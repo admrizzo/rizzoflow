@@ -1,51 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800;900&family=Barlow+Condensed:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ia.naimobiliária design system — verde neon sobre fundo escuro */
+/* Rizzo Imobiliária — design system */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 20% 10%;
+    --background: 214 32% 97%;
+    --foreground: 220 20% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 220 20% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 20% 18%;
 
-    --primary: 142 72% 42%;
+    --primary: 198 28% 26%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 94%;
-    --secondary-foreground: 220 20% 20%;
+    --secondary: 210 10% 96%;
+    --secondary-foreground: 220 20% 18%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 210 8% 96%;
+    --muted-foreground: 215 14% 34%;
 
-    --accent: 142 72% 42%;
+    --accent: 340 100% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 340 100% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 142 72% 42%;
+    --border: 210 10% 91%;
+    --input: 210 10% 89%;
+    --ring: 340 100% 45%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 20% 15%;
-    --sidebar-primary: 142 72% 42%;
+    --sidebar-background: 198 28% 26%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 340 100% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 20% 15%;
-    --sidebar-border: 220 13% 90%;
-    --sidebar-ring: 142 72% 42%;
+    --sidebar-accent: 198 25% 32%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 198 20% 35%;
+    --sidebar-ring: 340 100% 45%;
   }
 
   * {
@@ -54,12 +54,12 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Barlow', sans-serif;
+    font-family: 'Red Hat Display', system-ui, sans-serif;
   }
 
   h1, h2, h3 {
-    font-family: 'Barlow Condensed', sans-serif;
-    text-transform: uppercase;
+    font-family: 'Red Hat Display', system-ui, sans-serif;
+    font-weight: 700;
   }
 
   /* PERFORMANCE: Instant Radix animations */
@@ -131,10 +131,10 @@
 
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 20px hsl(120 100% 62% / 0.5), 0 0 40px hsl(120 100% 62% / 0.3);
+    text-shadow: 0 0 20px hsl(340 100% 45% / 0.5), 0 0 40px hsl(340 100% 45% / 0.3);
   }
 
   .border-glow {
-    box-shadow: 0 0 15px hsl(120 100% 62% / 0.15), inset 0 0 15px hsl(120 100% 62% / 0.05);
+    box-shadow: 0 0 15px hsl(340 100% 45% / 0.15), inset 0 0 15px hsl(340 100% 45% / 0.05);
   }
 }

@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Home } from 'lucide-react';
-import recepcaoImg from '@/assets/recepcao-rizzo.jpg';
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -68,45 +67,22 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Reception photo */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <img
-          src={recepcaoImg}
-          alt="Recepção Rizzo Imobiliária"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-8 left-8 right-8">
-          <img
-            src="/logo-rizzo-white.png"
-            alt="Rizzo Imobiliária"
-            className="h-10 mb-3"
-          />
-          <p className="text-white/80 text-sm font-medium">
-            Locação e Revenda — Automação de Fluxos
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      {/* Subtle background accent */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl" />
       </div>
 
-      {/* Right side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <Card className="w-full max-w-md shadow-xl border border-border/50">
-          <CardHeader className="text-center pb-2">
-            <div className="flex justify-center mb-4 lg:hidden">
-              <img
-                src="/logo-rizzo.png"
-                alt="Rizzo Imobiliária"
-                className="h-10 object-contain"
-              />
-            </div>
-            <div className="hidden lg:flex justify-center mb-4">
-              <img
-                src="/logo-rizzo.png"
-                alt="Rizzo Imobiliária"
-                className="h-10 object-contain"
-              />
-            </div>
+      <Card className="w-full max-w-md shadow-xl border border-border/50 relative z-10">
+        <CardHeader className="text-center pb-2">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/logo-rizzo.png"
+              alt="Rizzo Imobiliária"
+              className="h-10 object-contain"
+            />
+          </div>
             <CardTitle className="text-xl">Automação de Fluxos</CardTitle>
             <CardDescription>
               Passagem de bastão entre squads

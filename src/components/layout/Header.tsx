@@ -22,7 +22,6 @@ import { AdminPanel } from '@/components/admin';
 import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { Board } from '@/types/database';
 import { cn } from '@/lib/utils';
-import logoImg from '@/assets/logo-ia-naimobiliaria.png';
 
 interface HeaderProps {
   searchQuery: string;
@@ -83,9 +82,9 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           }}
         >
           <img 
-            src={logoImg} 
-            alt="ia.naimobiliária" 
-            className="h-7 w-auto"
+            src="/logo-rizzo-white.png" 
+            alt="Rizzo Imobiliária" 
+            className="h-6 w-auto"
           />
         </Link>
 

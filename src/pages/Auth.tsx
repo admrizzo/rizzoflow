@@ -78,7 +78,7 @@ export default function Auth() {
           <div className="flex justify-center mb-4">
             <img 
               src={logoImg} 
-              alt="ia.naimobiliária" 
+              alt="Rizzo Imobiliária" 
               className="h-12 object-contain"
             />
           </div>

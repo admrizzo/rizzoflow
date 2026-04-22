@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Barlow', 'sans-serif'],
+        heading: ['"Red Hat Display"', 'system-ui', 'sans-serif'],
+        sans: ['"Red Hat Display"', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -59,6 +60,26 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        gold: {
+          DEFAULT: "hsl(340 100% 45%)",
+          light: "hsl(340 60% 85%)",
+        },
+        navy: {
+          DEFAULT: "hsl(198 28% 26%)",
+          light: "hsl(198 20% 38%)",
+        },
+        success: {
+          DEFAULT: "hsl(152 36% 53%)",
+          foreground: "hsl(0 0% 100%)",
+        },
+        warning: {
+          DEFAULT: "hsl(40 88% 47%)",
+          foreground: "hsl(198 22% 18%)",
+        },
+        info: {
+          DEFAULT: "hsl(220 40% 59%)",
+          foreground: "hsl(0 0% 100%)",
         },
       },
       borderRadius: {

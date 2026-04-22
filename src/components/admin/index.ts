@@ -1,0 +1,12 @@
+export { AdminPanel } from './AdminPanel';
+export { UserRolesManager } from './UserRolesManager';
+export { UsersAndAccessManager } from './UsersAndAccessManager';
+export { BoardFieldsManager } from './BoardFieldsManager';
+export { BoardConfigManager } from './BoardConfigManager';
+export { BoardUsersManager } from './BoardUsersManager';
+export { ProposalResponsiblesManager } from './ProposalResponsiblesManager';
+export { BoardsManager } from './BoardsManager';
+export { BoardFormDialog } from './BoardFormDialog';
+export { ColumnsManager } from './ColumnsManager';
+export { ChecklistTemplatesManager } from './ChecklistTemplatesManager';
+export { CardTemplateChecklistsManager } from './CardTemplateChecklistsManager';

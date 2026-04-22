@@ -1,0 +1,1 @@
+UPDATE boards SET color = '#0891b2', updated_at = now() WHERE id = '04048a2e-8dce-4cc3-aa7c-28cb8d609763';

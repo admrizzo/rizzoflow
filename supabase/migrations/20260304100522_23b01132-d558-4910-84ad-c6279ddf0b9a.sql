@@ -1,0 +1,1 @@
+ALTER TABLE public.provider_registry ADD COLUMN specialty text DEFAULT NULL;

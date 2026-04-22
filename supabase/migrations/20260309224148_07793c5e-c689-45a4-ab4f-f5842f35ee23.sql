@@ -1,0 +1,1 @@
+UPDATE columns SET name = 'Concluído e Verificando Pagamentos' WHERE id = '7fad469b-2b2e-471a-8b09-792a19876195';

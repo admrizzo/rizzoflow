@@ -1,0 +1,131 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ForceRefreshPrompt } from "@/components/layout/ForceRefreshPrompt";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import AdminFlow from "./pages/AdminFlow";
+import ProviderPortal from "./pages/ProviderPortal";
+import NotFound from "./pages/NotFound";
+import Demo from "./pages/Demo";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30s default
+      gcTime: 300000, // 5 min cache
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+// Index component that handles redirects
+function IndexRedirect() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Redirect based on auth state
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to="/auth" replace />;
+}
+
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Public route that redirects if already logged in
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <ErrorBoundary label="app">
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<IndexRedirect />} />
+              <Route
+                path="/auth"
+                element={
+                  <PublicRoute>
+                    <Auth />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin-flow"
+                element={
+                  <ProtectedRoute>
+                    <AdminFlow />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/prestador/:token" element={<ProviderPortal />} />
+              <Route path="/demo" element={<Demo />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <ForceRefreshPrompt />
+          </AuthProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

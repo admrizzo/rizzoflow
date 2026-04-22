@@ -1,0 +1,1 @@
+ALTER TABLE maintenance_providers ADD COLUMN completion_deadline date DEFAULT null;

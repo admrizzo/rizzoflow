@@ -1,0 +1,1 @@
+UPDATE boards SET description = 'Gestão de manutenções de imóveis em andamento' WHERE id = '04048a2e-8dce-4cc3-aa7c-28cb8d609763';

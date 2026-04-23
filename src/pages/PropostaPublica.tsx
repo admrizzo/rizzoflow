@@ -1,24 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2,
-  Home, Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert,
-  Shield, ExternalLink, MapPin, Building2, Loader2
+  ArrowLeft, ArrowRight, Check, AlertCircle, Plus, Trash2,
+  Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert,
+  Shield, MapPin, Loader2, Home, BedDouble, Bath, Maximize,
+  User, Building, Phone, Mail, Briefcase, ChevronDown, Copy,
+  DollarSign, Users, FileCheck, Lock, Handshake, ClipboardCheck
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, UploadedFile,
@@ -43,24 +39,66 @@ const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-const CIVIL_STATUS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável', 'Separado(a)'];
-const RENDA_SOURCES = ['Empregado', 'Autônomo', 'Empresário', 'Funcionário Público'];
-const GARANTIA_OPTIONS = ['Seguro Fiança', 'Caução', 'Fiador', 'Título de Capitalização', 'Carta Fiança', 'Sem Garantia'];
+const CIVIL_STATUS = [
+  { label: 'Solteiro(a)', icon: '👤' },
+  { label: 'Casado(a)', icon: '💍' },
+  { label: 'Divorciado(a)', icon: '📋' },
+  { label: 'Viúvo(a)', icon: '🕊️' },
+  { label: 'União Estável', icon: '🤝' },
+];
+
+const RENDA_SOURCES = [
+  { value: 'Empregado(a)', icon: '💼', label: 'Empregado(a)' },
+  { value: 'Funcionário Público', icon: '🏛️', label: 'Funcionário Público' },
+  { value: 'Autônomo(a)', icon: '🔧', label: 'Autônomo(a)' },
+  { value: 'Empresário(a)', icon: '🏢', label: 'Empresário(a)' },
+];
+
+const GARANTIA_OPTIONS = [
+  { value: 'Seguro Fiança', icon: '🛡️', desc: 'Seguradora garante o contrato' },
+  { value: 'Caução', icon: '💰', desc: 'Depósito de 3 meses de aluguel' },
+  { value: 'Fiador', icon: '👥', desc: 'Pessoa que garante o contrato' },
+  { value: 'Título de Capitalização', icon: '📈', desc: 'Investimento como garantia' },
+  { value: 'Carta Fiança', icon: '📄', desc: 'Carta bancária de garantia' },
+  { value: 'Sem Garantia', icon: '⚠️', desc: 'Sem garantia oferecida' },
+];
+
 const MORADOR_TYPES = [
   { value: 'eu_mesmo', label: 'Eu mesmo' },
   { value: 'filho', label: 'Filho(a)' },
   { value: 'terceiro', label: 'Terceiro' },
 ];
 
+const FAQ_ITEMS = [
+  { icon: '🔒', q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
+  { icon: '👥', q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
+  { icon: '📄', q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
+  { icon: '🏠', q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
+  { icon: '📋', q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
+  { icon: '🔑', q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
+  { icon: '💲', q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
+];
+
 const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
 const CADASTRO_INICIADO_COLUMN_ID = '98579480-4d58-44f4-86dd-82c89e8f9f53';
+
+const STEP_CONFIG = [
+  { label: 'Imóvel e Tipo', shortLabel: 'Imóvel e Tipo', icon: Home },
+  { label: 'Dados Pessoais', shortLabel: 'Dados Pessoais', icon: User },
+  { label: 'Cônjuge / Sócios', shortLabel: 'Cônjuge / Sócios', icon: Users },
+  { label: 'Documentos', shortLabel: 'Documentos', icon: FileCheck },
+  { label: 'Moradores', shortLabel: 'Moradores', icon: BedDouble },
+  { label: 'Garantia', shortLabel: 'Garantia', icon: Lock },
+  { label: 'Negociação', shortLabel: 'Negociação', icon: Handshake },
+  { label: 'Revisão', shortLabel: 'Revisão', icon: ClipboardCheck },
+];
 
 function parseCurrency(val: string): number {
   const cleaned = val.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.');
   return parseFloat(cleaned) || 0;
 }
 
-function v(val: string | undefined | null): string {
+function vv(val: string | undefined | null): string {
   return val && val.trim() ? val : 'Não informado';
 }
 
@@ -74,36 +112,21 @@ function needsConjuge(data: ProposalFormData) {
   return civil === 'Casado(a)' || civil === 'União Estável';
 }
 
-function getStepLabels(showConjuge: boolean) {
-  return [
-    'Dados Pessoais',
-    'Estado Civil e Renda',
-    showConjuge ? 'Cônjuge / Sócios' : 'Cônjuge / Sócios',
-    'Documentos',
-    'Moradores',
-    'Garantia',
-    'Negociação',
-    'Revisão Final',
-  ];
-}
-
 function validateStep(step: number, data: ProposalFormData): string[] {
   const errors: string[] = [];
-  const showConjuge = needsConjuge(data);
   switch (step) {
-    case 0:
+    case 0: break; // Imóvel e Tipo — auto-preenchido
+    case 1:
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
+      if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
-      break;
-    case 1:
-      if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
     case 2:
-      if (showConjuge && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
+      if (needsConjuge(data) && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
       break;
     case 4:
       if (data.composicao.moradores.length === 0) errors.push('Informe pelo menos um morador');
@@ -137,37 +160,6 @@ interface PropertyData {
   status_imovel: number | null;
 }
 
-// ── Person fields ──
-function PersonFields({ data, onChange, labelPrefix, isCnpj }: {
-  data: DadosPessoais; onChange: (d: DadosPessoais) => void; labelPrefix: string; isCnpj?: boolean;
-}) {
-  const set = (key: keyof DadosPessoais, val: string) => onChange({ ...data, [key]: val });
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="sm:col-span-2">
-        <Label>{labelPrefix} – Nome completo <span className="text-destructive">*</span></Label>
-        <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" />
-      </div>
-      <div>
-        <Label>{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-destructive">*</span></Label>
-        <Input value={data.cpf} onChange={e => set('cpf', e.target.value)} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} />
-      </div>
-      <div>
-        <Label>Profissão</Label>
-        <Input value={data.profissao} onChange={e => set('profissao', e.target.value)} placeholder="Profissão" />
-      </div>
-      <div>
-        <Label>WhatsApp <span className="text-destructive">*</span></Label>
-        <Input value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" />
-      </div>
-      <div>
-        <Label>E-mail <span className="text-destructive">*</span></Label>
-        <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" />
-      </div>
-    </div>
-  );
-}
-
 // ── Score ──
 type ProposalScore = 'forte' | 'media' | 'risco';
 function calcScore(data: ProposalFormData, percentual: number | null): { score: ProposalScore; points: number; reasons: string[] } {
@@ -194,15 +186,14 @@ function calcScore(data: ProposalFormData, percentual: number | null): { score: 
 }
 
 function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
-  const sc = needsConjuge(data);
-  const allLabels = getStepLabels(sc);
   const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
+  const sc = needsConjuge(data);
   for (let i = 0; i < 7; i++) {
     if (i === 2 && !sc) continue;
     const errs = validateStep(i, data);
     if (errs.length > 0) {
-      const critical = [0, 1, 5].includes(i);
-      pending.push({ step: i, label: allLabels[i], errors: errs, critical });
+      const critical = [1, 5].includes(i);
+      pending.push({ step: i, label: STEP_CONFIG[i].label, errors: errs, critical });
     }
   }
   return pending;
@@ -216,12 +207,123 @@ function mapGarantia(label: string): string | null {
   return map[label] || null;
 }
 
+// ── Stepper Component ──
+function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
+  currentStep: number; totalSteps: number; onGoToStep: (s: number) => void;
+  visited: Set<number>; data: ProposalFormData;
+}) {
+  const showConjuge = needsConjuge(data);
+  return (
+    <div className="bg-white border-b sticky top-0 z-30">
+      <div className="max-w-3xl mx-auto px-4 py-4">
+        <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
+          Registro de Interesse na Locação
+        </p>
+        <div className="flex items-center justify-center gap-0 overflow-x-auto">
+          {STEP_CONFIG.map((cfg, i) => {
+            if (i === 2 && !showConjuge) return null;
+            const isActive = i === currentStep;
+            const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
+            const isClickable = visited.has(i);
+            const displayNum = i + 1;
+
+            return (
+              <div key={i} className="flex items-center">
+                {i > 0 && !(i === 2 && !showConjuge) && (
+                  <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-primary' : 'bg-border')} />
+                )}
+                <button
+                  onClick={() => isClickable && onGoToStep(i)}
+                  className={cn(
+                    'flex flex-col items-center gap-1 group transition-all',
+                    isClickable ? 'cursor-pointer' : 'cursor-default'
+                  )}
+                >
+                  <div className={cn(
+                    'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
+                    isActive && 'border-primary bg-primary text-primary-foreground shadow-md scale-110',
+                    isDone && !isActive && 'border-primary bg-primary text-primary-foreground',
+                    !isActive && !isDone && 'border-border bg-white text-muted-foreground',
+                  )}>
+                    {isDone ? <Check className="h-4 w-4" /> : displayNum}
+                  </div>
+                  <span className={cn(
+                    'text-[10px] sm:text-xs font-medium whitespace-nowrap max-w-[60px] sm:max-w-[80px] truncate',
+                    isActive && 'text-primary font-semibold',
+                    isDone && !isActive && 'text-primary',
+                    !isActive && !isDone && 'text-muted-foreground',
+                  )}>
+                    {cfg.shortLabel}
+                  </span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── FAQ Accordion ──
+function FAQSection() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  return (
+    <div className="bg-white rounded-2xl border p-6 mt-8">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div>
+          <h3 className="font-bold text-foreground">Dúvidas rápidas</h3>
+          <p className="text-xs text-muted-foreground">{FAQ_ITEMS.length} perguntas mais comuns</p>
+        </div>
+      </div>
+      <div className="divide-y">
+        {FAQ_ITEMS.map((faq, i) => (
+          <div key={i}>
+            <button
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              className="w-full flex items-center gap-3 py-3.5 text-left hover:bg-muted/30 rounded-lg px-2 transition-colors"
+            >
+              <span className="text-base">{faq.icon}</span>
+              <span className="flex-1 text-sm font-medium text-foreground">{faq.q}</span>
+              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
+            </button>
+            {openIdx === i && (
+              <div className="pl-10 pr-4 pb-3 text-sm text-muted-foreground leading-relaxed">
+                {faq.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Section Wrapper ──
+function FormSection({ icon: Icon, title, children, className }: {
+  icon: typeof User; title: string; children: React.ReactNode; className?: string;
+}) {
+  return (
+    <div className={cn('bg-white rounded-2xl border p-6', className)}>
+      <div className="flex items-center gap-2 mb-5">
+        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+        <h3 className="font-bold text-foreground">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 // ── Main Component ──
 export default function PropostaPublica() {
   const { codigoRobust } = useParams<{ codigoRobust: string }>();
   const codigo = codigoRobust || '';
 
-  // Load property from local DB
   const { data: property, isLoading: propertyLoading, error: propertyError } = useQuery({
     queryKey: ['public-property', codigo],
     queryFn: async () => {
@@ -240,7 +342,6 @@ export default function PropostaPublica() {
     retry: false,
   });
 
-  // Find the proposal_link for this code to get broker info
   const { data: proposalLink } = useQuery({
     queryKey: ['public-proposal-link', codigo],
     queryFn: async () => {
@@ -258,7 +359,6 @@ export default function PropostaPublica() {
     enabled: !!codigo,
   });
 
-  // Update proposal_link status to em_preenchimento on load
   useEffect(() => {
     if (proposalLink && proposalLink.status === 'nao_acessado') {
       supabase
@@ -269,7 +369,6 @@ export default function PropostaPublica() {
     }
   }, [proposalLink]);
 
-  // Form state
   const [step, setStep] = useState(0);
   const [data, setData] = useState<ProposalFormData>({
     imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: 'fisica' },
@@ -286,7 +385,6 @@ export default function PropostaPublica() {
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);
 
-  // Pre-fill property data
   useEffect(() => {
     if (property) {
       const endereco = [property.logradouro, property.numero, property.bairro, property.cidade, property.estado].filter(Boolean).join(', ');
@@ -304,8 +402,6 @@ export default function PropostaPublica() {
 
   const showConjuge = needsConjuge(data);
   const totalSteps = 8;
-  const labels = getStepLabels(showConjuge);
-  const progressPercent = ((step + 1) / totalSteps) * 100;
 
   const update = useCallback((updater: (prev: ProposalFormData) => ProposalFormData) => {
     setData(updater);
@@ -328,6 +424,7 @@ export default function PropostaPublica() {
       const next = step === 1 && !showConjuge ? 3 : step + 1;
       setStep(next);
       setVisited(prev => new Set(prev).add(next));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -335,23 +432,18 @@ export default function PropostaPublica() {
     if (step > 0) {
       const prev = step === 3 && !showConjuge ? 1 : step - 1;
       setStep(prev);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   function goToStep(s: number) {
     if (s === 2 && !showConjuge) return;
-    if (visited.has(s)) setStep(s);
+    if (visited.has(s)) {
+      setStep(s);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
-  function getStepStatus(s: number): 'done' | 'current' | 'pending' | 'skipped' {
-    if (s === step) return 'current';
-    if (s === 2 && !showConjuge) return 'skipped';
-    if (!visited.has(s)) return 'pending';
-    const errs = validateStep(s, data);
-    return errs.length === 0 ? 'done' : 'pending';
-  }
-
-  // Financial summary
   const totalMensal = useMemo(() => {
     if (!property) return null;
     const aluguel = property.valor_aluguel || 0;
@@ -389,8 +481,6 @@ export default function PropostaPublica() {
       '',
       `**Imóvel:** ${imovelCodigo}`,
       `**Endereço:** ${data.imovel.endereco || 'N/A'}`,
-      `**Bairro:** ${property?.bairro || 'N/A'}`,
-      `**Cidade:** ${property?.cidade || 'N/A'}`,
       `**Valor Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
       property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
@@ -402,7 +492,6 @@ export default function PropostaPublica() {
       `**Garantia:** ${garantiaLabel}`,
       `**Score:** ${scoreLabel} (${points}/100)`,
       `**Corretor:** ${brokerName}`,
-      `**Status:** Nova proposta`,
     ];
 
     try {
@@ -430,7 +519,6 @@ export default function PropostaPublica() {
       });
       if (error) throw error;
 
-      // Update proposal_link status
       if (proposalLink) {
         await supabase
           .from('proposal_links')
@@ -446,13 +534,13 @@ export default function PropostaPublica() {
     }
   }
 
-  // ── Loading / Error states ──
+  // ── Loading / Error / Submitted states ──
   if (propertyLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">Carregando dados do imóvel...</p>
+          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground text-sm">Carregando dados do imóvel...</p>
         </div>
       </div>
     );
@@ -463,198 +551,425 @@ export default function PropostaPublica() {
       ? 'Imóvel não encontrado ou indisponível.'
       : 'Não foi possível carregar os dados do imóvel. Tente novamente mais tarde.';
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-            </div>
-            <h2 className="text-xl font-bold">Proposta inválida ou expirada</h2>
-            <p className="text-muted-foreground">{msg}</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border max-w-md w-full p-10 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">Proposta inválida ou expirada</h2>
+          <p className="text-muted-foreground text-sm">{msg}</p>
+        </div>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-xl font-bold">Proposta enviada!</h2>
-            <p className="text-muted-foreground">
-              Sua proposta para o imóvel Cód. {property.codigo_robust} foi enviada com sucesso.
-              Entraremos em contato em breve.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border max-w-md w-full p-10 text-center space-y-4">
+          <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+            <Check className="h-10 w-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">Proposta enviada! 🎉</h2>
+          <p className="text-muted-foreground">
+            Sua proposta para o imóvel Cód. {property.codigo_robust} foi enviada com sucesso.
+            Entraremos em contato em breve.
+          </p>
+        </div>
       </div>
     );
   }
 
-  // ── Step Content ──
-  function renderStep() {
-    switch (step) {
-      case 0:
-        return (
-          <PersonFields
-            data={data.dados_pessoais}
-            onChange={d => update(p => ({ ...p, dados_pessoais: d }))}
-            labelPrefix="Proponente"
-            isCnpj={data.imovel.tipo_pessoa === 'juridica'}
-          />
-        );
-      case 1:
-        return (
-          <div className="space-y-6">
+  // ── Step Renderers ──
+  function renderStep0() {
+    const addressParts = [property.logradouro, property.numero, property.bairro, property.cidade].filter(Boolean);
+    return (
+      <div className="space-y-6">
+        {/* Welcome */}
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Home className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bem-vindo à sua proposta! 🏠</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Confira os dados do imóvel abaixo e prossiga com sua proposta.</p>
+        </div>
+
+        {/* Property Card */}
+        <div className="bg-white rounded-2xl border overflow-hidden">
+          <div className="flex flex-col sm:flex-row">
+            {property.foto_principal && (
+              <div className="sm:w-52 h-48 sm:h-auto relative overflow-hidden">
+                <img src={property.foto_principal} alt="" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="flex-1 p-5 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
+                    Cód. {property.codigo_robust}
+                  </span>
+                  {property.tipo_imovel && (
+                    <span className="text-xs text-muted-foreground">{property.tipo_imovel}</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success('Link copiado!'); }}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Copy className="h-3.5 w-3.5" /> Copiar link
+                </button>
+              </div>
+
+              <h3 className="font-bold text-foreground leading-tight">
+                {property.titulo || `Imóvel ${property.codigo_robust}`}
+              </h3>
+
+              {addressParts.length > 0 && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  {addressParts.join(', ')}
+                  {property.estado && `/${property.estado}`}
+                </p>
+              )}
+
+              {/* Financial breakdown */}
+              {totalMensal && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Aluguel</p>
+                    <p className="text-sm font-bold text-primary">{formatCurrency(totalMensal.aluguel)}</p>
+                  </div>
+                  {totalMensal.cond > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Condomínio</p>
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(totalMensal.cond)}</p>
+                    </div>
+                  )}
+                  {totalMensal.iptu > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">IPTU/mês</p>
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(totalMensal.iptu)}</p>
+                    </div>
+                  )}
+                  {totalMensal.seguro > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Seguro incêndio</p>
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(totalMensal.seguro)}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Fluxo */}
+        <div className="bg-white rounded-xl border px-4 py-3 flex items-center gap-2 text-sm">
+          <Home className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Fluxo selecionado automaticamente:</span>
+          <span className="font-bold text-foreground">Locação</span>
+        </div>
+
+        {/* Tipo de proponente */}
+        <div>
+          <h3 className="font-bold text-foreground mb-3">Tipo de proponente</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: 'fisica' as const, label: 'Pessoa Física', desc: 'CPF, RG, dados pessoais', icon: User },
+              { value: 'juridica' as const, label: 'Pessoa Jurídica', desc: 'CNPJ, contrato social, sócios', icon: Building },
+            ].map(opt => {
+              const selected = data.imovel.tipo_pessoa === opt.value;
+              return (
+                <button key={opt.value}
+                  onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
+                  className={cn(
+                    'relative p-5 rounded-2xl border-2 text-left transition-all',
+                    selected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                  )}
+                >
+                  {selected && (
+                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-primary" />
+                  )}
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
+                    <opt.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="font-bold text-foreground text-sm">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <FAQSection />
+      </div>
+    );
+  }
+
+  function renderStep1() {
+    const isCnpj = data.imovel.tipo_pessoa === 'juridica';
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <User className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Vamos nos conhecer! 👋</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Preencha seus dados pessoais. Campos com <span className="text-red-500">*</span> são obrigatórios.</p>
+        </div>
+
+        {/* Informações Pessoais */}
+        <FormSection icon={User} title="Informações Pessoais">
+          <div className="space-y-4">
             <div>
-              <Label className="mb-3 block">Estado civil <span className="text-destructive">*</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {CIVIL_STATUS.map(s => (
-                  <Button key={s} type="button" size="sm"
-                    variant={data.perfil_financeiro.estado_civil === s ? 'default' : 'outline'}
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s } }))}
-                  >{s}</Button>
-                ))}
+              <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
+              <Input value={data.dados_pessoais.nome} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, nome: e.target.value } }))} placeholder="Nome completo" className="mt-1.5" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></Label>
+                <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} className="mt-1.5" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Profissão <span className="text-red-500">*</span></Label>
+                <Input value={data.dados_pessoais.profissao} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, profissao: e.target.value } }))} placeholder="Sua profissão" className="mt-1.5" />
+              </div>
+            </div>
+          </div>
+        </FormSection>
+
+        {/* Contato */}
+        <FormSection icon={Phone} title="Contato">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
+              <div className="flex gap-2 mt-1.5">
+                <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
+                  🇧🇷 +55
+                </div>
+                <Input value={data.dados_pessoais.whatsapp} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" />
               </div>
             </div>
             <div>
-              <Label className="mb-3 block">Fonte de renda <span className="text-destructive">*</span></Label>
-              <RadioGroup value={data.perfil_financeiro.fonte_renda} onValueChange={val => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: val } }))}>
-                {RENDA_SOURCES.map(r => (
-                  <div key={r} className="flex items-center gap-2">
-                    <RadioGroupItem value={r} id={`renda-${r}`} />
-                    <Label htmlFor={`renda-${r}`} className="cursor-pointer">{r}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
+              <Input type="email" value={data.dados_pessoais.email} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, email: e.target.value } }))} placeholder="seu@email.com" className="mt-1.5" />
             </div>
+          </div>
+        </FormSection>
+
+        {/* Estado Civil e Renda */}
+        <FormSection icon={DollarSign} title="Estado Civil e Renda">
+          <div className="space-y-5">
             <div>
-              <Label>Renda mensal <span className="text-destructive">*</span></Label>
+              <Label className="text-sm font-medium mb-3 block">Estado Civil <span className="text-red-500">*</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {CIVIL_STATUS.map(s => (
+                  <button key={s.label} type="button"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s.label } }))}
+                    className={cn(
+                      'flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all',
+                      data.perfil_financeiro.estado_civil === s.label
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-muted-foreground/40'
+                    )}
+                  >
+                    {data.perfil_financeiro.estado_civil === s.label && <span className="text-xs">●</span>}
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(data.perfil_financeiro.estado_civil === 'Casado(a)' || data.perfil_financeiro.estado_civil === 'União Estável') && (
+              <div className="bg-muted/50 rounded-xl p-4 space-y-2">
+                <p className="text-sm font-medium">O(a) cônjuge/companheiro(a) vai fazer parte do contrato? <span className="text-red-500">*</span></p>
+                <p className="text-xs text-muted-foreground">Se sim, será necessário preencher os dados dele(a) na próxima etapa.</p>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button variant="outline" className="h-10">Sim, vai participar</Button>
+                  <Button variant="outline" className="h-10">Não, apenas eu</Button>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Fonte de Renda <span className="text-red-500">*</span></Label>
+              <div className="grid grid-cols-2 gap-2">
+                {RENDA_SOURCES.map(r => (
+                  <button key={r.value} type="button"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: r.value } }))}
+                    className={cn(
+                      'flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
+                      data.perfil_financeiro.fonte_renda === r.value
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/40'
+                    )}
+                  >
+                    <span className="text-lg">{r.icon}</span>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Renda Mensal <span className="text-red-500">*</span></Label>
               <Input
                 value={data.perfil_financeiro.renda_mensal}
                 onChange={e => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, renda_mensal: e.target.value } }))}
                 placeholder="R$ 0,00"
+                className="mt-1.5"
               />
               {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
-                <p className={cn('mt-1 text-sm font-medium', percentualComprometimento > 30 ? 'text-destructive' : 'text-muted-foreground')}>
+                <div className={cn(
+                  'mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2',
+                  percentualComprometimento > 30 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                )}>
+                  {percentualComprometimento > 30 ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
                   Comprometimento de renda: {percentualComprometimento.toFixed(1)}%
-                  {percentualComprometimento > 30 && ' ⚠️ Acima de 30%'}
-                </p>
+                  {percentualComprometimento > 30 && ' — acima de 30%'}
+                </div>
               )}
             </div>
           </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Dados do Cônjuge</h3>
-            <PersonFields data={data.conjuge} onChange={d => update(p => ({ ...p, conjuge: d }))} labelPrefix="Cônjuge" />
-            <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Sócios</h3>
-                <Button type="button" size="sm" variant="outline" onClick={() => update(p => ({ ...p, socios: [...p.socios, { ...emptyPerson }] }))}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar sócio
+        </FormSection>
+      </div>
+    );
+  }
+
+  function renderStep2() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Users className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Cônjuge e Sócios</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Preencha os dados do cônjuge e adicione sócios, se houver.</p>
+        </div>
+
+        <FormSection icon={User} title="Dados do Cônjuge">
+          <PersonFieldsClean data={data.conjuge} onChange={d => update(p => ({ ...p, conjuge: d }))} />
+        </FormSection>
+
+        <FormSection icon={Users} title="Sócios">
+          <div className="space-y-4">
+            {data.socios.map((s, i) => (
+              <div key={i} className="p-4 border rounded-xl relative">
+                <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 text-red-500 hover:text-red-700 h-8 w-8"
+                  onClick={() => update(p => ({ ...p, socios: p.socios.filter((_, idx) => idx !== i) }))}>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
+                <p className="text-xs font-semibold text-muted-foreground mb-3">Sócio {i + 1}</p>
+                <PersonFieldsClean data={s} onChange={d => { update(p => { const copy = [...p.socios]; copy[i] = d; return { ...p, socios: copy }; }); }} />
               </div>
-              {data.socios.map((s, i) => (
-                <div key={i} className="mb-6 p-4 border rounded-lg relative">
-                  <Button type="button" size="icon" variant="ghost" className="absolute top-2 right-2 text-destructive"
-                    onClick={() => update(p => ({ ...p, socios: p.socios.filter((_, idx) => idx !== i) }))}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <PersonFields data={s} onChange={d => { update(p => { const copy = [...p.socios]; copy[i] = d; return { ...p, socios: copy }; }); }} labelPrefix={`Sócio ${i + 1}`} />
-                </div>
-              ))}
-              {data.socios.length === 0 && <p className="text-sm text-muted-foreground">Nenhum sócio adicionado.</p>}
-            </div>
+            ))}
+            <Button type="button" variant="outline" className="w-full rounded-xl"
+              onClick={() => update(p => ({ ...p, socios: [...p.socios, { ...emptyPerson }] }))}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar sócio
+            </Button>
           </div>
-        );
-      case 3:
-        return (
-          <div className="space-y-6">
-            {data.documentos.map((cat, catIdx) => {
-              const status = cat.files.length === 0 ? 'pendente' : 'concluido';
-              return (
-                <div key={cat.key} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-sm">{cat.label}</h4>
-                        <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
-                          status === 'concluido' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800')}>
-                          {status === 'concluido' ? `${cat.files.length} arquivo(s)` : 'Pendente'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <HelpCircle className="h-3 w-3 shrink-0" /> {cat.help}
-                      </p>
+        </FormSection>
+      </div>
+    );
+  }
+
+  function renderStep3() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <FileCheck className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Envie os documentos necessários para análise da proposta.</p>
+        </div>
+
+        <div className="space-y-4">
+          {data.documentos.map((cat, catIdx) => {
+            const done = cat.files.length > 0;
+            return (
+              <div key={cat.key} className={cn('bg-white rounded-2xl border p-5 space-y-3', done && 'border-green-200')}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
+                      <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                        done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+                        {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                      </span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+                      <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
+                    </p>
                   </div>
-                  {cat.files.length > 0 && (
-                    <div className="space-y-1">
-                      {cat.files.map(file => (
-                        <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1.5">
-                          {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                          <span className="truncate flex-1">{file.name}</span>
-                          <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive"
-                            onClick={() => update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== file.id) }; return { ...p, documentos: docs }; })}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary hover:underline">
-                    <Upload className="h-4 w-4" /> Adicionar arquivo
-                    <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
-                      const fileList = e.target.files;
-                      if (!fileList) return;
-                      let rejected = 0;
-                      Array.from(fileList).forEach(file => {
-                        if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
-                        if (file.size > MAX_FILE_SIZE) { rejected++; return; }
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
-                          update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, uploaded] }; return { ...p, documentos: docs }; });
-                        };
-                        reader.readAsDataURL(file);
-                      });
-                      if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
-                      e.target.value = '';
-                    }} />
-                  </label>
                 </div>
-              );
-            })}
-            <div>
-              <Label>Observações adicionais</Label>
-              <Textarea value={data.documentos_observacao} onChange={e => update(p => ({ ...p, documentos_observacao: e.target.value }))} placeholder="Observações..." rows={3} />
-            </div>
+                {cat.files.length > 0 && (
+                  <div className="space-y-1.5">
+                    {cat.files.map(file => (
+                      <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
+                        {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                        <span className="truncate flex-1 text-foreground">{file.name}</span>
+                        <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                        <button className="text-red-400 hover:text-red-600 p-1"
+                          onClick={() => update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== file.id) }; return { ...p, documentos: docs }; })}>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-primary font-medium hover:bg-primary/5 border-2 border-dashed border-primary/30 rounded-xl py-3 transition-colors">
+                  <Upload className="h-4 w-4" /> Adicionar arquivo
+                  <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
+                    const fileList = e.target.files;
+                    if (!fileList) return;
+                    let rejected = 0;
+                    Array.from(fileList).forEach(file => {
+                      if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
+                      if (file.size > MAX_FILE_SIZE) { rejected++; return; }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
+                        update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, uploaded] }; return { ...p, documentos: docs }; });
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                    if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
+                    e.target.value = '';
+                  }} />
+                </label>
+              </div>
+            );
+          })}
+        </div>
+
+        <FormSection icon={FileText} title="Observações">
+          <Textarea value={data.documentos_observacao} onChange={e => update(p => ({ ...p, documentos_observacao: e.target.value }))} placeholder="Alguma observação sobre seus documentos?" rows={3} />
+        </FormSection>
+      </div>
+    );
+  }
+
+  function renderStep4() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <BedDouble className="h-7 w-7 text-primary" />
           </div>
-        );
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Moradores</h3>
-              <Button type="button" size="sm" variant="outline"
-                onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { ...emptyMorador }] } }))}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar
-              </Button>
-            </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Quem vai morar? 🏡</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Informe quem vai residir no imóvel.</p>
+        </div>
+
+        <FormSection icon={Users} title="Moradores">
+          <div className="space-y-3">
             {data.composicao.moradores.map((m, i) => (
-              <div key={i} className="flex items-end gap-3 p-3 border rounded-lg">
+              <div key={i} className="flex items-end gap-3 p-4 border rounded-xl bg-muted/30">
                 <div className="flex-1">
-                  <Label>Quem vai morar <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Quem vai morar <span className="text-red-500">*</span></Label>
                   <Select value={m.tipo} onValueChange={v => update(p => { const copy = [...p.composicao.moradores]; copy[i] = { ...copy[i], tipo: v as MoradorData['tipo'] }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       {MORADOR_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                     </SelectContent>
@@ -662,157 +977,181 @@ export default function PropostaPublica() {
                 </div>
                 {m.tipo === 'terceiro' && (
                   <div className="flex-1">
-                    <Label>Nome</Label>
-                    <Input value={m.nome} onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[i] = { ...copy[i], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })} placeholder="Nome do morador" />
+                    <Label className="text-sm font-medium">Nome</Label>
+                    <Input value={m.nome} onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[i] = { ...copy[i], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })} placeholder="Nome do morador" className="mt-1.5" />
                   </div>
                 )}
                 {data.composicao.moradores.length > 1 && (
-                  <Button type="button" size="icon" variant="ghost" className="text-destructive"
+                  <Button type="button" size="icon" variant="ghost" className="text-red-500 h-10 w-10"
                     onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, idx) => idx !== i) } }))}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             ))}
+            <Button type="button" variant="outline" className="w-full rounded-xl"
+              onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { ...emptyMorador }] } }))}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar morador
+            </Button>
           </div>
-        );
-      case 5:
-        return (
-          <div className="space-y-6">
-            <Label className="mb-3 block">Modalidade de garantia <span className="text-destructive">*</span></Label>
-            <div className="grid grid-cols-2 gap-2">
-              {GARANTIA_OPTIONS.map(g => (
-                <Button key={g} type="button" variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'} className="justify-start"
-                  onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g } }))}>{g}</Button>
-              ))}
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Textarea value={data.garantia.observacao} onChange={e => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))} placeholder="Detalhes..." rows={3} />
-            </div>
-          </div>
-        );
-      case 6:
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label>Valor proposto (R$)</Label>
-              <Input value={data.negociacao.valor_proposto} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))} placeholder="R$ 0,00" />
-            </div>
-            <div>
-              <Label className="mb-3 block">Aceitou o valor anunciado?</Label>
-              <div className="flex gap-3">
-                {(['sim', 'nao'] as const).map(opt => (
-                  <Button key={opt} type="button" variant={data.negociacao.aceitou_valor === opt ? 'default' : 'outline'} className="flex-1"
-                    onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: opt } }))}>{opt === 'sim' ? 'Sim' : 'Não'}</Button>
-                ))}
-              </div>
-            </div>
-            <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Condições..." rows={4} />
-          </div>
-        );
-      case 7:
-        return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} />;
-      default:
-        return null;
-    }
+        </FormSection>
+      </div>
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Property Header */}
-      <div className="bg-card border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {property.foto_principal && (
-              <img
-                src={property.foto_principal}
-                alt={property.titulo || ''}
-                className="w-full sm:w-40 h-32 sm:h-28 object-cover rounded-lg"
-              />
-            )}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-bold">Cód. {property.codigo_robust}</h1>
-                <Badge className="bg-primary text-primary-foreground">LOCAÇÃO</Badge>
-              </div>
-              <p className="text-sm font-medium">{property.titulo || `Imóvel ${property.codigo_robust}`}</p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {[property.logradouro, property.numero, property.bairro, property.cidade].filter(Boolean).join(', ')}
-              </p>
-              {totalMensal && (
-                <div className="flex flex-wrap gap-3 text-xs">
-                  <span>Aluguel: <strong>{formatCurrency(totalMensal.aluguel)}</strong></span>
-                  {totalMensal.cond > 0 && <span>Cond: {formatCurrency(totalMensal.cond)}</span>}
-                  {totalMensal.iptu > 0 && <span>IPTU: {formatCurrency(totalMensal.iptu)}</span>}
-                  {totalMensal.seguro > 0 && <span>Seguro: {formatCurrency(totalMensal.seguro)}</span>}
-                  <span className="font-bold text-primary">Total: {formatCurrency(totalMensal.total)}</span>
-                </div>
-              )}
-            </div>
+  function renderStep5() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Lock className="h-7 w-7 text-primary" />
           </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Garantia 🔒</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Escolha a modalidade de garantia para o contrato.</p>
         </div>
-      </div>
 
-      {/* Progress */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">Etapa {step + 1} de {totalSteps} — {labels[step]}</p>
-          <p className="text-xs font-medium text-primary">{Math.round(progressPercent)}%</p>
-        </div>
-        <Progress value={progressPercent} className="h-2" />
-      </div>
-
-      {/* Step indicators */}
-      <div className="max-w-4xl mx-auto px-4 py-3 overflow-x-auto">
-        <div className="flex gap-1 min-w-max">
-          {labels.map((label, i) => {
-            const status = getStepStatus(i);
-            if (status === 'skipped') return null;
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {GARANTIA_OPTIONS.map(g => {
+            const selected = data.garantia.tipo_garantia === g.value;
             return (
-              <button key={i} onClick={() => goToStep(i)}
-                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
-                  status === 'current' && 'bg-primary text-primary-foreground',
-                  status === 'done' && 'bg-green-100 text-green-800 cursor-pointer',
-                  status === 'pending' && visited.has(i) && 'bg-destructive/10 text-destructive cursor-pointer',
-                  status === 'pending' && !visited.has(i) && 'bg-muted text-muted-foreground',
-                )}>
-                {status === 'done' && <Check className="h-3 w-3" />}
-                {status === 'current' && <Circle className="h-3 w-3 fill-current" />}
-                {status === 'pending' && visited.has(i) && <AlertCircle className="h-3 w-3" />}
-                {label}
+              <button key={g.value} type="button"
+                onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g.value } }))}
+                className={cn(
+                  'p-4 rounded-2xl border-2 text-left transition-all',
+                  selected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">{g.icon}</span>
+                  <div>
+                    <p className="font-bold text-sm text-foreground">{g.value}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{g.desc}</p>
+                  </div>
+                </div>
               </button>
             );
           })}
         </div>
-      </div>
 
-      {/* Step content */}
-      <div className="max-w-4xl mx-auto px-4 pb-32">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">{labels[step]}</CardTitle>
-          </CardHeader>
-          <CardContent>{renderStep()}</CardContent>
-        </Card>
+        <FormSection icon={FileText} title="Observações sobre a garantia">
+          <Textarea value={data.garantia.observacao} onChange={e => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))} placeholder="Detalhes adicionais sobre a garantia..." rows={3} />
+        </FormSection>
+      </div>
+    );
+  }
+
+  function renderStep6() {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <Handshake className="h-7 w-7 text-primary" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Negociação 🤝</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Tem alguma proposta de valor ou condição especial?</p>
+        </div>
+
+        <FormSection icon={DollarSign} title="Proposta de valor">
+          <div className="space-y-5">
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Aceitou o valor anunciado?</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['sim', 'nao'] as const).map(opt => (
+                  <button key={opt} type="button"
+                    onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: opt } }))}
+                    className={cn(
+                      'p-3 rounded-xl border-2 text-sm font-bold transition-all',
+                      data.negociacao.aceitou_valor === opt
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border hover:border-muted-foreground/40'
+                    )}
+                  >
+                    {opt === 'sim' ? '✅ Sim, aceito' : '💬 Quero negociar'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {data.negociacao.aceitou_valor === 'nao' && (
+              <div>
+                <Label className="text-sm font-medium">Valor proposto (R$)</Label>
+                <Input value={data.negociacao.valor_proposto} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))} placeholder="R$ 0,00" className="mt-1.5" />
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm font-medium">Condições ou observações</Label>
+              <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Descreva suas condições ou observações..." rows={4} className="mt-1.5" />
+            </div>
+          </div>
+        </FormSection>
+      </div>
+    );
+  }
+
+  function renderStep7() {
+    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} />;
+  }
+
+  const stepRenderers = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} />
+
+      {/* Content */}
+      <div className="max-w-3xl mx-auto px-4 py-6 pb-28">
+        {stepRenderers[step]?.()}
       </div>
 
       {/* Bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 z-20">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Button variant="outline" onClick={goPrev} disabled={step === 0}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Anterior
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 z-20 shadow-lg">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <Button variant="ghost" onClick={goPrev} disabled={step === 0} className="shrink-0">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
           {step < totalSteps - 1 ? (
-            <Button onClick={goNext}>
+            <Button onClick={goNext} className="flex-1 h-12 rounded-xl text-base font-bold">
               Próximo <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleSubmit} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700">
               <Check className="h-4 w-4 mr-1" /> Enviar Proposta
             </Button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Reusable Person Fields (clean version) ──
+function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: (d: DadosPessoais) => void }) {
+  const set = (key: keyof DadosPessoais, val: string) => onChange({ ...data, [key]: val });
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
+        <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" className="mt-1.5" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
+          <Input value={data.cpf} onChange={e => set('cpf', e.target.value)} placeholder="000.000.000-00" className="mt-1.5" />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Profissão</Label>
+          <Input value={data.profissao} onChange={e => set('profissao', e.target.value)} placeholder="Profissão" className="mt-1.5" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
+          <Input value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" className="mt-1.5" />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
+          <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5" />
         </div>
       </div>
     </div>
@@ -828,42 +1167,50 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep }: {
   const hasCritical = pendingSteps.some(p => p.critical);
 
   const scoreConfig = {
-    forte: { icon: ShieldCheck, color: 'bg-green-100 border-green-300 text-green-800', label: 'Proposta Forte' },
-    media: { icon: Shield, color: 'bg-amber-100 border-amber-300 text-amber-800', label: 'Proposta Média' },
-    risco: { icon: ShieldAlert, color: 'bg-destructive/10 border-destructive/30 text-destructive', label: 'Proposta de Risco' },
+    forte: { icon: ShieldCheck, color: 'bg-green-50 border-green-200 text-green-800', label: 'Proposta Forte' },
+    media: { icon: Shield, color: 'bg-amber-50 border-amber-200 text-amber-800', label: 'Proposta Média' },
+    risco: { icon: ShieldAlert, color: 'bg-red-50 border-red-200 text-red-800', label: 'Proposta de Risco' },
   };
   const sc = scoreConfig[score];
   const ScoreIcon = sc.icon;
 
   return (
     <div className="space-y-6">
-      <div className={cn('p-4 rounded-lg border flex items-start gap-4', sc.color)}>
-        <ScoreIcon className="h-8 w-8 shrink-0 mt-0.5" />
+      <div className="text-center py-4">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <ClipboardCheck className="h-7 w-7 text-primary" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Revisão Final ✅</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Confira todos os dados antes de enviar sua proposta.</p>
+      </div>
+
+      <div className={cn('p-5 rounded-2xl border-2 flex items-start gap-4', sc.color)}>
+        <ScoreIcon className="h-10 w-10 shrink-0 mt-0.5" />
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
             <h3 className="text-lg font-bold">{sc.label}</h3>
             <span className="text-sm font-medium opacity-75">{points}/100 pts</span>
           </div>
           {reasons.length > 0 && (
-            <ul className="mt-2 space-y-0.5">
-              {reasons.map((r, i) => <li key={i} className="text-xs flex items-center gap-1"><AlertCircle className="h-3 w-3 shrink-0" /> {r}</li>)}
+            <ul className="mt-2 space-y-1">
+              {reasons.map((r, i) => <li key={i} className="text-xs flex items-center gap-1.5"><AlertCircle className="h-3.5 w-3.5 shrink-0" /> {r}</li>)}
             </ul>
           )}
         </div>
       </div>
 
       {pendingSteps.length > 0 && (
-        <div className="p-4 rounded-lg border border-amber-300 bg-amber-50">
-          <h4 className="font-semibold text-sm text-amber-900 mb-2">⚠️ Etapas que precisam de atenção</h4>
+        <div className="p-5 rounded-2xl border-2 border-amber-200 bg-amber-50">
+          <h4 className="font-bold text-sm text-amber-900 mb-3">⚠️ Etapas que precisam de atenção</h4>
           <div className="space-y-2">
             {pendingSteps.map(ps => (
-              <div key={ps.step} className="flex items-center justify-between bg-background rounded px-3 py-2 border">
+              <div key={ps.step} className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border">
                 <div>
-                  <span className="text-sm font-medium">{ps.label}</span>
-                  {ps.critical && <span className="ml-2 text-xs text-destructive font-semibold">Crítico</span>}
+                  <span className="text-sm font-bold">{ps.label}</span>
+                  {ps.critical && <span className="ml-2 text-xs text-red-600 font-bold">Crítico</span>}
                   <p className="text-xs text-muted-foreground">{ps.errors[0]}</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => onGoToStep(ps.step)}>Completar</Button>
+                <Button size="sm" variant="outline" className="rounded-lg" onClick={() => onGoToStep(ps.step)}>Completar</Button>
               </div>
             ))}
           </div>
@@ -872,22 +1219,22 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep }: {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <ReviewBlock title="👤 Dados Pessoais" items={[
-          ['Nome', v(data.dados_pessoais.nome)], ['CPF', v(data.dados_pessoais.cpf)],
-          ['WhatsApp', v(data.dados_pessoais.whatsapp)], ['E-mail', v(data.dados_pessoais.email)],
-        ]} onFix={() => onGoToStep(0)} />
+          ['Nome', vv(data.dados_pessoais.nome)], ['CPF', vv(data.dados_pessoais.cpf)],
+          ['WhatsApp', vv(data.dados_pessoais.whatsapp)], ['E-mail', vv(data.dados_pessoais.email)],
+        ]} onFix={() => onGoToStep(1)} />
         <ReviewBlock title="💰 Perfil Financeiro" items={[
-          ['Estado civil', v(data.perfil_financeiro.estado_civil)],
-          ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
+          ['Estado civil', vv(data.perfil_financeiro.estado_civil)],
+          ['Renda mensal', vv(data.perfil_financeiro.renda_mensal)],
           ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
         ]} onFix={() => onGoToStep(1)} />
-        <ReviewBlock title="🔒 Garantia" items={[['Modalidade', v(data.garantia.tipo_garantia)]]} onFix={() => onGoToStep(5)} />
+        <ReviewBlock title="🔒 Garantia" items={[['Modalidade', vv(data.garantia.tipo_garantia)]]} onFix={() => onGoToStep(5)} />
         <ReviewBlock title="📄 Documentos" items={
           data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} ✅` : 'Pendente ⚠️'] as [string, string])
         } onFix={() => onGoToStep(3)} />
       </div>
 
       {hasCritical && (
-        <div className="p-3 rounded-lg border border-destructive bg-destructive/5 text-destructive text-sm font-medium">
+        <div className="p-4 rounded-2xl border-2 border-red-200 bg-red-50 text-red-700 text-sm font-bold text-center">
           🚫 Pendências críticas. Regularize antes de enviar.
         </div>
       )}
@@ -898,16 +1245,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep }: {
 function ReviewBlock({ title, items, onFix }: { title: string; items: [string, string][]; onFix?: () => void }) {
   const hasNotInformed = items.some(([, val]) => val === 'Não informado' || val.includes('Pendente'));
   return (
-    <div className={cn('p-4 border rounded-lg', hasNotInformed && 'border-amber-300')}>
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="font-semibold text-sm">{title}</h4>
-        {hasNotInformed && onFix && <Button size="sm" variant="ghost" className="h-6 text-xs text-primary" onClick={onFix}>Completar</Button>}
+    <div className={cn('bg-white p-5 border rounded-2xl', hasNotInformed && 'border-amber-200')}>
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="font-bold text-sm">{title}</h4>
+        {hasNotInformed && onFix && <Button size="sm" variant="ghost" className="h-7 text-xs text-primary font-bold" onClick={onFix}>Completar</Button>}
       </div>
-      <dl className="space-y-1">
+      <dl className="space-y-1.5">
         {items.map(([label, value], i) => (
           <div key={i} className="flex justify-between text-sm">
             <dt className="text-muted-foreground">{label}</dt>
-            <dd className={cn('font-medium', (value === 'Não informado' || value.includes('Pendente')) && 'text-destructive')}>{value || '—'}</dd>
+            <dd className={cn('font-medium', (value === 'Não informado' || value.includes('Pendente')) && 'text-red-500')}>{value || '—'}</dd>
           </div>
         ))}
       </dl>

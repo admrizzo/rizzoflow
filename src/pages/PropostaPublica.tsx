@@ -823,7 +823,7 @@ export default function PropostaPublica() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Aluguel</p>
-                    <p className="text-sm font-bold text-primary">{formatCurrency(totalMensal.aluguel)}</p>
+                    <p className="text-sm font-bold text-accent">{formatCurrency(totalMensal.aluguel)}</p>
                   </div>
                   {totalMensal.cond > 0 && (
                     <div>
@@ -870,14 +870,17 @@ export default function PropostaPublica() {
                   onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
                   className={cn(
                     'relative p-5 rounded-2xl border-2 text-left transition-all',
-                    selected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                    selected ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'
                   )}
                 >
                   {selected && (
-                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-primary" />
+                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-accent" />
                   )}
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                    <opt.icon className="h-5 w-5 text-primary" />
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+                    selected ? 'bg-accent/10 ring-1 ring-accent/20' : 'bg-muted'
+                  )}>
+                    <opt.icon className={cn('h-5 w-5', selected ? 'text-accent' : 'text-muted-foreground')} />
                   </div>
                   <p className="font-bold text-foreground text-sm">{opt.label}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>

@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // ── Structured Variables ──
@@ -63,6 +63,24 @@ export interface Imovel {
   tipo_pessoa: 'fisica' | 'juridica' | '';
 }
 
+// documentos
+export type DocCategoryKey = 'documento_foto' | 'comprovante_residencia' | 'comprovante_renda' | 'estado_civil';
+
+export interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string; // mime
+  dataUrl: string; // base64 for preview
+}
+
+export interface DocumentCategory {
+  key: DocCategoryKey;
+  label: string;
+  help: string;
+  files: UploadedFile[];
+}
+
 // Full structured proposal
 export interface ProposalFormData {
   imovel: Imovel;
@@ -70,6 +88,7 @@ export interface ProposalFormData {
   perfil_financeiro: PerfilFinanceiro;
   conjuge: DadosPessoais;
   socios: DadosPessoais[];
+  documentos: DocumentCategory[];
   documentos_observacao: string;
   composicao: Composicao;
   garantia: GarantiaInfo;
@@ -79,12 +98,44 @@ export interface ProposalFormData {
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
 
+const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
+  {
+    key: 'documento_foto',
+    label: 'Documento com foto (CPF/RG/CNH)',
+    help: 'Envie frente e verso do documento com foto. Aceitos: JPG, PNG ou PDF.',
+    files: [],
+  },
+  {
+    key: 'comprovante_residencia',
+    label: 'Comprovante de residência',
+    help: 'Conta de luz, água, gás ou internet dos últimos 3 meses.',
+    files: [],
+  },
+  {
+    key: 'comprovante_renda',
+    label: 'Comprovante de renda',
+    help: 'Holerite, declaração de IR, extrato bancário ou pró-labore.',
+    files: [],
+  },
+  {
+    key: 'estado_civil',
+    label: 'Estado civil',
+    help: 'Certidão de nascimento, casamento ou averbação de divórcio.',
+    files: [],
+  },
+];
+
+const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
+const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const initialData: ProposalFormData = {
   imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: '' },
   dados_pessoais: { ...emptyPerson },
   perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '' },
   conjuge: { ...emptyPerson },
   socios: [],
+  documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
   documentos_observacao: '',
   composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
   garantia: { tipo_garantia: '', observacao: '' },
@@ -452,14 +503,115 @@ export default function PropostaLocacao() {
         );
       case 4:
         return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground">Envie ou descreva os documentos necessários para análise.</p>
-            <Textarea
-              value={data.documentos_observacao}
-              onChange={(e) => update(p => ({ ...p, documentos_observacao: e.target.value }))}
-              placeholder="Observações sobre documentos..."
-              rows={6}
-            />
+          <div className="space-y-6">
+            {data.documentos.map((cat, catIdx) => {
+              const status = cat.files.length === 0 ? 'pendente' : 'concluido';
+              return (
+                <div key={cat.key} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-sm">{cat.label}</h4>
+                        <span className={cn(
+                          'text-xs px-2 py-0.5 rounded-full font-medium',
+                          status === 'concluido' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                        )}>
+                          {status === 'concluido' ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <HelpCircle className="h-3 w-3 shrink-0" />
+                        {cat.help}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* File list */}
+                  {cat.files.length > 0 && (
+                    <div className="space-y-1">
+                      {cat.files.map((file) => (
+                        <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded px-2 py-1.5">
+                          {file.type.startsWith('image/') ? (
+                            <Image className="h-4 w-4 text-muted-foreground shrink-0" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          )}
+                          <span className="truncate flex-1">{file.name}</span>
+                          <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => {
+                              update(p => {
+                                const docs = [...p.documentos];
+                                docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== file.id) };
+                                return { ...p, documentos: docs };
+                              });
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary hover:underline">
+                    <Upload className="h-4 w-4" />
+                    Adicionar arquivo
+                    <input
+                      type="file"
+                      accept={ACCEPTED_FILE_TYPES}
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const fileList = e.target.files;
+                        if (!fileList) return;
+                        const newFiles: UploadedFile[] = [];
+                        let rejected = 0;
+                        Array.from(fileList).forEach((file) => {
+                          if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
+                          if (file.size > MAX_FILE_SIZE) { rejected++; return; }
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const uploaded: UploadedFile = {
+                              id: crypto.randomUUID(),
+                              name: file.name,
+                              size: file.size,
+                              type: file.type,
+                              dataUrl: reader.result as string,
+                            };
+                            update(p => {
+                              const docs = [...p.documentos];
+                              docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, uploaded] };
+                              return { ...p, documentos: docs };
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        });
+                        if (rejected > 0) {
+                          toast.error(`${rejected} arquivo(s) rejeitado(s)`, { description: 'Aceitos: JPG, PNG, PDF até 10MB' });
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              );
+            })}
+
+            <div>
+              <Label>Observações adicionais</Label>
+              <Textarea
+                value={data.documentos_observacao}
+                onChange={(e) => update(p => ({ ...p, documentos_observacao: e.target.value }))}
+                placeholder="Observações sobre documentos..."
+                rows={3}
+              />
+            </div>
           </div>
         );
       case 5:

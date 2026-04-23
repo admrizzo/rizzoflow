@@ -95,6 +95,8 @@ export interface Column {
   created_at: string;
   updated_at: string;
   review_deadline_days: number | null;
+  default_responsible_id: string | null;
+  sla_hours: number | null;
 }
 
 export interface Label {

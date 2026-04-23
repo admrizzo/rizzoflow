@@ -273,38 +273,3 @@ export default function CentralPropostas() {
     </div>
   );
 }
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-semibold">Proposta gerada com sucesso!</span>
-                </div>
-
-                <div className="bg-muted/40 rounded-lg border px-4 py-3">
-                  <p className="text-xs text-muted-foreground mb-1">Link da proposta</p>
-                  <p className="text-sm font-mono truncate">{generatedLink}</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-2">
-                  <Button variant="outline" className="w-full justify-start gap-2" onClick={handleCopyLink}>
-                    <Copy className="h-4 w-4" /> Copiar link
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2" onClick={() => window.open(generatedLink, '_blank')}>
-                    <ExternalLink className="h-4 w-4" /> Abrir proposta
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2" onClick={handleWhatsApp}>
-                    <MessageCircle className="h-4 w-4" /> Enviar via WhatsApp
-                  </Button>
-                </div>
-
-                <Button variant="default" className="w-full" onClick={openModal}>
-                  <Plus className="h-4 w-4 mr-2" /> Gerar outra proposta
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      {!authLoading && canEditPage && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
-    </div>
-  );
-}

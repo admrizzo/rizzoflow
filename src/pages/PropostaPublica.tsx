@@ -298,25 +298,26 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
 
   return (
     <div className="bg-white border-b sticky top-0 z-30">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-        <div className="flex justify-center mb-3">
-          <img 
-            src="/logo-rizzo.png" 
-            alt="Rizzo Imobiliária" 
-            className="h-8 w-auto object-contain"
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-5">
+          <img
+            src="/logo-rizzo.png"
+            alt="Rizzo Imobiliária"
+            className="h-12 sm:h-14 w-auto object-contain"
           />
+          <div className="hidden sm:block w-px h-10 bg-border" />
+          <p className="text-center sm:text-left text-base sm:text-lg font-bold text-foreground tracking-tight">
+            Registro de Interesse na Locação
+          </p>
         </div>
-        <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
-          Registro de Interesse na Locação
-        </p>
 
         {/* Progress bar */}
         <div className="mb-4 space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground font-medium">{progressMessage}</span>
-            <span className="font-bold text-primary">{progressPercent}%</span>
+            <span className="font-bold text-accent">{progressPercent}%</span>
           </div>
-          <Progress value={progressPercent} className="h-2.5" />
+          <Progress value={progressPercent} className="h-2.5 [&>div]:bg-accent" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               {isSaving ? (
@@ -326,7 +327,7 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
                 </>
               ) : lastSavedAt ? (
                 <>
-                  <Cloud className="h-3 w-3 text-primary" />
+                  <Cloud className="h-3 w-3 text-accent" />
                   <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </>
               ) : (
@@ -355,24 +356,24 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
             return (
               <div key={i} className="flex items-center">
                 {i > 0 && !(i === 2 && !showConjuge) && (
-                  <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-primary' : 'bg-border')} />
+                  <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-accent' : 'bg-border')} />
                 )}
                 <button
                   onClick={() => onGoToStep(i)}
                   className="flex flex-col items-center gap-1 group transition-all cursor-pointer"
                 >
                   <div className={cn(
-                    'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
-                    isActive && 'border-primary bg-primary text-primary-foreground shadow-md scale-110',
-                    isDone && !isActive && 'border-primary bg-primary text-primary-foreground',
+                    'w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
+                    isActive && 'border-accent bg-accent text-accent-foreground shadow-lg scale-110',
+                    isDone && !isActive && 'border-accent bg-accent text-accent-foreground',
                     !isActive && !isDone && 'border-border bg-white text-muted-foreground',
                   )}>
-                    {isDone ? <Check className="h-4 w-4" /> : displayNum}
+                    {isDone ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : displayNum}
                   </div>
                   <span className={cn(
                     'text-[10px] sm:text-xs font-medium whitespace-nowrap max-w-[60px] sm:max-w-[80px] truncate',
-                    isActive && 'text-primary font-semibold',
-                    isDone && !isActive && 'text-primary',
+                    isActive && 'text-accent font-semibold',
+                    isDone && !isActive && 'text-accent',
                     !isActive && !isDone && 'text-muted-foreground',
                   )}>
                     {cfg.shortLabel}
@@ -758,8 +759,8 @@ export default function PropostaPublica() {
       <div className="space-y-6">
         {/* Welcome */}
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Home className="h-7 w-7 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 ring-1 ring-accent/20">
+            <Home className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bem-vindo à sua proposta! 🏠</h2>
           <p className="text-muted-foreground mt-1 text-sm">Confira os dados do imóvel abaixo e prossiga com sua proposta.</p>
@@ -776,7 +777,7 @@ export default function PropostaPublica() {
             <div className="flex-1 p-5 space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent text-xs font-bold rounded-full">
                     Cód. {property.codigo_robust}
                   </span>
                   {property.tipo_imovel && (

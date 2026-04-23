@@ -20,9 +20,10 @@ interface KanbanColumnProps {
   budgetDeadlineValues?: Record<string, string | null>;
   showOwnerAvatar?: boolean;
   hasUnseenChanges?: (cardId: string, updatedAt: string) => boolean;
+  responsibleNames?: Record<string, string>;
 }
 
-export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, isFirstColumn = false, vacancyDeadlineValues = {}, categoryValues = {}, selectedProviders = {}, completionDeadlineValues = {}, budgetDeadlineValues = {}, showOwnerAvatar = false, hasUnseenChanges }: KanbanColumnProps) {
+export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, isFirstColumn = false, vacancyDeadlineValues = {}, categoryValues = {}, selectedProviders = {}, completionDeadlineValues = {}, budgetDeadlineValues = {}, showOwnerAvatar = false, hasUnseenChanges, responsibleNames = {} }: KanbanColumnProps) {
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   return (
@@ -76,6 +77,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
                       budgetDeadline={budgetDeadlineValues[card.id]}
                       showOwnerAvatar={showOwnerAvatar}
                       hasUnseenChanges={hasUnseenChanges?.(card.id, card.updated_at) ?? false}
+                      responsibleName={responsibleNames[card.id] || null}
                     />
                   </div>
                 )}

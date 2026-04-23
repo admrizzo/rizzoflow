@@ -177,11 +177,11 @@ const MORADOR_TYPES = [
 ];
 
 const FAQ_ITEMS = [
-  { Icon: Shield, q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
-  { Icon: Users, q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
+  { Icon: Shield, q: 'O que posso apresentar como garantia?', a: 'As modalidades de garantia aceitas são:\n\n• Seguro Fiança\n• Fiador: sendo necessário apresentar 2 fiadores, sendo:\n   - 1 com renda comprovada (mínimo de 3x o valor do aluguel)\n   - 1 com imóvel quitado localizado em um raio de até 200km de Goiânia (para facilitar validação e execução contratual, se necessário)\n• Título de Capitalização\n• Caução (até 3 meses de aluguel, conforme análise)\n\nA definição da garantia está sujeita à análise de crédito e aprovação da imobiliária.' },
+  { Icon: Users, q: 'No caso de fiador, pode ser um só?', a: 'Não. Para essa modalidade, normalmente são necessários dois fiadores:\n\n• 1 fiador com renda comprovada (mínimo de 3x o valor do aluguel)\n• 1 fiador com imóvel quitado localizado em um raio de até 200km de Goiânia\n\nEssa estrutura garante mais segurança para o contrato e faz parte da política de análise da imobiliária.\n\nEm casos específicos, a exigência pode variar conforme análise de crédito.' },
   { Icon: FileText, q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
   { Icon: Home, q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
-  { Icon: FileCheck, q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
+  { Icon: FileCheck, q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Para validação do fiador com imóvel, é necessário apresentar a certidão de matrícula atualizada do imóvel (emitida há no máximo 90 dias), comprovando que o bem está quitado.\n\nTambém poderá ser solicitado comprovante de endereço atualizado e, se necessário, documentos complementares para validação da propriedade.\n\nImportante: o imóvel deve estar localizado preferencialmente em Goiânia ou em um raio de até 200km, conforme análise da imobiliária.' },
   { Icon: CalendarDays, q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
   { Icon: DollarSign, q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
 ];
@@ -518,7 +518,7 @@ function FAQSection() {
                 <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
               </button>
               {openIdx === i && (
-                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                   {faq.a}
                 </div>
               )}

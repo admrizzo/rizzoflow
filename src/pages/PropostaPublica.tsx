@@ -14,7 +14,8 @@ import {
   Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert,
   Shield, MapPin, Loader2, Home, BedDouble, Bath, Maximize,
   User, Building, Phone, Mail, Briefcase, ChevronDown, Copy,
-  DollarSign, Users, FileCheck, Lock, Handshake, ClipboardCheck
+  DollarSign, Users, FileCheck, Lock, Handshake, ClipboardCheck,
+  Zap, MessageSquare, CalendarDays, Info
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, UploadedFile,

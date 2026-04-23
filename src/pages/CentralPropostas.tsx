@@ -48,6 +48,7 @@ export default function CentralPropostas() {
   const { user, profile, isAdmin, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
+  const canEditPage = isAdmin || user?.email === 'adm@rizzoimobiliaria.com';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,8 +164,21 @@ export default function CentralPropostas() {
 
   return (
     <div className="min-h-screen bg-background">
+      {!authLoading && canEditPage && (
+        <div className="fixed right-4 top-4 z-50 md:right-6 md:top-5">
+          <Button
+            size="lg"
+            onClick={() => setCmsOpen(true)}
+            className="h-11 border border-border px-4 shadow-lg"
+          >
+            <Settings2 className="h-4 w-4 mr-2" />
+            Editar Página
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
-      <header className="border-b bg-card px-6 py-4">
+      <header className="border-b bg-card px-6 py-4 pr-40 md:pr-56">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
@@ -174,7 +188,7 @@ export default function CentralPropostas() {
             <h1 className="text-xl font-bold">Central de Propostas</h1>
           </div>
           <div className="flex items-center gap-2">
-            {!authLoading && isAdmin && (
+            {!authLoading && canEditPage && (
               <Button variant="outline" size="sm" onClick={() => setCmsOpen(true)} className="gap-1">
                 <Settings2 className="h-4 w-4" />
                 Editar Página
@@ -429,7 +443,7 @@ export default function CentralPropostas() {
           </div>
         </DialogContent>
       </Dialog>
-      {!authLoading && isAdmin && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
+      {!authLoading && canEditPage && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
     </div>
   );
 }

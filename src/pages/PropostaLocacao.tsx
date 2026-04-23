@@ -169,6 +169,64 @@ export interface ProposalFormData {
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
+const emptyFiadorConjuge: FiadorConjugeData = { nome: '', cpf: '', documento_identidade: '', whatsapp: '', email: '' };
+
+// Categorias de documentos por tipo de fiador (regras Rizzo)
+const FIADOR_DOC_RENDA: FiadorDocumentCategory[] = [
+  { key: 'documento_foto', label: 'Documento oficial com foto', help: 'CNH, ou RG + CPF (frente e verso). Documento dentro da validade.', files: [] },
+  { key: 'comprovante_renda', label: 'Comprovante de renda', help: '3 últimos contracheques, extratos bancários ou declaração de IR.', files: [] },
+  { key: 'comprovante_residencia', label: 'Comprovante de residência', help: 'Conta de luz, água, gás ou internet — emitido nos últimos 90 dias.', files: [] },
+  { key: 'certidao_estado_civil', label: 'Certidão de estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
+];
+const FIADOR_DOC_IMOVEL: FiadorDocumentCategory[] = [
+  { key: 'documento_foto', label: 'Documento oficial com foto', help: 'CNH, ou RG + CPF (frente e verso). Documento dentro da validade.', files: [] },
+  { key: 'matricula_imovel', label: 'Certidão de matrícula do imóvel', help: 'Matrícula atualizada — emitida nos últimos 90 dias. Imóvel quitado em Goiânia.', files: [] },
+  { key: 'comprovante_residencia', label: 'Comprovante de residência', help: 'Conta de luz, água, gás ou internet — emitido nos últimos 90 dias.', files: [] },
+  { key: 'certidao_estado_civil', label: 'Certidão de estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
+];
+const FIADOR_DOC_CONJUGE_OBRIG: FiadorDocumentCategory = {
+  key: 'documento_conjuge', label: 'Documento do cônjuge (obrigatório)',
+  help: 'CNH, ou RG + CPF do cônjuge (frente e verso). Documento dentro da validade.', files: [],
+};
+const FIADOR_DOC_CONJUGE_RENDA: FiadorDocumentCategory = {
+  key: 'renda_conjuge', label: 'Comprovante de renda do cônjuge (opcional)',
+  help: 'Reforça a análise de crédito. Holerite, IR ou extrato bancário.', files: [],
+};
+
+function buildFiadorDocs(tipo: FiadorTipo, casadoComConjuge: boolean): FiadorDocumentCategory[] {
+  const base = tipo === 'imovel'
+    ? FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }))
+    : FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  if (casadoComConjuge) {
+    base.push({ ...FIADOR_DOC_CONJUGE_OBRIG, files: [] });
+    base.push({ ...FIADOR_DOC_CONJUGE_RENDA, files: [] });
+  }
+  return base;
+}
+
+function makeEmptyFiador(tipo: FiadorTipo = ''): FiadorData {
+  return {
+    tipo_fiador: tipo,
+    nome: '', cpf: '', profissao: '', whatsapp: '', email: '',
+    estado_civil: '',
+    renda_mensal: '',
+    registro_imoveis: '',
+    cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+    regime_bens: '', conjuge_participa: '',
+    conjuge: { ...emptyFiadorConjuge },
+    documentos: tipo ? buildFiadorDocs(tipo, false) : [],
+  };
+}
+
+function fiadorIsCasado(f: FiadorData): boolean {
+  return f.estado_civil === 'Casado(a)' || f.estado_civil === 'União Estável';
+}
+function fiadorNeedsConjuge(f: FiadorData): boolean {
+  if (!fiadorIsCasado(f)) return false;
+  if (!f.regime_bens) return false;
+  if (f.regime_bens === 'Separação total / absoluta de bens') return f.conjuge_participa === 'sim';
+  return true;
+}
 
 const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
   {

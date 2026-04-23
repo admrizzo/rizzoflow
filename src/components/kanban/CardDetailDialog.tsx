@@ -73,6 +73,7 @@ import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
+import { useProperties, Property } from '@/hooks/useProperties';
 import { format } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
@@ -199,6 +200,39 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedTransferUser, setSelectedTransferUser] = useState<string>('');
+  const [propertySearchOpen, setPropertySearchOpen] = useState(false);
+  const [propertySearchQuery, setPropertySearchQuery] = useState('');
+  const { properties: allProperties } = useProperties();
+
+  // Check if property is still available in CRM
+  const linkedProperty = card?.robust_code ? allProperties.find(p => String(p.codigo_robust) === card.robust_code) : null;
+  const propertyUnavailable = card?.robust_code && allProperties.length > 0 && !linkedProperty;
+
+  const filteredProperties = allProperties.filter(p => {
+    if (!propertySearchQuery) return true;
+    const q = propertySearchQuery.toLowerCase();
+    return (
+      String(p.codigo_robust).includes(q) ||
+      (p.titulo || '').toLowerCase().includes(q) ||
+      (p.bairro || '').toLowerCase().includes(q) ||
+      (p.logradouro || '').toLowerCase().includes(q)
+    );
+  }).slice(0, 15);
+
+  const selectProperty = (p: Property) => {
+    const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
+    setLocalRobustCode(String(p.codigo_robust));
+    setLocalBuildingName(p.titulo || '');
+    setLocalAddress(endereco);
+    updateCard.mutate({
+      id: card!.id,
+      robust_code: String(p.codigo_robust),
+      building_name: p.titulo || null,
+      address: endereco || null,
+    });
+    setPropertySearchOpen(false);
+    setPropertySearchQuery('');
+  };
 
   const resetLocalDialogs = useCallback(() => {
     setArchiveDialogOpen(false);

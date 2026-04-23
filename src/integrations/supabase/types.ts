@@ -1577,6 +1577,47 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_stage_faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_active: boolean
+          position: number
+          question: string
+          stage_id: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          question: string
+          stage_id: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          question?: string
+          stage_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_stage_faqs_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_stage_fields: {
         Row: {
           conditional_on: Json | null

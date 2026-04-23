@@ -939,13 +939,70 @@ export default function PropostaPublica() {
 
             {(data.perfil_financeiro.estado_civil === 'Casado(a)' || data.perfil_financeiro.estado_civil === 'União Estável') && (
               <div className="bg-muted/50 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-medium">O(a) cônjuge/companheiro(a) vai fazer parte do contrato? <span className="text-red-500">*</span></p>
-                <p className="text-xs text-muted-foreground">Se sim, será necessário preencher os dados dele(a) na próxima etapa.</p>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <Button variant="outline" className="h-10">Sim, vai participar</Button>
-                  <Button variant="outline" className="h-10">Não, apenas eu</Button>
+                <Label className="text-sm font-medium mb-3 block">Regime de Bens <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  {REGIME_BENS_OPTIONS.map(r => (
+                    <button key={r} type="button"
+                      onClick={() => update(p => ({
+                        ...p,
+                        perfil_financeiro: {
+                          ...p.perfil_financeiro,
+                          regime_bens: r,
+                          conjuge_participa: r !== 'Separação total / absoluta de bens' ? '' : p.perfil_financeiro.conjuge_participa,
+                        }
+                      }))}
+                      className={cn(
+                        'w-full flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
+                        data.perfil_financeiro.regime_bens === r
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/40'
+                      )}
+                    >
+                      {data.perfil_financeiro.regime_bens === r && <span className="text-xs">●</span>}
+                      {r}
+                    </button>
+                  ))}
                 </div>
-              </div>
+
+                {/* Separação total: perguntar se cônjuge participa */}
+                {data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+                  <div className="mt-4 p-3 bg-background rounded-lg border space-y-2">
+                    <p className="text-sm font-medium">O(a) cônjuge/companheiro(a) também participará do contrato? <span className="text-red-500">*</span></p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={data.perfil_financeiro.conjuge_participa === 'sim' ? 'default' : 'outline'}
+                        className="h-10"
+                        onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'sim' } }))}
+                      >
+                        Sim, vai participar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={data.perfil_financeiro.conjuge_participa === 'nao' ? 'default' : 'outline'}
+                        className="h-10"
+                        onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'nao' } }))}
+                      >
+                        Não, apenas eu
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info: regime obriga cônjuge */}
+                {data.perfil_financeiro.regime_bens && data.perfil_financeiro.regime_bens !== 'Separação total / absoluta de bens' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ℹ️ Com o regime selecionado, a etapa de cônjuge/companheiro é obrigatória.
+                  </p>
+                )}
+
+                {/* Info: cônjuge participará */}
+                {needsConjuge(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ✅ Você precisará preencher os dados do cônjuge na próxima etapa.
+                  </p>
+                )}
+                </div>
             )}
 
             <div>

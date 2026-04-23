@@ -26,6 +26,7 @@ import {
   calcPercentualComprometimento
 } from '@/pages/PropostaLocacao';
 import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
+import { FiadorSection } from '@/components/proposta/FiadorSection';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };

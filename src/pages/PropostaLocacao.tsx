@@ -49,6 +49,25 @@ export interface Composicao {
 export interface GarantiaInfo {
   tipo_garantia: string;
   observacao: string;
+  fiadores: FiadorData[];
+}
+
+export interface FiadorData {
+  nome: string;
+  cpf: string;
+  profissao: string;
+  whatsapp: string;
+  email: string;
+  renda_mensal: string;
+  registro_imoveis: string;
+  estado_civil: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
 }
 
 // negociacao

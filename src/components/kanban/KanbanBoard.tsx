@@ -7,6 +7,7 @@ import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { useCardViews } from '@/hooks/useCardViews';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserBoards } from '@/hooks/useUserBoards';
+import { useProfiles } from '@/hooks/useProfiles';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { KanbanColumn } from './KanbanColumn';
@@ -52,6 +53,28 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
   // Check if this board has owner_only_visibility enabled
   const isCurrentUserBoardAdmin = user?.id ? isBoardAdmin(user.id, board.id) : false;
   const showOwnerAvatar = boardConfig?.owner_only_visibility && (isAdmin || isCurrentUserBoardAdmin);
+  const { profiles } = useProfiles();
+
+  // Build responsible names map: for each card, find the responsible based on column's default_responsible_id
+  // or fall back to the first card member
+  const responsibleNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    cards.forEach(card => {
+      const col = columns.find(c => c.id === card.column_id);
+      if (col?.default_responsible_id) {
+        const profile = profiles.find(p => p.user_id === col.default_responsible_id);
+        if (profile) {
+          map[card.id] = profile.full_name;
+          return;
+        }
+      }
+      // Fallback to first member
+      if (card.members && card.members.length > 0) {
+        map[card.id] = card.members[0].full_name;
+      }
+    });
+    return map;
+  }, [cards, columns, profiles]);
 
   // When initialCardId changes (from notification), open that card
   useEffect(() => {
@@ -604,6 +627,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
                       budgetDeadlineValues={budgetDeadlineValues}
                       showOwnerAvatar={showOwnerAvatar}
                       hasUnseenChanges={hasUnseenChanges}
+                      responsibleNames={responsibleNames}
                   />
                 </div>
               ))}

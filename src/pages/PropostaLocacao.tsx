@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert, Shield, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert, Shield, ExternalLink, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -271,6 +271,22 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (data.composicao.moradores.length === 0) errors.push('Informe pelo menos um morador');
       for (const m of data.composicao.moradores) {
         if (!m.tipo) errors.push('Tipo de morador é obrigatório');
+      }
+      {
+        const t = data.composicao.moradores[0]?.tipo;
+        if (t === 'filho' || t === 'terceiro') {
+          for (const m of data.composicao.moradores) {
+            if (!m.relacao?.trim()) errors.push('Informe a relação do morador');
+            if (!m.nome?.trim()) errors.push('Informe o nome do morador');
+            if (!m.whatsapp?.trim()) errors.push('Informe o WhatsApp do morador');
+            if (!m.email?.trim()) errors.push('Informe o e-mail do morador');
+          }
+        }
+        if (data.composicao.responsavel_retirada) {
+          if (!data.composicao.retirada_nome?.trim()) errors.push('Informe o nome de quem vai retirar as chaves');
+          if (!data.composicao.retirada_whatsapp?.trim()) errors.push('Informe o WhatsApp de quem vai retirar as chaves');
+          if (!data.composicao.retirada_cpf?.trim()) errors.push('Informe o CPF de quem vai retirar as chaves');
+        }
       }
       break;
     case 6:

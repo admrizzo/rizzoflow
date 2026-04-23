@@ -38,6 +38,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const activeItems = allItems.filter(i => !i.is_dismissed);
     const totalItems = activeItems.length;
     const completedItems = activeItems.filter(i => i.is_completed).length;
+    const hasPendingItems = totalItems > 0 && completedItems < totalItems;
 
     const hasLabels = card.labels && card.labels.length > 0;
     const hasDueDate = card.due_date;
@@ -119,9 +120,10 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           isArchived && "opacity-60 bg-muted",
           isAnyDeadlineOverdue && !isArchived && "border-2 border-red-400 bg-red-50",
           reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-2 border-orange-400 bg-orange-50",
-          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-red-500",
-          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-amber-500",
-          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-emerald-500"
+          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-red-500",
+          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-amber-500",
+          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-emerald-500",
+          hasPendingItems && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && !hasSla && "border-l-4 border-l-amber-400"
         )}
       >
         {/* Red badge for unseen changes */}
@@ -185,6 +187,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           <div className="flex items-center gap-1 px-2 pt-2 text-orange-700 text-xs font-medium bg-orange-200/50">
             <AlertTriangle className="h-3 w-3" />
             <span>Revisão necessária</span>
+          </div>
+        )}
+
+        {/* Pending checklist items alert */}
+        {hasPendingItems && !isArchived && !isAnyDeadlineOverdue && !reviewOverdue && (
+          <div className="flex items-center gap-1 px-2 pt-1.5 text-amber-700 text-[10px] font-medium">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Pendências nesta etapa ({completedItems}/{totalItems})</span>
           </div>
         )}
 

@@ -1594,7 +1594,53 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
             ) : (
               // Other Boards (Locação): Robust Code + Building Name + Superlógica ID
               <div className="bg-muted/30 p-4 rounded-lg border border-muted">
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Identificação do Imóvel</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground">Identificação do Imóvel</h3>
+                  {isEditor && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPropertySearchOpen(!propertySearchOpen)}
+                      className="text-xs h-7"
+                    >
+                      <Home className="h-3 w-3 mr-1" /> Buscar imóvel
+                    </Button>
+                  )}
+                </div>
+                {propertyUnavailable && (
+                  <div className="mb-3 p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                    Imóvel indisponível ou alterado no CRM
+                  </div>
+                )}
+                {propertySearchOpen && (
+                  <div className="mb-3 border rounded-md p-2 space-y-2">
+                    <Input
+                      value={propertySearchQuery}
+                      onChange={(e) => setPropertySearchQuery(e.target.value)}
+                      placeholder="Buscar por código, nome, bairro, endereço..."
+                      className="h-8 text-xs"
+                      autoFocus
+                    />
+                    <div className="max-h-[180px] overflow-y-auto divide-y">
+                      {filteredProperties.map(p => (
+                        <div
+                          key={p.id}
+                          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/50 text-xs"
+                          onClick={() => selectProperty(p)}
+                        >
+                          <span className="font-medium">#{p.codigo_robust}</span>
+                          <span className="truncate flex-1">{p.titulo || 'Sem título'}</span>
+                          <span className="text-muted-foreground">{p.bairro}</span>
+                        </div>
+                      ))}
+                      {filteredProperties.length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-2">Nenhum imóvel encontrado</p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4 items-start">
                   {/* Robust Code */}
                   <div className="flex flex-col">

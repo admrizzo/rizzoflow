@@ -381,6 +381,7 @@ export default function PropostaPublica() {
   });
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   useEffect(() => {
     if (property) {
@@ -1086,7 +1087,7 @@ export default function PropostaPublica() {
   }
 
   function renderStep7() {
-    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} />;
+    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} property={property} />;
   }
 
   const stepRenderers = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7];
@@ -1114,6 +1115,10 @@ export default function PropostaPublica() {
             <Button onClick={() => {
               const pending = getPendingSteps(data);
               const critical = pending.filter(p => p.critical);
+              if (!termsAccepted) {
+                toast.error('Aceite os termos', { description: 'Você precisa aceitar os termos para enviar o registro.' });
+                return;
+              }
               if (critical.length > 0) {
                 toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
                 setStep(critical[0].step);
@@ -1122,8 +1127,8 @@ export default function PropostaPublica() {
                 return;
               }
               handleSubmit();
-            }} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700">
-              <Check className="h-4 w-4 mr-1" /> Enviar Proposta
+            }} disabled={!termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
+              <ArrowRight className="h-4 w-4 mr-1" /> Enviar Registro
             </Button>
           )}
         </div>
@@ -1166,105 +1171,170 @@ function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: 
 }
 
 // ── Review Step ──
-function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep }: {
+function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAccepted, onTermsChange, property }: {
   data: ProposalFormData; showConjuge: boolean; percentual: number | null; onGoToStep: (step: number) => void;
+  termsAccepted: boolean; onTermsChange: (v: boolean) => void; property: PropertyData;
 }) {
-  const { score, points, reasons } = calcScore(data, percentual);
   const pendingSteps = getPendingSteps(data);
   const hasCritical = pendingSteps.some(p => p.critical);
+  const hasPending = pendingSteps.length > 0;
+  const totalDocs = data.documentos.reduce((acc, c) => acc + c.files.length, 0);
 
-  const scoreConfig = {
-    forte: { icon: ShieldCheck, color: 'bg-green-50 border-green-200 text-green-800', label: 'Proposta Forte' },
-    media: { icon: Shield, color: 'bg-amber-50 border-amber-200 text-amber-800', label: 'Proposta Média' },
-    risco: { icon: ShieldAlert, color: 'bg-red-50 border-red-200 text-red-800', label: 'Proposta de Risco' },
-  };
-  const sc = scoreConfig[score];
-  const ScoreIcon = sc.icon;
+  const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
 
   return (
-    <div className="space-y-6">
-      <div className="text-center py-4">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="text-center py-6">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
           <ClipboardCheck className="h-7 w-7 text-primary" />
         </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Revisão Final ✅</h2>
-        <p className="text-muted-foreground mt-1 text-sm">Confira todos os dados antes de enviar sua proposta.</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Quase lá! 🎉</h2>
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">Revise todas as informações antes de enviar seu registro de interesse.</p>
       </div>
 
-      <div className={cn('p-5 rounded-2xl border-2 flex items-start gap-4', sc.color)}>
-        <ScoreIcon className="h-10 w-10 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-lg font-bold">{sc.label}</h3>
-            <span className="text-sm font-medium opacity-75">{points}/100 pts</span>
-          </div>
-          {reasons.length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {reasons.map((r, i) => <li key={i} className="text-xs flex items-center gap-1.5"><AlertCircle className="h-3.5 w-3.5 shrink-0" /> {r}</li>)}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {pendingSteps.length > 0 && (
-        <div className="p-5 rounded-2xl border-2 border-amber-200 bg-amber-50">
-          <h4 className="font-bold text-sm text-amber-900 mb-3">⚠️ Etapas que precisam de atenção</h4>
-          <div className="space-y-2">
+      {/* Pending steps alert */}
+      {hasPending && (
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6">
+          <p className="text-red-600 font-bold text-sm mb-4 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" /> Algumas etapas precisam de atenção
+          </p>
+          <div className="space-y-3">
             {pendingSteps.map(ps => (
-              <div key={ps.step} className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border">
-                <div>
-                  <span className="text-sm font-bold">{ps.label}</span>
-                  {ps.critical && <span className="ml-2 text-xs text-red-600 font-bold">Crítico</span>}
-                  <p className="text-xs text-muted-foreground">{ps.errors[0]}</p>
-                </div>
-                <Button size="sm" variant="outline" className="rounded-lg" onClick={() => onGoToStep(ps.step)}>Completar</Button>
+              <div key={ps.step} className="flex items-center justify-between bg-white rounded-xl px-5 py-4 border border-red-100">
+                <span className="text-sm font-medium text-red-700 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  Etapa {ps.step + 1}: {ps.label}
+                </span>
+                <button onClick={() => onGoToStep(ps.step)} className="text-sm font-semibold text-red-600 hover:text-red-800 transition-colors">
+                  Completar →
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <ReviewBlock title="👤 Dados Pessoais" items={[
-          ['Nome', vv(data.dados_pessoais.nome)], ['CPF', vv(data.dados_pessoais.cpf)],
-          ['WhatsApp', vv(data.dados_pessoais.whatsapp)], ['E-mail', vv(data.dados_pessoais.email)],
-        ]} onFix={() => onGoToStep(1)} />
-        <ReviewBlock title="💰 Perfil Financeiro" items={[
-          ['Estado civil', vv(data.perfil_financeiro.estado_civil)],
-          ['Renda mensal', vv(data.perfil_financeiro.renda_mensal)],
-          ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
-        ]} onFix={() => onGoToStep(1)} />
-        <ReviewBlock title="🔒 Garantia" items={[['Modalidade', vv(data.garantia.tipo_garantia)]]} onFix={() => onGoToStep(5)} />
-        <ReviewBlock title="📄 Documentos" items={
-          data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} ✅` : 'Pendente ⚠️'] as [string, string])
-        } onFix={() => onGoToStep(3)} />
+      {/* Data blocks */}
+      <div className="space-y-5">
+        {/* Dados Pessoais */}
+        <ReviewBlockNew title="Dados Pessoais" icon="👤" onFix={() => onGoToStep(1)} hasPending={!data.dados_pessoais.nome.trim()}>
+          <ReviewRow label="Nome" value={vv(data.dados_pessoais.nome)} />
+          <ReviewRow label="CPF" value={vv(data.dados_pessoais.cpf)} />
+          <ReviewRow label="Profissão" value={vv(data.dados_pessoais.profissao)} />
+          <ReviewRow label="WhatsApp" value={vv(data.dados_pessoais.whatsapp)} />
+          <ReviewRow label="E-mail" value={vv(data.dados_pessoais.email)} />
+          <ReviewRow label="Estado Civil" value={vv(data.perfil_financeiro.estado_civil)} />
+          <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
+          {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
+        </ReviewBlockNew>
+
+        {/* Documentos */}
+        <ReviewBlockNew title="Documentos" icon="📄" onFix={() => onGoToStep(3)} hasPending={totalDocs === 0}>
+          <p className="text-sm text-muted-foreground">{totalDocs} documento(s) enviado(s)</p>
+        </ReviewBlockNew>
+
+        {/* Moradores e Contrato */}
+        <ReviewBlockNew title="Moradores e Contrato" icon="🏠" onFix={() => onGoToStep(4)} hasPending={data.composicao.moradores.length === 0 || !data.composicao.moradores[0]?.tipo}>
+          <ReviewRow label="Inquilino" value={data.composicao.moradores[0]?.tipo === 'eu_mesmo' ? 'O próprio locatário' : data.composicao.moradores[0]?.tipo === 'terceiro' ? data.composicao.moradores[0]?.nome || 'Terceiro' : vv(data.composicao.moradores[0]?.tipo)} />
+          <ReviewRow label="Total de moradores" value={String(data.composicao.moradores.length)} />
+        </ReviewBlockNew>
+
+        {/* Garantia */}
+        <ReviewBlockNew title="Garantia" icon="🔒" onFix={() => onGoToStep(5)} hasPending={!data.garantia.tipo_garantia}>
+          <ReviewRow label="Modalidade" value={vv(data.garantia.tipo_garantia)} />
+          {data.garantia.observacao && <ReviewRow label="Observação" value={data.garantia.observacao} />}
+        </ReviewBlockNew>
+
+        {/* Negociação */}
+        <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
+          <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
+          {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={data.negociacao.valor_proposto} />}
+          {data.negociacao.observacao && <ReviewRow label="Observação" value={data.negociacao.observacao} />}
+        </ReviewBlockNew>
       </div>
 
-      {hasCritical && (
-        <div className="p-4 rounded-2xl border-2 border-red-200 bg-red-50 text-red-700 text-sm font-bold text-center">
-          🚫 Pendências críticas. Regularize antes de enviar.
+      {/* Terms */}
+      <div className="bg-white rounded-2xl border p-6 sm:p-8 space-y-5">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Declaro que as informações acima refletem os valores e condições <strong>anunciados na data do registro</strong>. 
+          Os valores de aluguel, condomínio, IPTU, seguro incêndio e demais encargos são informados pela administradora, 
+          condomínio e seguradoras responsáveis e <strong>podem variar</strong> entre o período do cadastro do anúncio e a contratação. 
+          Declara o proponente estar ciente disso e que as confirmações serão feitas no ato da locação diretamente com cada responsável.
+        </p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Seus dados pessoais serão tratados conforme a <strong>LGPD (Lei Geral de Proteção de Dados)</strong> e serão utilizados 
+          exclusivamente para os fins deste registro de interesse.
+        </p>
+        <label className="flex items-start gap-3 bg-muted/50 rounded-xl p-4 cursor-pointer hover:bg-muted/70 transition-colors">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={e => onTermsChange(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+          />
+          <span className="text-sm text-foreground leading-relaxed">
+            Li e aceito os termos acima. Declaro que todas as informações fornecidas são verdadeiras e autorizo a 
+            <strong> Rizzo Imobiliária</strong> a realizar as consultas e verificações necessárias para análise deste registro de interesse.
+          </span>
+        </label>
+      </div>
+
+      {/* Email notice */}
+      <div className="bg-white rounded-2xl border p-5 flex items-center justify-center gap-3 text-sm text-muted-foreground">
+        <Mail className="h-5 w-5 shrink-0" />
+        Você receberá uma cópia deste registro no seu e-mail.
+      </div>
+
+      {/* Submit block */}
+      {hasPending && (
+        <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 text-center space-y-4">
+          <p className="text-red-600 font-bold text-sm">Complete as etapas acima para liberar o envio</p>
+          {firstPendingStep && (
+            <button
+              onClick={() => onGoToStep(firstPendingStep.step)}
+              className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 rounded-xl py-3 text-red-600 font-semibold text-sm hover:bg-red-50 transition-colors"
+            >
+              <AlertCircle className="h-4 w-4" /> Ir para a primeira etapa pendente
+            </button>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function ReviewBlock({ title, items, onFix }: { title: string; items: [string, string][]; onFix?: () => void }) {
-  const hasNotInformed = items.some(([, val]) => val === 'Não informado' || val.includes('Pendente'));
+function ReviewBlockNew({ title, icon, children, onFix, hasPending = false }: {
+  title: string; icon: string; children: React.ReactNode; onFix?: () => void; hasPending?: boolean;
+}) {
   return (
-    <div className={cn('bg-white p-5 border rounded-2xl', hasNotInformed && 'border-amber-200')}>
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-bold text-sm">{title}</h4>
-        {hasNotInformed && onFix && <Button size="sm" variant="ghost" className="h-7 text-xs text-primary font-bold" onClick={onFix}>Completar</Button>}
+    <div className={cn('bg-white rounded-2xl border p-6 sm:p-8', hasPending && 'border-red-200')}>
+      <div className="flex items-center justify-between mb-5">
+        <h4 className="font-bold text-foreground flex items-center gap-2">
+          {hasPending && <AlertCircle className="h-4 w-4 text-red-500" />}
+          <span>{icon}</span> {title}
+        </h4>
+        {onFix && (
+          <button onClick={onFix} className="text-sm text-primary font-semibold hover:underline flex items-center gap-1">
+            ✏️ Completar
+          </button>
+        )}
       </div>
-      <dl className="space-y-1.5">
-        {items.map(([label, value], i) => (
-          <div key={i} className="flex justify-between text-sm">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className={cn('font-medium', (value === 'Não informado' || value.includes('Pendente')) && 'text-red-500')}>{value || '—'}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="space-y-2">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ReviewRow({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  const isNotInformed = value === 'Não informado';
+  return (
+    <div className="flex justify-between items-baseline py-1.5 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn('font-medium text-right', isNotInformed && 'text-red-500', warn && 'text-red-500')}>
+        {value}
+      </span>
     </div>
   );
 }

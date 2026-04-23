@@ -63,15 +63,47 @@ export interface GarantiaInfo {
   fiadores: FiadorData[];
 }
 
+export type FiadorTipo = 'renda' | 'imovel' | '';
+
+export type FiadorDocKey =
+  | 'documento_foto'
+  | 'comprovante_renda'
+  | 'matricula_imovel'
+  | 'comprovante_residencia'
+  | 'certidao_estado_civil'
+  | 'documento_conjuge'
+  | 'renda_conjuge';
+
+export interface FiadorDocumentCategory {
+  key: FiadorDocKey;
+  label: string;
+  help: string;
+  files: UploadedFile[];
+}
+
+export interface FiadorConjugeData {
+  nome: string;
+  cpf: string;
+  documento_identidade: string;
+  whatsapp: string;
+  email: string;
+}
+
 export interface FiadorData {
+  // Tipo do fiador (regra principal Rizzo: 1 com renda + 1 com imóvel)
+  tipo_fiador: FiadorTipo;
+  // Dados pessoais (padrão para todos)
   nome: string;
   cpf: string;
   profissao: string;
   whatsapp: string;
   email: string;
-  renda_mensal: string;
-  registro_imoveis: string;
   estado_civil: string;
+  // Tipo "renda"
+  renda_mensal: string;
+  // Tipo "imovel"
+  registro_imoveis: string;
+  // Endereço
   cep: string;
   logradouro: string;
   numero: string;
@@ -79,6 +111,12 @@ export interface FiadorData {
   bairro: string;
   cidade: string;
   uf: string;
+  // Cônjuge (mesma lógica do inquilino)
+  regime_bens: string;
+  conjuge_participa: 'sim' | 'nao' | '';
+  conjuge: FiadorConjugeData;
+  // Documentos por fiador
+  documentos: FiadorDocumentCategory[];
 }
 
 // negociacao

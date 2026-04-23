@@ -82,6 +82,8 @@ export function ProposalRulesTab() {
           description: newRule.description || null,
           rule_type: newRule.rule_type,
           position: maxPos,
+          condition_config: { trigger: newRule.trigger },
+          action_config: { action: newRule.action },
         });
       if (error) throw error;
     },

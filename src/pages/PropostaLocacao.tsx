@@ -273,7 +273,7 @@ export default function PropostaLocacao() {
     if (s === step) return 'current';
     if (s === 3 && !showConjuge) return 'skipped';
     if (!visited.has(s)) return 'pending';
-    const errs = validateStep(s, data, showConjuge);
+    const errs = validateStep(s, data);
     return errs.length === 0 ? 'done' : 'pending';
   }
 

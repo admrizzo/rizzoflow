@@ -329,15 +329,17 @@ export default function PropostaLocacao() {
   }
 
   function handleSubmit() {
-    // Validate all steps
-    for (let i = 0; i < totalSteps; i++) {
-      if (i === 3 && !showConjuge) continue;
-      const errs = validateStep(i, data);
-      if (errs.length > 0) {
-        setStep(i);
-        toast.error(`Pendências na etapa "${labels[i]}"`, { description: errs[0] });
-        return;
-      }
+    const pending = getPendingSteps(data);
+    const critical = pending.filter(p => p.critical);
+    if (critical.length > 0) {
+      toast.error('Pendências críticas impedem o envio', { description: critical[0].errors[0] });
+      setStep(critical[0].step);
+      return;
+    }
+    if (pending.length > 0) {
+      toast.error(`Pendências na etapa "${pending[0].label}"`, { description: pending[0].errors[0] });
+      setStep(pending[0].step);
+      return;
     }
     toast.success('Proposta enviada com sucesso!');
     navigate('/dashboard');

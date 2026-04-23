@@ -1118,7 +1118,35 @@ export default function PropostaLocacao() {
 
       {/* Progress bar */}
       <div className="max-w-4xl mx-auto px-4 pt-4">
-        <Progress value={progressPercent} className="h-2" />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-medium">
+              {progressPercent >= 85 ? 'Faltam poucos passos para finalizar! 🎉' :
+               progressPercent >= 50 ? `Você já preencheu ${progressPercent}% da proposta` :
+               progressPercent > 0 ? 'Continue preenchendo' : 'Preencha os dados para iniciar'}
+            </span>
+            <span className="font-bold text-primary">{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2.5" />
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            {isSaving ? (
+              <>
+                <Loader2Icon className="h-3 w-3 animate-spin" />
+                <span>Salvando...</span>
+              </>
+            ) : lastSavedAt ? (
+              <>
+                <Cloud className="h-3 w-3 text-primary" />
+                <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </>
+            ) : (
+              <>
+                <CloudOff className="h-3 w-3" />
+                <span>Ainda não salvo</span>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Step indicators */}

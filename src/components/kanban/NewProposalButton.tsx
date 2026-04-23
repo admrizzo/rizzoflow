@@ -31,11 +31,10 @@ function formatCurrency(v: number | null) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-interface NewProposalButtonProps {
-  boardId: string;
-}
+const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
+const CADASTRO_INICIADO_COLUMN_NAME = 'cadastro iniciado';
 
-export function NewProposalButton({ boardId }: NewProposalButtonProps) {
+export function NewProposalButton() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const { properties } = usePropertiesLocacao();
@@ -92,27 +91,28 @@ export function NewProposalButton({ boardId }: NewProposalButtonProps) {
         .single();
       if (linkError) throw linkError;
 
-      // 2. Find first column of the board ("Link gerado" or first available)
+      // 2. Find "Cadastro iniciado" column in the Locação board
       const { data: columns } = await supabase
         .from('columns')
         .select('id, name')
-        .eq('board_id', boardId)
+        .eq('board_id', LOCACAO_BOARD_ID)
         .order('position', { ascending: true });
 
-      const targetCol = columns?.find(c => c.name.toLowerCase().includes('nova proposta') || c.name.toLowerCase().includes('link gerado')) || columns?.[0];
+      const targetCol = columns?.find(c => c.name.toLowerCase().includes(CADASTRO_INICIADO_COLUMN_NAME)) || columns?.[0];
 
       if (targetCol) {
-        // 3. Create card in the board
+        // 3. Create card in the Locação board
         await supabase.from('cards').insert({
           title: `${selectedProperty.codigo_robust} - ${identification}`,
-          board_id: boardId,
+          board_id: LOCACAO_BOARD_ID,
           column_id: targetCol.id,
           robust_code: String(selectedProperty.codigo_robust),
           address: addressParts.join(', ') || null,
           proposal_responsible: brokerName.trim(),
-          description: `Proposta de locação gerada automaticamente.\nAluguel: ${formatCurrency(selectedProperty.valor_aluguel)}`,
+          description: `Proposta de locação gerada automaticamente.\nAluguel: ${formatCurrency(selectedProperty.valor_aluguel)}\nCorretor: ${brokerName.trim()}\nData: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: 0,
+          column_entered_at: new Date().toISOString(),
         });
       }
 

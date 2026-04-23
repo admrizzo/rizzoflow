@@ -55,6 +55,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [department, setDepartment] = useState<Department | 'none'>('none');
   const [reviewDeadlineDays, setReviewDeadlineDays] = useState<string>('');
+  const [slaHours, setSlaHours] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
@@ -62,6 +63,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
     setColor(PRESET_COLORS[0]);
     setDepartment('none');
     setReviewDeadlineDays('');
+    setSlaHours('');
     setEditingColumn(null);
   };
 
@@ -72,6 +74,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
       setColor(column.color || PRESET_COLORS[0]);
       setDepartment(column.department || 'none');
       setReviewDeadlineDays(column.review_deadline_days?.toString() || '');
+      setSlaHours(column.sla_hours?.toString() || '');
     } else {
       resetForm();
     }
@@ -88,6 +91,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
     if (!name.trim()) return;
 
     const reviewDays = reviewDeadlineDays ? parseInt(reviewDeadlineDays, 10) : null;
+    const slaH = slaHours ? parseInt(slaHours, 10) : null;
 
     setIsSubmitting(true);
     try {
@@ -98,6 +102,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
           color,
           department: department === 'none' ? null : department,
           review_deadline_days: reviewDays,
+          sla_hours: slaH,
         });
       } else {
         await createColumn.mutateAsync({
@@ -240,6 +245,22 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
                 />
                 <p className="text-xs text-muted-foreground">
                   Quantidade de dias que um card pode ficar nesta coluna antes de ser considerado desatualizado.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="slaHours">SLA da Etapa (horas)</Label>
+                <Input
+                  id="slaHours"
+                  type="number"
+                  min="1"
+                  max="720"
+                  value={slaHours}
+                  onChange={(e) => setSlaHours(e.target.value)}
+                  placeholder="Ex: 48 (deixe vazio para sem SLA)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Tempo máximo esperado nesta etapa. Cards ultrapassando o SLA ficam destacados em vermelho.
                 </p>
               </div>
 

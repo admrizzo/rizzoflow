@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign } from 'lucide-react';
+import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MentionTextarea, extractMentionedUserIds, renderMentionText } from './MentionTextarea';
@@ -255,6 +256,36 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       {/* Add new note */}
       {isEditor && (
         <div className="p-3 border-b bg-background">
+          {/* Quick action buttons */}
+          <div className="flex gap-1 mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={() => setNewNote(prev => prev ? prev + '\n📋 Atualização: ' : '📋 Atualização: ')}
+            >
+              <MessageCirclePlus className="h-3 w-3 mr-1" />
+              Atualização
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={() => setNewNote(prev => prev ? prev + '\n⚠️ Pendência: ' : '⚠️ Pendência: ')}
+            >
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Pendência
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2"
+              onClick={() => setNewNote(prev => prev ? prev + '\n✅ Conclusão: ' : '✅ Conclusão: ')}
+            >
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Conclusão
+            </Button>
+          </div>
           <MentionTextarea
             value={newNote}
             onChange={setNewNote}

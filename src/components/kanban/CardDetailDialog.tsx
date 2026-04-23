@@ -77,6 +77,7 @@ import { format } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -882,6 +883,53 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
 
 
             {/* Review Deadline Section - Only show for columns with review_deadline_days */}
+            {/* === BLOCO A: STATUS === */}
+            {!card.is_archived && (
+              <div className="rounded-lg border bg-card p-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Status</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Current stage */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Etapa atual</p>
+                    <p className="text-sm font-semibold text-foreground">{currentColumn?.name || '—'}</p>
+                  </div>
+                  {/* Time in stage */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Tempo na etapa</p>
+                    <p className="text-sm font-semibold text-foreground">{formatTimeElapsed(card.column_entered_at)}</p>
+                  </div>
+                  {/* SLA indicator */}
+                  {currentColumn?.sla_hours && (
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">SLA</p>
+                      {(() => {
+                        const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
+                        const colors = getSlaColors(status);
+                        return (
+                          <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold", colors.bg, colors.text)}>
+                            <span className={cn("w-2 h-2 rounded-full", colors.dot)} />
+                            {status === 'green' ? 'No prazo' : status === 'yellow' ? 'Atenção' : 'Atrasado'}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                  {/* Last moved */}
+                  {card.last_moved_at && (
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Última movimentação</p>
+                      <p className="text-xs text-foreground">
+                        {format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                        {card.last_moved_by_profile && (
+                          <span className="text-muted-foreground"> por {card.last_moved_by_profile.full_name}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {hasReviewDeadline && !card.is_archived && (
               <div className={cn(
                 "p-4 rounded-lg border",

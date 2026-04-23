@@ -950,48 +950,92 @@ export default function PropostaPublica() {
 
   function renderStep4() {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <BedDouble className="h-7 w-7 text-primary" />
+      <div className="space-y-8">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+            <Home className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Quem vai morar? 🏡</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Informe quem vai residir no imóvel.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Queremos te conhecer melhor! 😊</h2>
+          <p className="text-muted-foreground mt-2 text-base">Conte-nos quem vai morar no imóvel para prepararmos tudo da melhor forma pra você.</p>
         </div>
 
-        <FormSection icon={Users} title="Moradores">
-          <div className="space-y-3">
-            {data.composicao.moradores.map((m, i) => (
-              <div key={i} className="flex items-end gap-3 p-4 border rounded-xl bg-muted/30">
-                <div className="flex-1">
-                  <Label className="text-sm font-medium">Quem vai morar <span className="text-red-500">*</span></Label>
-                  <Select value={m.tipo} onValueChange={v => update(p => { const copy = [...p.composicao.moradores]; copy[i] = { ...copy[i], tipo: v as MoradorData['tipo'] }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {MORADOR_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {m.tipo === 'terceiro' && (
-                  <div className="flex-1">
-                    <Label className="text-sm font-medium">Nome</Label>
-                    <Input value={m.nome} onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[i] = { ...copy[i], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })} placeholder="Nome do morador" className="mt-1.5" />
+        {/* "Você está alugando..." card selection */}
+        <div className="bg-card rounded-2xl border p-6 space-y-5">
+          <h3 className="font-bold text-foreground text-lg">Você está alugando…</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { value: 'eu_mesmo', icon: User, label: 'Para eu mesmo morar', desc: 'Você será o inquilino e morador do imóvel' },
+              { value: 'filho', icon: Home, label: 'Para um filho(a)', desc: 'Alugando para seu filho ou filha' },
+              { value: 'terceiro', icon: Users, label: 'Para um conhecido', desc: 'Amigo, parente ou outra pessoa' },
+            ].map(opt => {
+              const firstMorador = data.composicao.moradores[0];
+              const isSelected = firstMorador?.tipo === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button key={opt.value} type="button"
+                  onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [{ tipo: opt.value as MoradorData['tipo'], nome: opt.value === 'eu_mesmo' ? '' : p.composicao.moradores[0]?.nome || '' }] } }))}
+                  className={cn(
+                    'flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all',
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
+                  )}
+                >
+                  <div className={cn(
+                    'w-12 h-12 rounded-xl flex items-center justify-center mb-3',
+                    isSelected ? 'bg-primary/10' : 'bg-muted'
+                  )}>
+                    <Icon className={cn('h-6 w-6', isSelected ? 'text-primary' : 'text-muted-foreground')} />
                   </div>
-                )}
-                {data.composicao.moradores.length > 1 && (
-                  <Button type="button" size="icon" variant="ghost" className="text-red-500 h-10 w-10"
-                    onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, idx) => idx !== i) } }))}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button type="button" variant="outline" className="w-full rounded-xl"
-              onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { ...emptyMorador }] } }))}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar morador
-            </Button>
+                  <p className={cn('font-bold text-sm', isSelected ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
+                </button>
+              );
+            })}
           </div>
-        </FormSection>
+        </div>
+
+        {/* Name input for filho/terceiro */}
+        {data.composicao.moradores[0]?.tipo && data.composicao.moradores[0].tipo !== 'eu_mesmo' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-3">
+            <Label className="text-sm font-semibold">Nome do morador</Label>
+            <Input
+              value={data.composicao.moradores[0]?.nome || ''}
+              onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+              placeholder="Nome completo de quem vai morar"
+              className="h-12 text-base"
+            />
+          </div>
+        )}
+
+        {/* "Outra pessoa vai retirar as chaves?" toggle */}
+        <div className="bg-card rounded-2xl border p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-foreground text-sm">Outra pessoa vai retirar as chaves?</h4>
+                <button type="button"
+                  onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, retira_chaves_terceiro: !p.composicao.retira_chaves_terceiro } }))}
+                  className={cn(
+                    'relative w-12 h-7 rounded-full transition-colors shrink-0',
+                    (data.composicao as any).retira_chaves_terceiro ? 'bg-primary' : 'bg-muted-foreground/20'
+                  )}
+                >
+                  <span className={cn(
+                    'absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform shadow-sm',
+                    (data.composicao as any).retira_chaves_terceiro ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'
+                  )} />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Se <strong className="text-foreground">você mesmo</strong> vai retirar as chaves, deixe desativado. Ative apenas se <strong className="text-foreground">outra pessoa</strong> ficará responsável por recebê-las na imobiliária.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

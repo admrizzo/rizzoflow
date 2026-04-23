@@ -428,6 +428,54 @@ export default function PropostaPublica() {
   const [submitted, setSubmitted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // ── Auto-save draft hook ──
+  const {
+    draftStatus,
+    lastSavedAt,
+    isSaving,
+    isRestoring,
+    restoredData,
+    restoredStep,
+    scheduleSave,
+    markAsSubmitted,
+  } = useProposalDraft({
+    codigoRobust: codigo,
+    proposalLinkId: proposalLink?.id,
+    enabled: !!codigo && !submitted,
+  });
+
+  // ── Restore draft data ──
+  useEffect(() => {
+    if (restoredData) {
+      setData(prev => ({
+        ...prev,
+        ...restoredData,
+        // Keep imovel from property data (auto-filled)
+        imovel: prev.imovel,
+        // Keep original doc structure but restore non-file data
+        documentos: prev.documentos,
+      }));
+      if (restoredStep !== null && restoredStep > 0) {
+        setStep(restoredStep);
+        const newVisited = new Set<number>();
+        for (let i = 0; i <= restoredStep; i++) newVisited.add(i);
+        setVisited(newVisited);
+        toast.info('Rascunho restaurado!', { description: 'Retomando de onde você parou.' });
+      }
+    }
+  }, [restoredData, restoredStep]);
+
+  // ── Progress calculation ──
+  const skipConjuge = !needsConjuge(data);
+  const { totalPercent: progressPercent, stepStatuses } = calcFormProgress(data, PUBLIC_STEP_WEIGHTS, skipConjuge);
+
+  // ── Auto-save on data or step change ──
+  useEffect(() => {
+    if (!submitted && !isRestoring && codigo) {
+      scheduleSave(data, step, progressPercent);
+    }
+  }, [data, step, submitted, isRestoring, codigo, scheduleSave, progressPercent]);
+
   useEffect(() => {
     if (property) {
       const endereco = [property.logradouro, property.numero, property.bairro, property.cidade, property.estado].filter(Boolean).join(', ');

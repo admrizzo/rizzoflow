@@ -252,6 +252,13 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
   return (
     <div className="bg-white border-b sticky top-0 z-30">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+        <div className="flex justify-center mb-3">
+          <img 
+            src="/logo-rizzo.png" 
+            alt="Rizzo Imobiliária" 
+            className="h-8 w-auto object-contain"
+          />
+        </div>
         <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
           Registro de Interesse na Locação
         </p>

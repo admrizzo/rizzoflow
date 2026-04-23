@@ -1218,16 +1218,135 @@ export default function PropostaPublica() {
           </div>
         </div>
 
-        {/* Name input for filho/terceiro */}
+        {/* Aviso ocupante autorizado */}
         {data.composicao.moradores[0]?.tipo && data.composicao.moradores[0].tipo !== 'eu_mesmo' && (
-          <div className="bg-card rounded-2xl border p-6 space-y-3">
-            <Label className="text-sm font-semibold">Nome do morador</Label>
-            <Input
-              value={data.composicao.moradores[0]?.nome || ''}
-              onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
-              placeholder="Nome completo de quem vai morar"
-              className="h-12 text-base"
-            />
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex gap-3">
+            <span className="text-2xl">👉</span>
+            <p className="text-sm text-amber-900">
+              <strong>Importante:</strong> mesmo que outra pessoa vá morar no imóvel, o contrato será feito no <strong>seu nome</strong> (locatário). A pessoa que vai morar será registrada como <strong>ocupante autorizado</strong>.
+            </p>
+          </div>
+        )}
+
+        {/* Dados do(a) filho(a) — 1 morador fixo */}
+        {data.composicao.moradores[0]?.tipo === 'filho' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-5">
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Dados do(a) filho(a) que vai morar</h3>
+              <p className="text-sm text-muted-foreground mt-1">Informe os dados de quem vai morar no imóvel.</p>
+            </div>
+            <div className="border rounded-xl p-5 space-y-4 bg-muted/20">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">Morador 1</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Qual a relação com você? *</Label>
+                  <Input
+                    value={data.composicao.moradores[0]?.relacao || ''}
+                    onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], relacao: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                    placeholder="Filho(a)"
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nome completo *</Label>
+                  <Input
+                    value={data.composicao.moradores[0]?.nome || ''}
+                    onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                    placeholder="Nome do morador"
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">WhatsApp *</Label>
+                  <Input
+                    value={data.composicao.moradores[0]?.whatsapp || ''}
+                    onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                    placeholder="(00) 00000-0000"
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">E-mail *</Label>
+                  <Input
+                    type="email"
+                    value={data.composicao.moradores[0]?.email || ''}
+                    onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], email: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                    placeholder="email@exemplo.com"
+                    className="h-11"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lista de moradores — terceiro (com adicionar) */}
+        {data.composicao.moradores[0]?.tipo === 'terceiro' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-5">
+            <div>
+              <h3 className="font-bold text-foreground text-lg">Quem vai morar no imóvel?</h3>
+              <p className="text-sm text-muted-foreground mt-1">Adicione as pessoas que vão morar no imóvel.</p>
+            </div>
+            {data.composicao.moradores.map((m, idx) => (
+              <div key={idx} className="border rounded-xl p-5 space-y-4 bg-muted/20 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-sm">Morador {idx + 1}</span>
+                  </div>
+                  {idx > 0 && (
+                    <button type="button" onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, i) => i !== idx) } }))} className="text-destructive hover:text-destructive/80">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Qual a relação com você? *</Label>
+                    <Input
+                      value={m.relacao || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], relacao: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="Filho(a), amigo(a), primo(a)..."
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nome completo *</Label>
+                    <Input
+                      value={m.nome || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], nome: e.target.value, tipo: 'terceiro' }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="Nome do morador"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">WhatsApp *</Label>
+                    <Input
+                      value={m.whatsapp || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="(00) 00000-0000"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">E-mail *</Label>
+                    <Input
+                      type="email"
+                      value={m.email || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], email: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="email@exemplo.com"
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { tipo: 'terceiro', nome: '', relacao: '', whatsapp: '', email: '' }] } }))} className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Adicionar outro morador
+            </Button>
           </div>
         )}
 
@@ -1256,6 +1375,26 @@ export default function PropostaPublica() {
               <p className="text-sm text-muted-foreground mt-1">
                 Se <strong className="text-foreground">você mesmo</strong> vai retirar as chaves, deixe desativado. Ative apenas se <strong className="text-foreground">outra pessoa</strong> ficará responsável por recebê-las na imobiliária.
               </p>
+              {data.composicao.responsavel_retirada && (
+                <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-muted/30 border">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nome completo *</Label>
+                    <Input value={data.composicao.retirada_nome || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_nome: e.target.value } }))} placeholder="Nome" className="h-11" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">WhatsApp *</Label>
+                    <Input value={data.composicao.retirada_whatsapp || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" className="h-11" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">CPF *</Label>
+                    <Input value={data.composicao.retirada_cpf || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: e.target.value } }))} placeholder="000.000.000-00" className="h-11" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">E-mail</Label>
+                    <Input type="email" value={data.composicao.retirada_email || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_email: e.target.value } }))} placeholder="email@exemplo.com" className="h-11" />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

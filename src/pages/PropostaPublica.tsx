@@ -271,6 +271,35 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       break;
     case 5:
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
+      if (data.garantia.tipo_garantia === 'Fiador') {
+        const fs = data.garantia.fiadores;
+        const hasRenda = fs.some(f => f.tipo_fiador === 'renda');
+        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel');
+        if (!hasRenda) errors.push('É necessário adicionar um fiador com renda');
+        if (!hasImovel) errors.push('É necessário adicionar um fiador com imóvel quitado');
+        fs.forEach((f, i) => {
+          const label = `Fiador ${i + 1}`;
+          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda ou imóvel)`);
+          if (!f.nome.trim() || !f.cpf.trim() || !f.whatsapp.trim() || !f.email.trim() || !f.profissao.trim() || !f.estado_civil) {
+            errors.push(`${label}: dados pessoais incompletos`);
+          }
+          if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
+            errors.push(`${label}: informe a renda mensal`);
+          }
+          const isCasado = f.estado_civil === 'Casado(a)' || f.estado_civil === 'União Estável';
+          if (isCasado && !f.regime_bens) errors.push(`${label}: informe o regime de bens`);
+          const needsConj = isCasado && f.regime_bens && (
+            f.regime_bens !== 'Separação total / absoluta de bens' || f.conjuge_participa === 'sim'
+          );
+          if (needsConj && (!f.conjuge.nome.trim() || !f.conjuge.cpf.trim())) {
+            errors.push(`${label}: dados do cônjuge obrigatórios`);
+          }
+          for (const cat of f.documentos) {
+            if (cat.key === 'renda_conjuge') continue; // opcional
+            if (cat.files.length === 0) errors.push(`${label}: documento "${cat.label}" pendente`);
+          }
+        });
+      }
       break;
   }
   return errors;

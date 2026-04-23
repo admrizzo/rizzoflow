@@ -13,6 +13,7 @@ import ProviderPortal from "./pages/ProviderPortal";
 import NotFound from "./pages/NotFound";
 import Demo from "./pages/Demo";
 import PropostaLocacao from "./pages/PropostaLocacao";
+import CentralPropostas from "./pages/CentralPropostas";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,6 +128,14 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
+              <Route
+                path="/central-propostas"
+                element={
+                  <ProtectedRoute>
+                    <CentralPropostas />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ForceRefreshPrompt />

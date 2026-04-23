@@ -13,6 +13,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Board } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, Users } from 'lucide-react';
+import { NewProposalButton } from '@/components/kanban/NewProposalButton';
 
 const SELECTED_BOARD_KEY = 'fluxos-sg-selected-board';
 
@@ -329,6 +330,13 @@ export default function Dashboard() {
                     <Users className="h-3.5 w-3.5" />
                     Painel dos Prestadores
                   </Button>
+                </div>
+              )}
+
+              {/* "Gerar nova proposta" button for Central de Propostas board */}
+              {selectedBoard.name?.toLowerCase().includes('central de propostas') && (
+                <div className="flex items-center gap-1 px-3 pt-2">
+                  <NewProposalButton boardId={selectedBoard.id} />
                 </div>
               )}
 

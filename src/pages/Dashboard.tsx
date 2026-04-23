@@ -334,9 +334,9 @@ export default function Dashboard() {
               )}
 
               {/* "Gerar nova proposta" button for Central de Propostas board */}
-              {selectedBoard.name?.toLowerCase().includes('central de propostas') && (
+              {selectedBoard.name?.toLowerCase().includes('locação') && (
                 <div className="flex items-center gap-1 px-3 pt-2">
-                  <NewProposalButton boardId={selectedBoard.id} />
+                  <NewProposalButton />
                 </div>
               )}
 

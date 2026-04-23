@@ -18,6 +18,7 @@ import { FilterState } from '@/components/layout/Header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface KanbanBoardProps {
   board: Board;
@@ -35,6 +36,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
   const { hasUnseenChanges, markAsViewed } = useCardViews(board.id);
   const { isAdmin, user } = useAuth();
   const { isBoardAdmin } = useUserBoards();
+  const { toast } = useToast();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   // Keep a stable snapshot so the dialog doesn't unmount if cards refetch momentarily
   const [selectedCardSnapshot, setSelectedCardSnapshot] = useState<CardWithRelations | null>(null);
@@ -556,6 +558,25 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
     // Columns cannot be reordered - only cards can be moved
     if (type === 'column') {
       return;
+    }
+
+    // BLOCKING RULE: To move to "Ativo" column, ALL checklists must be complete
+    const destColumn = columns.find(c => c.id === destination.droppableId);
+    if (destColumn?.name === 'Ativo') {
+      const card = cards.find(c => c.id === draggableId);
+      if (card) {
+        const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
+        const activeItems = allItems.filter(i => !i.is_dismissed);
+        const pendingItems = activeItems.filter(i => !i.is_completed);
+        if (pendingItems.length > 0) {
+          toast({
+            title: 'Existem pendências no processo',
+            description: `Regularize ${pendingItems.length} item(ns) pendente(s) antes de concluir.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
     }
 
     // Card was moved

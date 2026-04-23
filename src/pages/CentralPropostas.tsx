@@ -30,7 +30,7 @@ export default function CentralPropostas() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
-  const { data: profiles = [] } = useProfiles();
+  const { profiles } = useProfiles();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);

@@ -160,7 +160,7 @@ const initialData: ProposalFormData = {
   documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
   documentos_observacao: '',
   composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
-  garantia: { tipo_garantia: '', observacao: '' },
+  garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
 };
 

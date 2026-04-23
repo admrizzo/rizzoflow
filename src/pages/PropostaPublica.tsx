@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -15,7 +16,7 @@ import {
   Shield, MapPin, Loader2, Home, BedDouble, Bath, Maximize,
   User, Building, Phone, Mail, Briefcase, ChevronDown, Copy,
   DollarSign, Users, FileCheck, Lock, Handshake, ClipboardCheck,
-  Zap, MessageSquare, CalendarDays, Info
+  Zap, MessageSquare, CalendarDays, Info, Save, CloudOff, Cloud
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
@@ -24,6 +25,7 @@ import type {
 import {
   calcPercentualComprometimento
 } from '@/pages/PropostaLocacao';
+import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
@@ -244,11 +246,21 @@ function mapGarantia(label: string): string | null {
 }
 
 // ── Stepper Component ──
-function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
+function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, progressPercent, isSaving, lastSavedAt, draftStatus }: {
   currentStep: number; totalSteps: number; onGoToStep: (s: number) => void;
   visited: Set<number>; data: ProposalFormData;
+  progressPercent: number; isSaving: boolean; lastSavedAt: Date | null; draftStatus: string;
 }) {
   const showConjuge = needsConjuge(data);
+
+  const progressMessage = progressPercent >= 85
+    ? 'Faltam poucos passos para finalizar! 🎉'
+    : progressPercent >= 50
+    ? `Você já preencheu ${progressPercent}% da sua proposta`
+    : progressPercent > 0
+    ? 'Continue preenchendo sua proposta'
+    : 'Preencha os dados para iniciar';
+
   return (
     <div className="bg-white border-b sticky top-0 z-30">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -262,6 +274,41 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
         <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
           Registro de Interesse na Locação
         </p>
+
+        {/* Progress bar */}
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-medium">{progressMessage}</span>
+            <span className="font-bold text-primary">{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2.5" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Salvando...</span>
+                </>
+              ) : lastSavedAt ? (
+                <>
+                  <Cloud className="h-3 w-3 text-primary" />
+                  <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                </>
+              ) : (
+                <>
+                  <CloudOff className="h-3 w-3" />
+                  <span>Ainda não salvo</span>
+                </>
+              )}
+            </div>
+            {draftStatus === 'em_andamento' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                Em andamento
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-center gap-0 overflow-x-auto">
           {STEP_CONFIG.map((cfg, i) => {
             if (i === 2 && !showConjuge) return null;
@@ -426,6 +473,54 @@ export default function PropostaPublica() {
   const [submitted, setSubmitted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // ── Auto-save draft hook ──
+  const {
+    draftStatus,
+    lastSavedAt,
+    isSaving,
+    isRestoring,
+    restoredData,
+    restoredStep,
+    scheduleSave,
+    markAsSubmitted,
+  } = useProposalDraft({
+    codigoRobust: codigo,
+    proposalLinkId: proposalLink?.id,
+    enabled: !!codigo && !submitted,
+  });
+
+  // ── Restore draft data ──
+  useEffect(() => {
+    if (restoredData) {
+      setData(prev => ({
+        ...prev,
+        ...restoredData,
+        // Keep imovel from property data (auto-filled)
+        imovel: prev.imovel,
+        // Keep original doc structure but restore non-file data
+        documentos: prev.documentos,
+      }));
+      if (restoredStep !== null && restoredStep > 0) {
+        setStep(restoredStep);
+        const newVisited = new Set<number>();
+        for (let i = 0; i <= restoredStep; i++) newVisited.add(i);
+        setVisited(newVisited);
+        toast.info('Rascunho restaurado!', { description: 'Retomando de onde você parou.' });
+      }
+    }
+  }, [restoredData, restoredStep]);
+
+  // ── Progress calculation ──
+  const skipConjuge = !needsConjuge(data);
+  const { totalPercent: progressPercent, stepStatuses } = calcFormProgress(data, PUBLIC_STEP_WEIGHTS, skipConjuge);
+
+  // ── Auto-save on data or step change ──
+  useEffect(() => {
+    if (!submitted && !isRestoring && codigo) {
+      scheduleSave(data, step, progressPercent);
+    }
+  }, [data, step, submitted, isRestoring, codigo, scheduleSave, progressPercent]);
+
   useEffect(() => {
     if (property) {
       const endereco = [property.logradouro, property.numero, property.bairro, property.cidade, property.estado].filter(Boolean).join(', ');
@@ -568,6 +663,7 @@ export default function PropostaPublica() {
 
       setSubmitted(true);
       toast.success('Proposta enviada com sucesso!');
+      await markAsSubmitted();
     } catch (err: any) {
       console.error('Erro ao enviar proposta:', err);
       toast.error('Erro ao enviar proposta', { description: err.message });
@@ -1487,7 +1583,7 @@ export default function PropostaPublica() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} />
+      <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} progressPercent={progressPercent} isSaving={isSaving} lastSavedAt={lastSavedAt} draftStatus={draftStatus} />
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 pb-32">

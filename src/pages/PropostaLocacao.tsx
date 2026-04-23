@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
+import { useProposalDraft, calcFormProgress, INTERNAL_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
+import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
 
 // ── Structured Variables ──
 
@@ -325,7 +327,50 @@ export default function PropostaLocacao() {
   const showConjuge = needsConjuge(data);
   const totalSteps = 9;
   const labels = getStepLabels(showConjuge);
-  const progressPercent = ((step + 1) / totalSteps) * 100;
+
+  // ── Progress calculation ──
+  const skipConjuge = !showConjuge;
+  const { totalPercent: progressPercent, stepStatuses } = calcFormProgress(data, INTERNAL_STEP_WEIGHTS, skipConjuge);
+
+  // ── Auto-save draft ──
+  const {
+    draftStatus,
+    lastSavedAt,
+    isSaving,
+    isRestoring,
+    restoredData,
+    restoredStep,
+    scheduleSave,
+    markAsSubmitted,
+  } = useProposalDraft({
+    codigoRobust: data.imovel.codigo || 'internal',
+    enabled: true,
+  });
+
+  // Restore draft
+  useEffect(() => {
+    if (restoredData) {
+      setData(prev => ({
+        ...prev,
+        ...restoredData,
+        documentos: prev.documentos,
+      }));
+      if (restoredStep !== null && restoredStep > 0) {
+        setStep(restoredStep);
+        const newVisited = new Set<number>();
+        for (let i = 0; i <= restoredStep; i++) newVisited.add(i);
+        setVisited(newVisited);
+        toast.info('Rascunho restaurado!', { description: 'Retomando de onde você parou.' });
+      }
+    }
+  }, [restoredData, restoredStep]);
+
+  // Auto-save on change
+  useEffect(() => {
+    if (!isRestoring) {
+      scheduleSave(data, step, progressPercent);
+    }
+  }, [data, step, isRestoring, scheduleSave, progressPercent]);
 
   const update = useCallback((updater: (prev: ProposalFormData) => ProposalFormData) => {
     setData(updater);
@@ -474,6 +519,7 @@ export default function PropostaLocacao() {
       if (error) throw error;
 
       toast.success('Proposta enviada e card criado com sucesso!');
+      await markAsSubmitted();
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Erro ao criar card:', err);
@@ -1073,7 +1119,35 @@ export default function PropostaLocacao() {
 
       {/* Progress bar */}
       <div className="max-w-4xl mx-auto px-4 pt-4">
-        <Progress value={progressPercent} className="h-2" />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-medium">
+              {progressPercent >= 85 ? 'Faltam poucos passos para finalizar! 🎉' :
+               progressPercent >= 50 ? `Você já preencheu ${progressPercent}% da proposta` :
+               progressPercent > 0 ? 'Continue preenchendo' : 'Preencha os dados para iniciar'}
+            </span>
+            <span className="font-bold text-primary">{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2.5" />
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            {isSaving ? (
+              <>
+                <Loader2Icon className="h-3 w-3 animate-spin" />
+                <span>Salvando...</span>
+              </>
+            ) : lastSavedAt ? (
+              <>
+                <Cloud className="h-3 w-3 text-primary" />
+                <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </>
+            ) : (
+              <>
+                <CloudOff className="h-3 w-3" />
+                <span>Ainda não salvo</span>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Step indicators */}

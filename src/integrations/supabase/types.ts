@@ -1445,6 +1445,53 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_drafts: {
+        Row: {
+          browser_id: string | null
+          codigo_robust: number | null
+          created_at: string
+          current_step: number
+          form_data: Json
+          id: string
+          progress_percent: number
+          proposal_link_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          browser_id?: string | null
+          codigo_robust?: number | null
+          created_at?: string
+          current_step?: number
+          form_data?: Json
+          id?: string
+          progress_percent?: number
+          proposal_link_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          browser_id?: string | null
+          codigo_robust?: number | null
+          created_at?: string
+          current_step?: number
+          form_data?: Json
+          id?: string
+          progress_percent?: number
+          proposal_link_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_drafts_proposal_link_id_fkey"
+            columns: ["proposal_link_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_links: {
         Row: {
           accessed_at: string | null

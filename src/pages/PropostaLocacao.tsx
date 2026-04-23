@@ -1732,6 +1732,22 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
         ]} onFix={() => onGoToStep(5)} />
         <ReviewBlock title="🔒 Garantia" items={[
           ['Modalidade', v(data.garantia.tipo_garantia)],
+          ...(data.garantia.tipo_garantia === 'Fiador'
+            ? [
+                ['Fiadores cadastrados', String(data.garantia.fiadores.length)] as [string, string],
+                ['Possui fiador com renda', data.garantia.fiadores.some(f => f.tipo_fiador === 'renda') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
+                ['Possui fiador com imóvel', data.garantia.fiadores.some(f => f.tipo_fiador === 'imovel') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
+                ...data.garantia.fiadores.flatMap((f, i) => {
+                  const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : 'Tipo não definido';
+                  const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
+                  const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
+                  return [
+                    [`Fiador ${i + 1} — ${tipoLabel}`, v(f.nome)],
+                    [`Fiador ${i + 1} — Documentos`, docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`],
+                  ] as [string, string][];
+                }),
+              ]
+            : []),
         ]} onFix={() => onGoToStep(6)} />
         <ReviewBlock title="📄 Documentos" items={
           data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} arquivo(s) ✅` : 'Pendente ⚠️'] as [string, string])

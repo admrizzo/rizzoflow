@@ -188,12 +188,6 @@ export default function CentralPropostas() {
             <h1 className="text-xl font-bold">Central de Propostas</h1>
           </div>
           <div className="flex items-center gap-2">
-            {!authLoading && canEditPage && (
-              <Button variant="outline" size="sm" onClick={() => setCmsOpen(true)} className="gap-1">
-                <Settings2 className="h-4 w-4" />
-                Editar Página
-              </Button>
-            )}
             <Button variant="outline" size="sm" onClick={() => syncProperties.mutate()} disabled={syncProperties.isPending}>
               {syncProperties.isPending ? 'Sincronizando...' : 'Atualizar imóveis'}
             </Button>

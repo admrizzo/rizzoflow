@@ -57,11 +57,46 @@ const RENDA_SOURCES = [
 ];
 
 const GARANTIA_OPTIONS = [
-  { value: 'SG Cred', icon: '💳', desc: 'Análise de crédito própria', badge: 'Mais escolhida ⭐' },
-  { value: 'Seguro Fiança', icon: '🛡️', desc: 'Seguradora garante o contrato', badge: null },
-  { value: 'Fiador', icon: '👥', desc: 'Pessoa que garante o contrato', badge: null },
-  { value: 'Título de Capitalização', icon: '📈', desc: 'Investimento como garantia', badge: null },
-  { value: 'Carta Fiança', icon: '📄', desc: 'Carta bancária de garantia', badge: null },
+  {
+    value: 'SG Cred', icon: '💳', badge: 'Mais escolhida ⭐',
+    subtitle: 'Análise de crédito própria',
+    detail: 'Modalidade exclusiva com análise de crédito interna — sem burocracia, sem fiadores.',
+    estimatePercent: 0,
+    vantagens: ['Processo rápido e simplificado', 'Sem envolver terceiros', 'Aprovação em até 24h úteis'],
+    atencao: ['Sujeito à aprovação de crédito', 'Pode exigir renda mínima comprovada'],
+  },
+  {
+    value: 'Seguro Fiança', icon: '🛡️', badge: null,
+    subtitle: 'Seguradora garante o contrato, sem fiadores',
+    detail: 'Nessa modalidade você **não precisa de fiadores** e paga mensalmente um percentual a partir de 15,5% (pode variar conforme aprovação da seguradora) juntamente com seu aluguel.',
+    estimatePercent: 15.5,
+    vantagens: ['Cobertura completa (inadimplência + danos)', 'Sem envolver terceiros', 'Aceito amplamente no mercado'],
+    atencao: ['Necessária aprovação de crédito na seguradora', 'O valor não é ressarcido'],
+  },
+  {
+    value: 'Fiador', icon: '👥', badge: null,
+    subtitle: 'Pessoa que garante o contrato',
+    detail: 'Informe os dados de 1 ou 2 fiadores. Eles serão contatados para confirmação e envio de documentação.',
+    estimatePercent: 0,
+    vantagens: ['Sem custo adicional mensal', 'Não envolve seguradora', 'Processo simples com documentação'],
+    atencao: ['Fiador precisa ter imóvel quitado', 'Pode ser necessário mais de 1 fiador'],
+  },
+  {
+    value: 'Título de Capitalização', icon: '📈', badge: null,
+    subtitle: 'Investimento como garantia',
+    detail: 'Você adquire um título de capitalização que serve como caução. Ao final do contrato, o valor é devolvido com correção.',
+    estimatePercent: 0,
+    vantagens: ['Valor devolvido ao final do contrato', 'Sem envolver terceiros', 'Aceito por todas as imobiliárias'],
+    atencao: ['Valor inicial pode ser alto (6 a 12x aluguel)', 'Capital fica bloqueado durante o contrato'],
+  },
+  {
+    value: 'Carta Fiança', icon: '📄', badge: null,
+    subtitle: 'Carta bancária de garantia',
+    detail: 'O banco emite uma carta garantindo o pagamento. Modalidade segura e aceita no mercado.',
+    estimatePercent: 0,
+    vantagens: ['Alta credibilidade', 'Sem envolver terceiros', 'Aceita por grandes imobiliárias'],
+    atencao: ['Taxas bancárias podem ser elevadas', 'Requer relacionamento com o banco'],
+  },
 ];
 
 const MORADOR_TYPES = [

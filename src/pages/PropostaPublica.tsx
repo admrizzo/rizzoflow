@@ -298,15 +298,15 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
 
   return (
     <div className="bg-white border-b sticky top-0 z-30">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
           <img
             src="/logo-rizzo.png"
             alt="Rizzo Imobiliária"
-            className="h-12 sm:h-14 w-auto object-contain"
+            className="h-10 sm:h-12 w-auto object-contain"
           />
-          <div className="hidden sm:block w-px h-10 bg-border" />
-          <p className="text-center sm:text-left text-base sm:text-lg font-bold text-foreground tracking-tight">
+          <div className="w-px h-8 sm:h-10 bg-border" />
+          <p className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
             Registro de Interesse na Locação
           </p>
         </div>
@@ -345,40 +345,51 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-0 overflow-x-auto">
+        <div className="flex items-start justify-between gap-0 overflow-x-auto pb-1">
           {STEP_CONFIG.map((cfg, i) => {
             if (i === 2 && !showConjuge) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
-            const isClickable = true;
             const displayNum = i + 1;
 
             return (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-start flex-1 min-w-[60px]">
                 {i > 0 && !(i === 2 && !showConjuge) && (
-                  <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-accent' : 'bg-border')} />
+                  <div className={cn(
+                    'flex-1 h-px mt-4 sm:mt-5',
+                    isDone || isActive ? 'bg-accent' : 'bg-border',
+                  )} />
                 )}
                 <button
                   onClick={() => onGoToStep(i)}
-                  className="flex flex-col items-center gap-1 group transition-all cursor-pointer"
+                  className="flex flex-col items-center gap-1.5 group cursor-pointer px-1"
                 >
                   <div className={cn(
-                    'w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
-                    isActive && 'border-accent bg-accent text-accent-foreground shadow-lg scale-110',
+                    'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold border transition-all',
+                    isActive && 'border-accent bg-accent text-accent-foreground shadow-md',
                     isDone && !isActive && 'border-accent bg-accent text-accent-foreground',
-                    !isActive && !isDone && 'border-border bg-white text-muted-foreground',
+                    !isActive && !isDone && 'border-accent/30 bg-accent/5 text-accent',
                   )}>
-                    {isDone ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : displayNum}
+                    {isDone ? (
+                      <Check className="h-4 w-4" strokeWidth={2.5} />
+                    ) : isActive ? (
+                      displayNum
+                    ) : (
+                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
+                    )}
                   </div>
                   <span className={cn(
-                    'text-[10px] sm:text-xs font-medium whitespace-nowrap max-w-[60px] sm:max-w-[80px] truncate',
-                    isActive && 'text-accent font-semibold',
-                    isDone && !isActive && 'text-accent',
-                    !isActive && !isDone && 'text-muted-foreground',
+                    'text-[10px] sm:text-[11px] font-medium leading-tight text-center max-w-[70px] sm:max-w-[90px]',
+                    isActive && 'text-foreground font-semibold',
+                    isDone && !isActive && 'text-foreground',
+                    !isActive && !isDone && 'text-accent',
                   )}>
                     {cfg.shortLabel}
                   </span>
                 </button>
+                {i < STEP_CONFIG.length - 1 && !(i === STEP_CONFIG.length - 2 && false) && (
+                  <div className="flex-1" />
+                )}
               </div>
             );
           })}
@@ -392,34 +403,37 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
 function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   return (
-    <div className="bg-white rounded-2xl border p-6 mt-8">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-white rounded-2xl border p-5 sm:p-6 mt-8">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center ring-1 ring-accent/20">
+          <HelpCircle className="h-5 w-5 text-accent" strokeWidth={2} />
         </div>
         <div>
-          <h3 className="font-bold text-foreground">Dúvidas rápidas</h3>
+          <h3 className="font-bold text-foreground text-base">Dúvidas rápidas</h3>
           <p className="text-xs text-muted-foreground">{FAQ_ITEMS.length} perguntas mais comuns</p>
         </div>
       </div>
-      <div className="divide-y">
-        {FAQ_ITEMS.map((faq, i) => (
-          <div key={i}>
-            <button
-              onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="w-full flex items-center gap-3 py-3.5 text-left hover:bg-muted/30 rounded-lg px-2 transition-colors"
-            >
-              <span className="text-base">{faq.icon}</span>
-              <span className="flex-1 text-sm font-medium text-foreground">{faq.q}</span>
-              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
-            </button>
-            {openIdx === i && (
-              <div className="pl-10 pr-4 pb-3 text-sm text-muted-foreground leading-relaxed">
-                {faq.a}
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="divide-y divide-border/60">
+        {FAQ_ITEMS.map((faq, i) => {
+          const FaqIcon = faq.Icon;
+          return (
+            <div key={i}>
+              <button
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+                className="w-full flex items-center gap-3 py-4 text-left hover:bg-muted/30 rounded-lg px-2 transition-colors"
+              >
+                <FaqIcon className="h-4 w-4 text-accent shrink-0" strokeWidth={2} />
+                <span className="flex-1 text-sm font-medium text-foreground">{faq.q}</span>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
+              </button>
+              {openIdx === i && (
+                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -432,8 +446,8 @@ function FormSection({ icon: Icon, title, children, className }: {
   return (
     <div className={cn('bg-white rounded-2xl border p-6 sm:p-8', className)}>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center ring-1 ring-accent/20">
+          <Icon className="h-5 w-5 text-accent" strokeWidth={2} />
         </div>
         <h3 className="font-bold text-foreground text-lg">{title}</h3>
       </div>

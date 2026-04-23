@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useAuth as useAuthContext } from '@/contexts/AuthContext';
 import { ProposalCmsPanel } from '@/components/proposal-cms/ProposalCmsPanel';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -47,7 +46,7 @@ function formatCurrency(v: number | null) {
 export default function CentralPropostas() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { isAdmin } = useAuthContext();
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
 

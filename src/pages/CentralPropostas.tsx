@@ -33,11 +33,6 @@ export default function CentralPropostas() {
   const canEditPage = isAdmin || user?.email === 'adm@rizzoimobiliaria.com';
   const [cmsOpen, setCmsOpen] = useState(false);
 
-  // Block non-admin users
-  if (!authLoading && !canEditPage) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const { data: allLinks = [] } = useQuery({
     queryKey: ['proposal-links-all'],
     queryFn: async () => {
@@ -78,6 +73,11 @@ export default function CentralPropostas() {
 
     return { total, naoAcessado, emPreenchimento, enviadas, taxaConversao, corretores, taxaAbandono };
   }, [allLinks]);
+
+  // Block non-admin users (after all hooks)
+  if (!authLoading && !canEditPage) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (authLoading) {
     return (

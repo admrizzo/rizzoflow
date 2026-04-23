@@ -2068,6 +2068,24 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Garantia" icon="🔒" onFix={() => onGoToStep(5)} hasPending={!data.garantia.tipo_garantia}>
           <ReviewRow label="Modalidade" value={vv(data.garantia.tipo_garantia)} />
           {data.garantia.observacao && <ReviewRow label="Observação" value={data.garantia.observacao} />}
+          {data.garantia.tipo_garantia === 'Fiador' && (
+            <>
+              <ReviewRow label="Fiadores cadastrados" value={String(data.garantia.fiadores.length)} />
+              <ReviewRow label="Fiador com renda" value={data.garantia.fiadores.some(f => f.tipo_fiador === 'renda') ? '✅ Sim' : '⚠️ Pendente'} />
+              <ReviewRow label="Fiador com imóvel" value={data.garantia.fiadores.some(f => f.tipo_fiador === 'imovel') ? '✅ Sim' : '⚠️ Pendente'} />
+              {data.garantia.fiadores.map((f, i) => {
+                const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : 'Tipo não definido';
+                const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
+                const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
+                return (
+                  <div key={i}>
+                    <ReviewRow label={`Fiador ${i + 1} — ${tipoLabel}`} value={vv(f.nome)} />
+                    <ReviewRow label={`Fiador ${i + 1} — Documentos`} value={docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`} />
+                  </div>
+                );
+              })}
+            </>
+          )}
         </ReviewBlockNew>
 
         {/* Negociação */}

@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
 import { useProposalDraft, calcFormProgress, INTERNAL_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
+import { FiadorSection } from '@/components/proposta/FiadorSection';
 
 // ── Structured Variables ──
 
@@ -168,6 +169,64 @@ export interface ProposalFormData {
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
+const emptyFiadorConjuge: FiadorConjugeData = { nome: '', cpf: '', documento_identidade: '', whatsapp: '', email: '' };
+
+// Categorias de documentos por tipo de fiador (regras Rizzo)
+const FIADOR_DOC_RENDA: FiadorDocumentCategory[] = [
+  { key: 'documento_foto', label: 'Documento oficial com foto', help: 'CNH, ou RG + CPF (frente e verso). Documento dentro da validade.', files: [] },
+  { key: 'comprovante_renda', label: 'Comprovante de renda', help: '3 últimos contracheques, extratos bancários ou declaração de IR.', files: [] },
+  { key: 'comprovante_residencia', label: 'Comprovante de residência', help: 'Conta de luz, água, gás ou internet — emitido nos últimos 90 dias.', files: [] },
+  { key: 'certidao_estado_civil', label: 'Certidão de estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
+];
+const FIADOR_DOC_IMOVEL: FiadorDocumentCategory[] = [
+  { key: 'documento_foto', label: 'Documento oficial com foto', help: 'CNH, ou RG + CPF (frente e verso). Documento dentro da validade.', files: [] },
+  { key: 'matricula_imovel', label: 'Certidão de matrícula do imóvel', help: 'Matrícula atualizada — emitida nos últimos 90 dias. Imóvel quitado em Goiânia.', files: [] },
+  { key: 'comprovante_residencia', label: 'Comprovante de residência', help: 'Conta de luz, água, gás ou internet — emitido nos últimos 90 dias.', files: [] },
+  { key: 'certidao_estado_civil', label: 'Certidão de estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
+];
+const FIADOR_DOC_CONJUGE_OBRIG: FiadorDocumentCategory = {
+  key: 'documento_conjuge', label: 'Documento do cônjuge (obrigatório)',
+  help: 'CNH, ou RG + CPF do cônjuge (frente e verso). Documento dentro da validade.', files: [],
+};
+const FIADOR_DOC_CONJUGE_RENDA: FiadorDocumentCategory = {
+  key: 'renda_conjuge', label: 'Comprovante de renda do cônjuge (opcional)',
+  help: 'Reforça a análise de crédito. Holerite, IR ou extrato bancário.', files: [],
+};
+
+function buildFiadorDocs(tipo: FiadorTipo, casadoComConjuge: boolean): FiadorDocumentCategory[] {
+  const base = tipo === 'imovel'
+    ? FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }))
+    : FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  if (casadoComConjuge) {
+    base.push({ ...FIADOR_DOC_CONJUGE_OBRIG, files: [] });
+    base.push({ ...FIADOR_DOC_CONJUGE_RENDA, files: [] });
+  }
+  return base;
+}
+
+function makeEmptyFiador(tipo: FiadorTipo = ''): FiadorData {
+  return {
+    tipo_fiador: tipo,
+    nome: '', cpf: '', profissao: '', whatsapp: '', email: '',
+    estado_civil: '',
+    renda_mensal: '',
+    registro_imoveis: '',
+    cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+    regime_bens: '', conjuge_participa: '',
+    conjuge: { ...emptyFiadorConjuge },
+    documentos: tipo ? buildFiadorDocs(tipo, false) : [],
+  };
+}
+
+function fiadorIsCasado(f: FiadorData): boolean {
+  return f.estado_civil === 'Casado(a)' || f.estado_civil === 'União Estável';
+}
+function fiadorNeedsConjuge(f: FiadorData): boolean {
+  if (!fiadorIsCasado(f)) return false;
+  if (!f.regime_bens) return false;
+  if (f.regime_bens === 'Separação total / absoluta de bens') return f.conjuge_participa === 'sim';
+  return true;
+}
 
 const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
   {
@@ -329,6 +388,31 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       break;
     case 6:
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
+      if (data.garantia.tipo_garantia === 'Fiador') {
+        const fs = data.garantia.fiadores;
+        const hasRenda = fs.some(f => f.tipo_fiador === 'renda');
+        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel');
+        if (!hasRenda) errors.push('É necessário adicionar um fiador com renda');
+        if (!hasImovel) errors.push('É necessário adicionar um fiador com imóvel quitado');
+        fs.forEach((f, i) => {
+          const label = `Fiador ${i + 1}`;
+          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda ou imóvel)`);
+          if (!f.nome.trim()) errors.push(`${label}: nome é obrigatório`);
+          if (!f.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          if (!f.whatsapp.trim()) errors.push(`${label}: telefone é obrigatório`);
+          if (!f.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
+          if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
+            errors.push(`${label}: renda mensal é obrigatória`);
+          }
+          if (fiadorNeedsConjuge(f) && !f.conjuge.nome.trim()) {
+            errors.push(`${label}: dados do cônjuge obrigatórios`);
+          }
+          const docsPendentes = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length === 0);
+          if (f.tipo_fiador && docsPendentes.length > 0) {
+            errors.push(`${label}: documentos pendentes (${docsPendentes.length})`);
+          }
+        });
+      }
       break;
     case 7:
       break;
@@ -597,6 +681,121 @@ export default function PropostaLocacao() {
       'Sem Garantia': 'sem_garantia',
     };
     return map[label] || null;
+  }
+
+  // ── Garantia step (Fiador estruturado) ──
+  function renderGarantiaStep() {
+    const fiadores = data.garantia.fiadores;
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
+    const rentValue = parseCurrency(data.imovel.valor_aluguel);
+
+    const updateFiador = (index: number, patch: Partial<FiadorData>) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const current = { ...fs[index], ...patch };
+        const needsConj = fiadorNeedsConjuge(current);
+        if (
+          patch.tipo_fiador !== undefined ||
+          patch.estado_civil !== undefined ||
+          patch.regime_bens !== undefined ||
+          patch.conjuge_participa !== undefined
+        ) {
+          current.documentos = buildFiadorDocs(current.tipo_fiador, needsConj);
+          if (!needsConj) current.conjuge = { ...emptyFiadorConjuge };
+          if (!fiadorIsCasado(current)) {
+            current.regime_bens = '';
+            current.conjuge_participa = '';
+          }
+        }
+        fs[index] = current;
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const updateFiadorConjuge = (index: number, field: keyof FiadorConjugeData, value: string) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        fs[index] = { ...fs[index], conjuge: { ...fs[index].conjuge, [field]: value } };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const addFiadorFile = (fiadorIdx: number, catIdx: number, file: UploadedFile) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const docs = [...fs[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, file] };
+        fs[fiadorIdx] = { ...fs[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const removeFiadorFile = (fiadorIdx: number, catIdx: number, fileId: string) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const docs = [...fs[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== fileId) };
+        fs[fiadorIdx] = { ...fs[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const addFiador = (tipo: FiadorTipo = '') =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: [...p.garantia.fiadores, makeEmptyFiador(tipo)] } }));
+    const removeFiador = (i: number) =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: p.garantia.fiadores.filter((_, idx) => idx !== i) } }));
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <Label className="mb-3 block">Modalidade de garantia <span className="text-destructive">*</span></Label>
+          <div className="grid grid-cols-2 gap-2">
+            {GARANTIA_OPTIONS.map((g) => (
+              <Button
+                key={g}
+                type="button"
+                variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'}
+                className="justify-start"
+                onClick={() => update(p => ({
+                  ...p,
+                  garantia: {
+                    ...p.garantia,
+                    tipo_garantia: g,
+                    fiadores: g === 'Fiador' && p.garantia.fiadores.length === 0
+                      ? [makeEmptyFiador()]
+                      : p.garantia.fiadores,
+                  },
+                }))}
+              >
+                {g}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {data.garantia.tipo_garantia === 'Fiador' && (
+          <FiadorSection
+            fiadores={fiadores}
+            hasRenda={hasRenda}
+            hasImovel={hasImovel}
+            rentValue={rentValue}
+            onUpdateFiador={updateFiador}
+            onUpdateConjuge={updateFiadorConjuge}
+            onAddFile={addFiadorFile}
+            onRemoveFile={removeFiadorFile}
+            onAddFiador={addFiador}
+            onRemoveFiador={removeFiador}
+          />
+        )}
+
+        <div>
+          <Label>Observações</Label>
+          <Textarea
+            value={data.garantia.observacao}
+            onChange={(e) => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))}
+            placeholder="Detalhes sobre a garantia..."
+            rows={3}
+          />
+        </div>
+      </div>
+    );
   }
 
   // ── Step Content ──
@@ -1190,35 +1389,7 @@ export default function PropostaLocacao() {
           </div>
         );
       case 6:
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label className="mb-3 block">Modalidade de garantia <span className="text-destructive">*</span></Label>
-              <div className="grid grid-cols-2 gap-2">
-                {GARANTIA_OPTIONS.map((g) => (
-                  <Button
-                    key={g}
-                    type="button"
-                    variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'}
-                    className="justify-start"
-                    onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g } }))}
-                  >
-                    {g}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Textarea
-                value={data.garantia.observacao}
-                onChange={(e) => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))}
-                placeholder="Detalhes sobre a garantia..."
-                rows={3}
-              />
-            </div>
-          </div>
-        );
+        return renderGarantiaStep();
       case 7:
         return (
           <div className="space-y-6">
@@ -1561,6 +1732,22 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
         ]} onFix={() => onGoToStep(5)} />
         <ReviewBlock title="🔒 Garantia" items={[
           ['Modalidade', v(data.garantia.tipo_garantia)],
+          ...(data.garantia.tipo_garantia === 'Fiador'
+            ? [
+                ['Fiadores cadastrados', String(data.garantia.fiadores.length)] as [string, string],
+                ['Possui fiador com renda', data.garantia.fiadores.some(f => f.tipo_fiador === 'renda') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
+                ['Possui fiador com imóvel', data.garantia.fiadores.some(f => f.tipo_fiador === 'imovel') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
+                ...data.garantia.fiadores.flatMap((f, i) => {
+                  const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : 'Tipo não definido';
+                  const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
+                  const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
+                  return [
+                    [`Fiador ${i + 1} — ${tipoLabel}`, v(f.nome)],
+                    [`Fiador ${i + 1} — Documentos`, docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`],
+                  ] as [string, string][];
+                }),
+              ]
+            : []),
         ]} onFix={() => onGoToStep(6)} />
         <ReviewBlock title="📄 Documentos" items={
           data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} arquivo(s) ✅` : 'Pendente ⚠️'] as [string, string])

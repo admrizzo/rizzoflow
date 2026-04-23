@@ -1077,6 +1077,18 @@ export default function PropostaPublica() {
   }
 
   function renderStep5() {
+    const selectedGarantia = GARANTIA_OPTIONS.find(g => g.value === data.garantia.tipo_garantia);
+    const rentValue = property?.valor_aluguel || 0;
+    const updateFiador = (index: number, field: keyof FiadorData, value: string) => {
+      update(p => {
+        const fiadores = [...p.garantia.fiadores];
+        fiadores[index] = { ...fiadores[index], [field]: value };
+        return { ...p, garantia: { ...p.garantia, fiadores } };
+      });
+    };
+    const addFiador = () => update(p => ({ ...p, garantia: { ...p.garantia, fiadores: [...p.garantia.fiadores, { ...emptyFiador }] } }));
+    const removeFiador = (i: number) => update(p => ({ ...p, garantia: { ...p.garantia, fiadores: p.garantia.fiadores.filter((_, idx) => idx !== i) } }));
+
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
@@ -1110,7 +1122,14 @@ export default function PropostaPublica() {
             const selected = data.garantia.tipo_garantia === g.value;
             return (
               <button key={g.value} type="button" 
-                onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g.value } }))}
+                onClick={() => update(p => ({
+                  ...p,
+                  garantia: {
+                    ...p.garantia,
+                    tipo_garantia: g.value,
+                    fiadores: g.value === 'Fiador' && p.garantia.fiadores.length === 0 ? [{ ...emptyFiador }] : p.garantia.fiadores,
+                  }
+                }))}
                 className={cn(
                   'relative flex flex-col items-center text-center p-5 rounded-2xl border-2 transition-all',
                   selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
@@ -1132,6 +1151,195 @@ export default function PropostaPublica() {
             );
           })}
         </div>
+
+        {/* Detail panel for selected guarantee */}
+        {selectedGarantia && (
+          <div className="bg-card rounded-2xl border overflow-hidden">
+            {/* Header */}
+            <div className="p-6 border-b">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-2xl">{selectedGarantia.icon}</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground text-lg">{selectedGarantia.value}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedGarantia.subtitle}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Description */}
+              <p className="text-sm text-muted-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: selectedGarantia.detail.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground">$1</strong>')
+                }}
+              />
+
+              {/* Estimate for Seguro Fiança */}
+              {selectedGarantia.estimatePercent > 0 && rentValue > 0 && (
+                <div className="bg-muted/50 rounded-xl p-4 border">
+                  <p className="text-sm text-foreground">
+                    Para este imóvel (R$ {Number(rentValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}), estimativa de{' '}
+                    <strong>R$ {(rentValue * selectedGarantia.estimatePercent / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</strong>{' '}
+                    junto ao aluguel.
+                  </p>
+                </div>
+              )}
+
+              {/* Vantagens + Pontos de atenção */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Vantagens</p>
+                  <ul className="space-y-1.5">
+                    {selectedGarantia.vantagens.map((v, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        {v}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-warning uppercase tracking-wider mb-2">Pontos de atenção</p>
+                  <ul className="space-y-1.5">
+                    {selectedGarantia.atencao.map((a, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Fiador form - when Fiador is selected */}
+        {data.garantia.tipo_garantia === 'Fiador' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-foreground" />
+              <div>
+                <h3 className="font-bold text-foreground text-lg">Dados dos Fiadores</h3>
+                <p className="text-sm text-muted-foreground">Informe os dados de 1 ou 2 fiadores. Eles serão contatados para confirmação e envio de documentação.</p>
+              </div>
+            </div>
+
+            {data.garantia.fiadores.map((fiador, idx) => (
+              <div key={idx} className="bg-card rounded-2xl border p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">{idx + 1}</span>
+                    <h4 className="font-bold text-foreground">Fiador {idx + 1}</h4>
+                  </div>
+                  {data.garantia.fiadores.length > 1 && (
+                    <Button type="button" size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => removeFiador(idx)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Personal info */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Nome completo <span className="text-destructive">*</span></Label>
+                    <Input value={fiador.nome} onChange={e => updateFiador(idx, 'nome', e.target.value)} placeholder="Nome completo do fiador" className="mt-1.5 h-11" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">CPF <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.cpf} onChange={e => updateFiador(idx, 'cpf', e.target.value)} placeholder="000.000.000-00" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Profissão <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.profissao} onChange={e => updateFiador(idx, 'profissao', e.target.value)} placeholder="Profissão do fiador" className="mt-1.5 h-11" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">WhatsApp <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.whatsapp} onChange={e => updateFiador(idx, 'whatsapp', e.target.value)} placeholder="(00) 00000-0000" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">E-mail <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.email} onChange={e => updateFiador(idx, 'email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5 h-11" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Renda Mensal</Label>
+                      <Input value={fiador.renda_mensal} onChange={e => updateFiador(idx, 'renda_mensal', e.target.value)} placeholder="R$ 0,00" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Estado Civil <span className="text-destructive">*</span></Label>
+                      <Select value={fiador.estado_civil} onValueChange={v => updateFiador(idx, 'estado_civil', v)}>
+                        <SelectTrigger className="mt-1.5 h-11"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {CIVIL_STATUS.map(s => <SelectItem key={s.label} value={s.label}>{s.icon} {s.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Registro de Imóveis</Label>
+                    <Input value={fiador.registro_imoveis} onChange={e => updateFiador(idx, 'registro_imoveis', e.target.value)} placeholder="Cartório, matrícula..." className="mt-1.5 h-11" />
+                  </div>
+                </div>
+
+                {/* Address section */}
+                <div className="pt-4 border-t space-y-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <h5 className="font-bold text-foreground text-sm">Endereço do Fiador</h5>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Digite o CEP para preencher automaticamente ✨</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">CEP <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.cep} onChange={e => updateFiador(idx, 'cep', e.target.value)} placeholder="00000-000" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Logradouro <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.logradouro} onChange={e => updateFiador(idx, 'logradouro', e.target.value)} placeholder="Rua, Av..." className="mt-1.5 h-11" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Número <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.numero} onChange={e => updateFiador(idx, 'numero', e.target.value)} placeholder="Nº" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Complemento</Label>
+                      <Input value={fiador.complemento} onChange={e => updateFiador(idx, 'complemento', e.target.value)} placeholder="Apto, sala..." className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Bairro <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.bairro} onChange={e => updateFiador(idx, 'bairro', e.target.value)} placeholder="Bairro" className="mt-1.5 h-11" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Cidade <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.cidade} onChange={e => updateFiador(idx, 'cidade', e.target.value)} placeholder="Cidade" className="mt-1.5 h-11" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">UF <span className="text-destructive">*</span></Label>
+                      <Input value={fiador.uf} onChange={e => updateFiador(idx, 'uf', e.target.value)} placeholder="UF" className="mt-1.5 h-11" maxLength={2} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {data.garantia.fiadores.length < 2 && (
+              <Button type="button" variant="outline" className="w-full rounded-xl" onClick={addFiador}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar outro fiador
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Warning note */}
         <p className="text-sm text-muted-foreground text-center">

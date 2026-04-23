@@ -51,6 +51,14 @@ const CIVIL_STATUS = [
   { label: 'União Estável', icon: '🤝' },
 ];
 
+const REGIME_BENS_OPTIONS = [
+  'Comunhão parcial de bens',
+  'Comunhão universal de bens',
+  'Separação total / absoluta de bens',
+  'Participação final nos aquestos',
+  'Não sei informar',
+];
+
 const RENDA_SOURCES = [
   { value: 'Empregado(a)', icon: '💼', label: 'Empregado(a)' },
   { value: 'Funcionário Público', icon: '🏛️', label: 'Funcionário Público' },
@@ -145,9 +153,19 @@ function formatCurrency(n: number | null | undefined): string {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function needsConjuge(data: ProposalFormData) {
+function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
+}
+
+function needsConjuge(data: ProposalFormData) {
+  if (!isCasadoOuUniao(data)) return false;
+  const regime = data.perfil_financeiro.regime_bens;
+  if (!regime) return false;
+  if (regime === 'Separação total / absoluta de bens') {
+    return data.perfil_financeiro.conjuge_participa === 'sim';
+  }
+  return true;
 }
 
 function validateStep(step: number, data: ProposalFormData): string[] {
@@ -158,6 +176,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
+      if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
+      if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');

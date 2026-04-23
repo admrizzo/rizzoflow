@@ -628,18 +628,86 @@ export default function PropostaLocacao() {
                     type="button"
                     size="sm"
                     variant={data.perfil_financeiro.estado_civil === s ? 'default' : 'outline'}
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s } }))}
+                    onClick={() => update(p => ({
+                      ...p,
+                      perfil_financeiro: {
+                        ...p.perfil_financeiro,
+                        estado_civil: s,
+                        regime_bens: (s === 'Casado(a)' || s === 'União Estável') ? p.perfil_financeiro.regime_bens : '',
+                        conjuge_participa: (s === 'Casado(a)' || s === 'União Estável') ? p.perfil_financeiro.conjuge_participa : '',
+                      },
+                    }))}
                   >
                     {s}
                   </Button>
                 ))}
               </div>
-              {showConjuge && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  ℹ️ Etapa de cônjuge será ativada
-                </p>
-              )}
             </div>
+
+            {/* Regime de bens */}
+            {isCasadoOuUniao(data) && (
+              <div>
+                <Label className="mb-3 block">Regime de bens <span className="text-destructive">*</span></Label>
+                <div className="flex flex-wrap gap-2">
+                  {REGIME_BENS_OPTIONS.map((r) => (
+                    <Button
+                      key={r}
+                      type="button"
+                      size="sm"
+                      variant={data.perfil_financeiro.regime_bens === r ? 'default' : 'outline'}
+                      onClick={() => update(p => ({
+                        ...p,
+                        perfil_financeiro: {
+                          ...p.perfil_financeiro,
+                          regime_bens: r,
+                          conjuge_participa: r !== 'Separação total / absoluta de bens' ? '' : p.perfil_financeiro.conjuge_participa,
+                        },
+                      }))}
+                    >
+                      {r}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pergunta participação do cônjuge - só para separação total */}
+            {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+              <div className="p-4 rounded-lg border bg-muted/50">
+                <Label className="mb-3 block">O cônjuge/companheiro também participará do contrato? <span className="text-destructive">*</span></Label>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant={data.perfil_financeiro.conjuge_participa === 'sim' ? 'default' : 'outline'}
+                    className="flex-1"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'sim' } }))}
+                  >
+                    Sim, vai participar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={data.perfil_financeiro.conjuge_participa === 'nao' ? 'default' : 'outline'}
+                    className="flex-1"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'nao' } }))}
+                  >
+                    Não, apenas eu
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Indicadores informativos */}
+            {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens && data.perfil_financeiro.regime_bens !== 'Separação total / absoluta de bens' && (
+              <p className="text-sm text-muted-foreground">
+                ℹ️ Com o regime selecionado, a etapa de cônjuge/companheiro é obrigatória.
+              </p>
+            )}
+            {showConjuge && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+              <p className="text-sm text-muted-foreground">
+                ℹ️ A etapa de cônjuge/companheiro será ativada.
+              </p>
+            )}
+
             <div>
               <Label className="mb-3 block">Fonte de renda <span className="text-destructive">*</span></Label>
               <RadioGroup value={data.perfil_financeiro.fonte_renda} onValueChange={(val) => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: val } }))}>

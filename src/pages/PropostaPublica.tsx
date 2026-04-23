@@ -725,7 +725,7 @@ export default function PropostaPublica() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
+          <Loader2 className="h-10 w-10 animate-spin mx-auto text-accent" />
           <p className="text-muted-foreground text-sm">Carregando dados do imóvel...</p>
         </div>
       </div>
@@ -901,8 +901,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <User className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Vamos nos conhecer! 👋</h2>
           <p className="text-muted-foreground mt-1 text-sm">Preencha seus dados pessoais. Campos com <span className="text-red-500">*</span> são obrigatórios.</p>
@@ -967,7 +967,7 @@ export default function PropostaPublica() {
                     className={cn(
                       'flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all',
                       data.perfil_financeiro.estado_civil === s.label
-                        ? 'border-primary bg-primary/10 text-primary'
+                        ? 'border-accent bg-accent/10 text-accent'
                         : 'border-border hover:border-muted-foreground/40'
                     )}
                   >
@@ -995,7 +995,7 @@ export default function PropostaPublica() {
                       className={cn(
                         'w-full flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
                         data.perfil_financeiro.regime_bens === r
-                          ? 'border-primary bg-primary/5'
+                          ? 'border-accent bg-accent/5'
                           : 'border-border hover:border-muted-foreground/40'
                       )}
                     >
@@ -1055,7 +1055,7 @@ export default function PropostaPublica() {
                     className={cn(
                       'flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
                       data.perfil_financeiro.fonte_renda === r.value
-                        ? 'border-primary bg-primary/5'
+                        ? 'border-accent bg-accent/5'
                         : 'border-border hover:border-muted-foreground/40'
                     )}
                   >
@@ -1095,8 +1095,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Users className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <Users className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Cônjuge e Sócios</h2>
           <p className="text-muted-foreground mt-1 text-sm">Preencha os dados do cônjuge e adicione sócios, se houver.</p>
@@ -1132,8 +1132,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <FileCheck className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <FileCheck className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
           <p className="text-muted-foreground mt-1 text-sm">Envie os documentos necessários para análise da proposta.</p>
@@ -1173,7 +1173,7 @@ export default function PropostaPublica() {
                     ))}
                   </div>
                 )}
-                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-primary font-medium hover:bg-primary/5 border-2 border-dashed border-primary/30 rounded-xl py-3 transition-colors">
+                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
                   <Upload className="h-4 w-4" /> Adicionar arquivo
                   <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
                     const fileList = e.target.files;
@@ -1209,8 +1209,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Home className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <Home className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Queremos te conhecer melhor! 😊</h2>
           <p className="text-muted-foreground mt-2 text-base">Conte-nos quem vai morar no imóvel para prepararmos tudo da melhor forma pra você.</p>
@@ -1234,17 +1234,17 @@ export default function PropostaPublica() {
                   className={cn(
                     'flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all',
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
+                      ? 'border-accent bg-accent/5 shadow-sm'
                       : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
                   )}
                 >
                   <div className={cn(
                     'w-12 h-12 rounded-xl flex items-center justify-center mb-3',
-                    isSelected ? 'bg-primary/10' : 'bg-muted'
+                    isSelected ? 'bg-accent/10' : 'bg-muted'
                   )}>
-                    <Icon className={cn('h-6 w-6', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                    <Icon className={cn('h-6 w-6', isSelected ? 'text-accent' : 'text-muted-foreground')} />
                   </div>
-                  <p className={cn('font-bold text-sm', isSelected ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                  <p className={cn('font-bold text-sm', isSelected ? 'text-accent' : 'text-foreground')}>{opt.label}</p>
                   <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
                 </button>
               );
@@ -1271,7 +1271,7 @@ export default function PropostaPublica() {
             </div>
             <div className="border rounded-xl p-5 space-y-4 bg-muted/20">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-accent" />
                 <span className="font-semibold text-sm">Morador 1</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1328,7 +1328,7 @@ export default function PropostaPublica() {
               <div key={idx} className="border rounded-xl p-5 space-y-4 bg-muted/20 relative">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
+                    <Users className="h-4 w-4 text-accent" />
                     <span className="font-semibold text-sm">Morador {idx + 1}</span>
                   </div>
                   {idx > 0 && (
@@ -1387,8 +1387,8 @@ export default function PropostaPublica() {
         {/* "Outra pessoa vai retirar as chaves?" toggle */}
         <div className="bg-card rounded-2xl border p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <ShieldCheck className="h-5 w-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-accent" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
@@ -1397,7 +1397,7 @@ export default function PropostaPublica() {
                   onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: p.composicao.responsavel_retirada ? '' : 'terceiro' } }))}
                   className={cn(
                     'relative w-12 h-7 rounded-full transition-colors shrink-0',
-                    data.composicao.responsavel_retirada ? 'bg-primary' : 'bg-muted-foreground/20'
+                    data.composicao.responsavel_retirada ? 'bg-accent' : 'bg-muted-foreground/20'
                   )}
                 >
                   <span className={cn(
@@ -1452,8 +1452,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Garantia do contrato 🔒</h2>
           <p className="text-muted-foreground mt-2 text-base">A garantia protege tanto você quanto o proprietário. Escolha a modalidade que melhor se encaixa no seu perfil.</p>
@@ -1492,7 +1492,7 @@ export default function PropostaPublica() {
                 }))}
                 className={cn(
                   'relative flex flex-col items-center text-center p-5 rounded-2xl border-2 transition-all',
-                  selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
+                  selected ? 'border-accent bg-accent/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
                 )}
               >
                 {g.badge && (
@@ -1502,11 +1502,11 @@ export default function PropostaPublica() {
                 )}
                 <div className={cn(
                   'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
-                  selected ? 'bg-primary/10' : 'bg-muted'
+                  selected ? 'bg-accent/10' : 'bg-muted'
                 )}>
                   <span className="text-xl">{g.icon}</span>
                 </div>
-                <p className={cn('font-bold text-xs', selected ? 'text-primary' : 'text-foreground')}>{g.value}</p>
+                <p className={cn('font-bold text-xs', selected ? 'text-accent' : 'text-foreground')}>{g.value}</p>
               </button>
             );
           })}
@@ -1518,7 +1518,7 @@ export default function PropostaPublica() {
             {/* Header */}
             <div className="p-6 border-b">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
                   <span className="text-2xl">{selectedGarantia.icon}</span>
                 </div>
                 <div>
@@ -1550,11 +1550,11 @@ export default function PropostaPublica() {
               {/* Vantagens + Pontos de atenção */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Vantagens</p>
+                  <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2">Vantagens</p>
                   <ul className="space-y-1.5">
                     {selectedGarantia.vantagens.map((v, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />
                         {v}
                       </li>
                     ))}
@@ -1591,7 +1591,7 @@ export default function PropostaPublica() {
               <div key={idx} className="bg-card rounded-2xl border p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">{idx + 1}</span>
+                    <span className="w-7 h-7 rounded-full bg-accent/10 text-accent text-sm font-bold flex items-center justify-center">{idx + 1}</span>
                     <h4 className="font-bold text-foreground">Fiador {idx + 1}</h4>
                   </div>
                   {data.garantia.fiadores.length > 1 && (
@@ -1719,8 +1719,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Handshake className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <Handshake className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Negociação 🤝</h2>
           <p className="text-muted-foreground mt-2 text-base">Escolha como deseja prosseguir com o valor do aluguel.</p>
@@ -1734,18 +1734,18 @@ export default function PropostaPublica() {
             className={cn(
               'relative p-6 rounded-2xl border-2 text-left transition-all',
               data.negociacao.aceitou_valor === 'sim'
-                ? 'border-primary bg-primary/5 shadow-md'
+                ? 'border-accent bg-accent/5 shadow-md'
                 : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
             )}
           >
             {data.negociacao.aceitou_valor === 'sim' && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
                 ✓ Mais indicado
               </span>
             )}
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Zap className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <Zap className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <h3 className="font-bold text-foreground text-base">Alugar pelo valor anunciado</h3>
@@ -1771,7 +1771,7 @@ export default function PropostaPublica() {
             className={cn(
               'relative p-6 rounded-2xl border-2 text-left transition-all',
               data.negociacao.aceitou_valor === 'nao'
-                ? 'border-primary bg-primary/5 shadow-md'
+                ? 'border-accent bg-accent/5 shadow-md'
                 : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
             )}
           >
@@ -1809,8 +1809,8 @@ export default function PropostaPublica() {
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informações importantes</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <CalendarDays className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <h4 className="font-bold text-foreground text-sm">Contrato de 30 meses</h4>
@@ -1932,8 +1932,8 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center py-6">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-          <ClipboardCheck className="h-7 w-7 text-primary" />
+        <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+          <ClipboardCheck className="h-7 w-7 text-accent" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Quase lá! 🎉</h2>
         <p className="text-muted-foreground mt-2 text-sm sm:text-base">Revise todas as informações antes de enviar seu registro de interesse.</p>
@@ -2059,7 +2059,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
             type="checkbox"
             checked={termsAccepted}
             onChange={e => onTermsChange(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent"
           />
           <span className="text-sm text-foreground leading-relaxed">
             Li e aceito os termos acima. Declaro que todas as informações fornecidas são verdadeiras e autorizo a 
@@ -2103,7 +2103,7 @@ function ReviewBlockNew({ title, icon, children, onFix, hasPending = false }: {
           <span>{icon}</span> {title}
         </h4>
         {onFix && (
-          <button onClick={onFix} className="text-sm text-primary font-semibold hover:underline flex items-center gap-1">
+          <button onClick={onFix} className="text-sm text-accent font-semibold hover:underline flex items-center gap-1">
             ✏️ Completar
           </button>
         )}

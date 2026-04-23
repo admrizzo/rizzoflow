@@ -2,13 +2,14 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
 import { isReviewOverdue } from '@/hooks/useColumnReview';
+import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
 import {
   Tooltip,
   TooltipContent,
@@ -27,10 +28,11 @@ interface KanbanCardProps {
   budgetDeadline?: string | null;
   showOwnerAvatar?: boolean;
   hasUnseenChanges?: boolean;
+  responsibleName?: string | null;
 }
 
 export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
-  ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, hasUnseenChanges }, ref) => {
+  ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, hasUnseenChanges, responsibleName }, ref) => {
     // Calculate checklist progress - exclude dismissed items
     const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
     const activeItems = allItems.filter(i => !i.is_dismissed);
@@ -101,16 +103,25 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
     const stripeColor = getFinancingStripeColor();
 
+    // SLA status calculation
+    const slaStatus = getSlaStatus(card.column_entered_at, column?.sla_hours ?? null);
+    const slaColors = getSlaColors(slaStatus);
+    const timeInStage = formatTimeElapsed(card.column_entered_at);
+    const hasSla = !!column?.sla_hours;
+
     return (
       <Card 
         ref={ref}
         onClick={onClick}
         className={cn(
-          "cursor-pointer bg-white hover:bg-gray-50 shadow-sm hover:shadow-md border-0 rounded-lg overflow-hidden relative will-change-transform select-none",
+          "cursor-pointer bg-card hover:bg-accent/30 shadow-sm hover:shadow-md border rounded-lg overflow-hidden relative will-change-transform select-none",
           isDragging && "shadow-xl ring-2 ring-blue-400 opacity-95",
-          isArchived && "opacity-60 bg-amber-50",
-          isAnyDeadlineOverdue && !isArchived && "bg-amber-100 border-2 border-amber-400 hover:bg-amber-50",
-          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "bg-orange-100 border-2 border-orange-400 hover:bg-orange-50"
+          isArchived && "opacity-60 bg-muted",
+          isAnyDeadlineOverdue && !isArchived && "border-2 border-red-400 bg-red-50",
+          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-2 border-orange-400 bg-orange-50",
+          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-red-500",
+          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-amber-500",
+          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !isArchived && "border-l-4 border-l-emerald-500"
         )}
       >
         {/* Red badge for unseen changes */}
@@ -179,7 +190,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
         {/* Archived indicator */}
         {isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-amber-700 text-xs font-medium">
+          <div className="flex items-center gap-1 px-2 pt-2 text-muted-foreground text-xs font-medium">
             <Archive className="h-3 w-3" />
             <span>Arquivado</span>
           </div>
@@ -202,30 +213,56 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         )}
 
         <div className={cn("p-1.5", stripeColor && "pl-2.5")}>
-          {/* Card title with owner avatar */}
+          {/* Title with inline superlogica code */}
+          <div className="text-xs leading-snug min-w-0 mb-1">
+            {card.superlogica_id && (
+              <span className="text-[10px] text-muted-foreground mr-1">{card.superlogica_id} ·</span>
+            )}
+            <span className="font-semibold text-foreground break-words whitespace-normal line-clamp-2">
+              {card.title || card.address || 'Sem identificação'}
+            </span>
+          </div>
+
+          {/* Building/Address subtitle */}
+          {card.building_name && card.building_name !== card.title && (
+            <p className="text-[10px] text-muted-foreground truncate mb-1">{card.building_name}</p>
+          )}
+
+          {/* Responsible + Time in stage row */}
+          {(!isArchived && (responsibleName || card.column_entered_at)) && (
+            <div className="flex items-center justify-between gap-1 mb-1">
+              {responsibleName && (
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">{responsibleName}</span>
+                </div>
+              )}
+              {card.column_entered_at && (
+                <div className={cn(
+                  "flex items-center gap-0.5 text-[10px] font-medium px-1 py-0.5 rounded",
+                  hasSla ? `${slaColors.bg} ${slaColors.text}` : 'text-muted-foreground'
+                )}>
+                  <Clock className="h-3 w-3" />
+                  <span>{timeInStage}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Owner avatar */}
           {showOwnerAvatar && card.created_by_profile && (
             <div className="flex items-center gap-1.5 mb-1">
-              <Avatar className="h-5 w-5 flex-shrink-0 ring-1 ring-gray-200">
+              <Avatar className="h-4 w-4 flex-shrink-0">
                 <AvatarImage src={card.created_by_profile.avatar_url || undefined} />
-                <AvatarFallback className="text-[9px] bg-orange-100 text-orange-700">
+                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
                   {card.created_by_profile.full_name?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-[10px] text-gray-500 font-medium truncate">
+              <span className="text-[10px] text-muted-foreground truncate">
                 {card.created_by_profile.full_name}
               </span>
             </div>
           )}
-          
-          {/* Title with inline superlogica code */}
-          <div className="text-xs leading-snug min-w-0">
-            {card.superlogica_id && (
-              <span className="text-[10px] text-muted-foreground mr-1">{card.superlogica_id} ·</span>
-            )}
-            <span className="font-medium text-gray-800 break-words whitespace-normal line-clamp-2">
-              {card.title || card.address || 'Sem identificação'}
-            </span>
-          </div>
 
           {/* Selected Provider with budget value (Manutenção) */}
           {selectedProvider && (
@@ -242,19 +279,19 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
           {/* Footer with icons */}
           {(hasChecklists || hasDueDate || hasDeadline || hasVacancyDeadline || parsedBudgetDeadline || column?.review_deadline_days) && (
-            <div className="flex items-center flex-wrap gap-2 mt-1.5 text-gray-500">
+            <div className="flex items-center flex-wrap gap-2 mt-1.5 text-muted-foreground">
               {hasChecklists && (
                 <div className="flex items-center gap-0.5 text-[10px]">
-                  <CheckSquare className="h-3 w-3" />
-                  <span>{completedItems}/{totalItems}</span>
+                  <CheckSquare className={cn("h-3 w-3", completedItems === totalItems && totalItems > 0 && "text-emerald-600")} />
+                  <span className={cn(completedItems === totalItems && totalItems > 0 && "text-emerald-600 font-medium")}>{completedItems}/{totalItems}</span>
                 </div>
               )}
 
               {hasDeadline && (
                 <div className={cn(
                   "flex items-center gap-0.5 text-[10px]",
-                  isDeadlineOverdue && "text-amber-700 font-medium",
-                  card.deadline_met && "text-green-600"
+                  isDeadlineOverdue && "text-red-600 font-medium",
+                  card.deadline_met && "text-emerald-600"
                 )}>
                   <Clock className="h-3 w-3" />
                   <span>

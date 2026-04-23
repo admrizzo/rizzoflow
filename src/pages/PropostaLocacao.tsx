@@ -201,9 +201,19 @@ const MORADOR_TYPES = [
   { value: 'terceiro', label: 'Terceiro' },
 ];
 
-function needsConjuge(data: ProposalFormData) {
+function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
+}
+
+function needsConjuge(data: ProposalFormData) {
+  if (!isCasadoOuUniao(data)) return false;
+  const regime = data.perfil_financeiro.regime_bens;
+  if (!regime) return false;
+  if (regime === 'Separação total / absoluta de bens') {
+    return data.perfil_financeiro.conjuge_participa === 'sim';
+  }
+  return true;
 }
 
 // ── Step labels (always 9; step 4 label changes) ──

@@ -42,11 +42,18 @@ export interface PerfilFinanceiro {
 export interface MoradorData {
   tipo: 'eu_mesmo' | 'filho' | 'terceiro' | '';
   nome: string;
+  relacao?: string;
+  whatsapp?: string;
+  email?: string;
 }
 
 export interface Composicao {
   moradores: MoradorData[];
   responsavel_retirada: string; // empty = proponente retira
+  retirada_nome?: string;
+  retirada_whatsapp?: string;
+  retirada_cpf?: string;
+  retirada_email?: string;
 }
 
 // garantia

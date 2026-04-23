@@ -199,6 +199,7 @@ function validateStep(step: number, data: ProposalFormData): string[] {
   const showConjuge = needsConjuge(data);
   switch (step) {
     case 0:
+      if (!data.imovel.codigo.trim()) errors.push('Selecione um imóvel do CRM (Cód no Robust obrigatório)');
       if (!data.imovel.endereco.trim()) errors.push('Endereço do imóvel é obrigatório');
       if (!data.imovel.tipo_pessoa) errors.push('Tipo de pessoa é obrigatório');
       break;

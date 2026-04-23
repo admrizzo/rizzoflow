@@ -358,8 +358,8 @@ export default function PropostaLocacao() {
     const clientName = data.dados_pessoais.nome || 'Não informado';
     const imovelCodigo = data.imovel.codigo || '';
 
-    const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
-    const CADASTRO_COLUMN_ID = '98579480-4d58-44f4-86dd-82c89e8f9f53';
+    const PROPOSTAS_BOARD_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const NOVA_PROPOSTA_COLUMN_ID = '377d2e9f-5efe-4a05-9958-bd45936ee6e4';
 
     // Build card title
     const cardTitle = imovelCodigo
@@ -391,7 +391,7 @@ export default function PropostaLocacao() {
       const { data: existingCards } = await supabase
         .from('cards')
         .select('position')
-        .eq('column_id', CADASTRO_COLUMN_ID)
+        .eq('column_id', NOVA_PROPOSTA_COLUMN_ID)
         .eq('is_archived', false)
         .order('position', { ascending: false })
         .limit(1);
@@ -403,8 +403,8 @@ export default function PropostaLocacao() {
         .insert({
           title: cardTitle,
           description: descriptionLines.join('\n'),
-          board_id: LOCACAO_BOARD_ID,
-          column_id: CADASTRO_COLUMN_ID,
+          board_id: PROPOSTAS_BOARD_ID,
+          column_id: NOVA_PROPOSTA_COLUMN_ID,
           position: nextPosition,
           created_by: user?.id,
           address: data.imovel.endereco || null,
@@ -416,7 +416,7 @@ export default function PropostaLocacao() {
       if (error) throw error;
 
       toast.success('Proposta enviada e card criado com sucesso!');
-      navigate('/dashboard');
+      navigate('/central-propostas');
     } catch (err: any) {
       console.error('Erro ao criar card:', err);
       toast.error('Proposta válida, mas houve erro ao criar o card', { description: err.message });

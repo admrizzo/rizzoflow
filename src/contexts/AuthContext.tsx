@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          setIsLoading(true);
           // Defer fetching to avoid blocking
           setTimeout(() => {
             fetchUserData(session.user.id);
@@ -42,8 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRoles([]);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 

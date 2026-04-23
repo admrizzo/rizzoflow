@@ -1538,6 +1538,143 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_rules: {
+        Row: {
+          action_config: Json
+          condition_config: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          position: number
+          rule_type: string
+          updated_at: string
+        }
+        Insert: {
+          action_config?: Json
+          condition_config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: number
+          rule_type?: string
+          updated_at?: string
+        }
+        Update: {
+          action_config?: Json
+          condition_config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: number
+          rule_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      proposal_stage_fields: {
+        Row: {
+          conditional_on: Json | null
+          created_at: string
+          field_label: string
+          field_name: string
+          field_options: Json | null
+          field_type: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          placeholder: string | null
+          position: number
+          stage_id: string
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          conditional_on?: Json | null
+          created_at?: string
+          field_label: string
+          field_name: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          placeholder?: string | null
+          position?: number
+          stage_id: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          conditional_on?: Json | null
+          created_at?: string
+          field_label?: string
+          field_name?: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          placeholder?: string | null
+          position?: number
+          stage_id?: string
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_stage_fields_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_stages: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_required: boolean
+          name: string
+          position: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name: string
+          position?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          name?: string
+          position?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       provider_registry: {
         Row: {
           created_at: string

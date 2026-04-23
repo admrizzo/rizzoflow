@@ -15,10 +15,11 @@ import {
 } from '@/components/ui/dialog';
 import {
   FileText, Search, ArrowLeft, Link2, Copy, ExternalLink, MessageCircle,
-  Home, Clock, Plus, Building2, MapPin, CheckCircle2
+  Home, Clock, Plus, Building2, MapPin, CheckCircle2, Settings2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ProposalCmsPanel } from '@/components/proposal-cms/ProposalCmsPanel';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   nao_acessado: { label: 'Não acessado', color: 'bg-muted text-muted-foreground' },
@@ -45,6 +46,7 @@ function formatCurrency(v: number | null) {
 export default function CentralPropostas() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
 
@@ -54,6 +56,7 @@ export default function CentralPropostas() {
   const [brokerName, setBrokerName] = useState('');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<number | null>(null);
+  const [cmsOpen, setCmsOpen] = useState(false);
 
   // Auto-fill broker name from logged user
   useEffect(() => {
@@ -172,6 +175,12 @@ export default function CentralPropostas() {
             <h1 className="text-xl font-bold">Central de Propostas</h1>
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setCmsOpen(true)} className="gap-1">
+                <Settings2 className="h-4 w-4" />
+                Editar Página
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => syncProperties.mutate()} disabled={syncProperties.isPending}>
               {syncProperties.isPending ? 'Sincronizando...' : 'Atualizar imóveis'}
             </Button>
@@ -421,6 +430,7 @@ export default function CentralPropostas() {
           </div>
         </DialogContent>
       </Dialog>
+      {isAdmin && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
     </div>
   );
 }

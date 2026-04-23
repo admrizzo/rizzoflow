@@ -413,7 +413,7 @@ export default function PropostaPublica() {
   const [data, setData] = useState<ProposalFormData>({
     imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: 'fisica' },
     dados_pessoais: { ...emptyPerson },
-    perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '' },
+    perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' },
     conjuge: { ...emptyPerson },
     socios: [],
     documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),

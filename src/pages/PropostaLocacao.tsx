@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert, Shield, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ── Structured Variables ──
 
@@ -328,7 +330,9 @@ export default function PropostaLocacao() {
     return errs.length === 0 ? 'done' : 'pending';
   }
 
-  function handleSubmit() {
+  const { user } = useAuth();
+
+  async function handleSubmit() {
     const pending = getPendingSteps(data);
     const critical = pending.filter(p => p.critical);
     if (critical.length > 0) {
@@ -341,8 +345,94 @@ export default function PropostaLocacao() {
       setStep(pending[0].step);
       return;
     }
-    toast.success('Proposta enviada com sucesso!');
-    navigate('/dashboard');
+
+    // Calculate score for the card description
+    const renda = parseFloat(data.perfil_financeiro.renda_mensal.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+    const aluguel = parseFloat(data.imovel.valor_aluguel.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+    const percentualCalc = renda > 0 ? (aluguel / renda) * 100 : null;
+    const { score, points } = calcScore(data, percentualCalc);
+
+    const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';
+    const garantiaLabel = data.garantia.tipo_garantia || 'Não informado';
+    const valorProposto = data.negociacao.valor_proposto || 'Não informado';
+    const clientName = data.dados_pessoais.nome || 'Não informado';
+    const imovelCodigo = data.imovel.codigo || '';
+
+    const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
+    const CADASTRO_COLUMN_ID = '98579480-4d58-44f4-86dd-82c89e8f9f53';
+
+    // Build card title
+    const cardTitle = imovelCodigo
+      ? `${clientName} — ${imovelCodigo}`
+      : clientName;
+
+    // Build description with structured data
+    const descriptionLines = [
+      `**Cliente:** ${clientName}`,
+      `**CPF:** ${data.dados_pessoais.cpf || 'Não informado'}`,
+      `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'Não informado'}`,
+      `**E-mail:** ${data.dados_pessoais.email || 'Não informado'}`,
+      '',
+      `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
+      `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
+      `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      `**Valor Proposto:** ${valorProposto}`,
+      '',
+      `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      `**Comprometimento:** ${percentualCalc !== null ? percentualCalc.toFixed(1) + '%' : 'N/A'}`,
+      `**Garantia:** ${garantiaLabel}`,
+      '',
+      `**Score:** ${scoreLabel} (${points}/100)`,
+      `**Status:** Nova proposta`,
+    ];
+
+    try {
+      // Get max position in the target column
+      const { data: existingCards } = await supabase
+        .from('cards')
+        .select('position')
+        .eq('column_id', CADASTRO_COLUMN_ID)
+        .eq('is_archived', false)
+        .order('position', { ascending: false })
+        .limit(1);
+
+      const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
+
+      const { error } = await supabase
+        .from('cards')
+        .insert({
+          title: cardTitle,
+          description: descriptionLines.join('\n'),
+          board_id: LOCACAO_BOARD_ID,
+          column_id: CADASTRO_COLUMN_ID,
+          position: nextPosition,
+          created_by: user?.id,
+          address: data.imovel.endereco || null,
+          robust_code: imovelCodigo || null,
+          guarantee_type: mapGarantia(garantiaLabel),
+          column_entered_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast.success('Proposta enviada e card criado com sucesso!');
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Erro ao criar card:', err);
+      toast.error('Proposta válida, mas houve erro ao criar o card', { description: err.message });
+    }
+  }
+
+  function mapGarantia(label: string): 'fiador' | 'seguro_fianca' | 'caucao' | 'titulo_capitalizacao' | 'carta_fianca' | 'sem_garantia' | null {
+    const map: Record<string, any> = {
+      'Fiador': 'fiador',
+      'Seguro Fiança': 'seguro_fianca',
+      'Caução': 'caucao',
+      'Título de Capitalização': 'titulo_capitalizacao',
+      'Carta Fiança': 'carta_fianca',
+      'Sem Garantia': 'sem_garantia',
+    };
+    return map[label] || null;
   }
 
   // ── Step Content ──

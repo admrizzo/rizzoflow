@@ -13,66 +13,102 @@ import { toast } from 'sonner';
 import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// ── Types ──
-interface PersonData {
+// ── Structured Variables ──
+
+// dados_pessoais
+export interface DadosPessoais {
   nome: string;
-  cpf_cnpj: string;
+  cpf: string;
   profissao: string;
   whatsapp: string;
   email: string;
 }
 
-interface MoradorData {
+// perfil_financeiro
+export interface PerfilFinanceiro {
+  estado_civil: string;
+  fonte_renda: string;
+  renda_mensal: string; // stored as string for input, parsed to number for calc
+}
+
+// composicao
+export interface MoradorData {
   tipo: 'eu_mesmo' | 'filho' | 'terceiro' | '';
   nome: string;
 }
 
-interface ProposalFormData {
-  // Step 1
-  endereco_imovel: string;
-  tipo_pessoa: 'fisica' | 'juridica' | '';
-  // Step 2
-  dados_pessoais: PersonData;
-  // Step 3
-  estado_civil: string;
-  fonte_renda: string;
-  renda_mensal: string;
-  // Step 4 (conditional)
-  conjuge: PersonData;
-  socios: PersonData[];
-  // Step 5
-  documentos_observacao: string;
-  // Step 6
+export interface Composicao {
   moradores: MoradorData[];
-  outra_pessoa_chaves: boolean;
-  pessoa_chaves_nome: string;
-  // Step 7
-  garantia: string;
-  garantia_observacao: string;
-  // Step 8
-  negociacao_observacao: string;
+  responsavel_retirada: string; // empty = proponente retira
 }
 
-const emptyPerson: PersonData = { nome: '', cpf_cnpj: '', profissao: '', whatsapp: '', email: '' };
+// garantia
+export interface GarantiaInfo {
+  tipo_garantia: string;
+  observacao: string;
+}
+
+// negociacao
+export interface Negociacao {
+  valor_proposto: string;
+  aceitou_valor: 'sim' | 'nao' | '';
+  observacao: string;
+}
+
+// imovel
+export interface Imovel {
+  codigo: string;
+  endereco: string;
+  valor_aluguel: string;
+  tipo_pessoa: 'fisica' | 'juridica' | '';
+}
+
+// Full structured proposal
+export interface ProposalFormData {
+  imovel: Imovel;
+  dados_pessoais: DadosPessoais;
+  perfil_financeiro: PerfilFinanceiro;
+  conjuge: DadosPessoais;
+  socios: DadosPessoais[];
+  documentos_observacao: string;
+  composicao: Composicao;
+  garantia: GarantiaInfo;
+  negociacao: Negociacao;
+}
+
+const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
 
 const initialData: ProposalFormData = {
-  endereco_imovel: '',
-  tipo_pessoa: '',
+  imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: '' },
   dados_pessoais: { ...emptyPerson },
-  estado_civil: '',
-  fonte_renda: '',
-  renda_mensal: '',
+  perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '' },
   conjuge: { ...emptyPerson },
   socios: [],
   documentos_observacao: '',
-  moradores: [{ ...emptyMorador }],
-  outra_pessoa_chaves: false,
-  pessoa_chaves_nome: '',
-  garantia: '',
-  garantia_observacao: '',
-  negociacao_observacao: '',
+  composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
+  garantia: { tipo_garantia: '', observacao: '' },
+  negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
 };
+
+// ── Helper: parse currency string to number ──
+function parseCurrency(val: string): number {
+  const cleaned = val.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.');
+  return parseFloat(cleaned) || 0;
+}
+
+// ── Helper: calc percentual_comprometimento ──
+export function calcPercentualComprometimento(valorAluguel: string, rendaMensal: string): number | null {
+  const aluguel = parseCurrency(valorAluguel);
+  const renda = parseCurrency(rendaMensal);
+  if (renda <= 0) return null;
+  return Math.round((aluguel / renda) * 10000) / 100; // 2 decimal places
+}
+
+// ── Helper: display value or "Não informado" ──
+function v(val: string | undefined | null): string {
+  return val && val.trim() ? val : 'Não informado';
+}
 
 const CIVIL_STATUS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável', 'Separado(a)'];
 const RENDA_SOURCES = ['Empregado', 'Autônomo', 'Empresário', 'Funcionário Público'];
@@ -83,7 +119,8 @@ const MORADOR_TYPES = [
   { value: 'terceiro', label: 'Terceiro' },
 ];
 
-function needsConjuge(civil: string) {
+function needsConjuge(data: ProposalFormData) {
+  const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
 }
 
@@ -103,23 +140,24 @@ function getStepLabels(showConjuge: boolean) {
 }
 
 // ── Validation per step ──
-function validateStep(step: number, data: ProposalFormData, showConjuge: boolean): string[] {
+function validateStep(step: number, data: ProposalFormData): string[] {
   const errors: string[] = [];
+  const showConjuge = needsConjuge(data);
   switch (step) {
     case 0:
-      if (!data.endereco_imovel.trim()) errors.push('Endereço do imóvel é obrigatório');
-      if (!data.tipo_pessoa) errors.push('Tipo de pessoa é obrigatório');
+      if (!data.imovel.endereco.trim()) errors.push('Endereço do imóvel é obrigatório');
+      if (!data.imovel.tipo_pessoa) errors.push('Tipo de pessoa é obrigatório');
       break;
     case 1:
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
-      if (!data.dados_pessoais.cpf_cnpj.trim()) errors.push('CPF/CNPJ é obrigatório');
+      if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       break;
     case 2:
-      if (!data.estado_civil) errors.push('Estado civil é obrigatório');
-      if (!data.fonte_renda) errors.push('Fonte de renda é obrigatória');
-      if (!data.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
+      if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
+      if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
+      if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
     case 3:
       if (showConjuge && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
@@ -127,13 +165,13 @@ function validateStep(step: number, data: ProposalFormData, showConjuge: boolean
     case 4:
       break;
     case 5:
-      if (data.moradores.length === 0) errors.push('Informe pelo menos um morador');
-      for (const m of data.moradores) {
+      if (data.composicao.moradores.length === 0) errors.push('Informe pelo menos um morador');
+      for (const m of data.composicao.moradores) {
         if (!m.tipo) errors.push('Tipo de morador é obrigatório');
       }
       break;
     case 6:
-      if (!data.garantia) errors.push('Garantia é obrigatória');
+      if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       break;
     case 7:
       break;
@@ -150,12 +188,12 @@ function PersonFields({
   labelPrefix,
   isCnpj,
 }: {
-  data: PersonData;
-  onChange: (d: PersonData) => void;
+  data: DadosPessoais;
+  onChange: (d: DadosPessoais) => void;
   labelPrefix: string;
   isCnpj?: boolean;
 }) {
-  const set = (key: keyof PersonData, val: string) => onChange({ ...data, [key]: val });
+  const set = (key: keyof DadosPessoais, val: string) => onChange({ ...data, [key]: val });
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
@@ -164,7 +202,7 @@ function PersonFields({
       </div>
       <div>
         <Label>{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-destructive">*</span></Label>
-        <Input value={data.cpf_cnpj} onChange={(e) => set('cpf_cnpj', e.target.value)} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} />
+        <Input value={data.cpf} onChange={(e) => set('cpf', e.target.value)} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} />
       </div>
       <div>
         <Label>Profissão</Label>
@@ -189,16 +227,22 @@ export default function PropostaLocacao() {
   const [data, setData] = useState<ProposalFormData>(initialData);
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
 
-  const showConjuge = needsConjuge(data.estado_civil);
+  const showConjuge = needsConjuge(data);
   const totalSteps = 9;
   const labels = getStepLabels(showConjuge);
   const progressPercent = ((step + 1) / totalSteps) * 100;
 
-  const update = useCallback(<K extends keyof ProposalFormData>(key: K, value: ProposalFormData[K]) => {
-    setData((prev) => ({ ...prev, [key]: value }));
+  const update = useCallback((updater: (prev: ProposalFormData) => ProposalFormData) => {
+    setData(updater);
   }, []);
 
-  const stepErrors = validateStep(step, data, showConjuge);
+  // Computed values
+  const percentualComprometimento = calcPercentualComprometimento(
+    data.imovel.valor_aluguel,
+    data.perfil_financeiro.renda_mensal
+  );
+
+  const stepErrors = validateStep(step, data);
   const isStepValid = stepErrors.length === 0;
 
   function goNext() {
@@ -229,7 +273,7 @@ export default function PropostaLocacao() {
     if (s === step) return 'current';
     if (s === 3 && !showConjuge) return 'skipped';
     if (!visited.has(s)) return 'pending';
-    const errs = validateStep(s, data, showConjuge);
+    const errs = validateStep(s, data);
     return errs.length === 0 ? 'done' : 'pending';
   }
 
@@ -237,7 +281,7 @@ export default function PropostaLocacao() {
     // Validate all steps
     for (let i = 0; i < totalSteps; i++) {
       if (i === 3 && !showConjuge) continue;
-      const errs = validateStep(i, data, showConjuge);
+      const errs = validateStep(i, data);
       if (errs.length > 0) {
         setStep(i);
         toast.error(`Pendências na etapa "${labels[i]}"`, { description: errs[0] });
@@ -255,8 +299,28 @@ export default function PropostaLocacao() {
         return (
           <div className="space-y-6">
             <div>
+              <Label>Código do imóvel</Label>
+              <Input
+                value={data.imovel.codigo}
+                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, codigo: e.target.value } }))}
+                placeholder="Ex: IMV-001"
+              />
+            </div>
+            <div>
               <Label>Endereço do imóvel <span className="text-destructive">*</span></Label>
-              <Input value={data.endereco_imovel} onChange={(e) => update('endereco_imovel', e.target.value)} placeholder="Rua, número, bairro, cidade" />
+              <Input
+                value={data.imovel.endereco}
+                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, endereco: e.target.value } }))}
+                placeholder="Rua, número, bairro, cidade"
+              />
+            </div>
+            <div>
+              <Label>Valor do aluguel</Label>
+              <Input
+                value={data.imovel.valor_aluguel}
+                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, valor_aluguel: e.target.value } }))}
+                placeholder="R$ 0,00"
+              />
             </div>
             <div>
               <Label className="mb-3 block">Tipo de pessoa <span className="text-destructive">*</span></Label>
@@ -265,9 +329,9 @@ export default function PropostaLocacao() {
                   <Button
                     key={t}
                     type="button"
-                    variant={data.tipo_pessoa === t ? 'default' : 'outline'}
+                    variant={data.imovel.tipo_pessoa === t ? 'default' : 'outline'}
                     className="flex-1"
-                    onClick={() => update('tipo_pessoa', t)}
+                    onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: t } }))}
                   >
                     {t === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                   </Button>
@@ -280,9 +344,9 @@ export default function PropostaLocacao() {
         return (
           <PersonFields
             data={data.dados_pessoais}
-            onChange={(d) => update('dados_pessoais', d)}
+            onChange={(d) => update(p => ({ ...p, dados_pessoais: d }))}
             labelPrefix="Proponente"
-            isCnpj={data.tipo_pessoa === 'juridica'}
+            isCnpj={data.imovel.tipo_pessoa === 'juridica'}
           />
         );
       case 2:
@@ -296,8 +360,8 @@ export default function PropostaLocacao() {
                     key={s}
                     type="button"
                     size="sm"
-                    variant={data.estado_civil === s ? 'default' : 'outline'}
-                    onClick={() => update('estado_civil', s)}
+                    variant={data.perfil_financeiro.estado_civil === s ? 'default' : 'outline'}
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s } }))}
                   >
                     {s}
                   </Button>
@@ -311,7 +375,7 @@ export default function PropostaLocacao() {
             </div>
             <div>
               <Label className="mb-3 block">Fonte de renda <span className="text-destructive">*</span></Label>
-              <RadioGroup value={data.fonte_renda} onValueChange={(v) => update('fonte_renda', v)}>
+              <RadioGroup value={data.perfil_financeiro.fonte_renda} onValueChange={(val) => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: val } }))}>
                 {RENDA_SOURCES.map((r) => (
                   <div key={r} className="flex items-center gap-2">
                     <RadioGroupItem value={r} id={`renda-${r}`} />
@@ -322,7 +386,20 @@ export default function PropostaLocacao() {
             </div>
             <div>
               <Label>Renda mensal <span className="text-destructive">*</span></Label>
-              <Input value={data.renda_mensal} onChange={(e) => update('renda_mensal', e.target.value)} placeholder="R$ 0,00" />
+              <Input
+                value={data.perfil_financeiro.renda_mensal}
+                onChange={(e) => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, renda_mensal: e.target.value } }))}
+                placeholder="R$ 0,00"
+              />
+              {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
+                <p className={cn(
+                  'mt-1 text-sm font-medium',
+                  percentualComprometimento > 30 ? 'text-destructive' : 'text-muted-foreground'
+                )}>
+                  Comprometimento de renda: {percentualComprometimento.toFixed(1)}%
+                  {percentualComprometimento > 30 && ' ⚠️ Acima de 30%'}
+                </p>
+              )}
             </div>
           </div>
         );
@@ -330,7 +407,7 @@ export default function PropostaLocacao() {
         return (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold">Dados do Cônjuge</h3>
-            <PersonFields data={data.conjuge} onChange={(d) => update('conjuge', d)} labelPrefix="Cônjuge" />
+            <PersonFields data={data.conjuge} onChange={(d) => update(p => ({ ...p, conjuge: d }))} labelPrefix="Cônjuge" />
             <div className="border-t pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Sócios</h3>
@@ -338,7 +415,7 @@ export default function PropostaLocacao() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => update('socios', [...data.socios, { ...emptyPerson }])}
+                  onClick={() => update(p => ({ ...p, socios: [...p.socios, { ...emptyPerson }] }))}
                 >
                   <Plus className="h-4 w-4 mr-1" /> Adicionar sócio
                 </Button>
@@ -350,16 +427,18 @@ export default function PropostaLocacao() {
                     size="icon"
                     variant="ghost"
                     className="absolute top-2 right-2 text-destructive"
-                    onClick={() => update('socios', data.socios.filter((_, idx) => idx !== i))}
+                    onClick={() => update(p => ({ ...p, socios: p.socios.filter((_, idx) => idx !== i) }))}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                   <PersonFields
                     data={s}
                     onChange={(d) => {
-                      const copy = [...data.socios];
-                      copy[i] = d;
-                      update('socios', copy);
+                      update(p => {
+                        const copy = [...p.socios];
+                        copy[i] = d;
+                        return { ...p, socios: copy };
+                      });
                     }}
                     labelPrefix={`Sócio ${i + 1}`}
                   />
@@ -377,7 +456,7 @@ export default function PropostaLocacao() {
             <p className="text-muted-foreground">Envie ou descreva os documentos necessários para análise.</p>
             <Textarea
               value={data.documentos_observacao}
-              onChange={(e) => update('documentos_observacao', e.target.value)}
+              onChange={(e) => update(p => ({ ...p, documentos_observacao: e.target.value }))}
               placeholder="Observações sobre documentos..."
               rows={6}
             />
@@ -392,21 +471,23 @@ export default function PropostaLocacao() {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => update('moradores', [...data.moradores, { ...emptyMorador }])}
+                onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { ...emptyMorador }] } }))}
               >
                 <Plus className="h-4 w-4 mr-1" /> Adicionar
               </Button>
             </div>
-            {data.moradores.map((m, i) => (
+            {data.composicao.moradores.map((m, i) => (
               <div key={i} className="flex items-end gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
                   <Label>Quem vai morar <span className="text-destructive">*</span></Label>
                   <Select
                     value={m.tipo}
                     onValueChange={(v) => {
-                      const copy = [...data.moradores];
-                      copy[i] = { ...copy[i], tipo: v as MoradorData['tipo'] };
-                      update('moradores', copy);
+                      update(p => {
+                        const copy = [...p.composicao.moradores];
+                        copy[i] = { ...copy[i], tipo: v as MoradorData['tipo'] };
+                        return { ...p, composicao: { ...p.composicao, moradores: copy } };
+                      });
                     }}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -423,21 +504,23 @@ export default function PropostaLocacao() {
                     <Input
                       value={m.nome}
                       onChange={(e) => {
-                        const copy = [...data.moradores];
-                        copy[i] = { ...copy[i], nome: e.target.value };
-                        update('moradores', copy);
+                        update(p => {
+                          const copy = [...p.composicao.moradores];
+                          copy[i] = { ...copy[i], nome: e.target.value };
+                          return { ...p, composicao: { ...p.composicao, moradores: copy } };
+                        });
                       }}
                       placeholder="Nome do morador"
                     />
                   </div>
                 )}
-                {data.moradores.length > 1 && (
+                {data.composicao.moradores.length > 1 && (
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
                     className="text-destructive"
-                    onClick={() => update('moradores', data.moradores.filter((_, idx) => idx !== i))}
+                    onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, idx) => idx !== i) } }))}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -446,19 +529,15 @@ export default function PropostaLocacao() {
             ))}
             <div className="border-t pt-4 space-y-3">
               <div className="flex items-center gap-3">
-                <Checkbox
-                  id="chaves"
-                  checked={data.outra_pessoa_chaves}
-                  onCheckedChange={(v) => update('outra_pessoa_chaves', !!v)}
-                />
+                <Checkbox id="chaves" checked={!!data.composicao.responsavel_retirada} onCheckedChange={(checked) => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: checked ? p.composicao.responsavel_retirada || ' ' : '' } }))} />
                 <Label htmlFor="chaves" className="cursor-pointer">Outra pessoa vai retirar as chaves?</Label>
               </div>
-              {data.outra_pessoa_chaves && (
+              {!!data.composicao.responsavel_retirada && (
                 <div>
                   <Label>Nome da pessoa</Label>
                   <Input
-                    value={data.pessoa_chaves_nome}
-                    onChange={(e) => update('pessoa_chaves_nome', e.target.value)}
+                    value={data.composicao.responsavel_retirada.trim()}
+                    onChange={(e) => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: e.target.value } }))}
                     placeholder="Nome completo"
                   />
                 </div>
@@ -476,9 +555,9 @@ export default function PropostaLocacao() {
                   <Button
                     key={g}
                     type="button"
-                    variant={data.garantia === g ? 'default' : 'outline'}
+                    variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'}
                     className="justify-start"
-                    onClick={() => update('garantia', g)}
+                    onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g } }))}
                   >
                     {g}
                   </Button>
@@ -488,8 +567,8 @@ export default function PropostaLocacao() {
             <div>
               <Label>Observações</Label>
               <Textarea
-                value={data.garantia_observacao}
-                onChange={(e) => update('garantia_observacao', e.target.value)}
+                value={data.garantia.observacao}
+                onChange={(e) => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))}
                 placeholder="Detalhes sobre a garantia..."
                 rows={3}
               />
@@ -498,11 +577,34 @@ export default function PropostaLocacao() {
         );
       case 7:
         return (
-          <div className="space-y-4">
-            <p className="text-muted-foreground">Informe condições de negociação, valores, prazos ou observações.</p>
+          <div className="space-y-6">
+            <div>
+              <Label>Valor proposto (R$)</Label>
+              <Input
+                value={data.negociacao.valor_proposto}
+                onChange={(e) => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))}
+                placeholder="R$ 0,00"
+              />
+            </div>
+            <div>
+              <Label className="mb-3 block">O cliente aceitou o valor anunciado?</Label>
+              <div className="flex gap-3">
+                {(['sim', 'nao'] as const).map((opt) => (
+                  <Button
+                    key={opt}
+                    type="button"
+                    variant={data.negociacao.aceitou_valor === opt ? 'default' : 'outline'}
+                    className="flex-1"
+                    onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: opt } }))}
+                  >
+                    {opt === 'sim' ? 'Sim' : 'Não'}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <Textarea
-              value={data.negociacao_observacao}
-              onChange={(e) => update('negociacao_observacao', e.target.value)}
+              value={data.negociacao.observacao}
+              onChange={(e) => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))}
               placeholder="Condições de negociação..."
               rows={6}
             />
@@ -512,33 +614,50 @@ export default function PropostaLocacao() {
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Revisão da Proposta</h3>
+            {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
+              <div className={cn(
+                'p-3 rounded-lg border text-sm font-medium',
+                percentualComprometimento > 30 ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-muted border-border'
+              )}>
+                📊 Comprometimento de renda: <strong>{percentualComprometimento.toFixed(1)}%</strong>
+                {percentualComprometimento > 30 && ' — Acima do recomendado (30%)'}
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
-              <ReviewBlock title="Imóvel" items={[
-                ['Endereço', data.endereco_imovel],
-                ['Tipo', data.tipo_pessoa === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'],
+              <ReviewBlock title="🏠 Imóvel" items={[
+                ['Código', v(data.imovel.codigo)],
+                ['Endereço', v(data.imovel.endereco)],
+                ['Valor aluguel', v(data.imovel.valor_aluguel)],
+                ['Tipo', data.imovel.tipo_pessoa === 'fisica' ? 'Pessoa Física' : data.imovel.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Não informado'],
               ]} />
-              <ReviewBlock title="Proponente" items={[
-                ['Nome', data.dados_pessoais.nome],
-                ['CPF/CNPJ', data.dados_pessoais.cpf_cnpj],
-                ['WhatsApp', data.dados_pessoais.whatsapp],
-                ['E-mail', data.dados_pessoais.email],
+              <ReviewBlock title="👤 Dados Pessoais" items={[
+                ['Nome', v(data.dados_pessoais.nome)],
+                ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
+                ['Profissão', v(data.dados_pessoais.profissao)],
+                ['WhatsApp', v(data.dados_pessoais.whatsapp)],
+                ['E-mail', v(data.dados_pessoais.email)],
               ]} />
-              <ReviewBlock title="Estado Civil e Renda" items={[
-                ['Estado civil', data.estado_civil],
-                ['Fonte de renda', data.fonte_renda],
-                ['Renda mensal', data.renda_mensal],
+              <ReviewBlock title="💰 Perfil Financeiro" items={[
+                ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+                ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
+                ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
               ]} />
               {showConjuge && (
-                <ReviewBlock title="Cônjuge" items={[
-                  ['Nome', data.conjuge.nome],
-                  ['CPF', data.conjuge.cpf_cnpj],
+                <ReviewBlock title="💍 Cônjuge" items={[
+                  ['Nome', v(data.conjuge.nome)],
+                  ['CPF', v(data.conjuge.cpf)],
                 ]} />
               )}
-              <ReviewBlock title="Moradores" items={
-                data.moradores.map((m, i) => [`Morador ${i+1}`, MORADOR_TYPES.find(t => t.value === m.tipo)?.label || '—'])
-              } />
-              <ReviewBlock title="Garantia" items={[
-                ['Modalidade', data.garantia],
+              <ReviewBlock title="🏡 Composição" items={[
+                ...data.composicao.moradores.map((m, i) => [`Morador ${i+1}`, MORADOR_TYPES.find(t => t.value === m.tipo)?.label || 'Não informado'] as [string, string]),
+                ['Retira chaves', data.composicao.responsavel_retirada.trim() || 'Proponente'],
+              ]} />
+              <ReviewBlock title="🔒 Garantia" items={[
+                ['Modalidade', v(data.garantia.tipo_garantia)],
+              ]} />
+              <ReviewBlock title="🤝 Negociação" items={[
+                ['Valor proposto', v(data.negociacao.valor_proposto)],
+                ['Aceitou valor', data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'],
               ]} />
             </div>
           </div>

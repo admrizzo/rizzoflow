@@ -1497,8 +1497,29 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
           ]} onFix={() => onGoToStep(3)} />
         )}
         <ReviewBlock title="🏡 Composição" items={[
-          ...data.composicao.moradores.map((m, i) => [`Morador ${i+1}`, MORADOR_TYPES.find(t => t.value === m.tipo)?.label || 'Não informado'] as [string, string]),
-          ['Retira chaves', data.composicao.responsavel_retirada.trim() || 'Proponente'],
+          ['Tipo de locação',
+            data.composicao.moradores[0]?.tipo === 'eu_mesmo' ? 'Para o próprio locatário'
+            : data.composicao.moradores[0]?.tipo === 'filho' ? 'Para um filho(a)'
+            : data.composicao.moradores[0]?.tipo === 'terceiro' ? 'Para um conhecido'
+            : 'Não informado'
+          ],
+          ...(data.composicao.moradores[0]?.tipo && data.composicao.moradores[0].tipo !== 'eu_mesmo'
+            ? data.composicao.moradores.flatMap((m, i) => [
+                [`Morador ${i+1} — Nome`, v(m.nome || '')],
+                [`Morador ${i+1} — Relação`, v(m.relacao || '')],
+                [`Morador ${i+1} — WhatsApp`, v(m.whatsapp || '')],
+                [`Morador ${i+1} — E-mail`, v(m.email || '')],
+              ] as [string, string][])
+            : []),
+          ['Retira chaves', data.composicao.responsavel_retirada ? 'Outra pessoa' : 'O próprio proponente'],
+          ...(data.composicao.responsavel_retirada
+            ? [
+                ['Chave — Nome', v(data.composicao.retirada_nome || '')],
+                ['Chave — WhatsApp', v(data.composicao.retirada_whatsapp || '')],
+                ['Chave — CPF', v(data.composicao.retirada_cpf || '')],
+                ...(data.composicao.retirada_email ? [['Chave — E-mail', data.composicao.retirada_email] as [string, string]] : []),
+              ] as [string, string][]
+            : []),
         ]} onFix={() => onGoToStep(5)} />
         <ReviewBlock title="🔒 Garantia" items={[
           ['Modalidade', v(data.garantia.tipo_garantia)],

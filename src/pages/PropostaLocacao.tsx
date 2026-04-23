@@ -969,81 +969,183 @@ export default function PropostaLocacao() {
       case 5:
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Moradores</h3>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { ...emptyMorador }] } }))}
-              >
-                <Plus className="h-4 w-4 mr-1" /> Adicionar
-              </Button>
+            {/* "Você está alugando..." card selection */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Você está alugando…</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { value: 'eu_mesmo', icon: User, label: 'Para eu mesmo morar', desc: 'Você será o inquilino e morador' },
+                  { value: 'filho', icon: Home, label: 'Para um filho(a)', desc: 'Alugando para seu filho ou filha' },
+                  { value: 'terceiro', icon: Users, label: 'Para um conhecido', desc: 'Amigo, parente ou outra pessoa' },
+                ].map(opt => {
+                  const firstMorador = data.composicao.moradores[0];
+                  const isSelected = firstMorador?.tipo === opt.value;
+                  const Icon = opt.icon;
+                  return (
+                    <button key={opt.value} type="button"
+                      onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [{ tipo: opt.value as MoradorData['tipo'], nome: opt.value === 'eu_mesmo' ? '' : p.composicao.moradores[0]?.nome || '' }] } }))}
+                      className={cn(
+                        'flex flex-col items-center text-center p-4 rounded-lg border-2 transition-all',
+                        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/40'
+                      )}
+                    >
+                      <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-2', isSelected ? 'bg-primary/10' : 'bg-muted')}>
+                        <Icon className={cn('h-5 w-5', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                      </div>
+                      <p className={cn('font-semibold text-sm', isSelected ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {data.composicao.moradores.map((m, i) => (
-              <div key={i} className="flex items-end gap-3 p-3 border rounded-lg">
-                <div className="flex-1">
-                  <Label>Quem vai morar <span className="text-destructive">*</span></Label>
-                  <Select
-                    value={m.tipo}
-                    onValueChange={(v) => {
-                      update(p => {
-                        const copy = [...p.composicao.moradores];
-                        copy[i] = { ...copy[i], tipo: v as MoradorData['tipo'] };
-                        return { ...p, composicao: { ...p.composicao, moradores: copy } };
-                      });
-                    }}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {MORADOR_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+            {/* Aviso ocupante autorizado */}
+            {data.composicao.moradores[0]?.tipo && data.composicao.moradores[0].tipo !== 'eu_mesmo' && (
+              <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-4 flex gap-3">
+                <span className="text-xl">👉</span>
+                <p className="text-sm text-amber-900 dark:text-amber-200">
+                  <strong>Importante:</strong> mesmo que outra pessoa vá morar no imóvel, o contrato será feito no <strong>nome do proponente</strong> (locatário). A pessoa que vai morar será registrada como <strong>ocupante autorizado</strong>.
+                </p>
+              </div>
+            )}
+
+            {/* Filho — 1 morador fixo */}
+            {data.composicao.moradores[0]?.tipo === 'filho' && (
+              <div className="border rounded-lg p-5 space-y-4 bg-muted/20">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-sm">Dados do(a) filho(a) que vai morar</span>
                 </div>
-                {m.tipo === 'terceiro' && (
-                  <div className="flex-1">
-                    <Label>Nome</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Qual a relação? <span className="text-destructive">*</span></Label>
                     <Input
-                      value={m.nome}
-                      onChange={(e) => {
-                        update(p => {
-                          const copy = [...p.composicao.moradores];
-                          copy[i] = { ...copy[i], nome: e.target.value };
-                          return { ...p, composicao: { ...p.composicao, moradores: copy } };
-                        });
-                      }}
+                      value={data.composicao.moradores[0]?.relacao || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], relacao: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="Filho(a)"
+                    />
+                  </div>
+                  <div>
+                    <Label>Nome completo <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={data.composicao.moradores[0]?.nome || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], nome: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
                       placeholder="Nome do morador"
                     />
                   </div>
-                )}
-                {data.composicao.moradores.length > 1 && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive"
-                    onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, idx) => idx !== i) } }))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+                  <div>
+                    <Label>WhatsApp <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={data.composicao.moradores[0]?.whatsapp || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                  <div>
+                    <Label>E-mail <span className="text-destructive">*</span></Label>
+                    <Input
+                      type="email"
+                      value={data.composicao.moradores[0]?.email || ''}
+                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], email: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      placeholder="email@exemplo.com"
+                    />
+                  </div>
+                </div>
               </div>
-            ))}
-            <div className="border-t pt-4 space-y-3">
+            )}
+
+            {/* Terceiro — lista com adicionar */}
+            {data.composicao.moradores[0]?.tipo === 'terceiro' && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-sm">Quem vai morar no imóvel?</h4>
+                  <p className="text-xs text-muted-foreground">Adicione as pessoas que vão morar no imóvel.</p>
+                </div>
+                {data.composicao.moradores.map((m, idx) => (
+                  <div key={idx} className="border rounded-lg p-5 space-y-4 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-sm">Morador {idx + 1}</span>
+                      </div>
+                      {idx > 0 && (
+                        <button type="button" onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: p.composicao.moradores.filter((_, i) => i !== idx) } }))} className="text-destructive hover:text-destructive/80">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Qual a relação? <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={m.relacao || ''}
+                          onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], relacao: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                          placeholder="Filho(a), amigo(a), primo(a)..."
+                        />
+                      </div>
+                      <div>
+                        <Label>Nome completo <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={m.nome || ''}
+                          onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], nome: e.target.value, tipo: 'terceiro' }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                          placeholder="Nome do morador"
+                        />
+                      </div>
+                      <div>
+                        <Label>WhatsApp <span className="text-destructive">*</span></Label>
+                        <Input
+                          value={m.whatsapp || ''}
+                          onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                          placeholder="(00) 00000-0000"
+                        />
+                      </div>
+                      <div>
+                        <Label>E-mail <span className="text-destructive">*</span></Label>
+                        <Input
+                          type="email"
+                          value={m.email || ''}
+                          onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], email: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                          placeholder="email@exemplo.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [...p.composicao.moradores, { tipo: 'terceiro', nome: '', relacao: '', whatsapp: '', email: '' }] } }))} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" /> Adicionar outro morador
+                </Button>
+              </div>
+            )}
+
+            {/* Outra pessoa retira chaves */}
+            <div className="border-t pt-5 space-y-3">
               <div className="flex items-center gap-3">
-                <Checkbox id="chaves" checked={!!data.composicao.responsavel_retirada} onCheckedChange={(checked) => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: checked ? p.composicao.responsavel_retirada || ' ' : '' } }))} />
+                <Checkbox
+                  id="chaves"
+                  checked={!!data.composicao.responsavel_retirada}
+                  onCheckedChange={(checked) => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: checked ? 'terceiro' : '', retirada_nome: checked ? p.composicao.retirada_nome : '', retirada_whatsapp: checked ? p.composicao.retirada_whatsapp : '', retirada_cpf: checked ? p.composicao.retirada_cpf : '', retirada_email: checked ? p.composicao.retirada_email : '' } }))}
+                />
                 <Label htmlFor="chaves" className="cursor-pointer">Outra pessoa vai retirar as chaves?</Label>
               </div>
               {!!data.composicao.responsavel_retirada && (
-                <div>
-                  <Label>Nome da pessoa</Label>
-                  <Input
-                    value={data.composicao.responsavel_retirada.trim()}
-                    onChange={(e) => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: e.target.value } }))}
-                    placeholder="Nome completo"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border">
+                  <div>
+                    <Label>Nome completo <span className="text-destructive">*</span></Label>
+                    <Input value={data.composicao.retirada_nome || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_nome: e.target.value } }))} placeholder="Nome" />
+                  </div>
+                  <div>
+                    <Label>WhatsApp <span className="text-destructive">*</span></Label>
+                    <Input value={data.composicao.retirada_whatsapp || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" />
+                  </div>
+                  <div>
+                    <Label>CPF <span className="text-destructive">*</span></Label>
+                    <Input value={data.composicao.retirada_cpf || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: e.target.value } }))} placeholder="000.000.000-00" />
+                  </div>
+                  <div>
+                    <Label>E-mail</Label>
+                    <Input type="email" value={data.composicao.retirada_email || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_email: e.target.value } }))} placeholder="email@exemplo.com" />
+                  </div>
                 </div>
               )}
             </div>

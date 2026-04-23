@@ -807,6 +807,9 @@ export default function PropostaLocacao() {
               <ReviewBlock title="🔒 Garantia" items={[
                 ['Modalidade', v(data.garantia.tipo_garantia)],
               ]} />
+              <ReviewBlock title="📄 Documentos" items={
+                data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} arquivo(s) ✅` : 'Pendente ⚠️'] as [string, string])
+              } />
               <ReviewBlock title="🤝 Negociação" items={[
                 ['Valor proposto', v(data.negociacao.valor_proposto)],
                 ['Aceitou valor', data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'],

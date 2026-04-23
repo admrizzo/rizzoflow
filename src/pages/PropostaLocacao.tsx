@@ -327,7 +327,50 @@ export default function PropostaLocacao() {
   const showConjuge = needsConjuge(data);
   const totalSteps = 9;
   const labels = getStepLabels(showConjuge);
-  const progressPercent = ((step + 1) / totalSteps) * 100;
+
+  // ── Progress calculation ──
+  const skipConjuge = !showConjuge;
+  const { totalPercent: progressPercent, stepStatuses } = calcFormProgress(data, INTERNAL_STEP_WEIGHTS, skipConjuge);
+
+  // ── Auto-save draft ──
+  const {
+    draftStatus,
+    lastSavedAt,
+    isSaving,
+    isRestoring,
+    restoredData,
+    restoredStep,
+    scheduleSave,
+    markAsSubmitted,
+  } = useProposalDraft({
+    codigoRobust: data.imovel.codigo || 'internal',
+    enabled: true,
+  });
+
+  // Restore draft
+  useEffect(() => {
+    if (restoredData) {
+      setData(prev => ({
+        ...prev,
+        ...restoredData,
+        documentos: prev.documentos,
+      }));
+      if (restoredStep !== null && restoredStep > 0) {
+        setStep(restoredStep);
+        const newVisited = new Set<number>();
+        for (let i = 0; i <= restoredStep; i++) newVisited.add(i);
+        setVisited(newVisited);
+        toast.info('Rascunho restaurado!', { description: 'Retomando de onde você parou.' });
+      }
+    }
+  }, [restoredData, restoredStep]);
+
+  // Auto-save on change
+  useEffect(() => {
+    if (!isRestoring) {
+      scheduleSave(data, step, progressPercent);
+    }
+  }, [data, step, isRestoring, scheduleSave, progressPercent]);
 
   const update = useCallback((updater: (prev: ProposalFormData) => ProposalFormData) => {
     setData(updater);

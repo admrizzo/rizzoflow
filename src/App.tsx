@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Demo from "./pages/Demo";
 import PropostaLocacao from "./pages/PropostaLocacao";
 import CentralPropostas from "./pages/CentralPropostas";
+import PropostaPublica from "./pages/PropostaPublica";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,7 +129,7 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
-              <Route path="/proposta/:codigoRobust" element={<PropostaLocacao />} />
+              <Route path="/proposta/:codigoRobust" element={<PropostaPublica />} />
               <Route
                 path="/central-propostas"
                 element={

@@ -128,6 +128,7 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/proposta/:codigoRobust" element={<PropostaLocacao />} />
               <Route
                 path="/central-propostas"
                 element={

@@ -922,7 +922,15 @@ export default function PropostaPublica() {
               <div className="flex flex-wrap gap-2">
                 {CIVIL_STATUS.map(s => (
                   <button key={s.label} type="button"
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s.label } }))}
+                    onClick={() => update(p => ({
+                      ...p,
+                      perfil_financeiro: {
+                        ...p.perfil_financeiro,
+                        estado_civil: s.label,
+                        regime_bens: (s.label === 'Casado(a)' || s.label === 'União Estável') ? p.perfil_financeiro.regime_bens : '',
+                        conjuge_participa: (s.label === 'Casado(a)' || s.label === 'União Estável') ? p.perfil_financeiro.conjuge_participa : '',
+                      }
+                    }))}
                     className={cn(
                       'flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all',
                       data.perfil_financeiro.estado_civil === s.label

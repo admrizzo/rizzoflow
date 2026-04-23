@@ -519,6 +519,7 @@ export default function PropostaLocacao() {
       if (error) throw error;
 
       toast.success('Proposta enviada e card criado com sucesso!');
+      await markAsSubmitted();
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Erro ao criar card:', err);

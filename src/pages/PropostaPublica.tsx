@@ -435,10 +435,9 @@ export default function PropostaPublica() {
 
   function goToStep(s: number) {
     if (s === 2 && !showConjuge) return;
-    if (visited.has(s)) {
-      setStep(s);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setStep(s);
+    setVisited(prev => new Set(prev).add(s));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const totalMensal = useMemo(() => {

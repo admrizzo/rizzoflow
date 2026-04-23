@@ -32,6 +32,8 @@ export interface PerfilFinanceiro {
   estado_civil: string;
   fonte_renda: string;
   renda_mensal: string; // stored as string for input, parsed to number for calc
+  regime_bens: string;
+  conjuge_participa: 'sim' | 'nao' | '';
 }
 
 // composicao
@@ -154,7 +156,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const initialData: ProposalFormData = {
   imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: '' },
   dados_pessoais: { ...emptyPerson },
-  perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '' },
+  perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' },
   conjuge: { ...emptyPerson },
   socios: [],
   documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
@@ -184,6 +186,13 @@ function v(val: string | undefined | null): string {
 }
 
 const CIVIL_STATUS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável', 'Separado(a)'];
+const REGIME_BENS_OPTIONS = [
+  'Comunhão parcial de bens',
+  'Comunhão universal de bens',
+  'Separação total / absoluta de bens',
+  'Participação final nos aquestos',
+  'Não sei informar',
+];
 const RENDA_SOURCES = ['Empregado', 'Autônomo', 'Empresário', 'Funcionário Público'];
 const GARANTIA_OPTIONS = ['Seguro Fiança', 'Caução', 'Fiador', 'Título de Capitalização', 'Carta Fiança', 'Sem Garantia'];
 const MORADOR_TYPES = [
@@ -192,9 +201,19 @@ const MORADOR_TYPES = [
   { value: 'terceiro', label: 'Terceiro' },
 ];
 
-function needsConjuge(data: ProposalFormData) {
+function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
+}
+
+function needsConjuge(data: ProposalFormData) {
+  if (!isCasadoOuUniao(data)) return false;
+  const regime = data.perfil_financeiro.regime_bens;
+  if (!regime) return false;
+  if (regime === 'Separação total / absoluta de bens') {
+    return data.perfil_financeiro.conjuge_participa === 'sim';
+  }
+  return true;
 }
 
 // ── Step labels (always 9; step 4 label changes) ──
@@ -230,6 +249,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       break;
     case 2:
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
+      if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
+      if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
@@ -607,18 +628,86 @@ export default function PropostaLocacao() {
                     type="button"
                     size="sm"
                     variant={data.perfil_financeiro.estado_civil === s ? 'default' : 'outline'}
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s } }))}
+                    onClick={() => update(p => ({
+                      ...p,
+                      perfil_financeiro: {
+                        ...p.perfil_financeiro,
+                        estado_civil: s,
+                        regime_bens: (s === 'Casado(a)' || s === 'União Estável') ? p.perfil_financeiro.regime_bens : '',
+                        conjuge_participa: (s === 'Casado(a)' || s === 'União Estável') ? p.perfil_financeiro.conjuge_participa : '',
+                      },
+                    }))}
                   >
                     {s}
                   </Button>
                 ))}
               </div>
-              {showConjuge && (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  ℹ️ Etapa de cônjuge será ativada
-                </p>
-              )}
             </div>
+
+            {/* Regime de bens */}
+            {isCasadoOuUniao(data) && (
+              <div>
+                <Label className="mb-3 block">Regime de bens <span className="text-destructive">*</span></Label>
+                <div className="flex flex-wrap gap-2">
+                  {REGIME_BENS_OPTIONS.map((r) => (
+                    <Button
+                      key={r}
+                      type="button"
+                      size="sm"
+                      variant={data.perfil_financeiro.regime_bens === r ? 'default' : 'outline'}
+                      onClick={() => update(p => ({
+                        ...p,
+                        perfil_financeiro: {
+                          ...p.perfil_financeiro,
+                          regime_bens: r,
+                          conjuge_participa: r !== 'Separação total / absoluta de bens' ? '' : p.perfil_financeiro.conjuge_participa,
+                        },
+                      }))}
+                    >
+                      {r}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pergunta participação do cônjuge - só para separação total */}
+            {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+              <div className="p-4 rounded-lg border bg-muted/50">
+                <Label className="mb-3 block">O cônjuge/companheiro também participará do contrato? <span className="text-destructive">*</span></Label>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant={data.perfil_financeiro.conjuge_participa === 'sim' ? 'default' : 'outline'}
+                    className="flex-1"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'sim' } }))}
+                  >
+                    Sim, vai participar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={data.perfil_financeiro.conjuge_participa === 'nao' ? 'default' : 'outline'}
+                    className="flex-1"
+                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'nao' } }))}
+                  >
+                    Não, apenas eu
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Indicadores informativos */}
+            {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens && data.perfil_financeiro.regime_bens !== 'Separação total / absoluta de bens' && (
+              <p className="text-sm text-muted-foreground">
+                ℹ️ Com o regime selecionado, a etapa de cônjuge/companheiro é obrigatória.
+              </p>
+            )}
+            {showConjuge && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+              <p className="text-sm text-muted-foreground">
+                ℹ️ A etapa de cônjuge/companheiro será ativada.
+              </p>
+            )}
+
             <div>
               <Label className="mb-3 block">Fonte de renda <span className="text-destructive">*</span></Label>
               <RadioGroup value={data.perfil_financeiro.fonte_renda} onValueChange={(val) => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: val } }))}>
@@ -1195,6 +1284,10 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
         ]} onFix={() => onGoToStep(1)} />
         <ReviewBlock title="💰 Perfil Financeiro" items={[
           ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+          ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
+          ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
+            ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
+            : []),
           ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
           ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
           ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),

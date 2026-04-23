@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
-import { useProfiles } from '@/hooks/useProfiles';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,8 +29,6 @@ export default function CentralPropostas() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
-  const { profiles } = useProfiles();
-
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [brokerName, setBrokerName] = useState('');

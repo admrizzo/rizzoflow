@@ -137,9 +137,7 @@ const guaranteeLabels: Record<GuaranteeType, string> = {
   fiador: 'Fiador',
   seguro_fianca: 'Seguro Fiança',
   sem_garantia: 'Sem Garantia',
-  sg_cred: 'SG Cred',
   titulo_capitalizacao: 'Título de Capitalização',
-  ucred: 'Ucred',
   outro: 'Outro',
 };
 

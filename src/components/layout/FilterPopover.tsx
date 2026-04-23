@@ -38,9 +38,7 @@ const guaranteeOptions = [
   { value: 'fiador', label: 'Fiador' },
   { value: 'seguro_fianca', label: 'Seguro Fiança' },
   { value: 'sem_garantia', label: 'Sem Garantia' },
-  { value: 'sg_cred', label: 'SG Cred' },
   { value: 'titulo_capitalizacao', label: 'Título de Capitalização' },
-  { value: 'ucred', label: 'Ucred' },
   { value: 'outro', label: 'Outro' },
 ];
 

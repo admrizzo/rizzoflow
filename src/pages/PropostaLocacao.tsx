@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
 import { useProposalDraft, calcFormProgress, INTERNAL_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
+import { FiadorSection } from '@/components/proposta/FiadorSection';
 
 // ── Structured Variables ──
 

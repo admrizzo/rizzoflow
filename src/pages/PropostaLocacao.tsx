@@ -610,7 +610,7 @@ export default function PropostaLocacao() {
                           key={p.id}
                           className={cn(
                             'flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors',
-                            isSelected && 'bg-primary/10 border-l-2 border-l-primary'
+                            isSelected && 'bg-accent/10 border-l-2 border-l-primary'
                           )}
                           onClick={() => {
                             const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
@@ -634,7 +634,7 @@ export default function PropostaLocacao() {
                             <p className="text-xs text-muted-foreground truncate">
                               {[p.bairro, p.cidade].filter(Boolean).join(' — ')} • {p.tipo_imovel}
                             </p>
-                            <p className="text-xs font-medium text-primary">
+                            <p className="text-xs font-medium text-accent">
                               {p.valor_aluguel ? `R$ ${p.valor_aluguel.toLocaleString('pt-BR')}` : p.valor_venda ? `Venda R$ ${p.valor_venda.toLocaleString('pt-BR')}` : 'Valor não informado'}
                             </p>
                           </div>
@@ -911,7 +911,7 @@ export default function PropostaLocacao() {
                   )}
 
                   {/* Upload button */}
-                  <label className="flex items-center gap-2 cursor-pointer text-sm text-primary hover:underline">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-accent hover:underline">
                     <Upload className="h-4 w-4" />
                     Adicionar arquivo
                     <input
@@ -986,13 +986,13 @@ export default function PropostaLocacao() {
                       onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, moradores: [{ tipo: opt.value as MoradorData['tipo'], nome: opt.value === 'eu_mesmo' ? '' : p.composicao.moradores[0]?.nome || '' }] } }))}
                       className={cn(
                         'flex flex-col items-center text-center p-4 rounded-lg border-2 transition-all',
-                        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/40'
+                        isSelected ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/40'
                       )}
                     >
-                      <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-2', isSelected ? 'bg-primary/10' : 'bg-muted')}>
-                        <Icon className={cn('h-5 w-5', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                      <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-2', isSelected ? 'bg-accent/10' : 'bg-muted')}>
+                        <Icon className={cn('h-5 w-5', isSelected ? 'text-accent' : 'text-muted-foreground')} />
                       </div>
-                      <p className={cn('font-semibold text-sm', isSelected ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                      <p className={cn('font-semibold text-sm', isSelected ? 'text-accent' : 'text-foreground')}>{opt.label}</p>
                       <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
                     </button>
                   );
@@ -1014,7 +1014,7 @@ export default function PropostaLocacao() {
             {data.composicao.moradores[0]?.tipo === 'filho' && (
               <div className="border rounded-lg p-5 space-y-4 bg-muted/20">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
+                  <Users className="h-4 w-4 text-accent" />
                   <span className="font-semibold text-sm">Dados do(a) filho(a) que vai morar</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1066,7 +1066,7 @@ export default function PropostaLocacao() {
                   <div key={idx} className="border rounded-lg p-5 space-y-4 bg-muted/20">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
+                        <Users className="h-4 w-4 text-accent" />
                         <span className="font-semibold text-sm">Morador {idx + 1}</span>
                       </div>
                       {idx > 0 && (
@@ -1250,7 +1250,7 @@ export default function PropostaLocacao() {
                progressPercent >= 50 ? `Você já preencheu ${progressPercent}% da proposta` :
                progressPercent > 0 ? 'Continue preenchendo' : 'Preencha os dados para iniciar'}
             </span>
-            <span className="font-bold text-primary">{progressPercent}%</span>
+            <span className="font-bold text-accent">{progressPercent}%</span>
           </div>
           <Progress value={progressPercent} className="h-2.5" />
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -1261,7 +1261,7 @@ export default function PropostaLocacao() {
               </>
             ) : lastSavedAt ? (
               <>
-                <Cloud className="h-3 w-3 text-primary" />
+                <Cloud className="h-3 w-3 text-accent" />
                 <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
               </>
             ) : (
@@ -1286,7 +1286,7 @@ export default function PropostaLocacao() {
                 onClick={() => goToStep(i)}
                 className={cn(
                   'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
-                  status === 'current' && 'bg-primary text-primary-foreground',
+                  status === 'current' && 'bg-accent text-accent-foreground',
                   status === 'done' && 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 cursor-pointer',
                   status === 'pending' && visited.has(i) && 'bg-destructive/10 text-destructive cursor-pointer',
                   status === 'pending' && !visited.has(i) && 'bg-muted text-muted-foreground',
@@ -1551,7 +1551,7 @@ function ReviewBlock({ title, items, onFix }: { title: string; items: [string, s
       <div className="flex items-center justify-between mb-2">
         <h4 className="font-semibold text-sm">{title}</h4>
         {hasNotInformed && onFix && (
-          <Button size="sm" variant="ghost" className="h-6 text-xs text-primary" onClick={onFix}>
+          <Button size="sm" variant="ghost" className="h-6 text-xs text-accent" onClick={onFix}>
             Completar
           </Button>
         )}

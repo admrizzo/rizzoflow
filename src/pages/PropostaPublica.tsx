@@ -115,13 +115,13 @@ const MORADOR_TYPES = [
 ];
 
 const FAQ_ITEMS = [
-  { icon: '🔒', q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
-  { icon: '👥', q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
-  { icon: '📄', q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
-  { icon: '🏠', q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
-  { icon: '📋', q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
-  { icon: '🔑', q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
-  { icon: '💲', q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
+  { Icon: Shield, q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
+  { Icon: Users, q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
+  { Icon: FileText, q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
+  { Icon: Home, q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
+  { Icon: FileCheck, q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
+  { Icon: CalendarDays, q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
+  { Icon: DollarSign, q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
 ];
 
 const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
@@ -298,15 +298,15 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
 
   return (
     <div className="bg-white border-b sticky top-0 z-30">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 mb-5">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
           <img
             src="/logo-rizzo.png"
             alt="Rizzo Imobiliária"
-            className="h-12 sm:h-14 w-auto object-contain"
+            className="h-10 sm:h-12 w-auto object-contain"
           />
-          <div className="hidden sm:block w-px h-10 bg-border" />
-          <p className="text-center sm:text-left text-base sm:text-lg font-bold text-foreground tracking-tight">
+          <div className="w-px h-8 sm:h-10 bg-border" />
+          <p className="text-sm sm:text-base font-bold text-foreground tracking-tight leading-tight">
             Registro de Interesse na Locação
           </p>
         </div>
@@ -345,40 +345,51 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-0 overflow-x-auto">
+        <div className="flex items-start justify-between gap-0 overflow-x-auto pb-1">
           {STEP_CONFIG.map((cfg, i) => {
             if (i === 2 && !showConjuge) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
-            const isClickable = true;
             const displayNum = i + 1;
 
             return (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-start flex-1 min-w-[60px]">
                 {i > 0 && !(i === 2 && !showConjuge) && (
-                  <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-accent' : 'bg-border')} />
+                  <div className={cn(
+                    'flex-1 h-px mt-4 sm:mt-5',
+                    isDone || isActive ? 'bg-accent' : 'bg-border',
+                  )} />
                 )}
                 <button
                   onClick={() => onGoToStep(i)}
-                  className="flex flex-col items-center gap-1 group transition-all cursor-pointer"
+                  className="flex flex-col items-center gap-1.5 group cursor-pointer px-1"
                 >
                   <div className={cn(
-                    'w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
-                    isActive && 'border-accent bg-accent text-accent-foreground shadow-lg scale-110',
+                    'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold border transition-all',
+                    isActive && 'border-accent bg-accent text-accent-foreground shadow-md',
                     isDone && !isActive && 'border-accent bg-accent text-accent-foreground',
-                    !isActive && !isDone && 'border-border bg-white text-muted-foreground',
+                    !isActive && !isDone && 'border-accent/30 bg-accent/5 text-accent',
                   )}>
-                    {isDone ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : displayNum}
+                    {isDone ? (
+                      <Check className="h-4 w-4" strokeWidth={2.5} />
+                    ) : isActive ? (
+                      displayNum
+                    ) : (
+                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
+                    )}
                   </div>
                   <span className={cn(
-                    'text-[10px] sm:text-xs font-medium whitespace-nowrap max-w-[60px] sm:max-w-[80px] truncate',
-                    isActive && 'text-accent font-semibold',
-                    isDone && !isActive && 'text-accent',
-                    !isActive && !isDone && 'text-muted-foreground',
+                    'text-[10px] sm:text-[11px] font-medium leading-tight text-center max-w-[70px] sm:max-w-[90px]',
+                    isActive && 'text-foreground font-semibold',
+                    isDone && !isActive && 'text-foreground',
+                    !isActive && !isDone && 'text-accent',
                   )}>
                     {cfg.shortLabel}
                   </span>
                 </button>
+                {i < STEP_CONFIG.length - 1 && !(i === STEP_CONFIG.length - 2 && false) && (
+                  <div className="flex-1" />
+                )}
               </div>
             );
           })}
@@ -392,34 +403,37 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
 function FAQSection() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   return (
-    <div className="bg-white rounded-2xl border p-6 mt-8">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+    <div className="bg-white rounded-2xl border p-5 sm:p-6 mt-8">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center ring-1 ring-accent/20">
+          <HelpCircle className="h-5 w-5 text-accent" strokeWidth={2} />
         </div>
         <div>
-          <h3 className="font-bold text-foreground">Dúvidas rápidas</h3>
+          <h3 className="font-bold text-foreground text-base">Dúvidas rápidas</h3>
           <p className="text-xs text-muted-foreground">{FAQ_ITEMS.length} perguntas mais comuns</p>
         </div>
       </div>
-      <div className="divide-y">
-        {FAQ_ITEMS.map((faq, i) => (
-          <div key={i}>
-            <button
-              onClick={() => setOpenIdx(openIdx === i ? null : i)}
-              className="w-full flex items-center gap-3 py-3.5 text-left hover:bg-muted/30 rounded-lg px-2 transition-colors"
-            >
-              <span className="text-base">{faq.icon}</span>
-              <span className="flex-1 text-sm font-medium text-foreground">{faq.q}</span>
-              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
-            </button>
-            {openIdx === i && (
-              <div className="pl-10 pr-4 pb-3 text-sm text-muted-foreground leading-relaxed">
-                {faq.a}
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="divide-y divide-border/60">
+        {FAQ_ITEMS.map((faq, i) => {
+          const FaqIcon = faq.Icon;
+          return (
+            <div key={i}>
+              <button
+                onClick={() => setOpenIdx(openIdx === i ? null : i)}
+                className="w-full flex items-center gap-3 py-4 text-left hover:bg-muted/30 rounded-lg px-2 transition-colors"
+              >
+                <FaqIcon className="h-4 w-4 text-accent shrink-0" strokeWidth={2} />
+                <span className="flex-1 text-sm font-medium text-foreground">{faq.q}</span>
+                <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
+              </button>
+              {openIdx === i && (
+                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -432,8 +446,8 @@ function FormSection({ icon: Icon, title, children, className }: {
   return (
     <div className={cn('bg-white rounded-2xl border p-6 sm:p-8', className)}>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center ring-1 ring-accent/20">
+          <Icon className="h-5 w-5 text-accent" strokeWidth={2} />
         </div>
         <h3 className="font-bold text-foreground text-lg">{title}</h3>
       </div>
@@ -711,7 +725,7 @@ export default function PropostaPublica() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
+          <Loader2 className="h-10 w-10 animate-spin mx-auto text-accent" />
           <p className="text-muted-foreground text-sm">Carregando dados do imóvel...</p>
         </div>
       </div>
@@ -809,7 +823,7 @@ export default function PropostaPublica() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t">
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Aluguel</p>
-                    <p className="text-sm font-bold text-primary">{formatCurrency(totalMensal.aluguel)}</p>
+                    <p className="text-sm font-bold text-accent">{formatCurrency(totalMensal.aluguel)}</p>
                   </div>
                   {totalMensal.cond > 0 && (
                     <div>
@@ -856,14 +870,17 @@ export default function PropostaPublica() {
                   onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
                   className={cn(
                     'relative p-5 rounded-2xl border-2 text-left transition-all',
-                    selected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                    selected ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'
                   )}
                 >
                   {selected && (
-                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-primary" />
+                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-accent" />
                   )}
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                    <opt.icon className="h-5 w-5 text-primary" />
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+                    selected ? 'bg-accent/10 ring-1 ring-accent/20' : 'bg-muted'
+                  )}>
+                    <opt.icon className={cn('h-5 w-5', selected ? 'text-accent' : 'text-muted-foreground')} />
                   </div>
                   <p className="font-bold text-foreground text-sm">{opt.label}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
@@ -884,8 +901,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <User className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Vamos nos conhecer! 👋</h2>
           <p className="text-muted-foreground mt-1 text-sm">Preencha seus dados pessoais. Campos com <span className="text-red-500">*</span> são obrigatórios.</p>
@@ -950,7 +967,7 @@ export default function PropostaPublica() {
                     className={cn(
                       'flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all',
                       data.perfil_financeiro.estado_civil === s.label
-                        ? 'border-primary bg-primary/10 text-primary'
+                        ? 'border-accent bg-accent/10 text-accent'
                         : 'border-border hover:border-muted-foreground/40'
                     )}
                   >
@@ -978,7 +995,7 @@ export default function PropostaPublica() {
                       className={cn(
                         'w-full flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
                         data.perfil_financeiro.regime_bens === r
-                          ? 'border-primary bg-primary/5'
+                          ? 'border-accent bg-accent/5'
                           : 'border-border hover:border-muted-foreground/40'
                       )}
                     >
@@ -1038,7 +1055,7 @@ export default function PropostaPublica() {
                     className={cn(
                       'flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
                       data.perfil_financeiro.fonte_renda === r.value
-                        ? 'border-primary bg-primary/5'
+                        ? 'border-accent bg-accent/5'
                         : 'border-border hover:border-muted-foreground/40'
                     )}
                   >
@@ -1078,8 +1095,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Users className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <Users className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Cônjuge e Sócios</h2>
           <p className="text-muted-foreground mt-1 text-sm">Preencha os dados do cônjuge e adicione sócios, se houver.</p>
@@ -1115,8 +1132,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <FileCheck className="h-7 w-7 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+            <FileCheck className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
           <p className="text-muted-foreground mt-1 text-sm">Envie os documentos necessários para análise da proposta.</p>
@@ -1156,7 +1173,7 @@ export default function PropostaPublica() {
                     ))}
                   </div>
                 )}
-                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-primary font-medium hover:bg-primary/5 border-2 border-dashed border-primary/30 rounded-xl py-3 transition-colors">
+                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
                   <Upload className="h-4 w-4" /> Adicionar arquivo
                   <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
                     const fileList = e.target.files;
@@ -1192,8 +1209,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Home className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <Home className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Queremos te conhecer melhor! 😊</h2>
           <p className="text-muted-foreground mt-2 text-base">Conte-nos quem vai morar no imóvel para prepararmos tudo da melhor forma pra você.</p>
@@ -1217,17 +1234,17 @@ export default function PropostaPublica() {
                   className={cn(
                     'flex flex-col items-center text-center p-6 rounded-2xl border-2 transition-all',
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
+                      ? 'border-accent bg-accent/5 shadow-sm'
                       : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
                   )}
                 >
                   <div className={cn(
                     'w-12 h-12 rounded-xl flex items-center justify-center mb-3',
-                    isSelected ? 'bg-primary/10' : 'bg-muted'
+                    isSelected ? 'bg-accent/10' : 'bg-muted'
                   )}>
-                    <Icon className={cn('h-6 w-6', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                    <Icon className={cn('h-6 w-6', isSelected ? 'text-accent' : 'text-muted-foreground')} />
                   </div>
-                  <p className={cn('font-bold text-sm', isSelected ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                  <p className={cn('font-bold text-sm', isSelected ? 'text-accent' : 'text-foreground')}>{opt.label}</p>
                   <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
                 </button>
               );
@@ -1254,7 +1271,7 @@ export default function PropostaPublica() {
             </div>
             <div className="border rounded-xl p-5 space-y-4 bg-muted/20">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-accent" />
                 <span className="font-semibold text-sm">Morador 1</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1311,7 +1328,7 @@ export default function PropostaPublica() {
               <div key={idx} className="border rounded-xl p-5 space-y-4 bg-muted/20 relative">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
+                    <Users className="h-4 w-4 text-accent" />
                     <span className="font-semibold text-sm">Morador {idx + 1}</span>
                   </div>
                   {idx > 0 && (
@@ -1370,8 +1387,8 @@ export default function PropostaPublica() {
         {/* "Outra pessoa vai retirar as chaves?" toggle */}
         <div className="bg-card rounded-2xl border p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <ShieldCheck className="h-5 w-5 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-5 w-5 text-accent" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
@@ -1380,7 +1397,7 @@ export default function PropostaPublica() {
                   onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: p.composicao.responsavel_retirada ? '' : 'terceiro' } }))}
                   className={cn(
                     'relative w-12 h-7 rounded-full transition-colors shrink-0',
-                    data.composicao.responsavel_retirada ? 'bg-primary' : 'bg-muted-foreground/20'
+                    data.composicao.responsavel_retirada ? 'bg-accent' : 'bg-muted-foreground/20'
                   )}
                 >
                   <span className={cn(
@@ -1435,8 +1452,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Garantia do contrato 🔒</h2>
           <p className="text-muted-foreground mt-2 text-base">A garantia protege tanto você quanto o proprietário. Escolha a modalidade que melhor se encaixa no seu perfil.</p>
@@ -1475,7 +1492,7 @@ export default function PropostaPublica() {
                 }))}
                 className={cn(
                   'relative flex flex-col items-center text-center p-5 rounded-2xl border-2 transition-all',
-                  selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
+                  selected ? 'border-accent bg-accent/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
                 )}
               >
                 {g.badge && (
@@ -1485,11 +1502,11 @@ export default function PropostaPublica() {
                 )}
                 <div className={cn(
                   'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
-                  selected ? 'bg-primary/10' : 'bg-muted'
+                  selected ? 'bg-accent/10' : 'bg-muted'
                 )}>
                   <span className="text-xl">{g.icon}</span>
                 </div>
-                <p className={cn('font-bold text-xs', selected ? 'text-primary' : 'text-foreground')}>{g.value}</p>
+                <p className={cn('font-bold text-xs', selected ? 'text-accent' : 'text-foreground')}>{g.value}</p>
               </button>
             );
           })}
@@ -1501,7 +1518,7 @@ export default function PropostaPublica() {
             {/* Header */}
             <div className="p-6 border-b">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
                   <span className="text-2xl">{selectedGarantia.icon}</span>
                 </div>
                 <div>
@@ -1533,11 +1550,11 @@ export default function PropostaPublica() {
               {/* Vantagens + Pontos de atenção */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Vantagens</p>
+                  <p className="text-xs font-bold text-accent uppercase tracking-wider mb-2">Vantagens</p>
                   <ul className="space-y-1.5">
                     {selectedGarantia.vantagens.map((v, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />
                         {v}
                       </li>
                     ))}
@@ -1574,7 +1591,7 @@ export default function PropostaPublica() {
               <div key={idx} className="bg-card rounded-2xl border p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center">{idx + 1}</span>
+                    <span className="w-7 h-7 rounded-full bg-accent/10 text-accent text-sm font-bold flex items-center justify-center">{idx + 1}</span>
                     <h4 className="font-bold text-foreground">Fiador {idx + 1}</h4>
                   </div>
                   {data.garantia.fiadores.length > 1 && (
@@ -1702,8 +1719,8 @@ export default function PropostaPublica() {
     return (
       <div className="space-y-8">
         <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Handshake className="h-8 w-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+            <Handshake className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Negociação 🤝</h2>
           <p className="text-muted-foreground mt-2 text-base">Escolha como deseja prosseguir com o valor do aluguel.</p>
@@ -1717,18 +1734,18 @@ export default function PropostaPublica() {
             className={cn(
               'relative p-6 rounded-2xl border-2 text-left transition-all',
               data.negociacao.aceitou_valor === 'sim'
-                ? 'border-primary bg-primary/5 shadow-md'
+                ? 'border-accent bg-accent/5 shadow-md'
                 : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
             )}
           >
             {data.negociacao.aceitou_valor === 'sim' && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
                 ✓ Mais indicado
               </span>
             )}
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Zap className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <Zap className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <h3 className="font-bold text-foreground text-base">Alugar pelo valor anunciado</h3>
@@ -1754,7 +1771,7 @@ export default function PropostaPublica() {
             className={cn(
               'relative p-6 rounded-2xl border-2 text-left transition-all',
               data.negociacao.aceitou_valor === 'nao'
-                ? 'border-primary bg-primary/5 shadow-md'
+                ? 'border-accent bg-accent/5 shadow-md'
                 : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
             )}
           >
@@ -1792,8 +1809,8 @@ export default function PropostaPublica() {
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informações importantes</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <CalendarDays className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <h4 className="font-bold text-foreground text-sm">Contrato de 30 meses</h4>
@@ -1915,8 +1932,8 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center py-6">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-          <ClipboardCheck className="h-7 w-7 text-primary" />
+        <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
+          <ClipboardCheck className="h-7 w-7 text-accent" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Quase lá! 🎉</h2>
         <p className="text-muted-foreground mt-2 text-sm sm:text-base">Revise todas as informações antes de enviar seu registro de interesse.</p>
@@ -2042,7 +2059,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
             type="checkbox"
             checked={termsAccepted}
             onChange={e => onTermsChange(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            className="mt-1 h-4 w-4 rounded border-border text-accent focus:ring-accent"
           />
           <span className="text-sm text-foreground leading-relaxed">
             Li e aceito os termos acima. Declaro que todas as informações fornecidas são verdadeiras e autorizo a 
@@ -2086,7 +2103,7 @@ function ReviewBlockNew({ title, icon, children, onFix, hasPending = false }: {
           <span>{icon}</span> {title}
         </h4>
         {onFix && (
-          <button onClick={onFix} className="text-sm text-primary font-semibold hover:underline flex items-center gap-1">
+          <button onClick={onFix} className="text-sm text-accent font-semibold hover:underline flex items-center gap-1">
             ✏️ Completar
           </button>
         )}

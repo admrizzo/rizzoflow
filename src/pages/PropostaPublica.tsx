@@ -215,7 +215,7 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
   const showConjuge = needsConjuge(data);
   return (
     <div className="bg-white border-b sticky top-0 z-30">
-      <div className="max-w-3xl mx-auto px-4 py-4">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
         <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
           Registro de Interesse na Locação
         </p>
@@ -224,7 +224,7 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
             if (i === 2 && !showConjuge) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
-            const isClickable = visited.has(i);
+            const isClickable = true;
             const displayNum = i + 1;
 
             return (
@@ -233,11 +233,8 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
                   <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-primary' : 'bg-border')} />
                 )}
                 <button
-                  onClick={() => isClickable && onGoToStep(i)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 group transition-all',
-                    isClickable ? 'cursor-pointer' : 'cursor-default'
-                  )}
+                  onClick={() => onGoToStep(i)}
+                  className="flex flex-col items-center gap-1 group transition-all cursor-pointer"
                 >
                   <div className={cn(
                     'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',
@@ -307,12 +304,12 @@ function FormSection({ icon: Icon, title, children, className }: {
   icon: typeof User; title: string; children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn('bg-white rounded-2xl border p-6', className)}>
-      <div className="flex items-center gap-2 mb-5">
-        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <Icon className="h-4 w-4 text-primary" />
+    <div className={cn('bg-white rounded-2xl border p-6 sm:p-8', className)}>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
-        <h3 className="font-bold text-foreground">{title}</h3>
+        <h3 className="font-bold text-foreground text-lg">{title}</h3>
       </div>
       {children}
     </div>
@@ -438,10 +435,9 @@ export default function PropostaPublica() {
 
   function goToStep(s: number) {
     if (s === 2 && !showConjuge) return;
-    if (visited.has(s)) {
-      setStep(s);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setStep(s);
+    setVisited(prev => new Set(prev).add(s));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const totalMensal = useMemo(() => {
@@ -1100,13 +1096,13 @@ export default function PropostaPublica() {
       <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} />
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 py-6 pb-28">
+      <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 pb-32">
         {stepRenderers[step]?.()}
       </div>
 
       {/* Bottom navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 z-20 shadow-lg">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Button variant="ghost" onClick={goPrev} disabled={step === 0} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
@@ -1115,7 +1111,18 @@ export default function PropostaPublica() {
               Próximo <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700">
+            <Button onClick={() => {
+              const pending = getPendingSteps(data);
+              const critical = pending.filter(p => p.critical);
+              if (critical.length > 0) {
+                toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
+                setStep(critical[0].step);
+                setVisited(prev => new Set(prev).add(critical[0].step));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+              }
+              handleSubmit();
+            }} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700">
               <Check className="h-4 w-4 mr-1" /> Enviar Proposta
             </Button>
           )}

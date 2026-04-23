@@ -1445,6 +1445,48 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_links: {
+        Row: {
+          accessed_at: string | null
+          address_summary: string | null
+          broker_name: string | null
+          broker_user_id: string | null
+          codigo_robust: number
+          created_at: string
+          created_by: string | null
+          id: string
+          property_name: string | null
+          rent_value: number | null
+          status: string
+        }
+        Insert: {
+          accessed_at?: string | null
+          address_summary?: string | null
+          broker_name?: string | null
+          broker_user_id?: string | null
+          codigo_robust: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          property_name?: string | null
+          rent_value?: number | null
+          status?: string
+        }
+        Update: {
+          accessed_at?: string | null
+          address_summary?: string | null
+          broker_name?: string | null
+          broker_user_id?: string | null
+          codigo_robust?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          property_name?: string | null
+          rent_value?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       proposal_responsibles: {
         Row: {
           created_at: string

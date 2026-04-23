@@ -1500,15 +1500,69 @@ export default function PropostaPublica() {
   function renderStep5() {
     const selectedGarantia = GARANTIA_OPTIONS.find(g => g.value === data.garantia.tipo_garantia);
     const rentValue = property?.valor_aluguel || 0;
-    const updateFiador = (index: number, field: keyof FiadorData, value: string) => {
+    const updateFiador = (index: number, patch: Partial<FiadorData>) => {
       update(p => {
         const fiadores = [...p.garantia.fiadores];
-        fiadores[index] = { ...fiadores[index], [field]: value };
+        const current = { ...fiadores[index], ...patch };
+        // Se mudou tipo ou estado civil/regime/conjuge_participa, recalcula categorias de docs preservando arquivos existentes
+        const needsConj = fiadorNeedsConjuge(current);
+        if (
+          patch.tipo_fiador !== undefined ||
+          patch.estado_civil !== undefined ||
+          patch.regime_bens !== undefined ||
+          patch.conjuge_participa !== undefined
+        ) {
+          const target = buildFiadorDocs(current.tipo_fiador, needsConj);
+          // Preserva arquivos previamente enviados nas categorias que ainda existem
+          const prevByKey = new Map(current.documentos.map(c => [c.key, c.files]));
+          current.documentos = target.map(c => ({ ...c, files: prevByKey.get(c.key) ?? [] }));
+          if (!needsConj) {
+            current.conjuge = { ...emptyFiadorConjuge };
+            if (!fiadorIsCasado(current)) {
+              current.regime_bens = '';
+              current.conjuge_participa = '';
+            }
+          }
+        }
+        fiadores[index] = current;
         return { ...p, garantia: { ...p.garantia, fiadores } };
       });
     };
-    const addFiador = () => update(p => ({ ...p, garantia: { ...p.garantia, fiadores: [...p.garantia.fiadores, { ...emptyFiador }] } }));
-    const removeFiador = (i: number) => update(p => ({ ...p, garantia: { ...p.garantia, fiadores: p.garantia.fiadores.filter((_, idx) => idx !== i) } }));
+    const updateFiadorConjuge = (index: number, field: keyof FiadorConjugeData, value: string) => {
+      update(p => {
+        const fiadores = [...p.garantia.fiadores];
+        const current = { ...fiadores[index], conjuge: { ...fiadores[index].conjuge, [field]: value } };
+        fiadores[index] = current;
+        return { ...p, garantia: { ...p.garantia, fiadores } };
+      });
+    };
+    const addFiadorFile = (fiadorIdx: number, catIdx: number, file: UploadedFile) => {
+      update(p => {
+        const fiadores = [...p.garantia.fiadores];
+        const docs = [...fiadores[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, file] };
+        fiadores[fiadorIdx] = { ...fiadores[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores } };
+      });
+    };
+    const removeFiadorFile = (fiadorIdx: number, catIdx: number, fileId: string) => {
+      update(p => {
+        const fiadores = [...p.garantia.fiadores];
+        const docs = [...fiadores[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== fileId) };
+        fiadores[fiadorIdx] = { ...fiadores[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores } };
+      });
+    };
+    const addFiador = (tipo: FiadorTipo = '') =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: [...p.garantia.fiadores, makeEmptyFiador(tipo)] } }));
+    const removeFiador = (i: number) =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: p.garantia.fiadores.filter((_, idx) => idx !== i) } }));
+
+    // Status da regra principal
+    const fiadores = data.garantia.fiadores;
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
 
     return (
       <div className="space-y-8">

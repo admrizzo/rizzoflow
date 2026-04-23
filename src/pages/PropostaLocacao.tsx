@@ -14,6 +14,7 @@ import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, 
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProperties, Property } from '@/hooks/useProperties';
 
 // ── Structured Variables ──
 
@@ -331,6 +332,8 @@ export default function PropostaLocacao() {
   }
 
   const { user } = useAuth();
+  const { properties, isLoading: propertiesLoading, syncProperties } = useProperties();
+  const [propertySearch, setPropertySearch] = useState('');
 
   async function handleSubmit() {
     const pending = getPendingSteps(data);
@@ -441,29 +444,94 @@ export default function PropostaLocacao() {
       case 0:
         return (
           <div className="space-y-6">
-            <div>
-              <Label>Código do imóvel</Label>
+            {/* Property selector from CRM */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Selecionar imóvel do CRM <span className="text-destructive">*</span></Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => syncProperties.mutate()}
+                  disabled={syncProperties.isPending}
+                >
+                  {syncProperties.isPending ? 'Sincronizando...' : '↻ Sincronizar'}
+                </Button>
+              </div>
               <Input
-                value={data.imovel.codigo}
-                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, codigo: e.target.value } }))}
-                placeholder="Ex: IMV-001"
+                value={propertySearch}
+                onChange={(e) => setPropertySearch(e.target.value)}
+                placeholder="Buscar por código, título, bairro..."
               />
-            </div>
-            <div>
-              <Label>Endereço do imóvel <span className="text-destructive">*</span></Label>
-              <Input
-                value={data.imovel.endereco}
-                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, endereco: e.target.value } }))}
-                placeholder="Rua, número, bairro, cidade"
-              />
-            </div>
-            <div>
-              <Label>Valor do aluguel</Label>
-              <Input
-                value={data.imovel.valor_aluguel}
-                onChange={(e) => update(p => ({ ...p, imovel: { ...p.imovel, valor_aluguel: e.target.value } }))}
-                placeholder="R$ 0,00"
-              />
+              {propertiesLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando imóveis...</p>
+              ) : (
+                <div className="max-h-[250px] overflow-y-auto border rounded-md divide-y">
+                  {properties
+                    .filter(p => {
+                      if (!propertySearch) return true;
+                      const q = propertySearch.toLowerCase();
+                      return (
+                        String(p.codigo_robust).includes(q) ||
+                        (p.titulo || '').toLowerCase().includes(q) ||
+                        (p.bairro || '').toLowerCase().includes(q) ||
+                        (p.cidade || '').toLowerCase().includes(q) ||
+                        (p.logradouro || '').toLowerCase().includes(q)
+                      );
+                    })
+                    .slice(0, 30)
+                    .map(p => {
+                      const isSelected = data.imovel.codigo === String(p.codigo_robust);
+                      return (
+                        <div
+                          key={p.id}
+                          className={cn(
+                            'flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors',
+                            isSelected && 'bg-primary/10 border-l-2 border-l-primary'
+                          )}
+                          onClick={() => {
+                            const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
+                            update(prev => ({
+                              ...prev,
+                              imovel: {
+                                ...prev.imovel,
+                                codigo: String(p.codigo_robust),
+                                endereco,
+                                valor_aluguel: p.valor_aluguel ? String(p.valor_aluguel) : '',
+                              }
+                            }));
+                          }}
+                        >
+                          {p.foto_principal && (
+                            <img src={p.foto_principal} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{p.titulo || `Imóvel ${p.codigo_robust}`}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {[p.bairro, p.cidade].filter(Boolean).join(' — ')} • {p.tipo_imovel}
+                            </p>
+                            <p className="text-xs font-medium text-primary">
+                              {p.valor_aluguel ? `R$ ${p.valor_aluguel.toLocaleString('pt-BR')}` : p.valor_venda ? `Venda R$ ${p.valor_venda.toLocaleString('pt-BR')}` : 'Valor não informado'}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground">#{p.codigo_robust}</span>
+                        </div>
+                      );
+                    })}
+                  {properties.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum imóvel sincronizado. Clique em "Sincronizar" para importar do CRM.
+                    </p>
+                  )}
+                </div>
+              )}
+              {data.imovel.codigo && (
+                <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
+                  <p><strong>Código:</strong> {data.imovel.codigo}</p>
+                  <p><strong>Endereço:</strong> {data.imovel.endereco || 'N/A'}</p>
+                  <p><strong>Valor Aluguel:</strong> {data.imovel.valor_aluguel ? `R$ ${data.imovel.valor_aluguel}` : 'N/A'}</p>
+                </div>
+              )}
             </div>
             <div>
               <Label className="mb-3 block">Tipo de pessoa <span className="text-destructive">*</span></Label>

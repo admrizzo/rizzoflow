@@ -1367,6 +1367,84 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          codigo_robust: number
+          complemento: string | null
+          condominio: number | null
+          created_at: string
+          estado: string | null
+          finalidade: string | null
+          foto_principal: string | null
+          id: string
+          iptu: number | null
+          last_synced_at: string
+          logradouro: string | null
+          numero: string | null
+          raw_data: Json | null
+          seguro_incendio: number | null
+          status_imovel: number | null
+          tipo_imovel: string | null
+          titulo: string | null
+          updated_at: string
+          valor_aluguel: number | null
+          valor_venda: number | null
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          codigo_robust: number
+          complemento?: string | null
+          condominio?: number | null
+          created_at?: string
+          estado?: string | null
+          finalidade?: string | null
+          foto_principal?: string | null
+          id?: string
+          iptu?: number | null
+          last_synced_at?: string
+          logradouro?: string | null
+          numero?: string | null
+          raw_data?: Json | null
+          seguro_incendio?: number | null
+          status_imovel?: number | null
+          tipo_imovel?: string | null
+          titulo?: string | null
+          updated_at?: string
+          valor_aluguel?: number | null
+          valor_venda?: number | null
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          codigo_robust?: number
+          complemento?: string | null
+          condominio?: number | null
+          created_at?: string
+          estado?: string | null
+          finalidade?: string | null
+          foto_principal?: string | null
+          id?: string
+          iptu?: number | null
+          last_synced_at?: string
+          logradouro?: string | null
+          numero?: string | null
+          raw_data?: Json | null
+          seguro_incendio?: number | null
+          status_imovel?: number | null
+          tipo_imovel?: string | null
+          titulo?: string | null
+          updated_at?: string
+          valor_aluguel?: number | null
+          valor_venda?: number | null
+        }
+        Relationships: []
+      }
       proposal_responsibles: {
         Row: {
           created_at: string

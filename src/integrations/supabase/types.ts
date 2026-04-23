@@ -1026,33 +1026,39 @@ export type Database = {
           board_id: string | null
           color: string | null
           created_at: string
+          default_responsible_id: string | null
           department: Database["public"]["Enums"]["department"] | null
           id: string
           name: string
           position: number
           review_deadline_days: number | null
+          sla_hours: number | null
           updated_at: string
         }
         Insert: {
           board_id?: string | null
           color?: string | null
           created_at?: string
+          default_responsible_id?: string | null
           department?: Database["public"]["Enums"]["department"] | null
           id?: string
           name: string
           position?: number
           review_deadline_days?: number | null
+          sla_hours?: number | null
           updated_at?: string
         }
         Update: {
           board_id?: string | null
           color?: string | null
           created_at?: string
+          default_responsible_id?: string | null
           department?: Database["public"]["Enums"]["department"] | null
           id?: string
           name?: string
           position?: number
           review_deadline_days?: number | null
+          sla_hours?: number | null
           updated_at?: string
         }
         Relationships: [

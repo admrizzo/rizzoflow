@@ -56,12 +56,11 @@ const RENDA_SOURCES = [
 ];
 
 const GARANTIA_OPTIONS = [
-  { value: 'Seguro Fiança', icon: '🛡️', desc: 'Seguradora garante o contrato' },
-  { value: 'Caução', icon: '💰', desc: 'Depósito de 3 meses de aluguel' },
-  { value: 'Fiador', icon: '👥', desc: 'Pessoa que garante o contrato' },
-  { value: 'Título de Capitalização', icon: '📈', desc: 'Investimento como garantia' },
-  { value: 'Carta Fiança', icon: '📄', desc: 'Carta bancária de garantia' },
-  { value: 'Sem Garantia', icon: '⚠️', desc: 'Sem garantia oferecida' },
+  { value: 'SG Cred', icon: '💳', desc: 'Análise de crédito própria', badge: 'Mais escolhida ⭐' },
+  { value: 'Seguro Fiança', icon: '🛡️', desc: 'Seguradora garante o contrato', badge: null },
+  { value: 'Fiador', icon: '👥', desc: 'Pessoa que garante o contrato', badge: null },
+  { value: 'Título de Capitalização', icon: '📈', desc: 'Investimento como garantia', badge: null },
+  { value: 'Carta Fiança', icon: '📄', desc: 'Carta bancária de garantia', badge: null },
 ];
 
 const MORADOR_TYPES = [

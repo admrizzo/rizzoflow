@@ -1039,49 +1039,117 @@ export default function PropostaPublica() {
 
   function renderStep6() {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Handshake className="h-7 w-7 text-primary" />
+      <div className="space-y-8">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+            <Handshake className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Negociação 🤝</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Tem alguma proposta de valor ou condição especial?</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Negociação 🤝</h2>
+          <p className="text-muted-foreground mt-2 text-base">Escolha como deseja prosseguir com o valor do aluguel.</p>
         </div>
 
-        <FormSection icon={DollarSign} title="Proposta de valor">
-          <div className="space-y-5">
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Aceitou o valor anunciado?</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {(['sim', 'nao'] as const).map(opt => (
-                  <button key={opt} type="button"
-                    onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: opt } }))}
-                    className={cn(
-                      'p-3 rounded-xl border-2 text-sm font-bold transition-all',
-                      data.negociacao.aceitou_valor === opt
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-border hover:border-muted-foreground/40'
-                    )}
-                  >
-                    {opt === 'sim' ? '✅ Sim, aceito' : '💬 Quero negociar'}
-                  </button>
-                ))}
+        {/* Two option cards side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Option 1: Accept announced value */}
+          <button type="button"
+            onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: 'sim', valor_proposto: '' } }))}
+            className={cn(
+              'relative p-6 rounded-2xl border-2 text-left transition-all',
+              data.negociacao.aceitou_valor === 'sim'
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
+            )}
+          >
+            {data.negociacao.aceitou_valor === 'sim' && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                ✓ Mais indicado
+              </span>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Zap className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-base">Alugar pelo valor anunciado</h3>
+                <p className="text-muted-foreground text-sm mt-0.5">Garanta logo o seu!</p>
               </div>
             </div>
-
-            {data.negociacao.aceitou_valor === 'nao' && (
-              <div>
-                <Label className="text-sm font-medium">Valor proposto (R$)</Label>
-                <Input value={data.negociacao.valor_proposto} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))} placeholder="R$ 0,00" className="mt-1.5" />
+            {property && (
+              <div className="bg-background rounded-xl p-4 border">
+                <span className="text-2xl font-bold text-foreground">
+                  {property.valor_aluguel ? `R$ ${Number(property.valor_aluguel).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Valor a consultar'}
+                </span>
+                <span className="text-muted-foreground text-sm">/mês</span>
               </div>
             )}
+            <p className="text-sm text-muted-foreground mt-3">
+              Sua proposta tem <strong className="text-foreground">prioridade na análise</strong>. Imóveis bons vão rápido — não perca a oportunidade!
+            </p>
+          </button>
 
-            <div>
-              <Label className="text-sm font-medium">Condições ou observações</Label>
-              <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Descreva suas condições ou observações..." rows={4} className="mt-1.5" />
+          {/* Option 2: Negotiate */}
+          <button type="button"
+            onClick={() => update(p => ({ ...p, negociacao: { ...p.negociacao, aceitou_valor: 'nao' } }))}
+            className={cn(
+              'relative p-6 rounded-2xl border-2 text-left transition-all',
+              data.negociacao.aceitou_valor === 'nao'
+                ? 'border-primary bg-primary/5 shadow-md'
+                : 'border-border hover:border-muted-foreground/40 hover:shadow-sm'
+            )}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-base">Quero negociar o valor</h3>
+                <p className="text-muted-foreground text-sm mt-0.5">Sujeito à aprovação do proprietário</p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Você pode propor um valor diferente. A proposta será enviada ao proprietário, que poderá <strong className="text-foreground">aceitar, recusar ou contrapropor</strong>.
+            </p>
+          </button>
+        </div>
+
+        {/* Negotiate value input - appears when "negotiate" is selected */}
+        {data.negociacao.aceitou_valor === 'nao' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-4">
+            <Label className="text-sm font-semibold block">Qual valor você propõe? (R$)</Label>
+            <Input value={data.negociacao.valor_proposto} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))} placeholder="R$ 0,00" className="text-lg h-12" />
+          </div>
+        )}
+
+        {/* Observations */}
+        <div className="bg-card rounded-2xl border p-6 space-y-3">
+          <Label className="text-sm font-semibold block">Condições ou observações <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Descreva suas condições ou observações..." rows={4} />
+        </div>
+
+        {/* Important info cards */}
+        <div>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informações importantes</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground text-sm">Contrato de 30 meses</h4>
+                <p className="text-muted-foreground text-sm mt-1">Todos os nossos contratos residenciais são de <strong className="text-foreground">30 meses</strong>, com liberação da multa rescisória após <strong className="text-foreground">15 meses</strong> completados.</p>
+              </div>
+            </div>
+            <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                <Info className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <h4 className="font-bold text-foreground text-sm">Enviar não gera vínculo</h4>
+                <p className="text-muted-foreground text-sm mt-1">Mesmo no valor anunciado, sua proposta passa por <strong className="text-foreground">análise de crédito</strong> e respeita a <strong className="text-foreground">fila de interessados</strong> no imóvel.</p>
+              </div>
             </div>
           </div>
-        </FormSection>
+        </div>
       </div>
     );
   }

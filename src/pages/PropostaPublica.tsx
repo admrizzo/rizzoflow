@@ -246,11 +246,21 @@ function mapGarantia(label: string): string | null {
 }
 
 // ── Stepper Component ──
-function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
+function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, progressPercent, isSaving, lastSavedAt, draftStatus }: {
   currentStep: number; totalSteps: number; onGoToStep: (s: number) => void;
   visited: Set<number>; data: ProposalFormData;
+  progressPercent: number; isSaving: boolean; lastSavedAt: Date | null; draftStatus: string;
 }) {
   const showConjuge = needsConjuge(data);
+
+  const progressMessage = progressPercent >= 85
+    ? 'Faltam poucos passos para finalizar! 🎉'
+    : progressPercent >= 50
+    ? `Você já preencheu ${progressPercent}% da sua proposta`
+    : progressPercent > 0
+    ? 'Continue preenchendo sua proposta'
+    : 'Preencha os dados para iniciar';
+
   return (
     <div className="bg-white border-b sticky top-0 z-30">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -264,6 +274,41 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
         <p className="text-center text-sm font-semibold text-foreground mb-4 tracking-wide">
           Registro de Interesse na Locação
         </p>
+
+        {/* Progress bar */}
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-medium">{progressMessage}</span>
+            <span className="font-bold text-primary">{progressPercent}%</span>
+          </div>
+          <Progress value={progressPercent} className="h-2.5" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Salvando...</span>
+                </>
+              ) : lastSavedAt ? (
+                <>
+                  <Cloud className="h-3 w-3 text-primary" />
+                  <span>Salvo automaticamente às {lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                </>
+              ) : (
+                <>
+                  <CloudOff className="h-3 w-3" />
+                  <span>Ainda não salvo</span>
+                </>
+              )}
+            </div>
+            {draftStatus === 'em_andamento' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                Em andamento
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-center gap-0 overflow-x-auto">
           {STEP_CONFIG.map((cfg, i) => {
             if (i === 2 && !showConjuge) return null;

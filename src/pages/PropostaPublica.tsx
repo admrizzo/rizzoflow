@@ -518,7 +518,7 @@ function FAQSection() {
                 <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', openIdx === i && 'rotate-180')} />
               </button>
               {openIdx === i && (
-                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+                <div className="pl-9 pr-4 pb-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                   {faq.a}
                 </div>
               )}

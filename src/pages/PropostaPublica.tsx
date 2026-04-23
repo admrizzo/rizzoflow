@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
@@ -15,7 +16,7 @@ import {
   Shield, MapPin, Loader2, Home, BedDouble, Bath, Maximize,
   User, Building, Phone, Mail, Briefcase, ChevronDown, Copy,
   DollarSign, Users, FileCheck, Lock, Handshake, ClipboardCheck,
-  Zap, MessageSquare, CalendarDays, Info
+  Zap, MessageSquare, CalendarDays, Info, Save, CloudOff, Cloud
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
@@ -24,6 +25,7 @@ import type {
 import {
   calcPercentualComprometimento
 } from '@/pages/PropostaLocacao';
+import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };

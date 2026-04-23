@@ -12,6 +12,7 @@ import AdminFlow from "./pages/AdminFlow";
 import ProviderPortal from "./pages/ProviderPortal";
 import NotFound from "./pages/NotFound";
 import Demo from "./pages/Demo";
+import PropostaLocacao from "./pages/PropostaLocacao";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +118,14 @@ const App = () => (
                 }
               />
               <Route path="/prestador/:token" element={<ProviderPortal />} />
+              <Route
+                path="/proposta-locacao"
+                element={
+                  <ProtectedRoute>
+                    <PropostaLocacao />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/demo" element={<Demo />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

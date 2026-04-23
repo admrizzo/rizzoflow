@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, Upload, FileText, Image, X, HelpCircle, ShieldCheck, ShieldAlert, Shield, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 // ── Structured Variables ──
@@ -329,15 +329,17 @@ export default function PropostaLocacao() {
   }
 
   function handleSubmit() {
-    // Validate all steps
-    for (let i = 0; i < totalSteps; i++) {
-      if (i === 3 && !showConjuge) continue;
-      const errs = validateStep(i, data);
-      if (errs.length > 0) {
-        setStep(i);
-        toast.error(`Pendências na etapa "${labels[i]}"`, { description: errs[0] });
-        return;
-      }
+    const pending = getPendingSteps(data);
+    const critical = pending.filter(p => p.critical);
+    if (critical.length > 0) {
+      toast.error('Pendências críticas impedem o envio', { description: critical[0].errors[0] });
+      setStep(critical[0].step);
+      return;
+    }
+    if (pending.length > 0) {
+      toast.error(`Pendências na etapa "${pending[0].label}"`, { description: pending[0].errors[0] });
+      setStep(pending[0].step);
+      return;
     }
     toast.success('Proposta enviada com sucesso!');
     navigate('/dashboard');
@@ -763,60 +765,7 @@ export default function PropostaLocacao() {
           </div>
         );
       case 8:
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Revisão da Proposta</h3>
-            {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
-              <div className={cn(
-                'p-3 rounded-lg border text-sm font-medium',
-                percentualComprometimento > 30 ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-muted border-border'
-              )}>
-                📊 Comprometimento de renda: <strong>{percentualComprometimento.toFixed(1)}%</strong>
-                {percentualComprometimento > 30 && ' — Acima do recomendado (30%)'}
-              </div>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ReviewBlock title="🏠 Imóvel" items={[
-                ['Código', v(data.imovel.codigo)],
-                ['Endereço', v(data.imovel.endereco)],
-                ['Valor aluguel', v(data.imovel.valor_aluguel)],
-                ['Tipo', data.imovel.tipo_pessoa === 'fisica' ? 'Pessoa Física' : data.imovel.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Não informado'],
-              ]} />
-              <ReviewBlock title="👤 Dados Pessoais" items={[
-                ['Nome', v(data.dados_pessoais.nome)],
-                ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
-                ['Profissão', v(data.dados_pessoais.profissao)],
-                ['WhatsApp', v(data.dados_pessoais.whatsapp)],
-                ['E-mail', v(data.dados_pessoais.email)],
-              ]} />
-              <ReviewBlock title="💰 Perfil Financeiro" items={[
-                ['Estado civil', v(data.perfil_financeiro.estado_civil)],
-                ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
-                ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
-              ]} />
-              {showConjuge && (
-                <ReviewBlock title="💍 Cônjuge" items={[
-                  ['Nome', v(data.conjuge.nome)],
-                  ['CPF', v(data.conjuge.cpf)],
-                ]} />
-              )}
-              <ReviewBlock title="🏡 Composição" items={[
-                ...data.composicao.moradores.map((m, i) => [`Morador ${i+1}`, MORADOR_TYPES.find(t => t.value === m.tipo)?.label || 'Não informado'] as [string, string]),
-                ['Retira chaves', data.composicao.responsavel_retirada.trim() || 'Proponente'],
-              ]} />
-              <ReviewBlock title="🔒 Garantia" items={[
-                ['Modalidade', v(data.garantia.tipo_garantia)],
-              ]} />
-              <ReviewBlock title="📄 Documentos" items={
-                data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} arquivo(s) ✅` : 'Pendente ⚠️'] as [string, string])
-              } />
-              <ReviewBlock title="🤝 Negociação" items={[
-                ['Valor proposto', v(data.negociacao.valor_proposto)],
-                ['Aceitou valor', data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'],
-              ]} />
-            </div>
-          </div>
-        );
+        return <ReviewStep data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={(s) => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} />;
       default:
         return null;
     }
@@ -901,16 +850,211 @@ export default function PropostaLocacao() {
   );
 }
 
-// ── Review block ──
-function ReviewBlock({ title, items }: { title: string; items: [string, string][] }) {
+// ── Score calculation ──
+type ProposalScore = 'forte' | 'media' | 'risco';
+
+function calcScore(data: ProposalFormData, percentual: number | null): { score: ProposalScore; points: number; reasons: string[] } {
+  let points = 0;
+  const reasons: string[] = [];
+
+  // Renda vs aluguel (max 40 pts)
+  if (percentual !== null && percentual > 0) {
+    if (percentual <= 25) { points += 40; }
+    else if (percentual <= 30) { points += 30; reasons.push('Comprometimento de renda entre 25-30%'); }
+    else if (percentual <= 40) { points += 15; reasons.push('Comprometimento de renda acima de 30%'); }
+    else { points += 0; reasons.push('Comprometimento de renda acima de 40% — risco alto'); }
+  } else {
+    reasons.push('Renda ou valor do aluguel não informados');
+  }
+
+  // Garantia (max 30 pts)
+  const g = data.garantia.tipo_garantia;
+  if (g === 'Seguro Fiança' || g === 'Caução') { points += 30; }
+  else if (g === 'Fiador' || g === 'Título de Capitalização' || g === 'Carta Fiança') { points += 20; }
+  else if (g === 'Sem Garantia') { points += 0; reasons.push('Sem garantia apresentada'); }
+  else { reasons.push('Garantia não definida'); }
+
+  // Documentação (max 30 pts)
+  const totalDocs = data.documentos.length;
+  const completeDocs = data.documentos.filter(c => c.files.length > 0).length;
+  if (totalDocs > 0) {
+    const docScore = Math.round((completeDocs / totalDocs) * 30);
+    points += docScore;
+    if (completeDocs < totalDocs) reasons.push(`${totalDocs - completeDocs} categoria(s) de documento pendente(s)`);
+  }
+
+  const score: ProposalScore = points >= 70 ? 'forte' : points >= 40 ? 'media' : 'risco';
+  return { score, points, reasons };
+}
+
+// ── Pending steps checker ──
+function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
+  const sc = needsConjuge(data);
+  const allLabels = getStepLabels(sc);
+  const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
+  for (let i = 0; i < 8; i++) {
+    if (i === 3 && !sc) continue;
+    const errs = validateStep(i, data);
+    if (errs.length > 0) {
+      const critical = [0, 1, 2, 6].includes(i); // imovel, dados, renda, garantia
+      pending.push({ step: i, label: allLabels[i], errors: errs, critical });
+    }
+  }
+  return pending;
+}
+
+// ── Review Step component ──
+function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
+  data: ProposalFormData;
+  showConjuge: boolean;
+  percentual: number | null;
+  onGoToStep: (step: number) => void;
+}) {
+  const { score, points, reasons } = calcScore(data, percentual);
+  const pendingSteps = getPendingSteps(data);
+  const hasCritical = pendingSteps.some(p => p.critical);
+
+  const rendaMensal = v(data.perfil_financeiro.renda_mensal);
+  const valorAluguel = v(data.imovel.valor_aluguel);
+  const garantiaLabel = v(data.garantia.tipo_garantia);
+  const nomeProponente = v(data.dados_pessoais.nome);
+
+  const resumoTexto = `Proponente ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} com renda de ${rendaMensal !== 'Não informado' ? rendaMensal : '—'} pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}${percentual !== null ? `, comprometendo ${percentual.toFixed(1)}% da renda` : ''}. Garantia escolhida: ${garantiaLabel}.`;
+
+  const scoreConfig = {
+    forte: { icon: ShieldCheck, color: 'bg-green-100 border-green-300 text-green-800', label: 'Proposta Forte', desc: 'Documentação e perfil financeiro adequados.' },
+    media: { icon: Shield, color: 'bg-amber-100 border-amber-300 text-amber-800', label: 'Proposta Média', desc: 'Alguns pontos precisam de atenção.' },
+    risco: { icon: ShieldAlert, color: 'bg-destructive/10 border-destructive/30 text-destructive', label: 'Proposta de Risco', desc: 'Pendências críticas identificadas.' },
+  };
+
+  const sc = scoreConfig[score];
+  const ScoreIcon = sc.icon;
+
   return (
-    <div className="p-4 border rounded-lg">
-      <h4 className="font-semibold mb-2 text-sm">{title}</h4>
+    <div className="space-y-6">
+      {/* Score card */}
+      <div className={cn('p-4 rounded-lg border flex items-start gap-4', sc.color)}>
+        <ScoreIcon className="h-8 w-8 shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="text-lg font-bold">{sc.label}</h3>
+            <span className="text-sm font-medium opacity-75">{points}/100 pts</span>
+          </div>
+          <p className="text-sm">{sc.desc}</p>
+          {reasons.length > 0 && (
+            <ul className="mt-2 space-y-0.5">
+              {reasons.map((r, i) => (
+                <li key={i} className="text-xs flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 shrink-0" /> {r}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Pending steps alert */}
+      {pendingSteps.length > 0 && (
+        <div className="p-4 rounded-lg border border-amber-300 bg-amber-50">
+          <h4 className="font-semibold text-sm text-amber-900 mb-2">
+            ⚠️ Algumas etapas precisam de atenção
+          </h4>
+          <div className="space-y-2">
+            {pendingSteps.map((ps) => (
+              <div key={ps.step} className="flex items-center justify-between bg-background rounded px-3 py-2 border">
+                <div>
+                  <span className="text-sm font-medium">{ps.label}</span>
+                  {ps.critical && <span className="ml-2 text-xs text-destructive font-semibold">Crítico</span>}
+                  <p className="text-xs text-muted-foreground">{ps.errors[0]}</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => onGoToStep(ps.step)}>
+                  <ExternalLink className="h-3 w-3 mr-1" /> Completar
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Auto summary */}
+      <div className="p-4 rounded-lg bg-muted border">
+        <h4 className="font-semibold text-sm mb-2">📝 Resumo automático</h4>
+        <p className="text-sm">{resumoTexto}</p>
+      </div>
+
+      {/* Detailed review blocks */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ReviewBlock title="🏠 Imóvel" items={[
+          ['Código', v(data.imovel.codigo)],
+          ['Endereço', v(data.imovel.endereco)],
+          ['Valor aluguel', v(data.imovel.valor_aluguel)],
+          ['Tipo', data.imovel.tipo_pessoa === 'fisica' ? 'Pessoa Física' : data.imovel.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Não informado'],
+        ]} onFix={() => onGoToStep(0)} />
+        <ReviewBlock title="👤 Dados Pessoais" items={[
+          ['Nome', v(data.dados_pessoais.nome)],
+          ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
+          ['Profissão', v(data.dados_pessoais.profissao)],
+          ['WhatsApp', v(data.dados_pessoais.whatsapp)],
+          ['E-mail', v(data.dados_pessoais.email)],
+        ]} onFix={() => onGoToStep(1)} />
+        <ReviewBlock title="💰 Perfil Financeiro" items={[
+          ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+          ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
+          ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
+          ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
+        ]} onFix={() => onGoToStep(2)} />
+        {showConjuge && (
+          <ReviewBlock title="💍 Cônjuge" items={[
+            ['Nome', v(data.conjuge.nome)],
+            ['CPF', v(data.conjuge.cpf)],
+          ]} onFix={() => onGoToStep(3)} />
+        )}
+        <ReviewBlock title="🏡 Composição" items={[
+          ...data.composicao.moradores.map((m, i) => [`Morador ${i+1}`, MORADOR_TYPES.find(t => t.value === m.tipo)?.label || 'Não informado'] as [string, string]),
+          ['Retira chaves', data.composicao.responsavel_retirada.trim() || 'Proponente'],
+        ]} onFix={() => onGoToStep(5)} />
+        <ReviewBlock title="🔒 Garantia" items={[
+          ['Modalidade', v(data.garantia.tipo_garantia)],
+        ]} onFix={() => onGoToStep(6)} />
+        <ReviewBlock title="📄 Documentos" items={
+          data.documentos.map(cat => [cat.label, cat.files.length > 0 ? `${cat.files.length} arquivo(s) ✅` : 'Pendente ⚠️'] as [string, string])
+        } onFix={() => onGoToStep(4)} />
+        <ReviewBlock title="🤝 Negociação" items={[
+          ['Valor proposto', v(data.negociacao.valor_proposto)],
+          ['Aceitou valor', data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'],
+        ]} onFix={() => onGoToStep(7)} />
+      </div>
+
+      {/* Block message */}
+      {hasCritical && (
+        <div className="p-3 rounded-lg border border-destructive bg-destructive/5 text-destructive text-sm font-medium">
+          🚫 Existem pendências críticas. Regularize antes de enviar.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Review block ──
+function ReviewBlock({ title, items, onFix }: { title: string; items: [string, string][]; onFix?: () => void }) {
+  const hasNotInformed = items.some(([, val]) => val === 'Não informado' || val.includes('Pendente'));
+  return (
+    <div className={cn('p-4 border rounded-lg', hasNotInformed && 'border-amber-300')}>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-semibold text-sm">{title}</h4>
+        {hasNotInformed && onFix && (
+          <Button size="sm" variant="ghost" className="h-6 text-xs text-primary" onClick={onFix}>
+            Completar
+          </Button>
+        )}
+      </div>
       <dl className="space-y-1">
         {items.map(([label, value], i) => (
           <div key={i} className="flex justify-between text-sm">
             <dt className="text-muted-foreground">{label}</dt>
-            <dd className="font-medium">{value || '—'}</dd>
+            <dd className={cn('font-medium', (value === 'Não informado' || value.includes('Pendente')) && 'text-destructive')}>
+              {value || '—'}
+            </dd>
           </div>
         ))}
       </dl>

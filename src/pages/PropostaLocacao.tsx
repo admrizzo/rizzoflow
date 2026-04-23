@@ -49,6 +49,25 @@ export interface Composicao {
 export interface GarantiaInfo {
   tipo_garantia: string;
   observacao: string;
+  fiadores: FiadorData[];
+}
+
+export interface FiadorData {
+  nome: string;
+  cpf: string;
+  profissao: string;
+  whatsapp: string;
+  email: string;
+  renda_mensal: string;
+  registro_imoveis: string;
+  estado_civil: string;
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
 }
 
 // negociacao
@@ -141,7 +160,7 @@ const initialData: ProposalFormData = {
   documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
   documentos_observacao: '',
   composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
-  garantia: { tipo_garantia: '', observacao: '' },
+  garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
 };
 

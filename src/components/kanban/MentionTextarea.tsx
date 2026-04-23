@@ -147,8 +147,8 @@ export function MentionTextarea({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
-        rows={2}
-        className={cn("resize-none text-sm", className)}
+        rows={4}
+        className={cn("resize-none text-sm min-h-[80px]", className)}
       />
       
       {showSuggestions && filteredProfiles.length > 0 && (

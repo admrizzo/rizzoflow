@@ -333,7 +333,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* "Gerar nova proposta" button for Central de Propostas board */}
+              {/* "Gerar nova proposta" button for Locação board */}
               {selectedBoard.name?.toLowerCase().includes('locação') && (
                 <div className="flex items-center gap-1 px-3 pt-2">
                   <NewProposalButton />

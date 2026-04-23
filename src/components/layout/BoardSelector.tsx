@@ -78,8 +78,6 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
       <div className="w-px h-6 bg-white/30 mx-1" />
 
       {boards.map((board) => {
-        // Hide "Central de Propostas" — it's a dashboard, not a kanban flow
-        if (board.name.toLowerCase().includes('central de propostas')) return null;
         const Icon = iconMap[board.icon] || ClipboardList;
         const isSelected = selectedBoard?.id === board.id;
         const count = cardCounts[board.id] || 0;

@@ -224,7 +224,7 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
             if (i === 2 && !showConjuge) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
-            const isClickable = visited.has(i);
+            const isClickable = true;
             const displayNum = i + 1;
 
             return (

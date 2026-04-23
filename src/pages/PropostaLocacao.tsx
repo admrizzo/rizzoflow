@@ -193,7 +193,6 @@ const REGIME_BENS_OPTIONS = [
   'Comunhão universal de bens',
   'Separação total / absoluta de bens',
   'Participação final nos aquestos',
-  'Não sei informar',
 ];
 const RENDA_SOURCES = ['Empregado', 'Autônomo', 'Empresário', 'Funcionário Público'];
 const GARANTIA_OPTIONS = ['Seguro Fiança', 'Caução', 'Fiador', 'Título de Capitalização', 'Carta Fiança', 'Sem Garantia'];

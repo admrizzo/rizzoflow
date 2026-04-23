@@ -1487,6 +1487,30 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_page_config: {
+        Row: {
+          config_data: Json
+          created_at: string
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config_data?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config_data?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       proposal_responsibles: {
         Row: {
           created_at: string

@@ -1274,35 +1274,7 @@ export default function PropostaLocacao() {
           </div>
         );
       case 6:
-        return (
-          <div className="space-y-6">
-            <div>
-              <Label className="mb-3 block">Modalidade de garantia <span className="text-destructive">*</span></Label>
-              <div className="grid grid-cols-2 gap-2">
-                {GARANTIA_OPTIONS.map((g) => (
-                  <Button
-                    key={g}
-                    type="button"
-                    variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'}
-                    className="justify-start"
-                    onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g } }))}
-                  >
-                    {g}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Textarea
-                value={data.garantia.observacao}
-                onChange={(e) => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))}
-                placeholder="Detalhes sobre a garantia..."
-                rows={3}
-              />
-            </div>
-          </div>
-        );
+        return renderGarantiaStep();
       case 7:
         return (
           <div className="space-y-6">

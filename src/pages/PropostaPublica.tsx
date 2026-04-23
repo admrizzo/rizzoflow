@@ -759,8 +759,8 @@ export default function PropostaPublica() {
       <div className="space-y-6">
         {/* Welcome */}
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Home className="h-7 w-7 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4 ring-1 ring-accent/20">
+            <Home className="h-8 w-8 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Bem-vindo à sua proposta! 🏠</h2>
           <p className="text-muted-foreground mt-1 text-sm">Confira os dados do imóvel abaixo e prossiga com sua proposta.</p>
@@ -777,7 +777,7 @@ export default function PropostaPublica() {
             <div className="flex-1 p-5 space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent text-xs font-bold rounded-full">
                     Cód. {property.codigo_robust}
                   </span>
                   {property.tipo_imovel && (

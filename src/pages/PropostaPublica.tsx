@@ -304,12 +304,12 @@ function FormSection({ icon: Icon, title, children, className }: {
   icon: typeof User; title: string; children: React.ReactNode; className?: string;
 }) {
   return (
-    <div className={cn('bg-white rounded-2xl border p-6', className)}>
-      <div className="flex items-center gap-2 mb-5">
-        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <Icon className="h-4 w-4 text-primary" />
+    <div className={cn('bg-white rounded-2xl border p-6 sm:p-8', className)}>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
-        <h3 className="font-bold text-foreground">{title}</h3>
+        <h3 className="font-bold text-foreground text-lg">{title}</h3>
       </div>
       {children}
     </div>

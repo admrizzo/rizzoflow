@@ -505,6 +505,7 @@ export default function PropostaLocacao() {
                           )}
                           onClick={() => {
                             const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
+                            setSelectedProperty(p);
                             update(prev => ({
                               ...prev,
                               imovel: {

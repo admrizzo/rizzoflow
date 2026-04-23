@@ -249,6 +249,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       break;
     case 2:
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
+      if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
+      if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;

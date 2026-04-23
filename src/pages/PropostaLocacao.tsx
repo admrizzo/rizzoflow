@@ -14,7 +14,7 @@ import { ArrowLeft, ArrowRight, Check, Circle, AlertCircle, Plus, Trash2, Home, 
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProperties, Property } from '@/hooks/useProperties';
+import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
 
 // ── Structured Variables ──
 
@@ -332,8 +332,9 @@ export default function PropostaLocacao() {
   }
 
   const { user } = useAuth();
-  const { properties, isLoading: propertiesLoading, syncProperties } = useProperties();
+  const { properties, isLoading: propertiesLoading, syncProperties } = usePropertiesLocacao();
   const [propertySearch, setPropertySearch] = useState('');
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   async function handleSubmit() {
     const pending = getPendingSteps(data);
@@ -361,13 +362,20 @@ export default function PropostaLocacao() {
     const clientName = data.dados_pessoais.nome || 'Não informado';
     const imovelCodigo = data.imovel.codigo || '';
 
-    const PROPOSTAS_BOARD_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-    const NOVA_PROPOSTA_COLUMN_ID = '377d2e9f-5efe-4a05-9958-bd45936ee6e4';
+    const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
+    const CADASTRO_INICIADO_COLUMN_ID = '98579480-4d58-44f4-86dd-82c89e8f9f53';
 
     // Build card title
     const cardTitle = imovelCodigo
       ? `${clientName} — ${imovelCodigo}`
       : clientName;
+
+    // Build enriched description with property details
+    const bairro = selectedProperty?.bairro || 'Não informado';
+    const cidade = selectedProperty?.cidade || 'Não informado';
+    const condominio = selectedProperty?.condominio;
+    const iptu = selectedProperty?.iptu;
+    const seguroIncendio = selectedProperty?.seguro_incendio;
 
     // Build description with structured data
     const descriptionLines = [
@@ -378,7 +386,12 @@ export default function PropostaLocacao() {
       '',
       `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
       `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
+      `**Bairro:** ${bairro}`,
+      `**Cidade:** ${cidade}`,
       `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      condominio ? `**Condomínio:** R$ ${condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**Condomínio:** Não informado`,
+      iptu ? `**IPTU:** R$ ${iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**IPTU:** Não informado`,
+      seguroIncendio ? `**Seguro Incêndio:** R$ ${seguroIncendio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
       `**Valor Proposto:** ${valorProposto}`,
       '',
       `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
@@ -394,7 +407,7 @@ export default function PropostaLocacao() {
       const { data: existingCards } = await supabase
         .from('cards')
         .select('position')
-        .eq('column_id', NOVA_PROPOSTA_COLUMN_ID)
+        .eq('column_id', CADASTRO_INICIADO_COLUMN_ID)
         .eq('is_archived', false)
         .order('position', { ascending: false })
         .limit(1);
@@ -405,13 +418,14 @@ export default function PropostaLocacao() {
         .from('cards')
         .insert({
           title: cardTitle,
-          description: descriptionLines.join('\n'),
-          board_id: PROPOSTAS_BOARD_ID,
-          column_id: NOVA_PROPOSTA_COLUMN_ID,
+          description: descriptionLines.filter(Boolean).join('\n'),
+          board_id: LOCACAO_BOARD_ID,
+          column_id: CADASTRO_INICIADO_COLUMN_ID,
           position: nextPosition,
           created_by: user?.id,
           address: data.imovel.endereco || null,
           robust_code: imovelCodigo || null,
+          building_name: selectedProperty?.titulo || null,
           guarantee_type: mapGarantia(garantiaLabel),
           column_entered_at: new Date().toISOString(),
         });

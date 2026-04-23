@@ -1478,7 +1478,6 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                     ) : localRobustCode.trim() && allProperties.find(p => String(p.codigo_robust) === localRobustCode.trim()) ? (
                       <p className="text-xs text-green-600 mt-1">✓ Imóvel encontrado</p>
                     ) : null}
-                    )}
                   </div>
 
                   {/* Building Name */}

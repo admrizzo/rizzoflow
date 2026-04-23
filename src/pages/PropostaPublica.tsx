@@ -1141,8 +1141,8 @@ export default function PropostaPublica() {
               </div>
             </div>
             <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                <Info className="h-5 w-5 text-blue-500" />
+              <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center shrink-0">
+                <Info className="h-5 w-5 text-info" />
               </div>
               <div>
                 <h4 className="font-bold text-foreground text-sm">Enviar não gera vínculo</h4>

@@ -233,11 +233,8 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data }: {
                   <div className={cn('w-4 sm:w-8 h-[2px] mx-0.5', isDone || isActive ? 'bg-primary' : 'bg-border')} />
                 )}
                 <button
-                  onClick={() => isClickable && onGoToStep(i)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 group transition-all',
-                    isClickable ? 'cursor-pointer' : 'cursor-default'
-                  )}
+                  onClick={() => onGoToStep(i)}
+                  className="flex flex-col items-center gap-1 group transition-all cursor-pointer"
                 >
                   <div className={cn(
                     'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold border-2 transition-all',

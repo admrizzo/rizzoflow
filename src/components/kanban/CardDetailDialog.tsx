@@ -1449,15 +1449,35 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                     </div>
                     <Input
                       value={localRobustCode}
-                      onChange={(e) => setLocalRobustCode(e.target.value)}
-                      onBlur={() => handleFieldBlur('robust_code', localRobustCode, card.robust_code)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setLocalRobustCode(val);
+                        // Auto-search: if exact match found, auto-fill
+                        if (val.trim()) {
+                          const match = allProperties.find(p => String(p.codigo_robust) === val.trim());
+                          if (match) {
+                            selectProperty(match);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        handleFieldBlur('robust_code', localRobustCode, card.robust_code);
+                        // Show warning if code typed but not found
+                        if (localRobustCode.trim() && !allProperties.find(p => String(p.codigo_robust) === localRobustCode.trim())) {
+                          // Property not found - warning shown via propertyUnavailable
+                        }
+                      }}
                       placeholder="Ex: 12345"
                       disabled={!isEditor}
                       className={!localRobustCode ? 'border-amber-400' : ''}
                     />
-                    {!localRobustCode && (
+                    {!localRobustCode ? (
                       <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                    )}
+                    ) : localRobustCode.trim() && allProperties.length > 0 && !allProperties.find(p => String(p.codigo_robust) === localRobustCode.trim()) ? (
+                      <p className="text-xs text-destructive mt-1">Imóvel não localizado no CRM</p>
+                    ) : localRobustCode.trim() && allProperties.find(p => String(p.codigo_robust) === localRobustCode.trim()) ? (
+                      <p className="text-xs text-green-600 mt-1">✓ Imóvel encontrado</p>
+                    ) : null}
                   </div>
 
                   {/* Building Name */}

@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -11,6 +14,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -18,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Copy, ExternalLink, Search, RefreshCw } from 'lucide-react';
+import { Copy, ExternalLink, Search, Trash2, RefreshCw, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +48,57 @@ interface Props {
 export function ProposalManagementTab({ allLinks }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('proposal_links')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal-links-all'] });
+      setSelected(new Set());
+      toast.success('Propostas removidas');
+    },
+    onError: () => {
+      toast.error('Erro ao remover propostas');
+    },
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from('proposal_links')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proposal-links-all'] });
+      toast.success('Status atualizado');
+    },
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((l: any) => l.id)));
+    }
+  };
 
   const filtered = allLinks.filter((l: any) => {
     const matchSearch =
@@ -78,6 +142,16 @@ export function ProposalManagementTab({ allLinks }: Props) {
             <SelectItem value="enviada">Enviada</SelectItem>
           </SelectContent>
         </Select>
+        {selected.size > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Excluir ({selected.size})
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -86,6 +160,12 @@ export function ProposalManagementTab({ allLinks }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={filtered.length > 0 && selected.size === filtered.length}
+                      onCheckedChange={toggleAll}
+                    />
+                  </TableHead>
                   <TableHead>Código</TableHead>
                   <TableHead>Imóvel</TableHead>
                   <TableHead>Corretor</TableHead>
@@ -98,7 +178,7 @@ export function ProposalManagementTab({ allLinks }: Props) {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Nenhuma proposta encontrada.
                     </TableCell>
                   </TableRow>
@@ -107,14 +187,32 @@ export function ProposalManagementTab({ allLinks }: Props) {
                     const statusInfo = STATUS_LABELS[link.status] || STATUS_LABELS.nao_acessado;
                     const linkUrl = `${window.location.origin}/proposta/${link.codigo_robust}`;
                     return (
-                      <TableRow key={link.id}>
+                      <TableRow key={link.id} className={selected.has(link.id) ? 'bg-muted/50' : ''}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(link.id)}
+                            onCheckedChange={() => toggleSelect(link.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-sm">{link.codigo_robust}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{link.property_name || '—'}</TableCell>
                         <TableCell>{link.broker_name || '—'}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={cn('text-xs', statusInfo.color)}>
-                            {statusInfo.label}
-                          </Badge>
+                          <Select
+                            value={link.status}
+                            onValueChange={(v) => updateStatus.mutate({ id: link.id, status: v })}
+                          >
+                            <SelectTrigger className="h-7 w-[140px] text-xs">
+                              <Badge variant="outline" className={cn('text-xs', statusInfo.color)}>
+                                {statusInfo.label}
+                              </Badge>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nao_acessado">Não acessado</SelectItem>
+                              <SelectItem value="em_preenchimento">Em preenchimento</SelectItem>
+                              <SelectItem value="enviada">Enviada</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {new Date(link.created_at).toLocaleDateString('pt-BR')}
@@ -143,6 +241,17 @@ export function ProposalManagementTab({ allLinks }: Props) {
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => {
+                                setSelected(new Set([link.id]));
+                                setDeleteConfirm(true);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -158,6 +267,29 @@ export function ProposalManagementTab({ allLinks }: Props) {
       <p className="text-xs text-muted-foreground text-right">
         Mostrando {Math.min(filtered.length, 50)} de {filtered.length} propostas
       </p>
+
+      <AlertDialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selected.size} proposta(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. As propostas selecionadas serão permanentemente removidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                deleteMutation.mutate(Array.from(selected));
+                setDeleteConfirm(false);
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

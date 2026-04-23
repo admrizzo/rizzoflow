@@ -1115,6 +1115,10 @@ export default function PropostaPublica() {
             <Button onClick={() => {
               const pending = getPendingSteps(data);
               const critical = pending.filter(p => p.critical);
+              if (!termsAccepted) {
+                toast.error('Aceite os termos', { description: 'Você precisa aceitar os termos para enviar o registro.' });
+                return;
+              }
               if (critical.length > 0) {
                 toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
                 setStep(critical[0].step);
@@ -1123,8 +1127,8 @@ export default function PropostaPublica() {
                 return;
               }
               handleSubmit();
-            }} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700">
-              <Check className="h-4 w-4 mr-1" /> Enviar Proposta
+            }} disabled={!termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
+              <ArrowRight className="h-4 w-4 mr-1" /> Enviar Registro
             </Button>
           )}
         </div>

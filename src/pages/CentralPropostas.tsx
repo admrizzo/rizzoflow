@@ -45,8 +45,7 @@ function formatCurrency(v: number | null) {
 
 export default function CentralPropostas() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const { isAdmin } = useAuth();
+  const { user, profile, isAdmin, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { properties, isLoading: propsLoading, syncProperties } = usePropertiesLocacao();
 
@@ -175,7 +174,7 @@ export default function CentralPropostas() {
             <h1 className="text-xl font-bold">Central de Propostas</h1>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
+            {!authLoading && isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setCmsOpen(true)} className="gap-1">
                 <Settings2 className="h-4 w-4" />
                 Editar Página
@@ -430,7 +429,7 @@ export default function CentralPropostas() {
           </div>
         </DialogContent>
       </Dialog>
-      {isAdmin && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
+      {!authLoading && isAdmin && <ProposalCmsPanel open={cmsOpen} onOpenChange={setCmsOpen} />}
     </div>
   );
 }

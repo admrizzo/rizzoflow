@@ -51,6 +51,14 @@ const CIVIL_STATUS = [
   { label: 'União Estável', icon: '🤝' },
 ];
 
+const REGIME_BENS_OPTIONS = [
+  'Comunhão parcial de bens',
+  'Comunhão universal de bens',
+  'Separação total / absoluta de bens',
+  'Participação final nos aquestos',
+  'Não sei informar',
+];
+
 const RENDA_SOURCES = [
   { value: 'Empregado(a)', icon: '💼', label: 'Empregado(a)' },
   { value: 'Funcionário Público', icon: '🏛️', label: 'Funcionário Público' },
@@ -145,9 +153,19 @@ function formatCurrency(n: number | null | undefined): string {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function needsConjuge(data: ProposalFormData) {
+function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
+}
+
+function needsConjuge(data: ProposalFormData) {
+  if (!isCasadoOuUniao(data)) return false;
+  const regime = data.perfil_financeiro.regime_bens;
+  if (!regime) return false;
+  if (regime === 'Separação total / absoluta de bens') {
+    return data.perfil_financeiro.conjuge_participa === 'sim';
+  }
+  return true;
 }
 
 function validateStep(step: number, data: ProposalFormData): string[] {
@@ -158,6 +176,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
+      if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
+      if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
@@ -902,7 +922,15 @@ export default function PropostaPublica() {
               <div className="flex flex-wrap gap-2">
                 {CIVIL_STATUS.map(s => (
                   <button key={s.label} type="button"
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, estado_civil: s.label } }))}
+                    onClick={() => update(p => ({
+                      ...p,
+                      perfil_financeiro: {
+                        ...p.perfil_financeiro,
+                        estado_civil: s.label,
+                        regime_bens: (s.label === 'Casado(a)' || s.label === 'União Estável') ? p.perfil_financeiro.regime_bens : '',
+                        conjuge_participa: (s.label === 'Casado(a)' || s.label === 'União Estável') ? p.perfil_financeiro.conjuge_participa : '',
+                      }
+                    }))}
                     className={cn(
                       'flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all',
                       data.perfil_financeiro.estado_civil === s.label
@@ -919,13 +947,70 @@ export default function PropostaPublica() {
 
             {(data.perfil_financeiro.estado_civil === 'Casado(a)' || data.perfil_financeiro.estado_civil === 'União Estável') && (
               <div className="bg-muted/50 rounded-xl p-4 space-y-2">
-                <p className="text-sm font-medium">O(a) cônjuge/companheiro(a) vai fazer parte do contrato? <span className="text-red-500">*</span></p>
-                <p className="text-xs text-muted-foreground">Se sim, será necessário preencher os dados dele(a) na próxima etapa.</p>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <Button variant="outline" className="h-10">Sim, vai participar</Button>
-                  <Button variant="outline" className="h-10">Não, apenas eu</Button>
+                <Label className="text-sm font-medium mb-3 block">Regime de Bens <span className="text-red-500">*</span></Label>
+                <div className="space-y-2">
+                  {REGIME_BENS_OPTIONS.map(r => (
+                    <button key={r} type="button"
+                      onClick={() => update(p => ({
+                        ...p,
+                        perfil_financeiro: {
+                          ...p.perfil_financeiro,
+                          regime_bens: r,
+                          conjuge_participa: r !== 'Separação total / absoluta de bens' ? '' : p.perfil_financeiro.conjuge_participa,
+                        }
+                      }))}
+                      className={cn(
+                        'w-full flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
+                        data.perfil_financeiro.regime_bens === r
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-muted-foreground/40'
+                      )}
+                    >
+                      {data.perfil_financeiro.regime_bens === r && <span className="text-xs">●</span>}
+                      {r}
+                    </button>
+                  ))}
                 </div>
-              </div>
+
+                {/* Separação total: perguntar se cônjuge participa */}
+                {data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+                  <div className="mt-4 p-3 bg-background rounded-lg border space-y-2">
+                    <p className="text-sm font-medium">O(a) cônjuge/companheiro(a) também participará do contrato? <span className="text-red-500">*</span></p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={data.perfil_financeiro.conjuge_participa === 'sim' ? 'default' : 'outline'}
+                        className="h-10"
+                        onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'sim' } }))}
+                      >
+                        Sim, vai participar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={data.perfil_financeiro.conjuge_participa === 'nao' ? 'default' : 'outline'}
+                        className="h-10"
+                        onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, conjuge_participa: 'nao' } }))}
+                      >
+                        Não, apenas eu
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info: regime obriga cônjuge */}
+                {data.perfil_financeiro.regime_bens && data.perfil_financeiro.regime_bens !== 'Separação total / absoluta de bens' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ℹ️ Com o regime selecionado, a etapa de cônjuge/companheiro é obrigatória.
+                  </p>
+                )}
+
+                {/* Info: cônjuge participará */}
+                {needsConjuge(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ✅ Você precisará preencher os dados do cônjuge na próxima etapa.
+                  </p>
+                )}
+                </div>
             )}
 
             <div>
@@ -1714,6 +1799,10 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <ReviewRow label="WhatsApp" value={vv(data.dados_pessoais.whatsapp)} />
           <ReviewRow label="E-mail" value={vv(data.dados_pessoais.email)} />
           <ReviewRow label="Estado Civil" value={vv(data.perfil_financeiro.estado_civil)} />
+          {isCasadoOuUniao(data) && <ReviewRow label="Regime de Bens" value={vv(data.perfil_financeiro.regime_bens)} />}
+          {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+            <ReviewRow label="Cônjuge participa" value={data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'} />
+          )}
           <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
         </ReviewBlockNew>

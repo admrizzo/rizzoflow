@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
+import { useProposalDraft, calcFormProgress, INTERNAL_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
+import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
 
 // ── Structured Variables ──
 

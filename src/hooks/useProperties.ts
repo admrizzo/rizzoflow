@@ -26,16 +26,28 @@ export interface Property {
 }
 
 export function useProperties() {
+  return usePropertiesBase();
+}
+
+export function usePropertiesLocacao() {
+  return usePropertiesBase('locacao');
+}
+
+function usePropertiesBase(finalidade?: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: properties = [], isLoading } = useQuery({
-    queryKey: ['properties'],
+    queryKey: ['properties', finalidade || 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select('*')
         .order('codigo_robust');
+      if (finalidade) {
+        query = query.ilike('finalidade', `%${finalidade}%`);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as Property[];
     },

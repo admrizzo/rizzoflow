@@ -1018,15 +1018,15 @@ export default function PropostaPublica() {
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-foreground text-sm">Outra pessoa vai retirar as chaves?</h4>
                 <button type="button"
-                  onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, retira_chaves_terceiro: !p.composicao.retira_chaves_terceiro } }))}
+                  onClick={() => update(p => ({ ...p, composicao: { ...p.composicao, responsavel_retirada: p.composicao.responsavel_retirada ? '' : 'terceiro' } }))}
                   className={cn(
                     'relative w-12 h-7 rounded-full transition-colors shrink-0',
-                    (data.composicao as any).retira_chaves_terceiro ? 'bg-primary' : 'bg-muted-foreground/20'
+                    data.composicao.responsavel_retirada ? 'bg-primary' : 'bg-muted-foreground/20'
                   )}
                 >
                   <span className={cn(
                     'absolute top-0.5 w-6 h-6 bg-white rounded-full transition-transform shadow-sm',
-                    (data.composicao as any).retira_chaves_terceiro ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'
+                    data.composicao.responsavel_retirada ? 'left-[calc(100%-1.625rem)]' : 'left-0.5'
                   )} />
                 </button>
               </div>

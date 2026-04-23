@@ -1799,6 +1799,10 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <ReviewRow label="WhatsApp" value={vv(data.dados_pessoais.whatsapp)} />
           <ReviewRow label="E-mail" value={vv(data.dados_pessoais.email)} />
           <ReviewRow label="Estado Civil" value={vv(data.perfil_financeiro.estado_civil)} />
+          {isCasadoOuUniao(data) && <ReviewRow label="Regime de Bens" value={vv(data.perfil_financeiro.regime_bens)} />}
+          {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
+            <ReviewRow label="Cônjuge participa" value={data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'} />
+          )}
           <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
         </ReviewBlockNew>

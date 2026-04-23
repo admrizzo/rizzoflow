@@ -1284,6 +1284,10 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
         ]} onFix={() => onGoToStep(1)} />
         <ReviewBlock title="💰 Perfil Financeiro" items={[
           ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+          ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
+          ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
+            ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
+            : []),
           ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
           ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
           ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),

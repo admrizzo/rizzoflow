@@ -1968,8 +1968,46 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
 
         {/* Moradores e Contrato */}
         <ReviewBlockNew title="Moradores e Contrato" icon="🏠" onFix={() => onGoToStep(4)} hasPending={data.composicao.moradores.length === 0 || !data.composicao.moradores[0]?.tipo}>
-          <ReviewRow label="Inquilino" value={data.composicao.moradores[0]?.tipo === 'eu_mesmo' ? 'O próprio locatário' : data.composicao.moradores[0]?.tipo === 'terceiro' ? data.composicao.moradores[0]?.nome || 'Terceiro' : vv(data.composicao.moradores[0]?.tipo)} />
-          <ReviewRow label="Total de moradores" value={String(data.composicao.moradores.length)} />
+          <ReviewRow
+            label="Tipo de locação"
+            value={
+              data.composicao.moradores[0]?.tipo === 'eu_mesmo'
+                ? 'Para o próprio locatário'
+                : data.composicao.moradores[0]?.tipo === 'filho'
+                ? 'Para um filho(a)'
+                : data.composicao.moradores[0]?.tipo === 'terceiro'
+                ? 'Para um conhecido'
+                : 'Não informado'
+            }
+          />
+          {data.composicao.moradores[0]?.tipo && data.composicao.moradores[0].tipo !== 'eu_mesmo' && (
+            <>
+              <ReviewRow label="Total de moradores" value={String(data.composicao.moradores.length)} />
+              {data.composicao.moradores.map((m, i) => (
+                <div key={i} className="mt-2 pt-2 border-t border-border/60 first:border-t-0 first:pt-0 first:mt-0">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Morador {i + 1}</p>
+                  <ReviewRow label="Nome" value={vv(m.nome)} />
+                  <ReviewRow label="Relação" value={vv(m.relacao)} />
+                  <ReviewRow label="WhatsApp" value={vv(m.whatsapp)} />
+                  <ReviewRow label="E-mail" value={vv(m.email)} />
+                </div>
+              ))}
+            </>
+          )}
+          <div className="mt-2 pt-2 border-t border-border/60">
+            <ReviewRow
+              label="Quem retira as chaves"
+              value={data.composicao.responsavel_retirada ? 'Outra pessoa' : 'O próprio proponente'}
+            />
+            {data.composicao.responsavel_retirada && (
+              <>
+                <ReviewRow label="Nome" value={vv(data.composicao.retirada_nome)} />
+                <ReviewRow label="WhatsApp" value={vv(data.composicao.retirada_whatsapp)} />
+                <ReviewRow label="CPF" value={vv(data.composicao.retirada_cpf)} />
+                {data.composicao.retirada_email && <ReviewRow label="E-mail" value={data.composicao.retirada_email} />}
+              </>
+            )}
+          </div>
         </ReviewBlockNew>
 
         {/* Garantia */}

@@ -618,6 +618,7 @@ export default function PropostaPublica() {
 
       setSubmitted(true);
       toast.success('Proposta enviada com sucesso!');
+      await markAsSubmitted();
     } catch (err: any) {
       console.error('Erro ao enviar proposta:', err);
       toast.error('Erro ao enviar proposta', { description: err.message });

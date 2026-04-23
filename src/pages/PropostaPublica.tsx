@@ -115,13 +115,13 @@ const MORADOR_TYPES = [
 ];
 
 const FAQ_ITEMS = [
-  { icon: '🔒', q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
-  { icon: '👥', q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
-  { icon: '📄', q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
-  { icon: '🏠', q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
-  { icon: '📋', q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
-  { icon: '🔑', q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
-  { icon: '💲', q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
+  { Icon: Shield, q: 'O que posso apresentar como garantia?', a: 'As opções mais comuns são: Seguro Fiança, Caução (3 meses de depósito), Fiador com imóvel quitado, Título de Capitalização ou Carta Fiança bancária.' },
+  { Icon: Users, q: 'No caso de fiador, pode ser um só?', a: 'Geralmente é necessário um fiador com imóvel quitado na mesma cidade. Em alguns casos, pode ser solicitado mais de um fiador.' },
+  { Icon: FileText, q: 'O que é aceito como comprovação de renda?', a: 'Holerite dos últimos 3 meses, Declaração de IR, extrato bancário, pró-labore, ou declaração de contador para autônomos.' },
+  { Icon: Home, q: 'O que vale como comprovante de endereço e estado civil?', a: 'Conta de luz, água, gás ou internet dos últimos 3 meses. Para estado civil: certidão de nascimento, casamento ou averbação.' },
+  { Icon: FileCheck, q: 'Comprovação de imóvel do fiador — o que serve?', a: 'Certidão de matrícula atualizada do imóvel (máximo 30 dias) e IPTU em dia.' },
+  { Icon: CalendarDays, q: 'Em quanto tempo pego a chave?', a: 'Após aprovação da proposta e assinatura do contrato, geralmente entre 5 a 10 dias úteis.' },
+  { Icon: DollarSign, q: 'Tem algum custo no contrato?', a: 'Pode haver taxa de contrato e seguro incêndio obrigatório. Consulte os valores com o corretor.' },
 ];
 
 const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';

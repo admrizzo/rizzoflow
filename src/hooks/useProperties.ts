@@ -40,16 +40,18 @@ function usePropertiesBase(finalidade?: string) {
   const { data: properties = [], isLoading } = useQuery({
     queryKey: ['properties', finalidade || 'all'],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('properties')
         .select('*')
         .order('codigo_robust');
-      if (finalidade) {
-        query = query.ilike('finalidade', `%${finalidade}%`);
-      }
-      const { data, error } = await query;
       if (error) throw error;
-      return data as Property[];
+      let results = data as Property[];
+      if (finalidade) {
+        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const needle = normalize(finalidade);
+        results = results.filter(p => p.finalidade && normalize(p.finalidade).includes(needle));
+      }
+      return results;
     },
     staleTime: 60000, // 1 min cache
   });

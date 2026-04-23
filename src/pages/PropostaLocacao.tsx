@@ -32,6 +32,8 @@ export interface PerfilFinanceiro {
   estado_civil: string;
   fonte_renda: string;
   renda_mensal: string; // stored as string for input, parsed to number for calc
+  regime_bens: string;
+  conjuge_participa: 'sim' | 'nao' | '';
 }
 
 // composicao

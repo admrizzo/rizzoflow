@@ -308,8 +308,8 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       )}
 
       {/* Unified Timeline */}
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-2">
+      <ScrollArea className="flex-1 min-h-[300px]">
+        <div className="p-3 space-y-3">
           {isLoading ? (
             <p className="text-xs text-muted-foreground p-2">Carregando...</p>
           ) : timeline.length === 0 ? (

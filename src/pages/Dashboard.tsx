@@ -250,8 +250,8 @@ export default function Dashboard() {
 
   if (authLoading || boardsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-600">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+      <div className="min-h-screen flex items-center justify-center bg-primary">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-foreground" />
       </div>
     );
   }

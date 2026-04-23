@@ -2003,7 +2003,7 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               </div>
             )}
             {/* Mobile: Comments section inline at the bottom */}
-            <div className="md:hidden mt-6 border-t pt-4 pb-8">
+            <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
               <CardNotesSidebar 
                 cardId={card.id} 
                 showDetails={true}
@@ -2013,7 +2013,7 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
         </div>
 
         {/* Desktop: Notes/Comments Sidebar - side by side */}
-        <div className="hidden md:flex md:w-[40%] border-l flex-shrink-0">
+        <div className="hidden md:flex md:w-[45%] border-l flex-shrink-0">
           <CardNotesSidebar 
             cardId={card.id} 
             showDetails={true}

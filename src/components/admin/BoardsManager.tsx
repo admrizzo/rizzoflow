@@ -31,17 +31,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, MoreVertical, Columns, ListChecks, Pencil, Archive, ClipboardList, Copy, FileBox } from 'lucide-react';
+import { Plus, MoreVertical, Columns, ListChecks, Pencil, Archive, ClipboardList, Copy, FileBox, BarChart3 } from 'lucide-react';
 import { BoardFormDialog } from './BoardFormDialog';
 import { ColumnsManager } from './ColumnsManager';
 import { ChecklistTemplatesManager } from './ChecklistTemplatesManager';
 import { CardTemplateChecklistsManager } from './CardTemplateChecklistsManager';
 import { Board } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export function BoardsManager() {
   const { boards, isLoading, createBoard } = useBoards();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [archiveConfirm, setArchiveConfirm] = useState<Board | null>(null);
@@ -203,10 +205,16 @@ export function BoardsManager() {
           <p className="text-sm text-muted-foreground">
             Gerencie os fluxos de trabalho, suas colunas e checklists modelo.
           </p>
-          <Button onClick={() => { setEditingBoard(null); setShowFormDialog(true); }} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Fluxo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/central-propostas')}>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Central de Propostas
+            </Button>
+            <Button onClick={() => { setEditingBoard(null); setShowFormDialog(true); }} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Fluxo
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="h-[400px] pr-4">

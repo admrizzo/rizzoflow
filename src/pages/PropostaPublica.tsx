@@ -1042,41 +1042,71 @@ export default function PropostaPublica() {
 
   function renderStep5() {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Lock className="h-7 w-7 text-primary" />
+      <div className="space-y-8">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Garantia 🔒</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Escolha a modalidade de garantia para o contrato.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Garantia do contrato 🔒</h2>
+          <p className="text-muted-foreground mt-2 text-base">A garantia protege tanto você quanto o proprietário. Escolha a modalidade que melhor se encaixa no seu perfil.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* FAQ accordion */}
+        <div className="bg-card rounded-2xl border p-5">
+          <details className="group">
+            <summary className="flex items-center gap-3 cursor-pointer list-none">
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                <HelpCircle className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <span className="font-semibold text-foreground text-sm flex-1">Não sei qual garantia escolher. O que fazer?</span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <p className="text-sm text-muted-foreground mt-3 ml-[3.25rem]">
+              A modalidade mais prática é o <strong className="text-foreground">SG Cred</strong> (análise de crédito própria). Se preferir, o <strong className="text-foreground">Seguro Fiança</strong> também é bastante utilizado. 
+              Em caso de dúvida, prossiga com a que preferir — nosso time entrará em contato para orientá-lo.
+            </p>
+          </details>
+        </div>
+
+        {/* Garantia cards - horizontal row like SG */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
           {GARANTIA_OPTIONS.map(g => {
             const selected = data.garantia.tipo_garantia === g.value;
             return (
-              <button key={g.value} type="button"
+              <button key={g.value} type="button" 
                 onClick={() => update(p => ({ ...p, garantia: { ...p.garantia, tipo_garantia: g.value } }))}
                 className={cn(
-                  'p-4 rounded-2xl border-2 text-left transition-all',
-                  selected ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/30'
+                  'relative flex flex-col items-center text-center p-5 rounded-2xl border-2 transition-all',
+                  selected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-muted-foreground/30 hover:shadow-sm'
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{g.icon}</span>
-                  <div>
-                    <p className="font-bold text-sm text-foreground">{g.value}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{g.desc}</p>
-                  </div>
+                {g.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-warning text-warning-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                    {g.badge}
+                  </span>
+                )}
+                <div className={cn(
+                  'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
+                  selected ? 'bg-primary/10' : 'bg-muted'
+                )}>
+                  <span className="text-xl">{g.icon}</span>
                 </div>
+                <p className={cn('font-bold text-xs', selected ? 'text-primary' : 'text-foreground')}>{g.value}</p>
               </button>
             );
           })}
         </div>
 
-        <FormSection icon={FileText} title="Observações sobre a garantia">
+        {/* Warning note */}
+        <p className="text-sm text-muted-foreground text-center">
+          ⚠️ Não trabalhamos com depósito caução. As modalidades acima são as únicas formas de garantia aceitas.
+        </p>
+
+        {/* Observations */}
+        <div className="bg-card rounded-2xl border p-6 space-y-3">
+          <Label className="text-sm font-semibold block">Observações sobre a garantia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
           <Textarea value={data.garantia.observacao} onChange={e => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))} placeholder="Detalhes adicionais sobre a garantia..." rows={3} />
-        </FormSection>
+        </div>
       </div>
     );
   }

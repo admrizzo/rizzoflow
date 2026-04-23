@@ -1583,7 +1583,7 @@ export default function PropostaPublica() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} />
+      <StepperHeader currentStep={step} totalSteps={totalSteps} onGoToStep={goToStep} visited={visited} data={data} progressPercent={progressPercent} isSaving={isSaving} lastSavedAt={lastSavedAt} draftStatus={draftStatus} />
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 pb-32">

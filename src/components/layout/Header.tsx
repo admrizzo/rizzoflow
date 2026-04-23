@@ -13,12 +13,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw } from 'lucide-react';
+import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3 } from 'lucide-react';
 import { useForceRefresh } from '@/hooks/useForceRefresh';
 import { toast } from 'sonner';
 import { NotificationsPopover } from './NotificationsPopover';
 import { FilterPopover } from './FilterPopover';
 import { AdminPanel } from '@/components/admin';
+import { useNavigate } from 'react-router-dom';
 import { ProfileDialog } from '@/components/profile/ProfileDialog';
 import { Board } from '@/types/database';
 import { cn } from '@/lib/utils';
@@ -53,6 +54,7 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const { triggerForceRefresh } = useForceRefresh();
+  const navigate = useNavigate();
 
   const handleForceRefresh = async () => {
     try {
@@ -177,6 +179,16 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
                 onClick={() => setShowAdminPanel(true)}
               >
                 <Settings2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
+                onClick={() => navigate('/central-propostas')}
+                title="Central de Propostas"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline text-xs">Propostas</span>
               </Button>
             </>
           )}

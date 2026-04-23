@@ -206,10 +206,6 @@ export function BoardsManager() {
             Gerencie os fluxos de trabalho, suas colunas e checklists modelo.
           </p>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/central-propostas')}>
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Central de Propostas
-            </Button>
             <Button onClick={() => { setEditingBoard(null); setShowFormDialog(true); }} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               Novo Fluxo

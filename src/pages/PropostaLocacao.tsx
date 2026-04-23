@@ -969,11 +969,14 @@ export default function PropostaLocacao() {
       {/* Top bar */}
       <div className="sticky top-0 z-20 bg-background border-b px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-            <Home className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold">Proposta de Locação</h1>
+          <img 
+            src="/logo-rizzo.png" 
+            alt="Rizzo Imobiliária" 
+            className="h-8 w-auto object-contain"
+          />
+          <div className="w-px h-6 bg-border" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold truncate">Proposta de Locação</h1>
             <p className="text-xs text-muted-foreground">Etapa {step + 1} de {totalSteps} — {labels[step]}</p>
           </div>
         </div>

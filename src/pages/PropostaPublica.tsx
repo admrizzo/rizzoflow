@@ -18,7 +18,7 @@ import {
   Zap, MessageSquare, CalendarDays, Info
 } from 'lucide-react';
 import type {
-  ProposalFormData, DadosPessoais, MoradorData, UploadedFile,
+  ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
   DocumentCategory, DocCategoryKey
 } from '@/pages/PropostaLocacao';
 import {
@@ -28,6 +28,7 @@ import {
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
+const emptyFiador: FiadorData = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '', renda_mensal: '', registro_imoveis: '', estado_civil: '', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' };
 
 const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
   { key: 'documento_foto', label: 'Documento com foto (CPF/RG/CNH)', help: 'Envie frente e verso do documento com foto.', files: [] },

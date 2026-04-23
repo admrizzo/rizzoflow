@@ -56,7 +56,6 @@ const REGIME_BENS_OPTIONS = [
   'Comunhão universal de bens',
   'Separação total / absoluta de bens',
   'Participação final nos aquestos',
-  'Não sei informar',
 ];
 
 const RENDA_SOURCES = [

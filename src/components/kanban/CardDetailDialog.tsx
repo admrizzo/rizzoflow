@@ -675,7 +675,7 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
       modal
     >
       <DialogContent
-        className="max-w-5xl h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden"
+        className="max-w-6xl h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden"
         hideCloseButton
         onEscapeKeyDown={(e) => {
           // Nested dialogs (confirm/archive/transfer/clone) must close first.
@@ -846,7 +846,7 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
           {/* Main content - uses native overflow for reliable mobile touch scrolling */}
           <div className={cn(
             "flex-1 px-4 md:px-6 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch",
-            "md:w-[60%]"
+            "md:w-[55%]"
           )}>
           <div className="space-y-6 pb-6">
             {/* Archived Banner */}
@@ -2013,7 +2013,7 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
         </div>
 
         {/* Desktop: Notes/Comments Sidebar - side by side */}
-        <div className="hidden md:flex md:w-[45%] border-l flex-shrink-0">
+        <div className="hidden md:flex md:w-[45%] border-l flex-shrink-0 flex-col">
           <CardNotesSidebar 
             cardId={card.id} 
             showDetails={true}

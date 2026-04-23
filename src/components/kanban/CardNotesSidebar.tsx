@@ -308,8 +308,8 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       )}
 
       {/* Unified Timeline */}
-      <ScrollArea className="flex-1 min-h-[300px]">
-        <div className="p-3 space-y-3">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-3 space-y-4">
           {isLoading ? (
             <p className="text-xs text-muted-foreground p-2">Carregando...</p>
           ) : timeline.length === 0 ? (
@@ -320,7 +320,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             timeline.map((item) => {
               if (item.type === 'activity') {
                 return (
-                  <div key={`activity-${item.data.id}`} className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border border-blue-100 dark:border-blue-900/50">
+                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600">
                     <div className="flex items-start gap-2">
                       <Avatar className="h-6 w-6 flex-shrink-0">
                         <AvatarImage src={item.avatarUrl} alt={item.userName} />
@@ -355,7 +355,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               const wasEdited = comment.updated_at !== comment.created_at;
 
               return (
-                <div key={comment.id} className="p-2 bg-background rounded-lg group text-xs">
+                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30">
                   <div className="flex items-start gap-2">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={comment.profile?.avatar_url || undefined} alt={comment.profile?.full_name} />
@@ -364,8 +364,8 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="font-medium text-foreground">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-foreground">
                           {comment.profile?.full_name || 'Usuário'}
                         </span>
                         <a href="#" className="text-muted-foreground hover:underline" onClick={(e) => e.preventDefault()}>
@@ -392,7 +392,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                         </div>
                       ) : (
                         <>
-                          <p className="text-foreground/90 mt-0.5 whitespace-pre-wrap break-words">
+                          <p className="text-foreground/90 mt-1 whitespace-pre-wrap break-words leading-relaxed">
                             {renderMentionText(comment.content, profiles).map((part, i) => 
                               part.type === 'mention' ? (
                                 <span key={i} className="text-primary font-medium">{part.content}</span>

@@ -683,6 +683,121 @@ export default function PropostaLocacao() {
     return map[label] || null;
   }
 
+  // ── Garantia step (Fiador estruturado) ──
+  function renderGarantiaStep() {
+    const fiadores = data.garantia.fiadores;
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
+    const rentValue = parseCurrency(data.imovel.valor_aluguel);
+
+    const updateFiador = (index: number, patch: Partial<FiadorData>) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const current = { ...fs[index], ...patch };
+        const needsConj = fiadorNeedsConjuge(current);
+        if (
+          patch.tipo_fiador !== undefined ||
+          patch.estado_civil !== undefined ||
+          patch.regime_bens !== undefined ||
+          patch.conjuge_participa !== undefined
+        ) {
+          current.documentos = buildFiadorDocs(current.tipo_fiador, needsConj);
+          if (!needsConj) current.conjuge = { ...emptyFiadorConjuge };
+          if (!fiadorIsCasado(current)) {
+            current.regime_bens = '';
+            current.conjuge_participa = '';
+          }
+        }
+        fs[index] = current;
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const updateFiadorConjuge = (index: number, field: keyof FiadorConjugeData, value: string) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        fs[index] = { ...fs[index], conjuge: { ...fs[index].conjuge, [field]: value } };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const addFiadorFile = (fiadorIdx: number, catIdx: number, file: UploadedFile) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const docs = [...fs[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, file] };
+        fs[fiadorIdx] = { ...fs[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const removeFiadorFile = (fiadorIdx: number, catIdx: number, fileId: string) => {
+      update(p => {
+        const fs = [...p.garantia.fiadores];
+        const docs = [...fs[fiadorIdx].documentos];
+        docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== fileId) };
+        fs[fiadorIdx] = { ...fs[fiadorIdx], documentos: docs };
+        return { ...p, garantia: { ...p.garantia, fiadores: fs } };
+      });
+    };
+    const addFiador = (tipo: FiadorTipo = '') =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: [...p.garantia.fiadores, makeEmptyFiador(tipo)] } }));
+    const removeFiador = (i: number) =>
+      update(p => ({ ...p, garantia: { ...p.garantia, fiadores: p.garantia.fiadores.filter((_, idx) => idx !== i) } }));
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <Label className="mb-3 block">Modalidade de garantia <span className="text-destructive">*</span></Label>
+          <div className="grid grid-cols-2 gap-2">
+            {GARANTIA_OPTIONS.map((g) => (
+              <Button
+                key={g}
+                type="button"
+                variant={data.garantia.tipo_garantia === g ? 'default' : 'outline'}
+                className="justify-start"
+                onClick={() => update(p => ({
+                  ...p,
+                  garantia: {
+                    ...p.garantia,
+                    tipo_garantia: g,
+                    fiadores: g === 'Fiador' && p.garantia.fiadores.length === 0
+                      ? [makeEmptyFiador()]
+                      : p.garantia.fiadores,
+                  },
+                }))}
+              >
+                {g}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {data.garantia.tipo_garantia === 'Fiador' && (
+          <FiadorSection
+            fiadores={fiadores}
+            hasRenda={hasRenda}
+            hasImovel={hasImovel}
+            rentValue={rentValue}
+            onUpdateFiador={updateFiador}
+            onUpdateConjuge={updateFiadorConjuge}
+            onAddFile={addFiadorFile}
+            onRemoveFile={removeFiadorFile}
+            onAddFiador={addFiador}
+            onRemoveFiador={removeFiador}
+          />
+        )}
+
+        <div>
+          <Label>Observações</Label>
+          <Textarea
+            value={data.garantia.observacao}
+            onChange={(e) => update(p => ({ ...p, garantia: { ...p.garantia, observacao: e.target.value } }))}
+            placeholder="Detalhes sobre a garantia..."
+            rows={3}
+          />
+        </div>
+      </div>
+    );
+  }
+
   // ── Step Content ──
   function renderStep() {
     switch (step) {

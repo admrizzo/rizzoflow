@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCards } from '@/hooks/useCards';
 import { useLabels } from '@/hooks/useLabels';
@@ -54,15 +54,17 @@ interface AddCardButtonProps {
   boardId: string;
   boardName?: string;
   isAdding: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
+  onClose: () => void;
 }
 
-export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle }: AddCardButtonProps) {
+export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, onClose }: AddCardButtonProps) {
   const { createCard } = useCards(boardId);
   const queryClient = useQueryClient();
   const { labels } = useLabels(boardId);
   const { isEditor } = useAuth();
   const { titlePattern, generateTitle, hasCustomPattern } = useTitlePattern(boardId);
+  const formRef = useRef<HTMLFormElement | null>(null);
   
   // Determine board type - use passed boardName prop directly
   const isRescisaoBoard = boardName === RESCISAO_BOARD_NAME;
@@ -76,6 +78,32 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
   // Card templates for Administrativo board
   const { data: cardTemplates = [] } = useCardTemplates(isAdministrativoBoard ? boardId : undefined);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !formRef.current || formRef.current.contains(target)) return;
+      handleCancel();
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isAdding]);
   
   // Fields for regular boards (Locação, Venda, etc.)
   const [robustCode, setRobustCode] = useState('');
@@ -380,7 +408,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
           onSuccess: () => {
             setTenantName('');
             setSuperlogicaId('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -407,7 +435,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
           onSuccess: () => {
             setOwnerName('');
             setPropertyRobustCode('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -448,7 +476,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
             setMainBuyerName('');
             setMainSellerName('');
             setCardType('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -501,7 +529,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
             setDevUnidade('');
             setDevComprador('');
             setDevCardType('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -518,7 +546,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
         {
           onSuccess: () => {
             setJudicialIdentification('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -538,7 +566,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
           onSuccess: () => {
             setManutSuperlogicaId('');
             setManutAddress('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -563,7 +591,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
           onSuccess: () => {
             setRobustCode('');
             setBuildingName('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -589,6 +617,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
     setJudicialIdentification('');
     setManutSuperlogicaId('');
     setManutAddress('');
+    onClose();
   };
 
   // For Administrativo board, show template selector instead of form
@@ -618,7 +647,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
     return (
       <CardTemplateSelector
         open={true}
-        onOpenChange={(open) => { if (!open) onToggle(); }}
+        onOpenChange={(open) => { if (!open) onClose(); }}
         templates={cardTemplates}
         onSelect={handleTemplateSelect}
         isLoading={createCard.isPending}
@@ -631,7 +660,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
       <Button 
         variant="ghost" 
         className="w-full justify-start text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg text-xs h-8"
-        onClick={onToggle}
+        onClick={onOpen}
       >
         <Plus className="h-3.5 w-3.5 mr-1.5" />
         Adicionar cartão
@@ -649,7 +678,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
   const isValid = isRescisaoBoard ? isValidRescisao : isCaptacaoBoard ? isValidCaptacao : isVendaBoard ? isValidVenda : isDevBoard ? isValidDev : isJudicialBoard ? isValidJudicial : isManutencaoBoard ? isValidManutencao : isValidRegular;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 bg-white p-2 rounded-lg shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-100">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-2 bg-white p-2 rounded-lg shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-100">
       {isRescisaoBoard ? (
         // Rescisão Board Form
         <>

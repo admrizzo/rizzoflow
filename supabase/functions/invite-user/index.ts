@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const already = existing?.users?.find(u => u.email?.toLowerCase() === email)
     if (already) {
-      const syncError = await syncProfile(supabaseAdmin, already.id, fullName)
+      const syncError = await syncProfile(supabaseAdmin, already.id, fullName, email)
       if (syncError) {
         console.error(`[invite-user:${requestId}] Existing user sync failed for ${email}: ${syncError}`)
         return json({ error: syncError, requestId }, 500)
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     const newUserId = invited.user.id
 
     // 6. Garante profile (handle_new_user trigger geralmente já cria, mas garantimos)
-    const syncError = await syncProfile(supabaseAdmin, newUserId, fullName)
+    const syncError = await syncProfile(supabaseAdmin, newUserId, fullName, email)
     if (syncError) {
       console.error(`[invite-user:${requestId}] Sync failed for ${email}: ${syncError}`)
       return json({ error: syncError, requestId }, 500)
@@ -180,6 +180,7 @@ async function syncProfile(
   supabaseAdmin: any,
   userId: string,
   fullName: string,
+  email: string,
 ) {
   const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     user_metadata: { full_name: fullName },
@@ -189,7 +190,7 @@ async function syncProfile(
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
     .upsert(
-      { user_id: userId, full_name: fullName } as any,
+      { user_id: userId, full_name: fullName, email } as any,
       { onConflict: 'user_id' },
     )
   if (profileError) return `Erro ao sincronizar perfil: ${profileError.message}`

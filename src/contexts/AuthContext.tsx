@@ -62,8 +62,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (!mounted) return;
+
+      // Se houver erro ao obter a sessão (token inválido/expirado/corrompido),
+      // limpa tudo para evitar estado "logado fantasma".
+      if (error) {
+        console.warn('Sessão inválida detectada, limpando:', error.message);
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch {
+          // ignora
+        }
+        if (!mounted) return;
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setRoles([]);
+        setIsLoading(false);
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {

@@ -93,15 +93,17 @@ export function NewProposalButton() {
       const targetCol = columns?.find(c => c.name.toLowerCase().includes(CADASTRO_INICIADO_COLUMN_NAME)) || columns?.[0];
 
       if (targetCol) {
-        // 3. Create card in the Locação board
+        // 3. Create card in the Locação board, vinculado ao proposal_link
         await supabase.from('cards').insert({
           title: `${selectedProperty.codigo_robust} - ${identification}`,
           board_id: LOCACAO_BOARD_ID,
           column_id: targetCol.id,
           robust_code: String(selectedProperty.codigo_robust),
+          building_name: identification,
           address: addressParts.join(', ') || null,
           proposal_responsible: brokerName.trim(),
-          description: `Proposta de locação gerada automaticamente.\nAluguel: ${formatCurrency(selectedProperty.valor_aluguel)}\nCorretor: ${brokerName.trim()}\nData: ${new Date().toLocaleString('pt-BR')}`,
+          proposal_link_id: linkData.id,
+          description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName.trim()}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: 0,
           column_entered_at: new Date().toISOString(),

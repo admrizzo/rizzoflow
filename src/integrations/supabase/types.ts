@@ -712,7 +712,9 @@ export type Database = {
           last_reviewed_by: string | null
           negotiation_details: string | null
           position: number
+          proposal_link_id: string | null
           proposal_responsible: string | null
+          proposal_submitted_at: string | null
           robust_code: string | null
           superlogica_id: string | null
           title: string
@@ -755,7 +757,9 @@ export type Database = {
           last_reviewed_by?: string | null
           negotiation_details?: string | null
           position?: number
+          proposal_link_id?: string | null
           proposal_responsible?: string | null
+          proposal_submitted_at?: string | null
           robust_code?: string | null
           superlogica_id?: string | null
           title: string
@@ -798,7 +802,9 @@ export type Database = {
           last_reviewed_by?: string | null
           negotiation_details?: string | null
           position?: number
+          proposal_link_id?: string | null
           proposal_responsible?: string | null
+          proposal_submitted_at?: string | null
           robust_code?: string | null
           superlogica_id?: string | null
           title?: string
@@ -820,6 +826,13 @@ export type Database = {
             columns: ["column_id"]
             isOneToOne: false
             referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_proposal_link_id_fkey"
+            columns: ["proposal_link_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_links"
             referencedColumns: ["id"]
           },
         ]

@@ -79,9 +79,14 @@ export function NewProposalButton() {
           broker_user_id: user?.id || null,
           created_by: user?.id || null,
         })
-        .select('*')
+        // Selecionamos explicitamente public_token para falhar cedo se não vier
+        .select('id, codigo_robust, public_token')
         .single();
       if (linkError) throw linkError;
+      if (!linkData?.public_token) {
+        // Sem token público não há link seguro a compartilhar — abortamos a geração
+        throw new Error('Falha ao gerar token público da proposta. Tente novamente.');
+      }
 
       // 2. Find "Cadastro iniciado" column in the Locação board
       const { data: columns } = await supabase
@@ -110,12 +115,11 @@ export function NewProposalButton() {
         });
       }
 
-      return linkData;
+      return linkData as { id: string; codigo_robust: number; public_token: string };
     },
-    onSuccess: (data: any) => {
-      // Link público usa o token único da proposta (não o código do imóvel)
-      const token = data.public_token || data.id;
-      const link = `${window.location.origin}/proposta/${token}`;
+    onSuccess: (data) => {
+      // Link público SEMPRE usa public_token. id é apenas relacionamento interno.
+      const link = `${window.location.origin}/proposta/${data.public_token}`;
       setGeneratedLink(link);
       setGeneratedCode(data.codigo_robust);
       queryClient.invalidateQueries({ queryKey: ['proposal-links'] });

@@ -138,7 +138,7 @@ export function RepresentantesForm({ representantes, onChange }: RepresentantesF
                 )}>
                   <Checkbox checked={r.is_signatario} onCheckedChange={v => update(i, { is_signatario: v === true })} />
                   <span className="text-sm text-foreground">
-                    Será signatário do contrato <span className="text-red-500">*</span>
+                    Representante legal da empresa <span className="text-red-500">*</span>
                   </span>
                 </label>
               </div>

@@ -1341,6 +1341,24 @@ export default function PropostaPublica() {
   }
 
   function renderStep2() {
+    // PJ: renderiza formulário de representantes legais
+    if (isPJ(data)) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="h-7 w-7 text-accent" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Representantes Legais 👥</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Cadastre sócios, administradores e quem assinará o contrato.</p>
+          </div>
+          <RepresentantesForm
+            representantes={data.representantes}
+            onChange={next => update(p => ({ ...p, representantes: next }))}
+          />
+        </div>
+      );
+    }
     return (
       <div className="space-y-6">
         <div className="text-center py-4">

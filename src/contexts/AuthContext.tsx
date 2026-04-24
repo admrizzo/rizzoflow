@@ -124,19 +124,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // Limpa estado local imediatamente para a UI reagir mesmo se o backend falhar.
+    // Tenta encerrar a sessão no servidor, mas não bloqueia o logout local
+    // se a sessão já estiver inválida/expirada (evita travar em 403 session_not_found).
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch (err) {
+      console.error('signOut error (ignorado):', err);
+    }
+
+    // Limpa estado local imediatamente.
     setUser(null);
     setSession(null);
     setProfile(null);
     setRoles([]);
     setIsLoading(false);
+
+    // Defesa em profundidade: remove qualquer token Supabase remanescente do localStorage.
     try {
-      await supabase.auth.signOut();
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('sb-') || key.includes('supabase.auth')) {
+          localStorage.removeItem(key);
+        }
+      });
     } catch (err) {
-      console.error('signOut error:', err);
+      console.error('Erro ao limpar localStorage:', err);
     }
+
     // Limpa todo o cache do React Query (usuários internos, permissões, listas).
     queryClient.clear();
+
     // Redireciona forçando recarga para garantir que nenhum estado em memória sobrevive.
     window.location.replace('/auth');
   };

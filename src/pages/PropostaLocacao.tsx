@@ -1198,6 +1198,14 @@ export default function PropostaLocacao() {
           </div>
         );
       case 3:
+        if (isPJ(data)) {
+          return (
+            <RepresentantesForm
+              representantes={data.representantes}
+              onChange={(next) => update(p => ({ ...p, representantes: next }))}
+            />
+          );
+        }
         return (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold">Dados do Cônjuge</h3>

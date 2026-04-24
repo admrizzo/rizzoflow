@@ -205,7 +205,7 @@ export function UsersAndAccessManager() {
           fullName: name,
           email,
           role: inviteRole,
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${window.location.origin}/auth?invite=1`,
         },
       });
       if (error || data?.error) {

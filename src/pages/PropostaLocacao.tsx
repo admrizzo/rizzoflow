@@ -345,6 +345,8 @@ const initialData: ProposalFormData = {
   composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
   garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+  empresa: { ...emptyEmpresa },
+  representantes: [],
 };
 
 // ── Helper: parse currency string to number ──

@@ -223,13 +223,14 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
 
   const selectProperty = (p: Property) => {
     const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
+    const displayName = getPropertyDisplayName(p);
     setLocalRobustCode(String(p.codigo_robust));
-    setLocalBuildingName(p.titulo || '');
+    setLocalBuildingName(displayName);
     setLocalAddress(endereco);
     updateCard.mutate({
       id: card!.id,
       robust_code: String(p.codigo_robust),
-      building_name: p.titulo || null,
+      building_name: displayName || null,
       address: endereco || null,
     });
     setPropertySearchOpen(false);

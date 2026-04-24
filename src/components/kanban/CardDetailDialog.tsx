@@ -1962,10 +1962,14 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               </div>
             )}
 
-            {/* Guarantee and Contract Type - Uses board config for visibility */}
+            {/* === BLOCO: GARANTIA E TIPO DE CONTRATO === */}
             {(showGuaranteeType || showContractType) && (
-              <div className="grid grid-cols-2 gap-4">
-                {showGuaranteeType && (
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  {showGuaranteeType && showContractType ? 'Garantia e contrato' : showGuaranteeType ? 'Garantia' : 'Contrato'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {showGuaranteeType && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -1988,8 +1992,8 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                {showContractType && (
+                  )}
+                  {showContractType && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -2012,7 +2016,8 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                       </SelectContent>
                     </Select>
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 

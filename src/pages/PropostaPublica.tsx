@@ -839,7 +839,33 @@ export default function PropostaPublica() {
     const imovelCodigo = data.imovel.codigo;
     const brokerName = proposalLink?.broker_name || 'Não identificado';
 
-    const cardTitle = `${clientName} — ${imovelCodigo}`;
+    // Identificação do imóvel: condomínio → complemento → bairro+tipo
+    const propertyIdentification = property ? getPropertyIdentification(property) : `Imóvel ${imovelCodigo}`;
+    const cardTitle = `${clientName} — ${propertyIdentification}`;
+    const buildingName = propertyIdentification;
+
+    // Tipo de contrato (Digital / Físico) — mapeia para enum do banco
+    const contractTypeRaw = data.garantia.tipo_contrato_assinatura;
+    const contractType: 'digital' | 'fisico' | null =
+      contractTypeRaw === 'digital' || contractTypeRaw === 'fisico' ? contractTypeRaw : null;
+
+    // Detalhes da negociação preenchidos com valores do imóvel
+    const aluguelTotal =
+      (property?.valor_aluguel || 0) +
+      (property?.condominio || 0) +
+      (property?.iptu || 0) +
+      (property?.seguro_incendio || 0);
+    const negotiationDetailsLines = [
+      `**Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
+      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
+      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
+      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
+      `**Total mensal aproximado:** ${formatCurrency(aluguelTotal || null)}`,
+      data.negociacao.valor_proposto ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}` : '',
+      data.negociacao.aceitou_valor ? `**Aceitou o valor anunciado:** ${data.negociacao.aceitou_valor}` : '',
+      data.negociacao.observacao ? `**Observações:** ${data.negociacao.observacao}` : '',
+    ].filter(Boolean).join('\n');
+
     const descriptionLines = pj ? [
       `**Tipo:** Pessoa Jurídica`,
       `**Razão Social:** ${data.empresa.razao_social || 'N/A'}`,

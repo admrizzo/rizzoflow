@@ -23,6 +23,7 @@ export interface Property {
   status_imovel: number | null;
   foto_principal: string | null;
   last_synced_at: string;
+  raw_data?: any;
 }
 
 export function useProperties() {

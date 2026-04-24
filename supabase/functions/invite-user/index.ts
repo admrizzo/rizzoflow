@@ -82,7 +82,11 @@ Deno.serve(async (req) => {
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const already = existing?.users?.find(u => u.email?.toLowerCase() === email)
     if (already) {
-      await syncProfileAndRole(supabaseAdmin, already.id, fullName, role)
+      const syncError = await syncProfileAndRole(supabaseAdmin, already.id, fullName, role)
+      if (syncError) {
+        console.error(`[invite-user:${requestId}] Existing user sync failed for ${email}: ${syncError}`)
+        return json({ error: syncError, requestId }, 500)
+      }
 
       return json({
         success: true,
@@ -132,21 +136,26 @@ Deno.serve(async (req) => {
     })
     if (roleError) {
       // Não reverte o convite — admin pode reatribuir papel pela UI
+      console.error(`[invite-user:${requestId}] Role RPC failed for ${email}: ${roleError.message}`)
       return json({
         warning: `Usuário convidado mas houve erro ao atribuir papel: ${roleError.message}`,
         user_id: newUserId,
+        requestId,
       }, 207)
     }
 
+    console.log(`[invite-user:${requestId}] Invited ${email} as ${role}`)
     return json({
       success: true,
       user_id: newUserId,
       email,
       role,
       message: 'Convite enviado por e-mail',
+      requestId,
     }, 200)
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
+    console.error(`[invite-user] Unhandled error: ${msg}`)
     return json({ error: msg }, 500)
   }
 })

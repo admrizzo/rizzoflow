@@ -1047,6 +1047,9 @@ export default function PropostaLocacao() {
           </div>
         );
       case 1:
+        if (isPJ(data)) {
+          return <EmpresaForm data={data.empresa} onChange={(d) => update(p => ({ ...p, empresa: d }))} />;
+        }
         return (
           <PersonFields
             data={data.dados_pessoais}
@@ -1056,6 +1059,23 @@ export default function PropostaLocacao() {
           />
         );
       case 2:
+        if (isPJ(data)) {
+          return (
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                As informações financeiras da empresa já foram preenchidas na etapa anterior. Confira abaixo.
+              </p>
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Faturamento mensal</span><span className="font-medium">{data.empresa.faturamento_mensal || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Regime tributário</span><span className="font-medium">{data.empresa.regime_tributario || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tempo de atividade</span><span className="font-medium">{data.empresa.tempo_atividade || '—'}</span></div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Para alterar, volte à etapa "Dados da Empresa".
+              </p>
+            </div>
+          );
+        }
         return (
           <div className="space-y-6">
             <div>

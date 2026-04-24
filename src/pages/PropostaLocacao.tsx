@@ -1803,13 +1803,18 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
   const { score, points, reasons } = calcScore(data, percentual);
   const pendingSteps = getPendingSteps(data);
   const hasCritical = pendingSteps.some(p => p.critical);
+  const pj = isPJ(data);
 
   const rendaMensal = v(data.perfil_financeiro.renda_mensal);
   const valorAluguel = v(data.imovel.valor_aluguel);
   const garantiaLabel = v(data.garantia.tipo_garantia);
-  const nomeProponente = v(data.dados_pessoais.nome);
+  const nomeProponente = pj
+    ? v(data.empresa.razao_social)
+    : v(data.dados_pessoais.nome);
 
-  const resumoTexto = `Proponente ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} com renda de ${rendaMensal !== 'Não informado' ? rendaMensal : '—'} pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}${percentual !== null ? `, comprometendo ${percentual.toFixed(1)}% da renda` : ''}. Garantia escolhida: ${garantiaLabel}.`;
+  const resumoTexto = pj
+    ? `Empresa ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} (CNPJ ${v(data.empresa.cnpj)}) pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}. Faturamento mensal: ${v(data.empresa.faturamento_mensal)}. Garantia escolhida: ${garantiaLabel}.`
+    : `Proponente ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} com renda de ${rendaMensal !== 'Não informado' ? rendaMensal : '—'} pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}${percentual !== null ? `, comprometendo ${percentual.toFixed(1)}% da renda` : ''}. Garantia escolhida: ${garantiaLabel}.`;
 
   const scoreConfig = {
     forte: { icon: ShieldCheck, color: 'bg-green-100 border-green-300 text-green-800', label: 'Proposta Forte', desc: 'Documentação e perfil financeiro adequados.' },
@@ -1880,24 +1885,56 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
           ['Valor aluguel', v(data.imovel.valor_aluguel)],
           ['Tipo', data.imovel.tipo_pessoa === 'fisica' ? 'Pessoa Física' : data.imovel.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Não informado'],
         ]} onFix={() => onGoToStep(0)} />
-        <ReviewBlock title="👤 Dados Pessoais" items={[
-          ['Nome', v(data.dados_pessoais.nome)],
-          ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
-          ['Profissão', v(data.dados_pessoais.profissao)],
-          ['WhatsApp', v(data.dados_pessoais.whatsapp)],
-          ['E-mail', v(data.dados_pessoais.email)],
-        ]} onFix={() => onGoToStep(1)} />
-        <ReviewBlock title="💰 Perfil Financeiro" items={[
-          ['Estado civil', v(data.perfil_financeiro.estado_civil)],
-          ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
-          ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
-            ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
-            : []),
-          ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
-          ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
-          ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
-        ]} onFix={() => onGoToStep(2)} />
-        {showConjuge && (
+        {pj ? (
+          <>
+            <ReviewBlock title="🏢 Empresa" items={[
+              ['Razão Social', v(data.empresa.razao_social)],
+              ['Nome Fantasia', v(data.empresa.nome_fantasia)],
+              ['CNPJ', v(data.empresa.cnpj)],
+              ['Data de abertura', v(data.empresa.data_abertura)],
+              ['Ramo', v(data.empresa.ramo_atividade)],
+              ['Telefone', v(data.empresa.telefone)],
+              ['E-mail', v(data.empresa.email)],
+              ['Endereço', v([data.empresa.logradouro, data.empresa.numero, data.empresa.bairro, data.empresa.cidade, data.empresa.uf].filter(Boolean).join(', '))],
+            ]} onFix={() => onGoToStep(1)} />
+            <ReviewBlock title="💰 Capacidade Financeira" items={[
+              ['Faturamento mensal', v(data.empresa.faturamento_mensal)],
+              ['Regime tributário', v(data.empresa.regime_tributario)],
+              ['Tempo de atividade', v(data.empresa.tempo_atividade)],
+            ]} onFix={() => onGoToStep(2)} />
+            <ReviewBlock title="👥 Representantes Legais" items={[
+              ['Total', String(data.representantes.length)],
+              ['Signatário indicado', data.representantes.some(r => r.is_signatario) ? '✅ Sim' : '⚠️ Pendente'],
+              ...data.representantes.flatMap((r, i) => [
+                [`Representante ${i + 1} — Nome`, v(r.nome)],
+                [`Representante ${i + 1} — CPF`, v(r.cpf)],
+                [`Representante ${i + 1} — WhatsApp`, v(r.whatsapp)],
+                [`Representante ${i + 1} — Papéis`, [r.is_socio ? 'Sócio' : null, r.is_administrador ? 'Administrador' : null, r.is_signatario ? 'Signatário' : null].filter(Boolean).join(' • ') || 'Não informado'],
+              ] as [string, string][]),
+            ]} onFix={() => onGoToStep(3)} />
+          </>
+        ) : (
+          <>
+            <ReviewBlock title="👤 Dados Pessoais" items={[
+              ['Nome', v(data.dados_pessoais.nome)],
+              ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
+              ['Profissão', v(data.dados_pessoais.profissao)],
+              ['WhatsApp', v(data.dados_pessoais.whatsapp)],
+              ['E-mail', v(data.dados_pessoais.email)],
+            ]} onFix={() => onGoToStep(1)} />
+            <ReviewBlock title="💰 Perfil Financeiro" items={[
+              ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+              ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
+              ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
+                ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
+                : []),
+              ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
+              ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
+              ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
+            ]} onFix={() => onGoToStep(2)} />
+          </>
+        )}
+        {!pj && showConjuge && (
           <ReviewBlock title="💍 Cônjuge" items={[
             ['Nome', v(data.conjuge.nome)],
             ['CPF', v(data.conjuge.cpf)],

@@ -799,12 +799,43 @@ export default function PropostaPublica() {
     const { score, points } = calcScore(data, percentualCalc);
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';
     const garantiaLabel = data.garantia.tipo_garantia || 'Não informado';
-    const clientName = data.dados_pessoais.nome || 'Não informado';
+    const pj = isPJ(data);
+    const signatario = pj ? data.representantes.find(r => r.is_signatario) : null;
+    const clientName = pj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa não informada')
+      : (data.dados_pessoais.nome || 'Não informado');
     const imovelCodigo = data.imovel.codigo;
     const brokerName = proposalLink?.broker_name || 'Não identificado';
 
     const cardTitle = `${clientName} — ${imovelCodigo}`;
-    const descriptionLines = [
+    const descriptionLines = pj ? [
+      `**Tipo:** Pessoa Jurídica`,
+      `**Razão Social:** ${data.empresa.razao_social || 'N/A'}`,
+      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
+      `**CNPJ:** ${data.empresa.cnpj || 'N/A'}`,
+      `**Ramo:** ${data.empresa.ramo_atividade || 'N/A'}`,
+      `**Telefone:** ${data.empresa.telefone || 'N/A'}`,
+      `**E-mail:** ${data.empresa.email || 'N/A'}`,
+      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'N/A'}`,
+      `**Regime tributário:** ${data.empresa.regime_tributario || 'N/A'}`,
+      '',
+      `**Representantes:** ${data.representantes.length}`,
+      signatario
+        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
+        : `**Signatário:** ⚠️ não indicado`,
+      '',
+      `**Imóvel:** ${imovelCodigo}`,
+      `**Endereço:** ${data.imovel.endereco || 'N/A'}`,
+      `**Valor Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
+      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
+      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
+      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
+      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      '',
+      `**Garantia:** ${garantiaLabel}`,
+      `**Corretor:** ${brokerName}`,
+    ] : [
+      `**Tipo:** Pessoa Física`,
       `**Cliente:** ${clientName}`,
       `**CPF:** ${data.dados_pessoais.cpf || 'N/A'}`,
       `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'N/A'}`,

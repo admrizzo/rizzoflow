@@ -1579,6 +1579,7 @@ export type Database = {
           created_by: string | null
           id: string
           property_name: string | null
+          public_token: string
           rent_value: number | null
           status: string
         }
@@ -1592,6 +1593,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           property_name?: string | null
+          public_token?: string
           rent_value?: number | null
           status?: string
         }
@@ -1605,6 +1607,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           property_name?: string | null
+          public_token?: string
           rent_value?: number | null
           status?: string
         }

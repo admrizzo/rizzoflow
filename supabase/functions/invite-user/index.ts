@@ -69,50 +69,61 @@ Deno.serve(async (req) => {
     const role: ValidRole | undefined = body.role
 
     if (!email || !fullName || !role) {
-      return json({ error: 'email, fullName e role são obrigatórios' }, 400)
+      return json({ error: 'Nome completo, e-mail e papel são obrigatórios', requestId }, 400)
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json({ error: 'E-mail inválido' }, 400)
+      return json({ error: 'E-mail inválido', requestId }, 400)
     }
     if (!VALID_ROLES.includes(role)) {
-      return json({ error: `Papel inválido. Use: ${VALID_ROLES.join(', ')}` }, 400)
+      return json({ error: `Papel inválido. Use: ${VALID_ROLES.join(', ')}`, requestId }, 400)
     }
 
     // 4. Verifica se e-mail já existe
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const already = existing?.users?.find(u => u.email?.toLowerCase() === email)
     if (already) {
-      return json({ error: 'Já existe um usuário com este e-mail' }, 409)
+      await syncProfileAndRole(supabaseAdmin, already.id, fullName, role)
+
+      return json({
+        success: true,
+        existing: true,
+        user_id: already.id,
+        email,
+        role,
+        message: 'Usuário já existia; perfil e papel foram atualizados.',
+        requestId,
+      }, 200)
     }
 
     // 5. Convida via e-mail (Supabase manda link p/ definir senha)
-    const redirectTo = body.redirectTo || `${new URL(req.url).origin}`
+    const requestOrigin = req.headers.get('origin')
+    const redirectTo = body.redirectTo || (requestOrigin ? `${requestOrigin}/auth` : undefined)
     const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {
         data: { full_name: fullName },
-        redirectTo,
+        ...(redirectTo ? { redirectTo } : {}),
       }
     )
 
     if (inviteError || !invited?.user) {
-      return json({ error: inviteError?.message || 'Falha ao convidar usuário' }, 500)
+      console.error(`[invite-user:${requestId}] Invite failed for ${email}: ${inviteError?.message || 'no user returned'}`)
+      return json({ error: inviteError?.message || 'Falha ao convidar usuário', requestId }, 500)
     }
 
     const newUserId = invited.user.id
 
     // 6. Garante profile (handle_new_user trigger geralmente já cria, mas garantimos)
-    await supabaseAdmin
-      .from('profiles')
-      .upsert(
-        { user_id: newUserId, full_name: fullName },
-        { onConflict: 'user_id' }
-      )
+    const syncError = await syncProfileAndRole(supabaseAdmin, newUserId, fullName, role)
+    if (syncError) {
+      console.error(`[invite-user:${requestId}] Sync failed for ${email}: ${syncError}`)
+      return json({ error: syncError, requestId }, 500)
+    }
 
     // 7. Atribui role (chama RPC que valida admin novamente)
     const supabaseAsCaller = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      supabaseUrl!,
+      anonKey!,
       { global: { headers: { Authorization: authHeader } } }
     )
     const { error: roleError } = await supabaseAsCaller.rpc('set_user_role', {

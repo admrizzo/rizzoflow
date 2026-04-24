@@ -34,6 +34,86 @@ import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyIdentification } from '@/lib/propertyIdentification';
 
+// ── Upload de documentos da proposta para o Storage ──
+function dataUrlToBlob(dataUrl: string): Blob | null {
+  try {
+    const [meta, b64] = dataUrl.split(',');
+    if (!b64) return null;
+    const mime = /data:([^;]+);base64/.exec(meta)?.[1] || 'application/octet-stream';
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  } catch { return null; }
+}
+
+const DOC_CATEGORY_LABELS: Record<string, string> = {
+  documento_foto: 'Documento com foto',
+  comprovante_residencia: 'Comprovante de residência',
+  comprovante_renda: 'Comprovante de renda',
+  estado_civil: 'Estado civil',
+  matricula_imovel: 'Matrícula do imóvel',
+  certidao_estado_civil: 'Certidão de estado civil',
+  documento_conjuge: 'Documento do cônjuge',
+  renda_conjuge: 'Renda do cônjuge',
+};
+
+async function uploadProposalDocuments(
+  cardId: string,
+  proposalLinkId: string | null,
+  data: ProposalFormData,
+): Promise<void> {
+  type Job = { ownerType: string; ownerLabel: string; category: string; files: UploadedFile[] };
+  const jobs: Job[] = [];
+
+  // Proponente / Empresa
+  const isPj = data.imovel.tipo_pessoa === 'juridica';
+  const proponentLabel = isPj
+    ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa')
+    : (data.dados_pessoais.nome || 'Proponente');
+  for (const cat of data.documentos || []) {
+    if (cat.files.length > 0) {
+      jobs.push({ ownerType: isPj ? 'empresa' : 'proponente', ownerLabel: proponentLabel, category: cat.key, files: cat.files });
+    }
+  }
+
+  // Fiadores
+  (data.garantia.fiadores || []).forEach((f, idx) => {
+    const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
+    for (const cat of f.documentos || []) {
+      if (cat.files.length > 0) {
+        jobs.push({ ownerType: 'fiador', ownerLabel: label, category: cat.key, files: cat.files });
+      }
+    }
+  });
+
+  for (const job of jobs) {
+    for (const file of job.files) {
+      if (!file.dataUrl) continue;
+      const blob = dataUrlToBlob(file.dataUrl);
+      if (!blob) continue;
+      const safeName = file.name.replace(/[^\w.\-]/g, '_');
+      const path = `${cardId}/${job.ownerType}/${job.category}/${Date.now()}_${safeName}`;
+      const { error: upErr } = await supabase.storage
+        .from('proposal-documents')
+        .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
+      if (upErr) { console.error('upload err', upErr); continue; }
+      await supabase.from('proposal_documents').insert({
+        card_id: cardId,
+        proposal_link_id: proposalLinkId,
+        category: job.category,
+        category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
+        owner_type: job.ownerType,
+        owner_label: job.ownerLabel,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+        storage_path: path,
+      });
+    }
+  }
+}
+
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
@@ -924,7 +1004,7 @@ export default function PropostaPublica() {
         .limit(1);
       const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
 
-      const { error } = await supabase.from('cards').insert({
+      const { data: insertedCard, error } = await supabase.from('cards').insert({
         title: cardTitle,
         description: descriptionLines.filter(Boolean).join('\n'),
         board_id: LOCACAO_BOARD_ID,
@@ -939,8 +1019,18 @@ export default function PropostaPublica() {
         proposal_responsible: brokerName,
         negotiation_details: negotiationDetailsLines || null,
         column_entered_at: new Date().toISOString(),
-      });
+      }).select('id').single();
       if (error) throw error;
+
+      // Upload de documentos (proponente + cônjuge + empresa + fiadores)
+      if (insertedCard?.id) {
+        try {
+          await uploadProposalDocuments(insertedCard.id, proposalLink?.id || null, data);
+        } catch (uploadErr: any) {
+          console.error('Erro ao enviar documentos:', uploadErr);
+          toast.warning('Proposta enviada, mas alguns arquivos falharam', { description: uploadErr.message });
+        }
+      }
 
       if (proposalLink) {
         await supabase

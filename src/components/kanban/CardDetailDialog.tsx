@@ -71,6 +71,7 @@ import { CardNotesSidebar } from './CardNotesSidebar';
 import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
 import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
+import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { useCardParties } from '@/hooks/useCardParties';
@@ -1849,6 +1850,17 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                 {!isAdministrativoBoard && !localNegotiationDetails && (
                   <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
                 )}
+              </div>
+            )}
+
+            {/* Documentos da Proposta — apenas em boards de locação (com robust_code) */}
+            {card.robust_code && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Documentos da Proposta</Label>
+                </div>
+                <ProposalDocumentsSection cardId={card.id} />
               </div>
             )}
 

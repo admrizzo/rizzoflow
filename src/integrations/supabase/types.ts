@@ -1445,6 +1445,69 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_documents: {
+        Row: {
+          card_id: string | null
+          category: string
+          category_label: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          owner_label: string | null
+          owner_type: string
+          proposal_link_id: string | null
+          storage_path: string
+          uploaded_at: string
+        }
+        Insert: {
+          card_id?: string | null
+          category: string
+          category_label: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          owner_label?: string | null
+          owner_type?: string
+          proposal_link_id?: string | null
+          storage_path: string
+          uploaded_at?: string
+        }
+        Update: {
+          card_id?: string | null
+          category?: string
+          category_label?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          owner_label?: string | null
+          owner_type?: string
+          proposal_link_id?: string | null
+          storage_path?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_documents_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_documents_proposal_link_id_fkey"
+            columns: ["proposal_link_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_drafts: {
         Row: {
           browser_id: string | null

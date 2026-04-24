@@ -129,7 +129,11 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
-              {/* Token público único da proposta (UUID). É o caminho oficial. */}
+              {/*
+                Token público único da proposta (UUID) — caminho oficial.
+                A mesma página aceita também codigo_robust como fallback p/ links antigos
+                (o componente detecta o formato do parâmetro automaticamente).
+              */}
               <Route path="/proposta/:proposalToken" element={<PropostaPublica />} />
               <Route
                 path="/central-propostas"

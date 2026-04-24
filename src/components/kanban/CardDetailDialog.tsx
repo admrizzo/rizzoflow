@@ -76,6 +76,7 @@ import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
+import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
@@ -223,13 +224,14 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
 
   const selectProperty = (p: Property) => {
     const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
+    const displayName = getPropertyDisplayName(p);
     setLocalRobustCode(String(p.codigo_robust));
-    setLocalBuildingName(p.titulo || '');
+    setLocalBuildingName(displayName);
     setLocalAddress(endereco);
     updateCard.mutate({
       id: card!.id,
       robust_code: String(p.codigo_robust),
-      building_name: p.titulo || null,
+      building_name: displayName || null,
       address: endereco || null,
     });
     setPropertySearchOpen(false);

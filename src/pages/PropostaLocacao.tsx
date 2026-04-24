@@ -20,6 +20,7 @@ import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
 import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
+import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 
 // ── Structured Variables ──
 
@@ -803,7 +804,7 @@ export default function PropostaLocacao() {
           created_by: user?.id,
           address: data.imovel.endereco || null,
           robust_code: imovelCodigo || null,
-          building_name: selectedProperty?.titulo || null,
+          building_name: selectedProperty ? getPropertyDisplayName(selectedProperty) : null,
           guarantee_type: mapGarantia(garantiaLabel),
           column_entered_at: new Date().toISOString(),
         });

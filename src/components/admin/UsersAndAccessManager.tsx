@@ -1,9 +1,8 @@
 import { useState, useRef } from 'react';
-import { useUserRoles } from '@/hooks/useUserRoles';
-import { useProfiles } from '@/hooks/useProfiles';
 import { useUserBoards } from '@/hooks/useUserBoards';
 import { useBoards } from '@/hooks/useBoards';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInternalUsers, InternalUser } from '@/hooks/useInternalUsers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,76 +29,109 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { DoubleConfirmDialog } from '@/components/ui/double-confirm-dialog';
-import { Users, Shield, UserCog, UserX, Crown, Workflow, ChevronDown, Eye, Trash2, Info, Camera } from 'lucide-react';
+import {
+  Users,
+  Shield,
+  UserCog,
+  UserX,
+  Crown,
+  ChevronDown,
+  Trash2,
+  Info,
+  Camera,
+  Briefcase,
+  Building2,
+  ClipboardList,
+  Mail,
+  AlertTriangle,
+} from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-const ROLE_CONFIG = {
+// ─────────────────────────────────────────────────────────────────────────────
+// Apenas os 4 papéis oficiais aparecem na interface.
+// Roles legadas (editor/viewer) só existem como ALIAS interno para exibição
+// e nunca são gravadas pelo usuário.
+// ─────────────────────────────────────────────────────────────────────────────
+type DisplayRole = 'admin' | 'gestor' | 'corretor' | 'administrativo';
+const DISPLAY_ROLES: DisplayRole[] = ['admin', 'gestor', 'corretor', 'administrativo'];
+
+const ROLE_META: Record<DisplayRole, {
+  label: string;
+  short: string;
+  icon: typeof Shield;
+  color: string;
+  badgeClass: string;
+  permissions: string[];
+}> = {
   admin: {
-    label: 'Super Admin',
-    description: 'Acesso total, cria fluxos',
+    label: 'Admin',
+    short: 'Admin',
     icon: Shield,
     color: 'text-red-500',
-    bgColor: 'bg-red-50 border-red-200',
+    badgeClass: 'bg-red-100 text-red-700 border-red-200',
+    permissions: [
+      'Acesso total a todos os fluxos',
+      'Gerenciar usuários e permissões',
+      'Criar/editar/excluir fluxos e cards',
+      'Configurações críticas do sistema',
+    ],
   },
-  editor: {
-    label: 'Editor',
-    description: 'Cria e edita cards',
-    icon: UserCog,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50 border-blue-200',
+  gestor: {
+    label: 'Gestor',
+    short: 'Gestor',
+    icon: Briefcase,
+    color: 'text-purple-500',
+    badgeClass: 'bg-purple-100 text-purple-700 border-purple-200',
+    permissions: [
+      'Operar propostas e fluxos',
+      'Criar e editar cards',
+      'Visualizar e baixar documentos',
+      'Não gerencia usuários',
+    ],
   },
-  viewer: {
-    label: 'Visualizador',
-    description: 'Apenas leitura',
-    icon: Eye,
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-50 border-gray-200',
+  corretor: {
+    label: 'Corretor',
+    short: 'Corretor',
+    icon: Building2,
+    color: 'text-emerald-600',
+    badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    permissions: [
+      'Gerar novas propostas',
+      'Acompanhar as próprias propostas',
+      'Acesso restrito aos próprios cards',
+    ],
   },
-  none: {
-    label: 'Sem acesso',
-    description: 'Sem permissões',
-    icon: UserX,
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-50 border-gray-200',
+  administrativo: {
+    label: 'Administrativo',
+    short: 'Administrativo',
+    icon: ClipboardList,
+    color: 'text-amber-600',
+    badgeClass: 'bg-amber-100 text-amber-700 border-amber-200',
+    permissions: [
+      'Operar propostas, cards e checklists',
+      'Visualizar documentos',
+      'Não gerencia usuários nem fluxos',
+    ],
   },
-} as const;
-
-const ROLE_PERMISSIONS = {
-  super_admin: [
-    'Acesso total a todos os fluxos',
-    'Criar/editar/excluir fluxos',
-    'Gerenciar usuários e permissões',
-    'Criar/editar/excluir cards',
-    'Gerenciar etiquetas e campos',
-    'Excluir checklists e itens',
-  ],
-  flow_admin: [
-    'Gerenciar fluxos específicos',
-    'Gerenciar acesso ao fluxo',
-    'Gerenciar etiquetas do fluxo',
-    'Criar/editar cards',
-    'Não pode excluir itens permanentemente',
-  ],
-  editor: [
-    'Criar e editar cards',
-    'Completar checklists',
-    'Adicionar comentários',
-    'Dispensar itens (com justificativa)',
-    'Não pode excluir permanentemente',
-  ],
-  viewer: [
-    'Visualizar cards e checklists',
-    'Sem permissão de edição',
-    'Sem permissão de exclusão',
-  ],
 };
 
+/**
+ * Mapeia roles vindas do banco (incluindo aliases legados) para o papel
+ * exibido na UI. Garante que "Editor"/"Visualizador" nunca aparecem.
+ */
+function toDisplayRole(role: AppRole | null): DisplayRole | null {
+  if (!role) return null;
+  if (role === 'editor') return 'gestor';   // alias legado
+  if (role === 'viewer') return 'corretor'; // alias legado
+  if ((DISPLAY_ROLES as string[]).includes(role)) return role as DisplayRole;
+  return null;
+}
+
 export function UsersAndAccessManager() {
-  const { profiles, isLoading: isLoadingProfiles } = useProfiles();
-  const { userRoles, isLoading: isLoadingRoles, setUserRole, removeUserRole, getUserRole } = useUserRoles();
+  const { users, isLoading: isLoadingUsers, adminCount, setUserRole, removeUserRole } = useInternalUsers();
   const { allUserBoards, addUserToBoard, removeUserFromBoard, updateBoardAdmin, isLoading: isLoadingBoards } = useUserBoards();
   const { boards } = useBoards();
   const { user: currentUser, isAdmin } = useAuth();
@@ -113,15 +145,12 @@ export function UsersAndAccessManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingUploadUserId = useRef<string | null>(null);
 
-  const isLoading = isLoadingProfiles || isLoadingRoles || isLoadingBoards;
+  const isLoading = isLoadingUsers || isLoadingBoards;
 
   const toggleUserExpanded = (userId: string) => {
     const newExpanded = new Set(expandedUsers);
-    if (newExpanded.has(userId)) {
-      newExpanded.delete(userId);
-    } else {
-      newExpanded.add(userId);
-    }
+    if (newExpanded.has(userId)) newExpanded.delete(userId);
+    else newExpanded.add(userId);
     setExpandedUsers(newExpanded);
   };
 
@@ -134,62 +163,43 @@ export function UsersAndAccessManager() {
   };
 
   const handleToggleBoardAccess = (userId: string, boardId: string, hasAccess: boolean) => {
-    if (hasAccess) {
-      removeUserFromBoard.mutate({ userId, boardId });
-    } else {
-      addUserToBoard.mutate({ userId, boardId });
-    }
+    if (hasAccess) removeUserFromBoard.mutate({ userId, boardId });
+    else addUserToBoard.mutate({ userId, boardId });
   };
 
-  const handleToggleBoardAdmin = (userId: string, boardId: string, isAdmin: boolean) => {
-    updateBoardAdmin.mutate({ userId, boardId, isBoardAdmin: !isAdmin });
+  const handleToggleBoardAdmin = (userId: string, boardId: string, currentlyAdmin: boolean) => {
+    updateBoardAdmin.mutate({ userId, boardId, isBoardAdmin: !currentlyAdmin });
   };
 
-  // Delete user (remove from user_roles, user_boards, and profiles)
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
-
     try {
-      // Remove user_roles
       await supabase.from('user_roles').delete().eq('user_id', userToDelete.userId);
-      // Remove user_boards
       await supabase.from('user_boards').delete().eq('user_id', userToDelete.userId);
-      // Remove profile
       await supabase.from('profiles').delete().eq('user_id', userToDelete.userId);
-      
       toast({ title: 'Usuário excluído com sucesso!' });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
       queryClient.invalidateQueries({ queryKey: ['user-boards'] });
     } catch (error: any) {
-      toast({ 
-        title: 'Erro ao excluir usuário', 
-        description: error.message,
-        variant: 'destructive' 
-      });
+      toast({ title: 'Erro ao excluir usuário', description: error.message, variant: 'destructive' });
     } finally {
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
   };
 
-  // Inactivate user (remove all roles and board access)
   const handleInactivateUser = async (userId: string, userName: string) => {
     try {
-      // Remove user_roles
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-      // Remove user_boards
+      await supabase.rpc('remove_user_role', { _user_id: userId });
       await supabase.from('user_boards').delete().eq('user_id', userId);
-      
       toast({ title: `${userName} foi inativado com sucesso!` });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
       queryClient.invalidateQueries({ queryKey: ['user-boards'] });
     } catch (error: any) {
-      toast({ 
-        title: 'Erro ao inativar usuário', 
-        description: error.message,
-        variant: 'destructive' 
-      });
+      toast({ title: 'Erro ao inativar usuário', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -212,31 +222,24 @@ export function UsersAndAccessManager() {
     try {
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/avatar.${fileExt}`;
-
-      // Remove old avatar if exists
       await supabase.storage.from('avatars').remove([filePath]);
-
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
-
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
       const avatarUrl = `${publicUrl}?t=${Date.now()}`;
 
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: avatarUrl })
         .eq('user_id', userId);
-
       if (updateError) throw updateError;
 
       toast({ title: 'Foto atualizada com sucesso!' });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
     } catch (error: any) {
       toast({ title: 'Erro ao enviar foto', description: error.message, variant: 'destructive' });
     } finally {
@@ -246,7 +249,6 @@ export function UsersAndAccessManager() {
     }
   };
 
-  // Get board info for a user
   const getUserBoardsInfo = (userId: string) => {
     const userBoardEntries = allUserBoards.filter(ub => ub.user_id === userId);
     return userBoardEntries.map(ub => {
@@ -260,20 +262,6 @@ export function UsersAndAccessManager() {
     });
   };
 
-  // Get effective role label
-  const getEffectiveRole = (userId: string) => {
-    const role = getUserRole(userId);
-    if (role === 'admin') return 'super_admin';
-    
-    const userBoardsInfo = getUserBoardsInfo(userId);
-    const isFlowAdmin = userBoardsInfo.some(b => b.isAdmin);
-    
-    if (isFlowAdmin) return 'flow_admin';
-    if (role === 'editor') return 'editor';
-    if (role === 'viewer') return 'viewer';
-    return 'none';
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -284,337 +272,77 @@ export function UsersAndAccessManager() {
 
   return (
     <div className="space-y-4">
-      {/* Legend with Permissions */}
+      {/* Legenda dos 4 papéis oficiais */}
       <div className="p-3 bg-muted/30 rounded-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-help">
-                  <Shield className="h-4 w-4 text-red-500" />
-                  <div>
-                    <span className="text-xs font-semibold">Super Admin</span>
-                    <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p className="font-semibold mb-1">Super Admin pode:</p>
-                <ul className="text-xs space-y-0.5">
-                  {ROLE_PERMISSIONS.super_admin.map((perm, i) => (
-                    <li key={i}>• {perm}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-help">
-                  <Crown className="h-4 w-4 text-amber-500" />
-                  <div>
-                    <span className="text-xs font-semibold">Admin de Fluxo</span>
-                    <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p className="font-semibold mb-1">Admin de Fluxo pode:</p>
-                <ul className="text-xs space-y-0.5">
-                  {ROLE_PERMISSIONS.flow_admin.map((perm, i) => (
-                    <li key={i}>• {perm}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-help">
-                  <UserCog className="h-4 w-4 text-blue-500" />
-                  <div>
-                    <span className="text-xs font-semibold">Editor</span>
-                    <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p className="font-semibold mb-1">Editor pode:</p>
-                <ul className="text-xs space-y-0.5">
-                  {ROLE_PERMISSIONS.editor.map((perm, i) => (
-                    <li key={i}>• {perm}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-help">
-                  <Eye className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <span className="text-xs font-semibold">Visualizador</span>
-                    <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p className="font-semibold mb-1">Visualizador pode:</p>
-                <ul className="text-xs space-y-0.5">
-                  {ROLE_PERMISSIONS.viewer.map((perm, i) => (
-                    <li key={i}>• {perm}</li>
-                  ))}
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-
-      {/* Users List */}
-      <ScrollArea className="h-[400px] pr-2">
-        <div className="space-y-2">
-          {profiles.map((profile) => {
-            const currentRole = getUserRole(profile.user_id);
-            const isCurrentUser = profile.user_id === currentUser?.id;
-            const isSuperAdmin = currentRole === 'admin';
-            const userBoardsInfo = getUserBoardsInfo(profile.user_id);
-            const effectiveRole = getEffectiveRole(profile.user_id);
-            const isExpanded = expandedUsers.has(profile.user_id);
-            
+          {DISPLAY_ROLES.map((role) => {
+            const meta = ROLE_META[role];
+            const Icon = meta.icon;
             return (
-              <Collapsible 
-                key={profile.user_id}
-                open={isExpanded}
-                onOpenChange={() => toggleUserExpanded(profile.user_id)}
-              >
-                <Card className={isCurrentUser ? 'border-primary/50' : ''}>
-                  <CollapsibleTrigger asChild>
-                    <CardContent className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="relative group">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={profile.avatar_url || undefined} />
-                            <AvatarFallback className="bg-primary/20 text-primary text-sm font-semibold">
-                              {profile.full_name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          {isAdmin && (
-                            <button
-                              type="button"
-                              className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAvatarUpload(profile.user_id);
-                              }}
-                              disabled={uploadingUserId === profile.user_id}
-                            >
-                              {uploadingUserId === profile.user_id ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                              ) : (
-                                <Camera className="h-4 w-4 text-white" />
-                              )}
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate text-sm">{profile.full_name}</span>
-                            {isCurrentUser && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">Você</Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {/* Effective Role Badge */}
-                            {effectiveRole === 'super_admin' && (
-                              <Badge className="text-[10px] px-1.5 py-0 bg-red-100 text-red-700 border-red-200">
-                                <Shield className="h-2.5 w-2.5 mr-1" />
-                                Super Admin
-                              </Badge>
-                            )}
-                            {effectiveRole === 'flow_admin' && (
-                              <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200">
-                                <Crown className="h-2.5 w-2.5 mr-1" />
-                                Admin de Fluxo
-                              </Badge>
-                            )}
-                            {effectiveRole === 'editor' && (
-                              <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200">
-                                <UserCog className="h-2.5 w-2.5 mr-1" />
-                                Editor
-                              </Badge>
-                            )}
-                            {effectiveRole === 'viewer' && (
-                              <Badge className="text-[10px] px-1.5 py-0 bg-gray-100 text-gray-700 border-gray-200">
-                                <Eye className="h-2.5 w-2.5 mr-1" />
-                                Visualizador
-                              </Badge>
-                            )}
-                            {effectiveRole === 'none' && (
-                              <Badge className="text-[10px] px-1.5 py-0 bg-gray-50 text-gray-500">
-                                <UserX className="h-2.5 w-2.5 mr-1" />
-                                Sem acesso
-                              </Badge>
-                            )}
-                            
-                            {/* Flow count for non-super-admins */}
-                            {!isSuperAdmin && userBoardsInfo.length > 0 && (
-                              <span className="text-[10px] text-muted-foreground">
-                                • {userBoardsInfo.length} fluxo{userBoardsInfo.length > 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              <TooltipProvider key={role}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      <Icon className={`h-4 w-4 ${meta.color}`} />
+                      <div>
+                        <span className="text-xs font-semibold">{meta.label}</span>
+                        <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
                       </div>
-                    </CardContent>
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent>
-                    <div className="px-3 pb-3 pt-0 border-t bg-muted/20">
-                      {/* Role Selection */}
-                      <div className="flex items-center justify-between py-3 border-b">
-                        <span className="text-sm font-medium">Função Base:</span>
-                        <Select
-                          value={currentRole || 'none'}
-                          onValueChange={(value) => handleRoleChange(profile.user_id, value)}
-                          disabled={isCurrentUser}
-                        >
-                          <SelectTrigger className="w-[150px] h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover">
-                            <SelectItem value="admin">
-                              <div className="flex items-center gap-2">
-                                <Shield className="h-3.5 w-3.5 text-red-500" />
-                                <span>Super Admin</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="editor">
-                              <div className="flex items-center gap-2">
-                                <UserCog className="h-3.5 w-3.5 text-blue-500" />
-                                <span>Editor</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="viewer">
-                              <div className="flex items-center gap-2">
-                                <Eye className="h-3.5 w-3.5 text-gray-500" />
-                                <span>Visualizador</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="none">
-                              <div className="flex items-center gap-2">
-                                <UserX className="h-3.5 w-3.5 text-gray-400" />
-                                <span>Sem acesso</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Board Access - only show for non-super-admins */}
-                      {!isSuperAdmin && (
-                        <div className="py-3 space-y-2 border-b">
-                          <span className="text-sm font-medium">Acesso aos Fluxos:</span>
-                          <div className="space-y-1.5 mt-2">
-                            {boards.filter(b => b.is_active).map((board) => {
-                              const userBoard = allUserBoards.find(
-                                ub => ub.user_id === profile.user_id && ub.board_id === board.id
-                              );
-                              const hasAccess = !!userBoard;
-                              const isFlowAdmin = userBoard?.is_board_admin || false;
-
-                              return (
-                                <div 
-                                  key={board.id}
-                                  className="flex items-center justify-between py-1.5 px-2 rounded bg-background"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      checked={hasAccess}
-                                      onCheckedChange={() => handleToggleBoardAccess(profile.user_id, board.id, hasAccess)}
-                                    />
-                                    <div
-                                      className="w-2 h-2 rounded-full"
-                                      style={{ backgroundColor: board.color }}
-                                    />
-                                    <span className="text-sm">{board.name.replace('Fluxo de ', '').replace('Fluxo ', '')}</span>
-                                  </div>
-                                  
-                                  {hasAccess && (
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] text-muted-foreground">Admin</span>
-                                      <Switch
-                                        checked={isFlowAdmin}
-                                        onCheckedChange={() => handleToggleBoardAdmin(profile.user_id, board.id, isFlowAdmin)}
-                                        className="scale-75"
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {isSuperAdmin && (
-                        <div className="py-3 text-sm text-green-600 flex items-center gap-2 border-b">
-                          <Shield className="h-4 w-4" />
-                          Acesso total a todos os fluxos
-                        </div>
-                      )}
-
-                      {/* Action buttons - only for non-current users */}
-                      {!isCurrentUser && isAdmin && (
-                        <div className="py-3 flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs text-amber-600 border-amber-200 hover:bg-amber-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Inativar ${profile.full_name}? O usuário perderá todas as permissões.`)) {
-                                handleInactivateUser(profile.user_id, profile.full_name);
-                              }
-                            }}
-                          >
-                            <UserX className="h-3.5 w-3.5 mr-1" />
-                            Inativar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUserToDelete({ userId: profile.user_id, name: profile.full_name });
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Excluir
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="font-semibold mb-1">{meta.label} pode:</p>
+                    <ul className="text-xs space-y-0.5">
+                      {meta.permissions.map((perm, i) => (
+                        <li key={i}>• {perm}</li>
+                      ))}
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             );
           })}
         </div>
+      </div>
+
+      {/* Lista de usuários */}
+      <ScrollArea className="h-[400px] pr-2">
+        <div className="space-y-2">
+          {users.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Nenhum usuário encontrado.</p>
+            </div>
+          ) : (
+            users.map((u) => (
+              <UserCard
+                key={u.user_id}
+                user={u}
+                isCurrentUser={u.user_id === currentUser?.id}
+                isOnlyAdmin={u.role === 'admin' && adminCount <= 1}
+                isExpanded={expandedUsers.has(u.user_id)}
+                onToggleExpand={() => toggleUserExpanded(u.user_id)}
+                onRoleChange={(value) => handleRoleChange(u.user_id, value)}
+                onAvatarUpload={() => handleAvatarUpload(u.user_id)}
+                isUploadingAvatar={uploadingUserId === u.user_id}
+                isAdminViewer={isAdmin}
+                userBoardsInfo={getUserBoardsInfo(u.user_id)}
+                allBoards={boards.filter(b => b.is_active)}
+                allUserBoards={allUserBoards}
+                onToggleBoardAccess={handleToggleBoardAccess}
+                onToggleBoardAdmin={handleToggleBoardAdmin}
+                onInactivate={() => handleInactivateUser(u.user_id, u.full_name)}
+                onRequestDelete={() => {
+                  setUserToDelete({ userId: u.user_id, name: u.full_name });
+                  setDeleteDialogOpen(true);
+                }}
+                isSaving={setUserRole.isPending || removeUserRole.isPending}
+              />
+            ))
+          )}
+        </div>
       </ScrollArea>
 
-      {/* Delete Confirmation Dialog */}
       <DoubleConfirmDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -624,7 +352,6 @@ export function UsersAndAccessManager() {
         confirmText="EXCLUIR"
       />
 
-      {/* Hidden file input for avatar upload */}
       <input
         ref={fileInputRef}
         type="file"
@@ -633,5 +360,268 @@ export function UsersAndAccessManager() {
         onChange={handleFileChange}
       />
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card de usuário (extraído para legibilidade)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface UserCardProps {
+  user: InternalUser;
+  isCurrentUser: boolean;
+  isOnlyAdmin: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onRoleChange: (value: string) => void;
+  onAvatarUpload: () => void;
+  isUploadingAvatar: boolean;
+  isAdminViewer: boolean;
+  userBoardsInfo: Array<{ boardId: string; boardName: string; boardColor: string; isAdmin: boolean }>;
+  allBoards: Array<{ id: string; name: string; color: string | null; is_active: boolean }>;
+  allUserBoards: Array<{ user_id: string; board_id: string; is_board_admin: boolean }>;
+  onToggleBoardAccess: (userId: string, boardId: string, hasAccess: boolean) => void;
+  onToggleBoardAdmin: (userId: string, boardId: string, currentlyAdmin: boolean) => void;
+  onInactivate: () => void;
+  onRequestDelete: () => void;
+  isSaving: boolean;
+}
+
+function UserCard({
+  user,
+  isCurrentUser,
+  isOnlyAdmin,
+  isExpanded,
+  onToggleExpand,
+  onRoleChange,
+  onAvatarUpload,
+  isUploadingAvatar,
+  isAdminViewer,
+  userBoardsInfo,
+  allBoards,
+  allUserBoards,
+  onToggleBoardAccess,
+  onToggleBoardAdmin,
+  onInactivate,
+  onRequestDelete,
+  isSaving,
+}: UserCardProps) {
+  const displayRole = toDisplayRole(user.role);
+  const meta = displayRole ? ROLE_META[displayRole] : null;
+  const isAdminRole = displayRole === 'admin';
+  // Bloqueia o seletor se o admin atual seria removido sendo o único.
+  const lockSelector = isCurrentUser && isOnlyAdmin;
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+      <Card className={isCurrentUser ? 'border-primary/50' : ''}>
+        <CollapsibleTrigger asChild>
+          <CardContent className="p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="relative group">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary/20 text-primary text-sm font-semibold">
+                    {user.full_name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                {isAdminViewer && (
+                  <button
+                    type="button"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAvatarUpload();
+                    }}
+                    disabled={isUploadingAvatar}
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium truncate text-sm">{user.full_name}</span>
+                  {isCurrentUser && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">Você</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Mail className="h-3 w-3" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {meta ? (
+                    <Badge className={`text-[10px] px-1.5 py-0 ${meta.badgeClass}`}>
+                      <meta.icon className="h-2.5 w-2.5 mr-1" />
+                      {meta.short}
+                    </Badge>
+                  ) : (
+                    <Badge className="text-[10px] px-1.5 py-0 bg-gray-50 text-gray-500">
+                      <UserX className="h-2.5 w-2.5 mr-1" />
+                      Sem papel definido
+                    </Badge>
+                  )}
+                  {!isAdminRole && userBoardsInfo.length > 0 && (
+                    <span className="text-[10px] text-muted-foreground">
+                      • {userBoardsInfo.length} fluxo{userBoardsInfo.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </div>
+          </CardContent>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <div className="px-3 pb-3 pt-0 border-t bg-muted/20">
+            {/* Seletor de papel */}
+            <div className="flex items-center justify-between py-3 border-b">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Papel:</span>
+                {lockSelector && (
+                  <span className="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
+                    <AlertTriangle className="h-3 w-3" />
+                    Único admin — papel bloqueado
+                  </span>
+                )}
+              </div>
+              <Select
+                value={displayRole ?? 'none'}
+                onValueChange={onRoleChange}
+                disabled={lockSelector || isSaving}
+              >
+                <SelectTrigger className="w-[170px] h-8 text-xs">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {DISPLAY_ROLES.map((role) => {
+                    const m = ROLE_META[role];
+                    const Icon = m.icon;
+                    return (
+                      <SelectItem key={role} value={role}>
+                        <div className="flex items-center gap-2">
+                          <Icon className={`h-3.5 w-3.5 ${m.color}`} />
+                          <span>{m.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                  <SelectItem value="none">
+                    <div className="flex items-center gap-2">
+                      <UserX className="h-3.5 w-3.5 text-gray-400" />
+                      <span>Sem acesso</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Acesso a fluxos (não exibido para Admin, que tem acesso total) */}
+            {!isAdminRole && (
+              <div className="py-3 space-y-2 border-b">
+                <span className="text-sm font-medium">Acesso aos Fluxos:</span>
+                <div className="space-y-1.5 mt-2">
+                  {allBoards.map((board) => {
+                    const userBoard = allUserBoards.find(
+                      ub => ub.user_id === user.user_id && ub.board_id === board.id
+                    );
+                    const hasAccess = !!userBoard;
+                    const isFlowAdmin = userBoard?.is_board_admin || false;
+
+                    return (
+                      <div
+                        key={board.id}
+                        className="flex items-center justify-between py-1.5 px-2 rounded bg-background"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={hasAccess}
+                            onCheckedChange={() => onToggleBoardAccess(user.user_id, board.id, hasAccess)}
+                          />
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: board.color || '#6b7280' }}
+                          />
+                          <span className="text-sm">
+                            {board.name.replace('Fluxo de ', '').replace('Fluxo ', '')}
+                          </span>
+                        </div>
+
+                        {hasAccess && (
+                          <div className="flex items-center gap-1.5">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Crown className="h-3 w-3 text-amber-500" />
+                                  Gestor do fluxo
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Quando ativo, o usuário pode gerenciar este fluxo específico.
+                              </TooltipContent>
+                            </Tooltip>
+                            <Switch
+                              checked={isFlowAdmin}
+                              onCheckedChange={() => onToggleBoardAdmin(user.user_id, board.id, isFlowAdmin)}
+                              className="scale-75"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {isAdminRole && (
+              <div className="py-3 text-sm text-emerald-600 flex items-center gap-2 border-b">
+                <Shield className="h-4 w-4" />
+                Acesso total a todos os fluxos
+              </div>
+            )}
+
+            {/* Ações */}
+            {!isCurrentUser && isAdminViewer && (
+              <div className="py-3 flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-amber-600 border-amber-200 hover:bg-amber-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Inativar ${user.full_name}? O usuário perderá todas as permissões.`)) {
+                      onInactivate();
+                    }
+                  }}
+                >
+                  <UserX className="h-3.5 w-3.5 mr-1" />
+                  Inativar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRequestDelete();
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Excluir
+                </Button>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 }

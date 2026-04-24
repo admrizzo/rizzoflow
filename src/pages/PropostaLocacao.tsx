@@ -583,7 +583,7 @@ export default function PropostaLocacao() {
 
   const showConjuge = needsConjuge(data);
   const totalSteps = 9;
-  const labels = getStepLabels(showConjuge);
+  const labels = getStepLabels(showConjuge, isPJ(data));
 
   // ── Progress calculation ──
   const skipConjuge = !showConjuge;
@@ -1016,7 +1016,28 @@ export default function PropostaLocacao() {
                     type="button"
                     variant={data.imovel.tipo_pessoa === t ? 'default' : 'outline'}
                     className="flex-1"
-                    onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: t } }))}
+                    onClick={() => update(p => {
+                      if (p.imovel.tipo_pessoa === t) return p;
+                      const isNowPJ = t === 'juridica';
+                      return {
+                        ...p,
+                        imovel: { ...p.imovel, tipo_pessoa: t },
+                        // Limpa dados PF se virou PJ
+                        dados_pessoais: isNowPJ ? { ...emptyPerson } : p.dados_pessoais,
+                        perfil_financeiro: isNowPJ
+                          ? { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' }
+                          : p.perfil_financeiro,
+                        conjuge: isNowPJ ? { ...emptyPerson } : p.conjuge,
+                        socios: isNowPJ ? [] : p.socios,
+                        // Limpa dados PJ se virou PF
+                        empresa: !isNowPJ ? { ...emptyEmpresa } : p.empresa,
+                        representantes: !isNowPJ ? [] : p.representantes,
+                        // Reinicia documentos com o template correto
+                        documentos: isNowPJ
+                          ? PJ_DOC_CATEGORIES.map(c => ({ ...c, files: [] }))
+                          : INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
+                      };
+                    })}
                   >
                     {t === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                   </Button>

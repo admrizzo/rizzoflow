@@ -951,32 +951,98 @@ export default function PropostaPublica() {
         {/* Tipo de proponente */}
         <div>
           <h3 className="font-bold text-foreground mb-3">Tipo de proponente</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { value: 'fisica' as const, label: 'Pessoa Física', desc: 'CPF, RG, dados pessoais', icon: User },
-              { value: 'juridica' as const, label: 'Pessoa Jurídica', desc: 'CNPJ, contrato social, sócios', icon: Building },
+              {
+                value: 'fisica' as const,
+                label: 'Pessoa Física',
+                desc: 'Documentos pessoais e comprovação de renda',
+                icon: User,
+                docs: [
+                  'CNH ou RG e CPF',
+                  'Comprovante de endereço atualizado',
+                  'Comprovante de renda (3 últimos contracheques, extratos bancários ou Imposto de Renda)',
+                  'Se casado(a): certidão de casamento + documento do cônjuge',
+                  'Se solteiro(a): certidão de nascimento',
+                ],
+              },
+              {
+                value: 'juridica' as const,
+                label: 'Pessoa Jurídica',
+                desc: 'Documentação da empresa e dos sócios',
+                icon: Building,
+                docs: [
+                  'Documentos pessoais dos representantes legais',
+                  'Contrato Social',
+                  'Cartão CNPJ',
+                  'Balanço patrimonial e último balancete',
+                  'DRE (Demonstração do Resultado do Exercício) do último ano calendário',
+                  'DEFIS (para empresas do Simples Nacional) + recibo de entrega',
+                  'Extrato do Simples Nacional do último mês (quando aplicável)',
+                ],
+              },
             ].map(opt => {
               const selected = data.imovel.tipo_pessoa === opt.value;
               return (
-                <button key={opt.value}
+                <div
+                  key={opt.value}
                   onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
                   className={cn(
-                    'relative p-5 rounded-2xl border-2 text-left transition-all',
-                    selected ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/30'
+                    'relative rounded-xl border text-left transition-all cursor-pointer px-3.5 py-3',
+                    selected
+                      ? 'border-accent bg-accent/5 shadow-sm'
+                      : 'border-border bg-white hover:border-accent/40 hover:bg-accent/[0.02]'
                   )}
                 >
-                  {selected && (
-                    <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-accent" />
-                  )}
-                  <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center mb-3',
-                    selected ? 'bg-accent/10 ring-1 ring-accent/20' : 'bg-muted'
-                  )}>
-                    <opt.icon className={cn('h-5 w-5', selected ? 'text-accent' : 'text-muted-foreground')} />
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+                      selected ? 'bg-accent/10 ring-1 ring-accent/20' : 'bg-muted'
+                    )}>
+                      <opt.icon className={cn('h-4 w-4', selected ? 'text-accent' : 'text-muted-foreground')} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm leading-tight">{opt.label}</p>
+                      <p className="text-[11.5px] text-muted-foreground mt-0.5 leading-snug">{opt.desc}</p>
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            'shrink-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors',
+                            'text-muted-foreground hover:text-accent hover:bg-accent/10'
+                          )}
+                          aria-label={`Ver documentos exigidos — ${opt.label}`}
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="top"
+                        align="end"
+                        className="w-72 p-3.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="text-xs font-bold text-foreground mb-2 uppercase tracking-wide">
+                          Documentação exigida
+                        </p>
+                        <ul className="space-y-1.5">
+                          {opt.docs.map((d, i) => (
+                            <li key={i} className="flex gap-2 text-xs text-muted-foreground leading-snug">
+                              <span className="text-accent mt-0.5">•</span>
+                              <span>{d}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                  <p className="font-bold text-foreground text-sm">{opt.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
-                </button>
+                  {selected && (
+                    <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-white" />
+                  )}
+                </div>
               );
             })}
           </div>

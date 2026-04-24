@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // 5. Convida via e-mail (Supabase manda link p/ definir senha)
     const requestOrigin = req.headers.get('origin')
-    const redirectTo = body.redirectTo || (requestOrigin ? `${requestOrigin}/auth` : undefined)
+    const redirectTo = body.redirectTo || (requestOrigin ? `${requestOrigin}/auth?invite=1` : undefined)
     const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {

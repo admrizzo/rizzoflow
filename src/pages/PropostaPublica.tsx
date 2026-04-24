@@ -32,6 +32,7 @@ import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks
 import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
+import { getPropertyIdentification } from '@/lib/propertyIdentification';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };

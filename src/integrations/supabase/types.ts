@@ -1355,6 +1355,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           department: Database["public"]["Enums"]["department"] | null
+          email: string | null
           full_name: string
           id: string
           updated_at: string
@@ -1364,6 +1365,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           department?: Database["public"]["Enums"]["department"] | null
+          email?: string | null
           full_name: string
           id?: string
           updated_at?: string
@@ -1373,6 +1375,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           department?: Database["public"]["Enums"]["department"] | null
+          email?: string | null
           full_name?: string
           id?: string
           updated_at?: string

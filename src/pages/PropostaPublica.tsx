@@ -612,6 +612,8 @@ export default function PropostaPublica() {
     composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
     garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
     negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+    empresa: { ...emptyEmpresa },
+    representantes: [],
   });
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);

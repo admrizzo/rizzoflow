@@ -81,7 +81,37 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
   const { data: cardTemplates = [] } = useCardTemplates(isAdministrativoBoard ? boardId : undefined);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
-  // Property auto-fill (regular boards)
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !formRef.current || formRef.current.contains(target)) return;
+      handleCancel();
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isAdding]);
+  
+  // Fields for regular boards (Locação, Venda, etc.)
+  const [robustCode, setRobustCode] = useState('');
+  const [buildingName, setBuildingName] = useState('');
+
+  // Property lookup helpers (regular boards)
   const { properties: allProperties } = useProperties();
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
   const [propertySearchQuery, setPropertySearchQuery] = useState('');
@@ -117,36 +147,6 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
     setPropertySearchOpen(false);
     setPropertySearchQuery('');
   };
-
-  useEffect(() => {
-    if (!isAdding) return;
-
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (!target || !formRef.current || formRef.current.contains(target)) return;
-      handleCancel();
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleCancel();
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('touchstart', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('touchstart', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isAdding]);
-  
-  // Fields for regular boards (Locação, Venda, etc.)
-  const [robustCode, setRobustCode] = useState('');
-  const [buildingName, setBuildingName] = useState('');
   
   // Fields for Rescisão board
   const [tenantName, setTenantName] = useState('');

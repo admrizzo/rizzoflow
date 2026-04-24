@@ -135,6 +135,49 @@ export interface Imovel {
   tipo_pessoa: 'fisica' | 'juridica' | '';
 }
 
+// ── Pessoa Jurídica ──
+export interface EmpresaData {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  data_abertura: string;
+  ramo_atividade: string;
+  telefone: string;
+  email: string;
+  // Endereço da empresa
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  // Capacidade financeira PJ
+  faturamento_mensal: string;
+  regime_tributario: string;
+  tempo_atividade: string;
+}
+
+export interface RepresentanteLegal {
+  nome: string;
+  cpf: string;
+  profissao: string;
+  whatsapp: string;
+  email: string;
+  // Endereço do representante
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  // Papéis na empresa
+  is_socio: boolean;
+  is_administrador: boolean;
+  is_signatario: boolean;
+}
+
 // documentos
 export type DocCategoryKey = 'documento_foto' | 'comprovante_residencia' | 'comprovante_renda' | 'estado_civil';
 

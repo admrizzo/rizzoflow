@@ -2007,6 +2007,25 @@ export type Database = {
         Returns: boolean
       }
       is_team_member: { Args: { _user_id: string }; Returns: boolean }
+      list_internal_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
+      remove_user_role: { Args: { _user_id: string }; Returns: undefined }
+      set_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       admin_task_category: "financeiro" | "cadastral" | "operacional"

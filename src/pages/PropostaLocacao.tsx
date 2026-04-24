@@ -18,6 +18,8 @@ import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
 import { useProposalDraft, calcFormProgress, INTERNAL_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { Cloud, CloudOff, Loader2 as Loader2Icon } from 'lucide-react';
 import { FiadorSection } from '@/components/proposta/FiadorSection';
+import { EmpresaForm } from '@/components/proposta/EmpresaForm';
+import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 
 // ── Structured Variables ──
 
@@ -389,6 +391,8 @@ function isCasadoOuUniao(data: ProposalFormData) {
 }
 
 function needsConjuge(data: ProposalFormData) {
+  // PJ não tem cônjuge — empresa não tem estado civil
+  if (data.imovel.tipo_pessoa === 'juridica') return false;
   if (!isCasadoOuUniao(data)) return false;
   const regime = data.perfil_financeiro.regime_bens;
   if (!regime) return false;
@@ -398,13 +402,17 @@ function needsConjuge(data: ProposalFormData) {
   return true;
 }
 
+function isPJ(data: ProposalFormData) {
+  return data.imovel.tipo_pessoa === 'juridica';
+}
+
 // ── Step labels (always 9; step 4 label changes) ──
-function getStepLabels(showConjuge: boolean) {
+function getStepLabels(showConjuge: boolean, pj: boolean = false) {
   return [
     'Imóvel e Tipo',
-    'Dados Pessoais',
-    'Estado Civil e Renda',
-    showConjuge ? 'Cônjuge / Sócios' : 'Cônjuge / Sócios',
+    pj ? 'Dados da Empresa' : 'Dados Pessoais',
+    pj ? 'Capacidade Financeira' : 'Estado Civil e Renda',
+    pj ? 'Representantes Legais' : (showConjuge ? 'Cônjuge / Sócios' : 'Cônjuge / Sócios'),
     'Documentos',
     'Moradores',
     'Garantia',
@@ -417,6 +425,7 @@ function getStepLabels(showConjuge: boolean) {
 function validateStep(step: number, data: ProposalFormData): string[] {
   const errors: string[] = [];
   const showConjuge = needsConjuge(data);
+  const pj = isPJ(data);
   switch (step) {
     case 0:
       if (!data.imovel.codigo.trim()) errors.push('Selecione um imóvel do CRM (Cód no Robust obrigatório)');
@@ -424,12 +433,25 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.imovel.tipo_pessoa) errors.push('Tipo de pessoa é obrigatório');
       break;
     case 1:
+      if (pj) {
+        if (!data.empresa.razao_social.trim()) errors.push('Razão Social é obrigatória');
+        if (!data.empresa.cnpj.trim()) errors.push('CNPJ é obrigatório');
+        if (!data.empresa.ramo_atividade.trim()) errors.push('Ramo de atividade é obrigatório');
+        if (!data.empresa.telefone.trim()) errors.push('Telefone da empresa é obrigatório');
+        if (!data.empresa.email.trim()) errors.push('E-mail da empresa é obrigatório');
+        break;
+      }
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       break;
     case 2:
+      if (pj) {
+        if (!data.empresa.faturamento_mensal.trim()) errors.push('Faturamento mensal é obrigatório');
+        if (!data.empresa.regime_tributario) errors.push('Regime tributário é obrigatório');
+        break;
+      }
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
       if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
       if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
@@ -437,6 +459,20 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
     case 3:
+      if (pj) {
+        if (data.representantes.length === 0) errors.push('Adicione pelo menos um representante legal');
+        data.representantes.forEach((r, i) => {
+          const label = `Representante ${i + 1}`;
+          if (!r.nome.trim()) errors.push(`${label}: nome é obrigatório`);
+          if (!r.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          if (!r.whatsapp.trim()) errors.push(`${label}: WhatsApp é obrigatório`);
+          if (!r.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
+        });
+        if (data.representantes.length > 0 && !data.representantes.some(r => r.is_signatario)) {
+          errors.push('Indique pelo menos um representante como signatário do contrato');
+        }
+        break;
+      }
       if (showConjuge && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
       break;
     case 4:
@@ -547,7 +583,7 @@ export default function PropostaLocacao() {
 
   const showConjuge = needsConjuge(data);
   const totalSteps = 9;
-  const labels = getStepLabels(showConjuge);
+  const labels = getStepLabels(showConjuge, isPJ(data));
 
   // ── Progress calculation ──
   const skipConjuge = !showConjuge;
@@ -612,7 +648,8 @@ export default function PropostaLocacao() {
       return;
     }
     if (step < totalSteps - 1) {
-      const next = step === 2 && !showConjuge ? 4 : step + 1;
+      // PF sem cônjuge: pula etapa 3 (Cônjuge/Sócios). PJ sempre exige etapa 3 (Representantes).
+      const next = step === 2 && !showConjuge && !isPJ(data) ? 4 : step + 1;
       setStep(next);
       setVisited((prev) => new Set(prev).add(next));
     }
@@ -620,19 +657,19 @@ export default function PropostaLocacao() {
 
   function goPrev() {
     if (step > 0) {
-      const prev = step === 4 && !showConjuge ? 2 : step - 1;
+      const prev = step === 4 && !showConjuge && !isPJ(data) ? 2 : step - 1;
       setStep(prev);
     }
   }
 
   function goToStep(s: number) {
-    if (s === 3 && !showConjuge) return;
+    if (s === 3 && !showConjuge && !isPJ(data)) return;
     if (visited.has(s)) setStep(s);
   }
 
   function getStepStatus(s: number): 'done' | 'current' | 'pending' | 'skipped' {
     if (s === step) return 'current';
-    if (s === 3 && !showConjuge) return 'skipped';
+    if (s === 3 && !showConjuge && !isPJ(data)) return 'skipped';
     if (!visited.has(s)) return 'pending';
     const errs = validateStep(s, data);
     return errs.length === 0 ? 'done' : 'pending';
@@ -666,7 +703,11 @@ export default function PropostaLocacao() {
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';
     const garantiaLabel = data.garantia.tipo_garantia || 'Não informado';
     const valorProposto = data.negociacao.valor_proposto || 'Não informado';
-    const clientName = data.dados_pessoais.nome || 'Não informado';
+    const pj = isPJ(data);
+    const signatario = pj ? data.representantes.find(r => r.is_signatario) : null;
+    const clientName = pj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa não informada')
+      : (data.dados_pessoais.nome || 'Não informado');
     const imovelCodigo = data.imovel.codigo || '';
 
     const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
@@ -685,7 +726,35 @@ export default function PropostaLocacao() {
     const seguroIncendio = selectedProperty?.seguro_incendio;
 
     // Build description with structured data
-    const descriptionLines = [
+    const descriptionLines = pj ? [
+      `**Tipo:** Pessoa Jurídica`,
+      `**Razão Social:** ${data.empresa.razao_social || 'Não informado'}`,
+      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
+      `**CNPJ:** ${data.empresa.cnpj || 'Não informado'}`,
+      `**Ramo:** ${data.empresa.ramo_atividade || 'Não informado'}`,
+      `**Telefone:** ${data.empresa.telefone || 'Não informado'}`,
+      `**E-mail:** ${data.empresa.email || 'Não informado'}`,
+      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'Não informado'}`,
+      `**Regime tributário:** ${data.empresa.regime_tributario || 'Não informado'}`,
+      '',
+      `**Representantes:** ${data.representantes.length}`,
+      signatario
+        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
+        : `**Signatário:** ⚠️ não indicado`,
+      '',
+      `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
+      `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
+      `**Bairro:** ${bairro}`,
+      `**Cidade:** ${cidade}`,
+      `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      condominio ? `**Condomínio:** R$ ${condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**Condomínio:** Não informado`,
+      iptu ? `**IPTU:** R$ ${iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**IPTU:** Não informado`,
+      seguroIncendio ? `**Seguro Incêndio:** R$ ${seguroIncendio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
+      `**Valor Proposto:** ${valorProposto}`,
+      '',
+      `**Garantia:** ${garantiaLabel}`,
+      `**Status:** Nova proposta`,
+    ] : [
       `**Cliente:** ${clientName}`,
       `**CPF:** ${data.dados_pessoais.cpf || 'Não informado'}`,
       `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'Não informado'}`,
@@ -980,7 +1049,28 @@ export default function PropostaLocacao() {
                     type="button"
                     variant={data.imovel.tipo_pessoa === t ? 'default' : 'outline'}
                     className="flex-1"
-                    onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: t } }))}
+                    onClick={() => update(p => {
+                      if (p.imovel.tipo_pessoa === t) return p;
+                      const isNowPJ = t === 'juridica';
+                      return {
+                        ...p,
+                        imovel: { ...p.imovel, tipo_pessoa: t },
+                        // Limpa dados PF se virou PJ
+                        dados_pessoais: isNowPJ ? { ...emptyPerson } : p.dados_pessoais,
+                        perfil_financeiro: isNowPJ
+                          ? { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' }
+                          : p.perfil_financeiro,
+                        conjuge: isNowPJ ? { ...emptyPerson } : p.conjuge,
+                        socios: isNowPJ ? [] : p.socios,
+                        // Limpa dados PJ se virou PF
+                        empresa: !isNowPJ ? { ...emptyEmpresa } : p.empresa,
+                        representantes: !isNowPJ ? [] : p.representantes,
+                        // Reinicia documentos com o template correto
+                        documentos: isNowPJ
+                          ? PJ_DOC_CATEGORIES.map(c => ({ ...c, files: [] }))
+                          : INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
+                      };
+                    })}
                   >
                     {t === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                   </Button>
@@ -990,6 +1080,9 @@ export default function PropostaLocacao() {
           </div>
         );
       case 1:
+        if (isPJ(data)) {
+          return <EmpresaForm data={data.empresa} onChange={(d) => update(p => ({ ...p, empresa: d }))} />;
+        }
         return (
           <PersonFields
             data={data.dados_pessoais}
@@ -999,6 +1092,23 @@ export default function PropostaLocacao() {
           />
         );
       case 2:
+        if (isPJ(data)) {
+          return (
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                As informações financeiras da empresa já foram preenchidas na etapa anterior. Confira abaixo.
+              </p>
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Faturamento mensal</span><span className="font-medium">{data.empresa.faturamento_mensal || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Regime tributário</span><span className="font-medium">{data.empresa.regime_tributario || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Tempo de atividade</span><span className="font-medium">{data.empresa.tempo_atividade || '—'}</span></div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Para alterar, volte à etapa "Dados da Empresa".
+              </p>
+            </div>
+          );
+        }
         return (
           <div className="space-y-6">
             <div>
@@ -1121,6 +1231,14 @@ export default function PropostaLocacao() {
           </div>
         );
       case 3:
+        if (isPJ(data)) {
+          return (
+            <RepresentantesForm
+              representantes={data.representantes}
+              onChange={(next) => update(p => ({ ...p, representantes: next }))}
+            />
+          );
+        }
         return (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold">Dados do Cônjuge</h3>
@@ -1659,13 +1777,16 @@ function calcScore(data: ProposalFormData, percentual: number | null): { score: 
 // ── Pending steps checker ──
 function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
   const sc = needsConjuge(data);
-  const allLabels = getStepLabels(sc);
+  const pj = isPJ(data);
+  const allLabels = getStepLabels(sc, pj);
   const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
   for (let i = 0; i < 8; i++) {
-    if (i === 3 && !sc) continue;
+    // PF sem cônjuge: ignora etapa 3 (Cônjuge/Sócios). PJ sempre exige (Representantes).
+    if (i === 3 && !sc && !pj) continue;
     const errs = validateStep(i, data);
     if (errs.length > 0) {
-      const critical = [0, 1, 2, 6].includes(i); // imovel, dados, renda, garantia
+      // PJ: também marca etapa 3 (Representantes) como crítica
+      const critical = [0, 1, 2, 6].includes(i) || (pj && i === 3);
       pending.push({ step: i, label: allLabels[i], errors: errs, critical });
     }
   }
@@ -1682,13 +1803,18 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
   const { score, points, reasons } = calcScore(data, percentual);
   const pendingSteps = getPendingSteps(data);
   const hasCritical = pendingSteps.some(p => p.critical);
+  const pj = isPJ(data);
 
   const rendaMensal = v(data.perfil_financeiro.renda_mensal);
   const valorAluguel = v(data.imovel.valor_aluguel);
   const garantiaLabel = v(data.garantia.tipo_garantia);
-  const nomeProponente = v(data.dados_pessoais.nome);
+  const nomeProponente = pj
+    ? v(data.empresa.razao_social)
+    : v(data.dados_pessoais.nome);
 
-  const resumoTexto = `Proponente ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} com renda de ${rendaMensal !== 'Não informado' ? rendaMensal : '—'} pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}${percentual !== null ? `, comprometendo ${percentual.toFixed(1)}% da renda` : ''}. Garantia escolhida: ${garantiaLabel}.`;
+  const resumoTexto = pj
+    ? `Empresa ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} (CNPJ ${v(data.empresa.cnpj)}) pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}. Faturamento mensal: ${v(data.empresa.faturamento_mensal)}. Garantia escolhida: ${garantiaLabel}.`
+    : `Proponente ${nomeProponente !== 'Não informado' ? nomeProponente : '—'} com renda de ${rendaMensal !== 'Não informado' ? rendaMensal : '—'} pretende locar imóvel de ${valorAluguel !== 'Não informado' ? valorAluguel : '—'}${percentual !== null ? `, comprometendo ${percentual.toFixed(1)}% da renda` : ''}. Garantia escolhida: ${garantiaLabel}.`;
 
   const scoreConfig = {
     forte: { icon: ShieldCheck, color: 'bg-green-100 border-green-300 text-green-800', label: 'Proposta Forte', desc: 'Documentação e perfil financeiro adequados.' },
@@ -1759,24 +1885,56 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
           ['Valor aluguel', v(data.imovel.valor_aluguel)],
           ['Tipo', data.imovel.tipo_pessoa === 'fisica' ? 'Pessoa Física' : data.imovel.tipo_pessoa === 'juridica' ? 'Pessoa Jurídica' : 'Não informado'],
         ]} onFix={() => onGoToStep(0)} />
-        <ReviewBlock title="👤 Dados Pessoais" items={[
-          ['Nome', v(data.dados_pessoais.nome)],
-          ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
-          ['Profissão', v(data.dados_pessoais.profissao)],
-          ['WhatsApp', v(data.dados_pessoais.whatsapp)],
-          ['E-mail', v(data.dados_pessoais.email)],
-        ]} onFix={() => onGoToStep(1)} />
-        <ReviewBlock title="💰 Perfil Financeiro" items={[
-          ['Estado civil', v(data.perfil_financeiro.estado_civil)],
-          ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
-          ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
-            ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
-            : []),
-          ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
-          ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
-          ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
-        ]} onFix={() => onGoToStep(2)} />
-        {showConjuge && (
+        {pj ? (
+          <>
+            <ReviewBlock title="🏢 Empresa" items={[
+              ['Razão Social', v(data.empresa.razao_social)],
+              ['Nome Fantasia', v(data.empresa.nome_fantasia)],
+              ['CNPJ', v(data.empresa.cnpj)],
+              ['Data de abertura', v(data.empresa.data_abertura)],
+              ['Ramo', v(data.empresa.ramo_atividade)],
+              ['Telefone', v(data.empresa.telefone)],
+              ['E-mail', v(data.empresa.email)],
+              ['Endereço', v([data.empresa.logradouro, data.empresa.numero, data.empresa.bairro, data.empresa.cidade, data.empresa.uf].filter(Boolean).join(', '))],
+            ]} onFix={() => onGoToStep(1)} />
+            <ReviewBlock title="💰 Capacidade Financeira" items={[
+              ['Faturamento mensal', v(data.empresa.faturamento_mensal)],
+              ['Regime tributário', v(data.empresa.regime_tributario)],
+              ['Tempo de atividade', v(data.empresa.tempo_atividade)],
+            ]} onFix={() => onGoToStep(2)} />
+            <ReviewBlock title="👥 Representantes Legais" items={[
+              ['Total', String(data.representantes.length)],
+              ['Signatário indicado', data.representantes.some(r => r.is_signatario) ? '✅ Sim' : '⚠️ Pendente'],
+              ...data.representantes.flatMap((r, i) => [
+                [`Representante ${i + 1} — Nome`, v(r.nome)],
+                [`Representante ${i + 1} — CPF`, v(r.cpf)],
+                [`Representante ${i + 1} — WhatsApp`, v(r.whatsapp)],
+                [`Representante ${i + 1} — Papéis`, [r.is_socio ? 'Sócio' : null, r.is_administrador ? 'Administrador' : null, r.is_signatario ? 'Signatário' : null].filter(Boolean).join(' • ') || 'Não informado'],
+              ] as [string, string][]),
+            ]} onFix={() => onGoToStep(3)} />
+          </>
+        ) : (
+          <>
+            <ReviewBlock title="👤 Dados Pessoais" items={[
+              ['Nome', v(data.dados_pessoais.nome)],
+              ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
+              ['Profissão', v(data.dados_pessoais.profissao)],
+              ['WhatsApp', v(data.dados_pessoais.whatsapp)],
+              ['E-mail', v(data.dados_pessoais.email)],
+            ]} onFix={() => onGoToStep(1)} />
+            <ReviewBlock title="💰 Perfil Financeiro" items={[
+              ['Estado civil', v(data.perfil_financeiro.estado_civil)],
+              ...(isCasadoOuUniao(data) ? [['Regime de bens', v(data.perfil_financeiro.regime_bens)] as [string, string]] : []),
+              ...(isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens'
+                ? [['Cônjuge participa', data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'] as [string, string]]
+                : []),
+              ['Fonte de renda', v(data.perfil_financeiro.fonte_renda)],
+              ['Renda mensal', v(data.perfil_financeiro.renda_mensal)],
+              ...(percentual !== null ? [['Comprometimento', `${percentual.toFixed(1)}%`] as [string, string]] : []),
+            ]} onFix={() => onGoToStep(2)} />
+          </>
+        )}
+        {!pj && showConjuge && (
           <ReviewBlock title="💍 Cônjuge" items={[
             ['Nome', v(data.conjuge.nome)],
             ['CPF', v(data.conjuge.cpf)],

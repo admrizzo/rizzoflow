@@ -799,12 +799,43 @@ export default function PropostaPublica() {
     const { score, points } = calcScore(data, percentualCalc);
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';
     const garantiaLabel = data.garantia.tipo_garantia || 'Não informado';
-    const clientName = data.dados_pessoais.nome || 'Não informado';
+    const pj = isPJ(data);
+    const signatario = pj ? data.representantes.find(r => r.is_signatario) : null;
+    const clientName = pj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa não informada')
+      : (data.dados_pessoais.nome || 'Não informado');
     const imovelCodigo = data.imovel.codigo;
     const brokerName = proposalLink?.broker_name || 'Não identificado';
 
     const cardTitle = `${clientName} — ${imovelCodigo}`;
-    const descriptionLines = [
+    const descriptionLines = pj ? [
+      `**Tipo:** Pessoa Jurídica`,
+      `**Razão Social:** ${data.empresa.razao_social || 'N/A'}`,
+      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
+      `**CNPJ:** ${data.empresa.cnpj || 'N/A'}`,
+      `**Ramo:** ${data.empresa.ramo_atividade || 'N/A'}`,
+      `**Telefone:** ${data.empresa.telefone || 'N/A'}`,
+      `**E-mail:** ${data.empresa.email || 'N/A'}`,
+      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'N/A'}`,
+      `**Regime tributário:** ${data.empresa.regime_tributario || 'N/A'}`,
+      '',
+      `**Representantes:** ${data.representantes.length}`,
+      signatario
+        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
+        : `**Signatário:** ⚠️ não indicado`,
+      '',
+      `**Imóvel:** ${imovelCodigo}`,
+      `**Endereço:** ${data.imovel.endereco || 'N/A'}`,
+      `**Valor Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
+      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
+      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
+      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
+      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      '',
+      `**Garantia:** ${garantiaLabel}`,
+      `**Corretor:** ${brokerName}`,
+    ] : [
+      `**Tipo:** Pessoa Física`,
       `**Cliente:** ${clientName}`,
       `**CPF:** ${data.dados_pessoais.cpf || 'N/A'}`,
       `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'N/A'}`,
@@ -2137,6 +2168,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const hasCritical = pendingSteps.some(p => p.critical);
   const hasPending = pendingSteps.length > 0;
   const totalDocs = data.documentos.reduce((acc, c) => acc + c.files.length, 0);
+  const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
 
@@ -2175,7 +2207,54 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
 
       {/* Data blocks */}
       <div className="space-y-5">
-        {/* Dados Pessoais */}
+        {pj ? (
+          <>
+            {/* Empresa */}
+            <ReviewBlockNew title="Dados da Empresa" icon="🏢" onFix={() => onGoToStep(1)} hasPending={!data.empresa.razao_social.trim() || !data.empresa.cnpj.trim()}>
+              <ReviewRow label="Razão Social" value={vv(data.empresa.razao_social)} />
+              <ReviewRow label="Nome Fantasia" value={vv(data.empresa.nome_fantasia)} />
+              <ReviewRow label="CNPJ" value={vv(data.empresa.cnpj)} />
+              <ReviewRow label="Data de abertura" value={vv(data.empresa.data_abertura)} />
+              <ReviewRow label="Ramo de atividade" value={vv(data.empresa.ramo_atividade)} />
+              <ReviewRow label="Telefone" value={vv(data.empresa.telefone)} />
+              <ReviewRow label="E-mail" value={vv(data.empresa.email)} />
+              <ReviewRow
+                label="Endereço"
+                value={vv([data.empresa.logradouro, data.empresa.numero, data.empresa.bairro, data.empresa.cidade, data.empresa.uf].filter(Boolean).join(', '))}
+              />
+              <ReviewRow label="Faturamento mensal" value={vv(data.empresa.faturamento_mensal)} />
+              <ReviewRow label="Regime tributário" value={vv(data.empresa.regime_tributario)} />
+              <ReviewRow label="Tempo de atividade" value={vv(data.empresa.tempo_atividade)} />
+            </ReviewBlockNew>
+
+            {/* Representantes */}
+            <ReviewBlockNew
+              title="Representantes Legais"
+              icon="👥"
+              onFix={() => onGoToStep(2)}
+              hasPending={data.representantes.length === 0 || !data.representantes.some(r => r.is_signatario)}
+            >
+              <ReviewRow label="Total de representantes" value={String(data.representantes.length)} />
+              <ReviewRow
+                label="Signatário do contrato"
+                value={data.representantes.some(r => r.is_signatario) ? '✅ Indicado' : '⚠️ Pendente'}
+              />
+              {data.representantes.map((r, i) => (
+                <div key={i} className="mt-2 pt-2 border-t border-border/60 first:border-t-0 first:pt-0 first:mt-0">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Representante {i + 1}</p>
+                  <ReviewRow label="Nome" value={vv(r.nome)} />
+                  <ReviewRow label="CPF" value={vv(r.cpf)} />
+                  <ReviewRow label="WhatsApp" value={vv(r.whatsapp)} />
+                  <ReviewRow label="E-mail" value={vv(r.email)} />
+                  <ReviewRow
+                    label="Papéis"
+                    value={[r.is_socio ? 'Sócio' : null, r.is_administrador ? 'Administrador' : null, r.is_signatario ? 'Signatário' : null].filter(Boolean).join(' • ') || 'Não informado'}
+                  />
+                </div>
+              ))}
+            </ReviewBlockNew>
+          </>
+        ) : (
         <ReviewBlockNew title="Dados Pessoais" icon="👤" onFix={() => onGoToStep(1)} hasPending={!data.dados_pessoais.nome.trim()}>
           <ReviewRow label="Nome" value={vv(data.dados_pessoais.nome)} />
           <ReviewRow label="CPF" value={vv(data.dados_pessoais.cpf)} />
@@ -2190,6 +2269,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
         </ReviewBlockNew>
+        )}
 
         {/* Documentos */}
         <ReviewBlockNew title="Documentos" icon="📄" onFix={() => onGoToStep(3)} hasPending={totalDocs === 0}>

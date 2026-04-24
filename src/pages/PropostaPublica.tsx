@@ -1038,7 +1038,29 @@ export default function PropostaPublica() {
               return (
                 <div
                   key={opt.value}
-                  onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
+                  onClick={() => update(p => {
+                    if (p.imovel.tipo_pessoa === opt.value) return p;
+                    // Ao trocar tipo de pessoa, limpa os dados específicos do tipo anterior
+                    const isNowPJ = opt.value === 'juridica';
+                    return {
+                      ...p,
+                      imovel: { ...p.imovel, tipo_pessoa: opt.value },
+                      // Limpa dados PF se virou PJ
+                      dados_pessoais: isNowPJ ? { ...emptyPerson } : p.dados_pessoais,
+                      perfil_financeiro: isNowPJ
+                        ? { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' }
+                        : p.perfil_financeiro,
+                      conjuge: isNowPJ ? { ...emptyPerson } : p.conjuge,
+                      socios: isNowPJ ? [] : p.socios,
+                      // Limpa dados PJ se virou PF
+                      empresa: !isNowPJ ? { ...emptyEmpresa } : p.empresa,
+                      representantes: !isNowPJ ? [] : p.representantes,
+                      // Reinicia documentos com o template correto
+                      documentos: isNowPJ
+                        ? PJ_DOC_CATEGORIES.map(c => ({ ...c, files: [] }))
+                        : INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
+                    };
+                  })}
                   className={cn(
                     'relative rounded-xl border text-left transition-all cursor-pointer px-3.5 py-3',
                     selected

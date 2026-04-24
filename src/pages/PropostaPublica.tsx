@@ -933,8 +933,11 @@ export default function PropostaPublica() {
         created_by: proposalLink?.broker_user_id || null,
         address: data.imovel.endereco || null,
         robust_code: imovelCodigo || null,
-        building_name: property?.titulo || null,
+        building_name: buildingName,
         guarantee_type: mapGarantia(garantiaLabel) as any,
+        contract_type: contractType,
+        proposal_responsible: brokerName,
+        negotiation_details: negotiationDetailsLines || null,
         column_entered_at: new Date().toISOString(),
       });
       if (error) throw error;

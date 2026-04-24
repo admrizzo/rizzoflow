@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
 const VALID_ROLES = ['admin', 'gestor', 'corretor', 'administrativo'] as const
@@ -14,21 +14,40 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const requestId = crypto.randomUUID()
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY')
+    const missingSecrets = [
+      !supabaseUrl ? 'SUPABASE_URL' : null,
+      !serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null,
+      !anonKey ? 'SUPABASE_ANON_KEY ou SUPABASE_PUBLISHABLE_KEY' : null,
+    ].filter(Boolean)
+
+    if (missingSecrets.length > 0) {
+      console.error(`[invite-user:${requestId}] Missing secrets: ${missingSecrets.join(', ')}`)
+      return json({
+        error: `Configuração ausente na função invite-user: ${missingSecrets.join(', ')}`,
+        requestId,
+      }, 500)
+    }
+
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl!,
+      serviceRoleKey!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     // 1. Auth: precisa estar logado
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return json({ error: 'No authorization header' }, 401)
+      return json({ error: 'Sessão obrigatória para convidar usuários', requestId }, 401)
     }
     const token = authHeader.replace('Bearer ', '')
     const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !requestingUser) {
-      return json({ error: 'Invalid token' }, 401)
+      console.error(`[invite-user:${requestId}] Invalid token: ${authError?.message ?? 'no user'}`)
+      return json({ error: 'Sessão inválida. Entre novamente e tente de novo.', requestId }, 401)
     }
 
     // 2. Apenas admin pode convidar
@@ -39,7 +58,8 @@ Deno.serve(async (req) => {
       .eq('role', 'admin')
       .maybeSingle()
     if (!adminRow) {
-      return json({ error: 'Apenas administradores podem convidar usuários' }, 403)
+      console.warn(`[invite-user:${requestId}] Forbidden invite attempt by ${requestingUser.id}`)
+      return json({ error: 'Apenas administradores podem convidar usuários', requestId }, 403)
     }
 
     // 3. Payload

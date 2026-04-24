@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCards } from '@/hooks/useCards';
 import { useLabels } from '@/hooks/useLabels';
@@ -54,15 +54,17 @@ interface AddCardButtonProps {
   boardId: string;
   boardName?: string;
   isAdding: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
+  onClose: () => void;
 }
 
-export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle }: AddCardButtonProps) {
+export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, onClose }: AddCardButtonProps) {
   const { createCard } = useCards(boardId);
   const queryClient = useQueryClient();
   const { labels } = useLabels(boardId);
   const { isEditor } = useAuth();
   const { titlePattern, generateTitle, hasCustomPattern } = useTitlePattern(boardId);
+  const formRef = useRef<HTMLFormElement | null>(null);
   
   // Determine board type - use passed boardName prop directly
   const isRescisaoBoard = boardName === RESCISAO_BOARD_NAME;
@@ -76,6 +78,32 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onToggle
   // Card templates for Administrativo board
   const { data: cardTemplates = [] } = useCardTemplates(isAdministrativoBoard ? boardId : undefined);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAdding) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !formRef.current || formRef.current.contains(target)) return;
+      handleCancel();
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCancel();
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isAdding]);
   
   // Fields for regular boards (Locação, Venda, etc.)
   const [robustCode, setRobustCode] = useState('');

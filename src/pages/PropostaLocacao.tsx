@@ -208,11 +208,43 @@ export interface ProposalFormData {
   composicao: Composicao;
   garantia: GarantiaInfo;
   negociacao: Negociacao;
+  // ── Pessoa Jurídica ──
+  empresa: EmpresaData;
+  representantes: RepresentanteLegal[];
 }
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
 const emptyFiadorConjuge: FiadorConjugeData = { nome: '', cpf: '', documento_identidade: '', whatsapp: '', email: '' };
+
+export const emptyEmpresa: EmpresaData = {
+  razao_social: '', nome_fantasia: '', cnpj: '', data_abertura: '',
+  ramo_atividade: '', telefone: '', email: '',
+  cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+  faturamento_mensal: '', regime_tributario: '', tempo_atividade: '',
+};
+
+export const emptyRepresentante: RepresentanteLegal = {
+  nome: '', cpf: '', profissao: '', whatsapp: '', email: '',
+  cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+  is_socio: true, is_administrador: false, is_signatario: true,
+};
+
+export const REGIME_TRIBUTARIO_OPTIONS = [
+  'Simples Nacional',
+  'Lucro Presumido',
+  'Lucro Real',
+  'MEI',
+  'Outro',
+];
+
+// Categorias de documentos para Pessoa Jurídica
+export const PJ_DOC_CATEGORIES: DocumentCategory[] = [
+  { key: 'documento_foto' as DocCategoryKey, label: 'Contrato Social', help: 'Contrato social e última alteração registrada na Junta Comercial.', files: [] },
+  { key: 'comprovante_residencia' as DocCategoryKey, label: 'Cartão CNPJ', help: 'Cartão CNPJ atualizado emitido pela Receita Federal.', files: [] },
+  { key: 'comprovante_renda' as DocCategoryKey, label: 'Balanço patrimonial e balancete', help: 'Último balanço patrimonial e balancete recente assinados pelo contador.', files: [] },
+  { key: 'estado_civil' as DocCategoryKey, label: 'DRE — Demonstração do Resultado', help: 'DRE do último ano calendário assinada pelo contador.', files: [] },
+];
 
 // Categorias de documentos por tipo de fiador (regras Rizzo)
 const FIADOR_DOC_RENDA: FiadorDocumentCategory[] = [

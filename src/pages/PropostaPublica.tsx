@@ -995,22 +995,21 @@ export default function PropostaPublica() {
     ];
 
     try {
-      const { data: existingCards } = await supabase
-        .from('cards')
-        .select('position')
-        .eq('column_id', CADASTRO_INICIADO_COLUMN_ID)
-        .eq('is_archived', false)
-        .order('position', { ascending: false })
-        .limit(1);
-      const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
+      // 1) Tenta localizar o card pré-criado vinculado a este proposal_link
+      let targetCardId: string | null = null;
+      if (proposalLink?.id) {
+        const { data: linkedCard } = await supabase
+          .from('cards')
+          .select('id')
+          .eq('proposal_link_id', proposalLink.id)
+          .eq('is_archived', false)
+          .maybeSingle();
+        targetCardId = linkedCard?.id || null;
+      }
 
-      const { data: insertedCard, error } = await supabase.from('cards').insert({
+      const cardPayload = {
         title: cardTitle,
         description: descriptionLines.filter(Boolean).join('\n'),
-        board_id: LOCACAO_BOARD_ID,
-        column_id: CADASTRO_INICIADO_COLUMN_ID,
-        position: nextPosition,
-        created_by: proposalLink?.broker_user_id || null,
         address: data.imovel.endereco || null,
         robust_code: imovelCodigo || null,
         building_name: buildingName,
@@ -1018,25 +1017,78 @@ export default function PropostaPublica() {
         contract_type: contractType,
         proposal_responsible: brokerName,
         negotiation_details: negotiationDetailsLines || null,
-        column_entered_at: new Date().toISOString(),
-      }).select('id').single();
-      if (error) throw error;
+        proposal_submitted_at: new Date().toISOString(),
+      };
 
-      // Upload de documentos (proponente + cônjuge + empresa + fiadores)
-      if (insertedCard?.id) {
+      if (targetCardId) {
+        // 2a) Atualiza o card pré-criado (não cria duplicata)
+        const { error: updErr } = await supabase
+          .from('cards')
+          .update(cardPayload)
+          .eq('id', targetCardId);
+        if (updErr) throw updErr;
+      } else {
+        // 2b) Fallback: link sem card vinculado (legado) — cria novo
+        const { data: existingCards } = await supabase
+          .from('cards')
+          .select('position')
+          .eq('column_id', CADASTRO_INICIADO_COLUMN_ID)
+          .eq('is_archived', false)
+          .order('position', { ascending: false })
+          .limit(1);
+        const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
+        const { data: insertedCard, error: insErr } = await supabase.from('cards').insert({
+          ...cardPayload,
+          board_id: LOCACAO_BOARD_ID,
+          column_id: CADASTRO_INICIADO_COLUMN_ID,
+          position: nextPosition,
+          created_by: proposalLink?.broker_user_id || null,
+          proposal_link_id: proposalLink?.id || null,
+          column_entered_at: new Date().toISOString(),
+        }).select('id').single();
+        if (insErr) throw insErr;
+        targetCardId = insertedCard?.id || null;
+      }
+
+      // 3) Upload de documentos (proponente + cônjuge + empresa + fiadores)
+      if (targetCardId) {
         try {
-          await uploadProposalDocuments(insertedCard.id, proposalLink?.id || null, data);
+          await uploadProposalDocuments(targetCardId, proposalLink?.id || null, data);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos:', uploadErr);
           toast.warning('Proposta enviada, mas alguns arquivos falharam', { description: uploadErr.message });
         }
       }
 
+      // 4) Marca o link como enviado
       if (proposalLink) {
         await supabase
           .from('proposal_links')
           .update({ status: 'enviada' })
           .eq('id', proposalLink.id);
+      }
+
+      // 5) Notifica o time administrativo (admins) que a proposta foi enviada
+      if (targetCardId) {
+        try {
+          const { data: admins } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'admin');
+          const userIds = new Set<string>((admins || []).map((r: any) => r.user_id));
+          if (proposalLink?.broker_user_id) userIds.add(proposalLink.broker_user_id);
+          const notifications = Array.from(userIds).map(uid => ({
+            user_id: uid,
+            card_id: targetCardId!,
+            title: '📬 Nova proposta recebida',
+            message: `${clientName} enviou a proposta para o imóvel ${imovelCodigo}. Pronta para análise.`,
+          }));
+          if (notifications.length > 0) {
+            await supabase.from('notifications').insert(notifications);
+          }
+        } catch (notifyErr) {
+          console.error('Erro ao notificar admins:', notifyErr);
+        }
       }
 
       setSubmitted(true);

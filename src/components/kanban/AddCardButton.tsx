@@ -1028,19 +1028,63 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
         <>
           {/* Robust Code Field */}
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-              <Label className="text-xs font-medium text-gray-600">
-                Cód no Robust <span className="text-destructive">*</span>
-              </Label>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs font-medium text-gray-600">
+                  Cód no Robust <span className="text-destructive">*</span>
+                </Label>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPropertySearchOpen((v) => !v)}
+                className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Search className="h-3 w-3" />
+                Buscar imóvel
+              </button>
             </div>
             <Input
               value={robustCode}
-              onChange={(e) => setRobustCode(e.target.value)}
+              onChange={(e) => {
+                setRobustCode(e.target.value);
+                setBuildingNameTouched(false);
+              }}
               placeholder="Ex: 12345"
               autoFocus
               className="h-9 text-sm"
             />
+            {propertySearchOpen && (
+              <div className="mt-1.5 border rounded-md p-2 space-y-2 bg-card">
+                <Input
+                  value={propertySearchQuery}
+                  onChange={(e) => setPropertySearchQuery(e.target.value)}
+                  placeholder="Buscar por código, nome, bairro..."
+                  className="h-8 text-xs"
+                />
+                {propertySearchQuery && filteredProperties.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-1">
+                    Nenhum imóvel encontrado
+                  </p>
+                )}
+                {filteredProperties.length > 0 && (
+                  <div className="max-h-44 overflow-y-auto divide-y">
+                    {filteredProperties.map((p) => (
+                      <button
+                        type="button"
+                        key={p.id}
+                        onClick={() => handleSelectProperty(p)}
+                        className="w-full text-left text-xs px-1 py-1.5 hover:bg-muted/60 flex items-center gap-2"
+                      >
+                        <span className="font-medium">#{p.codigo_robust}</span>
+                        <span className="truncate flex-1">{getPropertyDisplayName(p)}</span>
+                        <span className="text-muted-foreground truncate">{p.bairro}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Building Name Field */}
@@ -1053,7 +1097,10 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
             </div>
             <Input
               value={buildingName}
-              onChange={(e) => setBuildingName(e.target.value)}
+              onChange={(e) => {
+                setBuildingName(e.target.value);
+                setBuildingNameTouched(true);
+              }}
               placeholder="Ex: Edifício Central"
               className="h-9 text-sm"
             />

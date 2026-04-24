@@ -21,10 +21,12 @@ import {
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
-  DocumentCategory, DocCategoryKey, FiadorTipo, FiadorDocumentCategory, FiadorConjugeData
+  DocumentCategory, DocCategoryKey, FiadorTipo, FiadorDocumentCategory, FiadorConjugeData,
+  EmpresaData, RepresentanteLegal,
 } from '@/pages/PropostaLocacao';
 import {
-  calcPercentualComprometimento
+  calcPercentualComprometimento,
+  emptyEmpresa, emptyRepresentante, REGIME_TRIBUTARIO_OPTIONS, PJ_DOC_CATEGORIES,
 } from '@/pages/PropostaLocacao';
 import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { FiadorSection } from '@/components/proposta/FiadorSection';

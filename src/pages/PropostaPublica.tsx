@@ -2137,6 +2137,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const hasCritical = pendingSteps.some(p => p.critical);
   const hasPending = pendingSteps.length > 0;
   const totalDocs = data.documentos.reduce((acc, c) => acc + c.files.length, 0);
+  const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
 

@@ -5,11 +5,13 @@ import { useLabels } from '@/hooks/useLabels';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTitlePattern, generateTitleFromPattern, TitleContext } from '@/hooks/useTitlePattern';
 import { useCardTemplates, CardTemplate } from '@/hooks/useCardTemplates';
+import { useProperties, Property } from '@/hooks/useProperties';
+import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, X, Hash, Building2, User, Wallet, CreditCard, FileText, MapPin } from 'lucide-react';
+import { Plus, X, Hash, Building2, User, Wallet, CreditCard, FileText, MapPin, Search } from 'lucide-react';
 import { CardTemplateSelector } from './CardTemplateSelector';
 
 // Board name constants for conditional rendering
@@ -78,6 +80,43 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
   // Card templates for Administrativo board
   const { data: cardTemplates = [] } = useCardTemplates(isAdministrativoBoard ? boardId : undefined);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+
+  // Property auto-fill (regular boards)
+  const { properties: allProperties } = useProperties();
+  const [propertySearchOpen, setPropertySearchOpen] = useState(false);
+  const [propertySearchQuery, setPropertySearchQuery] = useState('');
+  const [buildingNameTouched, setBuildingNameTouched] = useState(false);
+
+  const filteredProperties = allProperties.filter((p) => {
+    const q = propertySearchQuery.trim().toLowerCase();
+    if (!q) return false;
+    return (
+      String(p.codigo_robust).includes(q) ||
+      (p.titulo || '').toLowerCase().includes(q) ||
+      (p.bairro || '').toLowerCase().includes(q) ||
+      (p.logradouro || '').toLowerCase().includes(q) ||
+      (p.cidade || '').toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
+
+  // Auto-fill building name when robust code matches a known property
+  useEffect(() => {
+    if (buildingNameTouched) return;
+    const code = robustCode.trim();
+    if (!code) return;
+    const match = allProperties.find((p) => String(p.codigo_robust) === code);
+    if (match) {
+      setBuildingName(getPropertyDisplayName(match));
+    }
+  }, [robustCode, allProperties, buildingNameTouched]);
+
+  const handleSelectProperty = (p: Property) => {
+    setRobustCode(String(p.codigo_robust));
+    setBuildingName(getPropertyDisplayName(p));
+    setBuildingNameTouched(false);
+    setPropertySearchOpen(false);
+    setPropertySearchQuery('');
+  };
 
   useEffect(() => {
     if (!isAdding) return;

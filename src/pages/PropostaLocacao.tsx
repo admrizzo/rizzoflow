@@ -703,7 +703,11 @@ export default function PropostaLocacao() {
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';
     const garantiaLabel = data.garantia.tipo_garantia || 'Não informado';
     const valorProposto = data.negociacao.valor_proposto || 'Não informado';
-    const clientName = data.dados_pessoais.nome || 'Não informado';
+    const pj = isPJ(data);
+    const signatario = pj ? data.representantes.find(r => r.is_signatario) : null;
+    const clientName = pj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa não informada')
+      : (data.dados_pessoais.nome || 'Não informado');
     const imovelCodigo = data.imovel.codigo || '';
 
     const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
@@ -722,7 +726,35 @@ export default function PropostaLocacao() {
     const seguroIncendio = selectedProperty?.seguro_incendio;
 
     // Build description with structured data
-    const descriptionLines = [
+    const descriptionLines = pj ? [
+      `**Tipo:** Pessoa Jurídica`,
+      `**Razão Social:** ${data.empresa.razao_social || 'Não informado'}`,
+      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
+      `**CNPJ:** ${data.empresa.cnpj || 'Não informado'}`,
+      `**Ramo:** ${data.empresa.ramo_atividade || 'Não informado'}`,
+      `**Telefone:** ${data.empresa.telefone || 'Não informado'}`,
+      `**E-mail:** ${data.empresa.email || 'Não informado'}`,
+      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'Não informado'}`,
+      `**Regime tributário:** ${data.empresa.regime_tributario || 'Não informado'}`,
+      '',
+      `**Representantes:** ${data.representantes.length}`,
+      signatario
+        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
+        : `**Signatário:** ⚠️ não indicado`,
+      '',
+      `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
+      `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
+      `**Bairro:** ${bairro}`,
+      `**Cidade:** ${cidade}`,
+      `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      condominio ? `**Condomínio:** R$ ${condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**Condomínio:** Não informado`,
+      iptu ? `**IPTU:** R$ ${iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**IPTU:** Não informado`,
+      seguroIncendio ? `**Seguro Incêndio:** R$ ${seguroIncendio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
+      `**Valor Proposto:** ${valorProposto}`,
+      '',
+      `**Garantia:** ${garantiaLabel}`,
+      `**Status:** Nova proposta`,
+    ] : [
       `**Cliente:** ${clientName}`,
       `**CPF:** ${data.dados_pessoais.cpf || 'Não informado'}`,
       `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'Não informado'}`,
@@ -1745,13 +1777,16 @@ function calcScore(data: ProposalFormData, percentual: number | null): { score: 
 // ── Pending steps checker ──
 function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
   const sc = needsConjuge(data);
-  const allLabels = getStepLabels(sc);
+  const pj = isPJ(data);
+  const allLabels = getStepLabels(sc, pj);
   const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
   for (let i = 0; i < 8; i++) {
-    if (i === 3 && !sc) continue;
+    // PF sem cônjuge: ignora etapa 3 (Cônjuge/Sócios). PJ sempre exige (Representantes).
+    if (i === 3 && !sc && !pj) continue;
     const errs = validateStep(i, data);
     if (errs.length > 0) {
-      const critical = [0, 1, 2, 6].includes(i); // imovel, dados, renda, garantia
+      // PJ: também marca etapa 3 (Representantes) como crítica
+      const critical = [0, 1, 2, 6].includes(i) || (pj && i === 3);
       pending.push({ step: i, label: allLabels[i], errors: errs, critical });
     }
   }

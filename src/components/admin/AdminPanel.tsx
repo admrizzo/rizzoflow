@@ -119,7 +119,7 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
             {!isAdmin && (
               <Badge variant="outline" className="ml-2 text-xs font-normal">
                 <Crown className="h-3 w-3 mr-1 text-amber-500" />
-                Admin de Fluxo
+                Gestor de Fluxo
               </Badge>
             )}
           </DialogTitle>

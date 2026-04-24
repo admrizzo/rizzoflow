@@ -140,11 +140,11 @@ export function BoardUsersManager({ boardId, onClose }: BoardUsersManagerProps) 
         <div className="space-y-2 pt-4 border-t text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-red-500" />
-            <span><strong>Super Administradores</strong> têm acesso total a todos os fluxos.</span>
+            <span><strong>Admins</strong> têm acesso total a todos os fluxos.</span>
           </div>
           <div className="flex items-center gap-2">
             <Crown className="h-4 w-4 text-amber-500" />
-            <span><strong>Administradores de Fluxo</strong> podem gerenciar campos, checklists e usuários deste fluxo.</span>
+            <span><strong>Gestores de Fluxo</strong> podem gerenciar campos, checklists e usuários deste fluxo.</span>
           </div>
         </div>
       </DialogContent>

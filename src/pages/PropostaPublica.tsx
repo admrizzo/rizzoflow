@@ -389,11 +389,13 @@ function calcScore(data: ProposalFormData, percentual: number | null): { score: 
 function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
   const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
   const sc = needsConjuge(data);
+  const pj = isPJ(data);
   for (let i = 0; i < 7; i++) {
-    if (i === 2 && !sc) continue;
+    // Step 2: cônjuge/sócios — só pula em PF sem cônjuge necessário
+    if (i === 2 && !sc && !pj) continue;
     const errs = validateStep(i, data);
     if (errs.length > 0) {
-      const critical = [1, 5].includes(i);
+      const critical = [1, 2, 5].includes(i) && (i !== 2 || pj || sc);
       pending.push({ step: i, label: STEP_CONFIG[i].label, errors: errs, critical });
     }
   }

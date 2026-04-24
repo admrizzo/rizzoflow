@@ -113,7 +113,8 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
             boardId={boardId}
             boardName={boardName}
             isAdding={isAddingCard}
-            onToggle={() => setIsAddingCard(!isAddingCard)}
+            onOpen={() => setIsAddingCard(true)}
+            onClose={() => setIsAddingCard(false)}
           />
         </div>
       )}

@@ -71,6 +71,7 @@ import { CardNotesSidebar } from './CardNotesSidebar';
 import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
 import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
+import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { useCardParties } from '@/hooks/useCardParties';

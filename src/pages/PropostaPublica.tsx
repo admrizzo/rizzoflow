@@ -223,6 +223,8 @@ function isCasadoOuUniao(data: ProposalFormData) {
 }
 
 function needsConjuge(data: ProposalFormData) {
+  // PJ não tem cônjuge — empresa não tem estado civil
+  if (data.imovel.tipo_pessoa === 'juridica') return false;
   if (!isCasadoOuUniao(data)) return false;
   const regime = data.perfil_financeiro.regime_bens;
   if (!regime) return false;
@@ -232,11 +234,27 @@ function needsConjuge(data: ProposalFormData) {
   return true;
 }
 
+function isPJ(data: ProposalFormData) {
+  return data.imovel.tipo_pessoa === 'juridica';
+}
+
 function validateStep(step: number, data: ProposalFormData): string[] {
   const errors: string[] = [];
+  const pj = isPJ(data);
   switch (step) {
     case 0: break; // Imóvel e Tipo — auto-preenchido
     case 1:
+      if (pj) {
+        // PJ: dados da empresa
+        if (!data.empresa.razao_social.trim()) errors.push('Razão Social é obrigatória');
+        if (!data.empresa.cnpj.trim()) errors.push('CNPJ é obrigatório');
+        if (!data.empresa.ramo_atividade.trim()) errors.push('Ramo de atividade é obrigatório');
+        if (!data.empresa.telefone.trim()) errors.push('Telefone da empresa é obrigatório');
+        if (!data.empresa.email.trim()) errors.push('E-mail da empresa é obrigatório');
+        if (!data.empresa.faturamento_mensal.trim()) errors.push('Faturamento mensal é obrigatório');
+        if (!data.empresa.regime_tributario) errors.push('Regime tributário é obrigatório');
+        break;
+      }
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
@@ -248,6 +266,22 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
     case 2:
+      if (pj) {
+        // PJ: representantes legais
+        if (data.representantes.length === 0) errors.push('Adicione pelo menos um representante legal');
+        data.representantes.forEach((r, i) => {
+          const label = `Representante ${i + 1}`;
+          if (!r.nome.trim()) errors.push(`${label}: nome é obrigatório`);
+          if (!r.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          if (!r.whatsapp.trim()) errors.push(`${label}: WhatsApp é obrigatório`);
+          if (!r.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
+        });
+        const hasSignatario = data.representantes.some(r => r.is_signatario);
+        if (data.representantes.length > 0 && !hasSignatario) {
+          errors.push('Indique pelo menos um representante como signatário do contrato');
+        }
+        break;
+      }
       if (needsConjuge(data) && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
       break;
     case 4:

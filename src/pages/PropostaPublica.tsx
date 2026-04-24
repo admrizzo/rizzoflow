@@ -417,6 +417,16 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
   progressPercent: number; isSaving: boolean; lastSavedAt: Date | null; draftStatus: string;
 }) {
   const showConjuge = needsConjuge(data);
+  const pj = isPJ(data);
+
+  // Labels dinâmicos por tipo de pessoa
+  const dynamicLabels = STEP_CONFIG.map((cfg, i) => {
+    if (pj) {
+      if (i === 1) return { ...cfg, shortLabel: 'Empresa', label: 'Empresa' };
+      if (i === 2) return { ...cfg, shortLabel: 'Representantes', label: 'Representantes' };
+    }
+    return cfg;
+  });
 
   const progressMessage = progressPercent >= 85
     ? 'Faltam poucos passos para finalizar! 🎉'
@@ -476,8 +486,9 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
         </div>
 
         <div className="flex items-start justify-between gap-0 overflow-x-auto pb-1">
-          {STEP_CONFIG.map((cfg, i) => {
-            if (i === 2 && !showConjuge) return null;
+          {dynamicLabels.map((cfg, i) => {
+            // Step 2 só aparece se PF com cônjuge OU PJ (representantes sempre exigidos)
+            if (i === 2 && !showConjuge && !pj) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
             const displayNum = i + 1;

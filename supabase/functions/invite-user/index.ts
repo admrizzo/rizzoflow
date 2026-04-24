@@ -62,6 +62,12 @@ Deno.serve(async (req) => {
       return json({ error: 'Apenas administradores podem convidar usuários', requestId }, 403)
     }
 
+    const supabaseAsCaller = createClient(
+      supabaseUrl!,
+      anonKey!,
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
     // 3. Payload
     const body = await req.json().catch(() => ({}))
     const email: string | undefined = body.email?.trim().toLowerCase()
@@ -82,10 +88,18 @@ Deno.serve(async (req) => {
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const already = existing?.users?.find(u => u.email?.toLowerCase() === email)
     if (already) {
-      const syncError = await syncProfileAndRole(supabaseAdmin, already.id, fullName, role)
+      const syncError = await syncProfile(supabaseAdmin, already.id, fullName)
       if (syncError) {
         console.error(`[invite-user:${requestId}] Existing user sync failed for ${email}: ${syncError}`)
         return json({ error: syncError, requestId }, 500)
+      }
+      const { error: roleError } = await supabaseAsCaller.rpc('set_user_role', {
+        _user_id: already.id,
+        _role: role,
+      })
+      if (roleError) {
+        console.error(`[invite-user:${requestId}] Existing user role RPC failed for ${email}: ${roleError.message}`)
+        return json({ error: `Erro ao atribuir papel: ${roleError.message}`, requestId }, 500)
       }
 
       return json({
@@ -118,18 +132,13 @@ Deno.serve(async (req) => {
     const newUserId = invited.user.id
 
     // 6. Garante profile (handle_new_user trigger geralmente já cria, mas garantimos)
-    const syncError = await syncProfileAndRole(supabaseAdmin, newUserId, fullName, role)
+    const syncError = await syncProfile(supabaseAdmin, newUserId, fullName)
     if (syncError) {
       console.error(`[invite-user:${requestId}] Sync failed for ${email}: ${syncError}`)
       return json({ error: syncError, requestId }, 500)
     }
 
     // 7. Atribui role (chama RPC que valida admin novamente)
-    const supabaseAsCaller = createClient(
-      supabaseUrl!,
-      anonKey!,
-      { global: { headers: { Authorization: authHeader } } }
-    )
     const { error: roleError } = await supabaseAsCaller.rpc('set_user_role', {
       _user_id: newUserId,
       _role: role,

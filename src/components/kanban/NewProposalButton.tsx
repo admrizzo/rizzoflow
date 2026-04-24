@@ -67,7 +67,7 @@ export function NewProposalButton() {
       const identification = getPropertyIdentification(selectedProperty);
       const addressParts = [selectedProperty.logradouro, selectedProperty.numero, selectedProperty.bairro, selectedProperty.cidade].filter(Boolean);
 
-      // 1. Create proposal link
+      // 1. Cria o proposal_link — public_token é gerado automaticamente pelo banco (UUID)
       const { data: linkData, error: linkError } = await supabase
         .from('proposal_links')
         .insert({
@@ -79,7 +79,7 @@ export function NewProposalButton() {
           broker_user_id: user?.id || null,
           created_by: user?.id || null,
         })
-        .select()
+        .select('*')
         .single();
       if (linkError) throw linkError;
 
@@ -112,8 +112,10 @@ export function NewProposalButton() {
 
       return linkData;
     },
-    onSuccess: (data) => {
-      const link = `${window.location.origin}/proposta/${data.codigo_robust}`;
+    onSuccess: (data: any) => {
+      // Link público usa o token único da proposta (não o código do imóvel)
+      const token = data.public_token || data.id;
+      const link = `${window.location.origin}/proposta/${token}`;
       setGeneratedLink(link);
       setGeneratedCode(data.codigo_robust);
       queryClient.invalidateQueries({ queryKey: ['proposal-links'] });

@@ -130,6 +130,29 @@ const ROLE_META: Record<DisplayRole, {
   },
 };
 
+async function getInviteErrorMessage(error: unknown, data: unknown) {
+  if (data && typeof data === 'object' && 'error' in data) {
+    return String((data as { error: unknown }).error);
+  }
+
+  const context = error && typeof error === 'object' && 'context' in error
+    ? (error as { context?: unknown }).context
+    : null;
+
+  if (context instanceof Response) {
+    const text = await context.clone().text().catch(() => '');
+    try {
+      const payload = JSON.parse(text) as { error?: string; message?: string; requestId?: string };
+      const message = payload.error || payload.message;
+      return payload.requestId && message ? `${message} (ID: ${payload.requestId})` : message || text;
+    } catch {
+      return text || 'A função de convite retornou erro sem detalhes.';
+    }
+  }
+
+  return error instanceof Error ? error.message : 'Tente novamente.';
+}
+
 /**
  * Mapeia roles vindas do banco (incluindo aliases legados) para o papel
  * exibido na UI. Garante que "Editor"/"Visualizador" nunca aparecem.
@@ -185,14 +208,13 @@ export function UsersAndAccessManager() {
           redirectTo: `${window.location.origin}/auth`,
         },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error || data?.error) {
+        throw new Error(await getInviteErrorMessage(error, data));
+      }
 
       toast({
-        title: 'Convite enviado!',
-        description: data?.warning
-          ? data.warning
-          : `${name} receberá um e-mail para definir a senha.`,
+        title: data?.existing ? 'Usuário atualizado!' : 'Convite enviado!',
+        description: data?.message || data?.warning || `${name} receberá um e-mail para definir a senha.`,
       });
       queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });

@@ -134,15 +134,7 @@ const RENDA_SOURCES = [
 
 const GARANTIA_OPTIONS = [
   {
-    value: 'SG Cred', icon: '💳', badge: 'Mais escolhida ⭐',
-    subtitle: 'Análise de crédito própria',
-    detail: 'Modalidade exclusiva com análise de crédito interna — sem burocracia, sem fiadores.',
-    estimatePercent: 0,
-    vantagens: ['Processo rápido e simplificado', 'Sem envolver terceiros', 'Aprovação em até 24h úteis'],
-    atencao: ['Sujeito à aprovação de crédito', 'Pode exigir renda mínima comprovada'],
-  },
-  {
-    value: 'Seguro Fiança', icon: '🛡️', badge: null,
+    value: 'Seguro Fiança', icon: '🛡️', badge: 'Mais escolhida ⭐',
     subtitle: 'Seguradora garante o contrato, sem fiadores',
     detail: 'Nessa modalidade você **não precisa de fiadores** e paga mensalmente um percentual a partir de 15,5% (pode variar conforme aprovação da seguradora) juntamente com seu aluguel.',
     estimatePercent: 15.5,
@@ -172,6 +164,14 @@ const GARANTIA_OPTIONS = [
     estimatePercent: 0,
     vantagens: ['Alta credibilidade', 'Sem envolver terceiros', 'Aceita por grandes imobiliárias'],
     atencao: ['Taxas bancárias podem ser elevadas', 'Requer relacionamento com o banco'],
+  },
+  {
+    value: 'Caução', icon: '💰', badge: null,
+    subtitle: 'Depósito de até 3 meses de aluguel',
+    detail: 'Depósito de até 3 meses de aluguel, que poderá ser utilizado como garantia da locação. Essa modalidade está sujeita à análise de crédito e aprovação, podendo variar conforme o perfil do cliente e do imóvel.',
+    estimatePercent: 0,
+    vantagens: ['Sem envolver terceiros', 'Sem custo mensal adicional', 'Valor devolvido ao final do contrato'],
+    atencao: ['Sujeito à análise de crédito e aprovação', 'Imobilização de capital no início'],
   },
 ];
 
@@ -1848,10 +1848,14 @@ export default function PropostaPublica() {
               <span className="font-semibold text-foreground text-sm flex-1">Não sei qual garantia escolher. O que fazer?</span>
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
             </summary>
-            <p className="text-sm text-muted-foreground mt-3 ml-[3.25rem]">
-              A modalidade mais prática é o <strong className="text-foreground">SG Cred</strong> (análise de crédito própria). Se preferir, o <strong className="text-foreground">Seguro Fiança</strong> também é bastante utilizado. 
-              Em caso de dúvida, prossiga com a que preferir — nosso time entrará em contato para orientá-lo.
-            </p>
+            <div className="text-sm text-muted-foreground mt-3 ml-[3.25rem] space-y-2">
+              <p>
+                A modalidade mais prática e utilizada é o <strong className="text-foreground">Seguro Fiança</strong>, pois dispensa a necessidade de fiador e agiliza o processo de aprovação.
+              </p>
+              <p>
+                Caso tenha dúvidas, você pode seguir com a opção que preferir — nosso time irá analisar sua proposta e orientá-lo na melhor escolha conforme o seu perfil.
+              </p>
+            </div>
           </details>
         </div>
 

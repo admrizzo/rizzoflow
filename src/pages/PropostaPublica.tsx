@@ -1972,9 +1972,14 @@ export default function PropostaPublica() {
         )}
 
         {/* Warning note */}
-        <p className="text-sm text-muted-foreground text-center">
-          ⚠️ Não trabalhamos com depósito caução. As modalidades acima são as únicas formas de garantia aceitas.
-        </p>
+        <div className="text-sm text-muted-foreground text-center space-y-2 max-w-3xl mx-auto">
+          <p>
+            ⚠️ A modalidade de caução poderá ser aceita mediante análise de crédito e perfil da locação.
+          </p>
+          <p>
+            A definição da garantia depende da avaliação completa da proposta, podendo variar conforme o imóvel e o perfil do pretendente.
+          </p>
+        </div>
 
         {/* Observations */}
         <div className="bg-card rounded-2xl border p-6 space-y-3">

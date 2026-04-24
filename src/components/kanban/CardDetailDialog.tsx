@@ -1853,6 +1853,17 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               </div>
             )}
 
+            {/* Documentos da Proposta — apenas em boards de locação (com robust_code) */}
+            {card.robust_code && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Documentos da Proposta</Label>
+                </div>
+                <ProposalDocumentsSection cardId={card.id} />
+              </div>
+            )}
+
             {/* Motivo da transferência - Only for Administrativo board with "Imóvel que veio alugado" label */}
             {isAdministrativoBoard && hasImovelAlugadoLabel && (
               <div>

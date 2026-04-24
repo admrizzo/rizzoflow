@@ -1740,9 +1740,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                             ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
                             : "Ex: 1000,00 + taxas"
                       }
-                      rows={2}
+                      rows={8}
                       disabled={!isEditor}
-                      className={!isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''}
+                      className={cn(
+                        'min-h-44 resize-y',
+                        !isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''
+                      )}
                     />
                     {!isAdministrativoBoard && !localNegotiationDetails && (
                       <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>

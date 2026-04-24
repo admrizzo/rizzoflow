@@ -408,7 +408,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
           onSuccess: () => {
             setTenantName('');
             setSuperlogicaId('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -435,7 +435,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
           onSuccess: () => {
             setOwnerName('');
             setPropertyRobustCode('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -476,7 +476,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
             setMainBuyerName('');
             setMainSellerName('');
             setCardType('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -529,7 +529,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
             setDevUnidade('');
             setDevComprador('');
             setDevCardType('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -546,7 +546,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
         {
           onSuccess: () => {
             setJudicialIdentification('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -566,7 +566,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
           onSuccess: () => {
             setManutSuperlogicaId('');
             setManutAddress('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -591,7 +591,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
           onSuccess: () => {
             setRobustCode('');
             setBuildingName('');
-            onToggle();
+            onClose();
           },
         }
       );
@@ -617,6 +617,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
     setJudicialIdentification('');
     setManutSuperlogicaId('');
     setManutAddress('');
+    onClose();
   };
 
   // For Administrativo board, show template selector instead of form
@@ -646,7 +647,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
     return (
       <CardTemplateSelector
         open={true}
-        onOpenChange={(open) => { if (!open) onToggle(); }}
+        onOpenChange={(open) => { if (!open) onClose(); }}
         templates={cardTemplates}
         onSelect={handleTemplateSelect}
         isLoading={createCard.isPending}
@@ -659,7 +660,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
       <Button 
         variant="ghost" 
         className="w-full justify-start text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg text-xs h-8"
-        onClick={onToggle}
+        onClick={onOpen}
       >
         <Plus className="h-3.5 w-3.5 mr-1.5" />
         Adicionar cartão
@@ -677,7 +678,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
   const isValid = isRescisaoBoard ? isValidRescisao : isCaptacaoBoard ? isValidCaptacao : isVendaBoard ? isValidVenda : isDevBoard ? isValidDev : isJudicialBoard ? isValidJudicial : isManutencaoBoard ? isValidManutencao : isValidRegular;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 bg-white p-2 rounded-lg shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-100">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-2 bg-white p-2 rounded-lg shadow-sm animate-in fade-in-0 slide-in-from-top-1 duration-100">
       {isRescisaoBoard ? (
         // Rescisão Board Form
         <>

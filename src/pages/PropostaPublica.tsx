@@ -924,7 +924,7 @@ export default function PropostaPublica() {
         .limit(1);
       const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
 
-      const { error } = await supabase.from('cards').insert({
+      const { data: insertedCard, error } = await supabase.from('cards').insert({
         title: cardTitle,
         description: descriptionLines.filter(Boolean).join('\n'),
         board_id: LOCACAO_BOARD_ID,
@@ -939,8 +939,18 @@ export default function PropostaPublica() {
         proposal_responsible: brokerName,
         negotiation_details: negotiationDetailsLines || null,
         column_entered_at: new Date().toISOString(),
-      });
+      }).select('id').single();
       if (error) throw error;
+
+      // Upload de documentos (proponente + cônjuge + empresa + fiadores)
+      if (insertedCard?.id) {
+        try {
+          await uploadProposalDocuments(insertedCard.id, proposalLink?.id || null, data);
+        } catch (uploadErr: any) {
+          console.error('Erro ao enviar documentos:', uploadErr);
+          toast.warning('Proposta enviada, mas alguns arquivos falharam', { description: uploadErr.message });
+        }
+      }
 
       if (proposalLink) {
         await supabase

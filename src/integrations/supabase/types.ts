@@ -2010,7 +2010,13 @@ export type Database = {
     }
     Enums: {
       admin_task_category: "financeiro" | "cadastral" | "operacional"
-      app_role: "admin" | "editor" | "viewer"
+      app_role:
+        | "admin"
+        | "editor"
+        | "viewer"
+        | "gestor"
+        | "corretor"
+        | "administrativo"
       contract_type: "digital" | "fisico"
       department: "comercial" | "juridico" | "vistoriadores" | "administrativo"
       guarantee_type:
@@ -2151,7 +2157,14 @@ export const Constants = {
   public: {
     Enums: {
       admin_task_category: ["financeiro", "cadastral", "operacional"],
-      app_role: ["admin", "editor", "viewer"],
+      app_role: [
+        "admin",
+        "editor",
+        "viewer",
+        "gestor",
+        "corretor",
+        "administrativo",
+      ],
       contract_type: ["digital", "fisico"],
       department: ["comercial", "juridico", "vistoriadores", "administrativo"],
       guarantee_type: [

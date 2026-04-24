@@ -68,6 +68,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 // Public route that redirects if already logged in
+function isAuthPasswordFlow() {
+  const params = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const type = params.get('type') || hashParams.get('type');
+  return params.get('invite') === '1' || type === 'invite' || type === 'recovery';
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
 
@@ -79,7 +86,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user) {
+  if (user && !isAuthPasswordFlow()) {
     return <Navigate to="/dashboard" replace />;
   }
 

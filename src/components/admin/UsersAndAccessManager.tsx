@@ -30,6 +30,16 @@ import {
 } from '@/components/ui/tooltip';
 import { DoubleConfirmDialog } from '@/components/ui/double-confirm-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
   Users,
   Shield,
   UserCog,
@@ -44,6 +54,8 @@ import {
   ClipboardList,
   Mail,
   AlertTriangle,
+  UserPlus,
+  Loader2,
 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
@@ -144,6 +156,61 @@ export function UsersAndAccessManager() {
   const [uploadingUserId, setUploadingUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingUploadUserId = useRef<string | null>(null);
+
+  // Convite de novo usuário interno
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<DisplayRole>('corretor');
+  const [inviting, setInviting] = useState(false);
+
+  const handleInviteUser = async () => {
+    const name = inviteName.trim();
+    const email = inviteEmail.trim().toLowerCase();
+    if (!name || !email || !inviteRole) {
+      toast({ title: 'Preencha todos os campos', variant: 'destructive' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: 'E-mail inválido', variant: 'destructive' });
+      return;
+    }
+    setInviting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          fullName: name,
+          email,
+          role: inviteRole,
+          redirectTo: `${window.location.origin}/auth`,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: 'Convite enviado!',
+        description: data?.warning
+          ? data.warning
+          : `${name} receberá um e-mail para definir a senha.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      setInviteOpen(false);
+      setInviteName('');
+      setInviteEmail('');
+      setInviteRole('corretor');
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao convidar usuário',
+        description: err.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const isLoading = isLoadingUsers || isLoadingBoards;
 
@@ -272,6 +339,19 @@ export function UsersAndAccessManager() {
 
   return (
     <div className="space-y-4">
+      {/* Cabeçalho com ação de convite (somente admin) */}
+      {isAdmin && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {users.length} {users.length === 1 ? 'usuário interno' : 'usuários internos'}
+          </div>
+          <Button size="sm" onClick={() => setInviteOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Convidar usuário
+          </Button>
+        </div>
+      )}
+
       {/* Legenda dos 4 papéis oficiais */}
       <div className="p-3 bg-muted/30 rounded-lg">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -359,6 +439,94 @@ export function UsersAndAccessManager() {
         className="hidden"
         onChange={handleFileChange}
       />
+
+      {/* Dialog de convite */}
+      <Dialog open={inviteOpen} onOpenChange={(o) => !inviting && setInviteOpen(o)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Convidar novo usuário
+            </DialogTitle>
+            <DialogDescription>
+              O usuário receberá um e-mail para definir a senha e acessar o sistema.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-name">Nome completo</Label>
+              <Input
+                id="invite-name"
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                placeholder="João da Silva"
+                disabled={inviting}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-email">E-mail</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="usuario@empresa.com"
+                disabled={inviting}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="invite-role">Papel</Label>
+              <Select
+                value={inviteRole}
+                onValueChange={(v) => setInviteRole(v as DisplayRole)}
+                disabled={inviting}
+              >
+                <SelectTrigger id="invite-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {DISPLAY_ROLES.map((r) => {
+                    const m = ROLE_META[r];
+                    const Icon = m.icon;
+                    return (
+                      <SelectItem key={r} value={r}>
+                        <div className="flex items-center gap-2">
+                          <Icon className={`h-3.5 w-3.5 ${m.color}`} />
+                          <span>{m.label}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setInviteOpen(false)}
+              disabled={inviting}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleInviteUser} disabled={inviting}>
+              {inviting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Enviar convite
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2093,7 +2093,11 @@ export default function PropostaPublica() {
               </div>
               <div>
                 <h4 className="font-bold text-foreground text-sm">Contrato de 30 meses</h4>
-                <p className="text-muted-foreground text-sm mt-1">Todos os nossos contratos residenciais são de <strong className="text-foreground">30 meses</strong>, com liberação da multa rescisória após <strong className="text-foreground">15 meses</strong> completados.</p>
+                <div className="text-muted-foreground text-sm mt-1 space-y-2">
+                  <p>Nossos contratos residenciais possuem prazo de <strong className="text-foreground">30 meses</strong>.</p>
+                  <p>O inquilino pode encerrar o contrato <strong className="text-foreground">sem multa</strong> ao final de cada ciclo de 12 meses, desde que seja realizado <strong className="text-foreground">aviso prévio no 11º mês</strong> para saída no 12º mês.</p>
+                  <p>Essa regra se repete a cada novo período de 12 meses durante a vigência do contrato.</p>
+                </div>
               </div>
             </div>
             <div className="bg-card rounded-2xl border p-5 flex items-start gap-4">

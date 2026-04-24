@@ -63,7 +63,7 @@ async function uploadProposalDocuments(
   proposalLinkId: string | null,
   data: ProposalFormData,
 ): Promise<void> {
-  type Job = { ownerType: string; ownerLabel: string; category: string; files: UploadedFile[] };
+  type Job = { ownerType: string; ownerKey: string; ownerLabel: string; category: string; files: UploadedFile[] };
   const jobs: Job[] = [];
 
   // Proponente / Empresa
@@ -71,29 +71,50 @@ async function uploadProposalDocuments(
   const proponentLabel = isPj
     ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa')
     : (data.dados_pessoais.nome || 'Proponente');
+  const proponentOwnerType = isPj ? 'empresa' : 'proponente';
+  const proponentOwnerKey = proponentOwnerType; // único por proposta
   for (const cat of data.documentos || []) {
     if (cat.files.length > 0) {
-      jobs.push({ ownerType: isPj ? 'empresa' : 'proponente', ownerLabel: proponentLabel, category: cat.key, files: cat.files });
+      jobs.push({
+        ownerType: proponentOwnerType,
+        ownerKey: proponentOwnerKey,
+        ownerLabel: proponentLabel,
+        category: cat.key,
+        files: cat.files,
+      });
     }
   }
 
   // Fiadores
   (data.garantia.fiadores || []).forEach((f, idx) => {
     const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
+    const ownerKey = `fiador-${idx + 1}`;
     for (const cat of f.documentos || []) {
       if (cat.files.length > 0) {
-        jobs.push({ ownerType: 'fiador', ownerLabel: label, category: cat.key, files: cat.files });
+        jobs.push({
+          ownerType: 'fiador',
+          ownerKey,
+          ownerLabel: label,
+          category: cat.key,
+          files: cat.files,
+        });
       }
     }
   });
 
+  // Dedup: evita enviar duas vezes o mesmo arquivo (mesmo ownerKey + categoria + nome + tamanho)
+  const seen = new Set<string>();
   for (const job of jobs) {
     for (const file of job.files) {
       if (!file.dataUrl) continue;
+      const dedupKey = `${job.ownerKey}|${job.category}|${file.name}|${file.size ?? 0}`;
+      if (seen.has(dedupKey)) continue;
+      seen.add(dedupKey);
       const blob = dataUrlToBlob(file.dataUrl);
       if (!blob) continue;
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      const path = `${cardId}/${job.ownerType}/${job.category}/${Date.now()}_${safeName}`;
+      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores
+      const path = `${cardId}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
@@ -752,6 +773,7 @@ export default function PropostaPublica() {
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Auto-save draft hook ──
   const {
@@ -897,11 +919,14 @@ export default function PropostaPublica() {
   }, [property]);
 
   async function handleSubmit() {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const pending = getPendingSteps(data);
     const critical = pending.filter(p => p.critical);
     if (critical.length > 0) {
       toast.error('Pendências críticas', { description: critical[0].errors[0] });
       setStep(critical[0].step);
+      setIsSubmitting(false);
       return;
     }
 
@@ -1097,6 +1122,8 @@ export default function PropostaPublica() {
     } catch (err: any) {
       console.error('Erro ao enviar proposta:', err);
       toast.error('Erro ao enviar proposta', { description: err.message });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -2389,8 +2416,12 @@ export default function PropostaPublica() {
                 return;
               }
               handleSubmit();
-            }} disabled={!termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
-              <ArrowRight className="h-4 w-4 mr-1" /> Enviar Registro
+            }} disabled={isSubmitting || !termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
+              ) : (
+                <><ArrowRight className="h-4 w-4 mr-1" /> Enviar Registro</>
+              )}
             </Button>
           )}
         </div>

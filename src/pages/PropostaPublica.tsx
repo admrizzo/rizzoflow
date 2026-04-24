@@ -311,6 +311,9 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       break;
     case 5:
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
+      if (!data.garantia.tipo_contrato_assinatura) {
+        errors.push('Selecione como prefere assinar o contrato (Digital ou Físico)');
+      }
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
         const hasRenda = fs.some(f => f.tipo_fiador === 'renda');

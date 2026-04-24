@@ -24,6 +24,33 @@ export interface IdentifiableProperty {
 }
 
 /**
+ * Detecta se um texto parece nome de condomínio/loteamento/edifício.
+ * Auditoria do JSON real do Robust mostra que o nome do condomínio
+ * costuma vir DENTRO de `endereco.bairro`, ex.:
+ *   "Residencial Recanto do Bosque", "PORTAL DO SOL GREEN",
+ *   "Residencial Goiânia Golfe Clube", "Condomínio X".
+ * Bairros normais são "Setor Bueno", "Setor Marista", "Centro" etc.
+ */
+function looksLikeCondoName(text: string): boolean {
+  if (!text) return false;
+  const t = text.trim();
+  if (t.length < 4) return false;
+  return /\b(residencial|condom[ií]nio|edif[ií]cio|edificio|portal|jardim|jardins|parque|park|village|alphaville|loteamento|aldeia|recanto|reserva|terras\s+de|moradas|vila\s+\w+|quinta\s+d[oa]|chac[ÁÃa]ras?\s+\w+|setor\s+(?:residencial|empresarial|industrial))\b/i.test(t);
+}
+
+/**
+ * Detecta complementos "lixo" vindos do CRM (ex.: "00", "0", "-", "n/a").
+ */
+function isJunkComplement(text?: string | null): boolean {
+  if (!text) return true;
+  const t = text.trim().toLowerCase();
+  if (t.length === 0) return true;
+  if (/^[0\-_.\s]+$/.test(t)) return true;
+  if (['n/a', 'na', 'nao', 'não', 'sem', 'sn'].includes(t)) return true;
+  return false;
+}
+
+/**
  * Detecta títulos comerciais de anúncio.
  * Heurísticas:
  *  - frases longas com verbos/adjetivos típicos de marketing
@@ -61,66 +88,106 @@ function looksLikeAdTitle(title: string): boolean {
   return false;
 }
 
-function pickFromRaw(prop: IdentifiableProperty): string | null {
-  const raw = prop.raw_data;
-  if (!raw || typeof raw !== 'object') return null;
-  const candidates = [
+/**
+ * Tenta achar um nome de condomínio/prédio em qualquer lugar do JSON.
+ * Inclui o campo `endereco.bairro` quando ele parece nome de condomínio
+ * (que é o caso real da Robust — ver auditoria).
+ */
+function pickCondoName(prop: IdentifiableProperty): string | null {
+  const raw = prop.raw_data || {};
+  const endereco = raw?.endereco || {};
+
+  // 1) Campos nominais explícitos (raros, mas existem em alguns CRMs)
+  const explicit = [
     raw?.condominio?.nome,
-    raw?.condominio,
     raw?.empreendimento?.nome,
     raw?.empreendimento,
-    raw?.endereco?.condominio,
+    raw?.edificio,
+    raw?.predio,
+    endereco?.condominio,
   ];
-  for (const c of candidates) {
+  for (const c of explicit) {
     if (typeof c === 'string' && c.trim().length >= 3 && !looksLikeAdTitle(c)) {
       return c.trim();
     }
   }
+
+  // 2) `endereco.bairro` quando parece condomínio/loteamento
+  //    (caso real da Robust — ver auditoria)
+  const bairroRaw = (endereco?.bairro || prop.bairro || '').trim();
+  if (bairroRaw && looksLikeCondoName(bairroRaw)) {
+    return bairroRaw;
+  }
+
   return null;
 }
 
+/**
+ * Retorna apenas o bairro "real" (não o nome do condomínio).
+ * Usa apelido_bairro ou cai no bairro normal quando ele não é condomínio.
+ */
+function pickRealBairro(prop: IdentifiableProperty): string | null {
+  const endereco = prop.raw_data?.endereco || {};
+  const apelido = (endereco?.apelido_bairro || '').trim();
+  if (apelido) return apelido;
+  const bairroRaw = (endereco?.bairro || prop.bairro || '').trim();
+  if (!bairroRaw) return null;
+  if (looksLikeCondoName(bairroRaw)) return null;
+  return bairroRaw;
+}
+
 function buildAddressShort(prop: IdentifiableProperty): string | null {
-  const raw = prop.raw_data?.endereco || {};
-  const logradouro = (prop.logradouro || raw.logradouro || '').trim();
-  const numero = (prop.numero || raw.numero || '').trim();
-  const bairro = (prop.bairro || raw.bairro || '').trim();
-  if (logradouro && numero) {
-    return bairro ? `${logradouro}, ${numero} - ${bairro}` : `${logradouro}, ${numero}`;
+  const endereco = prop.raw_data?.endereco || {};
+  const logradouro = (prop.logradouro || endereco.logradouro || '').trim();
+  const numero = (prop.numero || endereco.numero || '').trim();
+  const bairro = pickRealBairro(prop) || '';
+  // Ignora número "0" / sem número
+  const validNumero = numero && numero !== '0' && numero !== '00' ? numero : '';
+  if (logradouro && validNumero) {
+    return bairro ? `${logradouro}, ${validNumero} - ${bairro}` : `${logradouro}, ${validNumero}`;
   }
   if (logradouro) return bairro ? `${logradouro}, ${bairro}` : logradouro;
   return null;
 }
 
 export function getPropertyIdentification(prop: IdentifiableProperty): string {
-  // 1. Nome do condomínio/prédio (raw_data)
-  const fromRaw = pickFromRaw(prop);
-  if (fromRaw) return fromRaw;
+  // 1) Nome do condomínio/prédio (campos explícitos OU bairro que parece condo)
+  const condo = pickCondoName(prop);
+  if (condo) {
+    // Quando temos condomínio + complemento útil, junta para diferenciar unidades
+    const endereco = prop.raw_data?.endereco || {};
+    const complemento = (prop.complemento || endereco.complemento || '').trim();
+    if (!isJunkComplement(complemento)) {
+      return `${condo} — ${complemento}`;
+    }
+    return condo;
+  }
 
-  // 2. Complemento (ex.: "Apto 302")
-  const rawComplemento = prop.raw_data?.endereco?.complemento as string | undefined;
-  const complemento = (prop.complemento || rawComplemento || '').trim();
-  if (complemento) {
-    const bairro = (prop.bairro || '').trim();
+  // 2) Complemento (ex.: "Apto 302") + bairro real
+  const endereco = prop.raw_data?.endereco || {};
+  const complemento = (prop.complemento || endereco.complemento || '').trim();
+  if (!isJunkComplement(complemento)) {
+    const bairro = pickRealBairro(prop);
     return bairro ? `${complemento} - ${bairro}` : complemento;
   }
 
-  // 3. Endereço resumido (logradouro + número [+ bairro])
+  // 3) Endereço resumido (logradouro + número [+ bairro])
   const address = buildAddressShort(prop);
   if (address) return address;
 
-  // 4. Tipo do imóvel + bairro
-  const bairro = (prop.bairro || '').trim();
+  // 4) Tipo do imóvel + bairro real
+  const bairro = pickRealBairro(prop);
   const tipo = (prop.tipo_imovel || '').trim();
   if (tipo && bairro) return `${tipo} - ${bairro}`;
   if (bairro) return bairro;
   if (tipo) return tipo;
 
-  // 5. Título do CRM (somente se não parecer anúncio)
+  // 5) Título do CRM (somente se não parecer anúncio)
   if (prop.titulo && !looksLikeAdTitle(prop.titulo)) {
     return prop.titulo.trim();
   }
 
-  // 6. Fallback final
+  // 6) Fallback final
   return `Imóvel ${prop.codigo_robust}`;
 }
 

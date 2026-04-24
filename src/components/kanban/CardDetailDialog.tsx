@@ -76,6 +76,7 @@ import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
+import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';

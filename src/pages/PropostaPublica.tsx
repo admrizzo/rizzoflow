@@ -2176,7 +2176,54 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
 
       {/* Data blocks */}
       <div className="space-y-5">
-        {/* Dados Pessoais */}
+        {pj ? (
+          <>
+            {/* Empresa */}
+            <ReviewBlockNew title="Dados da Empresa" icon="🏢" onFix={() => onGoToStep(1)} hasPending={!data.empresa.razao_social.trim() || !data.empresa.cnpj.trim()}>
+              <ReviewRow label="Razão Social" value={vv(data.empresa.razao_social)} />
+              <ReviewRow label="Nome Fantasia" value={vv(data.empresa.nome_fantasia)} />
+              <ReviewRow label="CNPJ" value={vv(data.empresa.cnpj)} />
+              <ReviewRow label="Data de abertura" value={vv(data.empresa.data_abertura)} />
+              <ReviewRow label="Ramo de atividade" value={vv(data.empresa.ramo_atividade)} />
+              <ReviewRow label="Telefone" value={vv(data.empresa.telefone)} />
+              <ReviewRow label="E-mail" value={vv(data.empresa.email)} />
+              <ReviewRow
+                label="Endereço"
+                value={vv([data.empresa.logradouro, data.empresa.numero, data.empresa.bairro, data.empresa.cidade, data.empresa.uf].filter(Boolean).join(', '))}
+              />
+              <ReviewRow label="Faturamento mensal" value={vv(data.empresa.faturamento_mensal)} />
+              <ReviewRow label="Regime tributário" value={vv(data.empresa.regime_tributario)} />
+              <ReviewRow label="Tempo de atividade" value={vv(data.empresa.tempo_atividade)} />
+            </ReviewBlockNew>
+
+            {/* Representantes */}
+            <ReviewBlockNew
+              title="Representantes Legais"
+              icon="👥"
+              onFix={() => onGoToStep(2)}
+              hasPending={data.representantes.length === 0 || !data.representantes.some(r => r.is_signatario)}
+            >
+              <ReviewRow label="Total de representantes" value={String(data.representantes.length)} />
+              <ReviewRow
+                label="Signatário do contrato"
+                value={data.representantes.some(r => r.is_signatario) ? '✅ Indicado' : '⚠️ Pendente'}
+              />
+              {data.representantes.map((r, i) => (
+                <div key={i} className="mt-2 pt-2 border-t border-border/60 first:border-t-0 first:pt-0 first:mt-0">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Representante {i + 1}</p>
+                  <ReviewRow label="Nome" value={vv(r.nome)} />
+                  <ReviewRow label="CPF" value={vv(r.cpf)} />
+                  <ReviewRow label="WhatsApp" value={vv(r.whatsapp)} />
+                  <ReviewRow label="E-mail" value={vv(r.email)} />
+                  <ReviewRow
+                    label="Papéis"
+                    value={[r.is_socio ? 'Sócio' : null, r.is_administrador ? 'Administrador' : null, r.is_signatario ? 'Signatário' : null].filter(Boolean).join(' • ') || 'Não informado'}
+                  />
+                </div>
+              ))}
+            </ReviewBlockNew>
+          </>
+        ) : (
         <ReviewBlockNew title="Dados Pessoais" icon="👤" onFix={() => onGoToStep(1)} hasPending={!data.dados_pessoais.nome.trim()}>
           <ReviewRow label="Nome" value={vv(data.dados_pessoais.nome)} />
           <ReviewRow label="CPF" value={vv(data.dados_pessoais.cpf)} />
@@ -2191,6 +2238,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
         </ReviewBlockNew>
+        )}
 
         {/* Documentos */}
         <ReviewBlockNew title="Documentos" icon="📄" onFix={() => onGoToStep(3)} hasPending={totalDocs === 0}>

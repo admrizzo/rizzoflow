@@ -1131,6 +1131,21 @@ export default function PropostaPublica() {
   }
 
   function renderStep1() {
+    // PJ: renderiza formulário da empresa
+    if (isPJ(data)) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+              <Building className="h-7 w-7 text-accent" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Dados da Empresa 🏢</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Informe os dados cadastrais e financeiros da empresa.</p>
+          </div>
+          <EmpresaForm data={data.empresa} onChange={d => update(p => ({ ...p, empresa: d }))} />
+        </div>
+      );
+    }
     const isCnpj = data.imovel.tipo_pessoa === 'juridica';
     return (
       <div className="space-y-6">

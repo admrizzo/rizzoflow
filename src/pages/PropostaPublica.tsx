@@ -30,6 +30,8 @@ import {
 } from '@/pages/PropostaLocacao';
 import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { FiadorSection } from '@/components/proposta/FiadorSection';
+import { EmpresaForm } from '@/components/proposta/EmpresaForm';
+import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };

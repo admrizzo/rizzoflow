@@ -1,6 +1,6 @@
 export type GuaranteeType = 'fiador' | 'seguro_fianca' | 'caucao' | 'titulo_capitalizacao' | 'sem_garantia' | 'carta_fianca' | 'outro';
 export type ContractType = 'digital' | 'fisico';
-export type AppRole = 'admin' | 'editor' | 'viewer';
+export type AppRole = 'admin' | 'gestor' | 'corretor' | 'administrativo' | 'editor' | 'viewer';
 export type Department = 'comercial' | 'juridico' | 'vistoriadores' | 'administrativo';
 export type FieldType = 'text' | 'textarea' | 'select' | 'date' | 'checkbox' | 'number' | 'multi_checkbox';
 export type CardType = 'com_financiamento' | 'sem_financiamento';

@@ -157,3 +157,36 @@ function json(body: unknown, status: number) {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 }
+
+async function syncProfileAndRole(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+  fullName: string,
+  role: ValidRole,
+) {
+  const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    user_metadata: { full_name: fullName },
+  })
+  if (metadataError) return `Erro ao atualizar dados do usuário: ${metadataError.message}`
+
+  const { error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .upsert(
+      { user_id: userId, full_name: fullName },
+      { onConflict: 'user_id' },
+    )
+  if (profileError) return `Erro ao sincronizar perfil: ${profileError.message}`
+
+  const { error: deleteRoleError } = await supabaseAdmin
+    .from('user_roles')
+    .delete()
+    .eq('user_id', userId)
+  if (deleteRoleError) return `Erro ao limpar papel anterior: ${deleteRoleError.message}`
+
+  const { error: roleError } = await supabaseAdmin
+    .from('user_roles')
+    .insert({ user_id: userId, role })
+  if (roleError) return `Erro ao atribuir papel: ${roleError.message}`
+
+  return null
+}

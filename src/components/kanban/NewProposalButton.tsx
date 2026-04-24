@@ -16,15 +16,7 @@ import {
   Plus, Building2, MapPin, CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-function getPropertyIdentification(prop: Property): string {
-  const raw = (prop as any).raw_data as Record<string, any> | null;
-  const endereco = raw?.endereco as Record<string, any> | null;
-  const complemento = endereco?.complemento || prop.complemento;
-  if (prop.bairro && prop.bairro.length > 3) return prop.bairro;
-  if (complemento) return String(complemento);
-  return prop.titulo || `Imóvel ${prop.codigo_robust}`;
-}
+import { getPropertyIdentification } from '@/lib/propertyIdentification';
 
 function formatCurrency(v: number | null) {
   if (v == null) return '—';

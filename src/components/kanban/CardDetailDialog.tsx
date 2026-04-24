@@ -61,8 +61,6 @@ import {
   ArrowRightCircle,
   Loader2,
   UserPlus,
-  ChevronLeft,
-  ChevronRight,
   Home,
   Search,
 } from 'lucide-react';
@@ -120,20 +118,10 @@ const VENDA_IMOVEL_ALUGADO_LABEL = 'Venda de imóvel alugado';
 // Label name for "Pedido de imóvel alugado pelo locador" template (Devolução solicitada pelo locador)
 const PEDIDO_IMOVEL_LOCADOR_LABEL = 'Pedido de imóvel alugado pelo locador';
 
-interface NavigationInfo {
-  hasPrevious: boolean;
-  hasNext: boolean;
-  currentIndex: number;
-  total: number;
-}
-
 interface CardDetailDialogProps {
   card: CardWithRelations | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNavigatePrevious?: () => void;
-  onNavigateNext?: () => void;
-  navigationInfo?: NavigationInfo;
 }
 
 const guaranteeLabels: Record<GuaranteeType, string> = {
@@ -151,7 +139,7 @@ const contractLabels: Record<ContractType, string> = {
   fisico: 'Físico',
 };
 
-export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious, onNavigateNext, navigationInfo }: CardDetailDialogProps) {
+export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
   const { updateCard, deleteCard, archiveCard, setDeadlineMet, setDeadlineDispensed, notifyDeadlineOverdue, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
   const { labels, addLabelToCard, removeLabelFromCard } = useLabels(card?.board_id);
   const { profiles, addMemberToCard, removeMemberFromCard } = useProfiles();
@@ -460,30 +448,6 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
     });
   }, [isDevBoard, card, updateCardTitle]);
 
-  // Keyboard navigation between cards
-  useEffect(() => {
-    if (!open) return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't navigate if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      
-      if (e.key === 'ArrowLeft' && onNavigatePrevious) {
-        e.preventDefault();
-        onNavigatePrevious();
-      } else if (e.key === 'ArrowRight' && onNavigateNext) {
-        e.preventDefault();
-        onNavigateNext();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onNavigatePrevious, onNavigateNext]);
-
   // Early return AFTER all hooks
   if (!card) return null;
 
@@ -731,45 +695,6 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
           }
         }}
       >
-        {/* Navigation arrows - fixed on sides */}
-        {(onNavigatePrevious || onNavigateNext) && (
-          <>
-            {/* Previous button - left side */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onNavigatePrevious}
-              disabled={!onNavigatePrevious}
-              className={cn(
-                "fixed left-2 top-1/2 -translate-y-1/2 z-50 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg border",
-                "hover:bg-background hover:scale-110 transition-all",
-                "hidden md:flex",
-                !onNavigatePrevious && "opacity-30 cursor-not-allowed"
-              )}
-              title="Card anterior (←)"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </Button>
-            
-            {/* Next button - right side */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onNavigateNext}
-              disabled={!onNavigateNext}
-              className={cn(
-                "fixed right-2 top-1/2 -translate-y-1/2 z-50 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm shadow-lg border",
-                "hover:bg-background hover:scale-110 transition-all",
-                "hidden md:flex",
-                !onNavigateNext && "opacity-30 cursor-not-allowed"
-              )}
-              title="Próximo card (→)"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </Button>
-          </>
-        )}
-
         {/* Mobile header with back button */}
         <DialogHeader className="flex-shrink-0 p-4 md:p-6 pb-2 md:pb-0 relative">
           <DialogDescription className="sr-only">
@@ -797,47 +722,12 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               <X className="h-4 w-4 mr-1" />
               Voltar
             </Button>
-            
-            {/* Mobile navigation */}
-            {(onNavigatePrevious || onNavigateNext) && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onNavigatePrevious}
-                  disabled={!onNavigatePrevious}
-                  className="h-8 w-8"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {navigationInfo && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {navigationInfo.currentIndex}/{navigationInfo.total}
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onNavigateNext}
-                  disabled={!onNavigateNext}
-                  className="h-8 w-8"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </div>
           <div className="flex items-start gap-2">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground font-mono mt-1">
                 #{card.card_number}
               </span>
-              {/* Desktop navigation counter */}
-              {navigationInfo && (
-                <span className="hidden md:inline text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full mt-1">
-                  {navigationInfo.currentIndex} de {navigationInfo.total}
-                </span>
-              )}
             </div>
             {isEditingTitle ? (
               <Input

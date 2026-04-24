@@ -669,9 +669,6 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
             setSelectedCardId(null);
           }
         }}
-        onNavigatePrevious={navigationInfo.hasPrevious ? handleNavigatePrevious : undefined}
-        onNavigateNext={navigationInfo.hasNext ? handleNavigateNext : undefined}
-        navigationInfo={navigationInfo}
       />
     </>
   );

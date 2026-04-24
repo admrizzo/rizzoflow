@@ -1781,9 +1781,10 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               />
             )}
 
-            {/* Address - Only for Locação boards (not Rescisão, Venda, DEV, Administrativo, or Captação - which uses custom fields) */}
+            {/* === BLOCO: IMÓVEL (endereço) === */}
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard && (
-              <div>
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Imóvel</h3>
                 <div className="flex items-center gap-2 mb-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
                   <Label className="text-sm font-medium">Endereço</Label>
@@ -1798,68 +1799,73 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               </div>
             )}
 
-            {/* Proposal Responsible - Different label for Administrativo board, hidden for special templates and Captação (uses custom fields) */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <UserCircle className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium">
-                    {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pela proposta'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                  </Label>
-                </div>
-                <Input
-                  value={localProposalResponsible}
-                  onChange={(e) => setLocalProposalResponsible(e.target.value)}
-                  onBlur={() => handleFieldBlur('proposal_responsible', localProposalResponsible, card.proposal_responsible)}
-                  placeholder={isAdministrativoBoard ? "Nome do responsável pelo imóvel" : "Nome do responsável"}
-                  disabled={!isEditor}
-                  className={!isAdministrativoBoard && !localProposalResponsible ? 'border-amber-400' : ''}
-                />
-                {!isAdministrativoBoard && !localProposalResponsible && (
-                  <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
+            {/* === BLOCO: RESUMO DA PROPOSTA (responsável + negociação) === */}
+            {((!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel))) ||
+              (!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard)) && (
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted space-y-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resumo da proposta</h3>
+
+                {/* Proposal Responsible */}
+                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserCircle className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">
+                        {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pela proposta'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                      </Label>
+                    </div>
+                    <Input
+                      value={localProposalResponsible}
+                      onChange={(e) => setLocalProposalResponsible(e.target.value)}
+                      onBlur={() => handleFieldBlur('proposal_responsible', localProposalResponsible, card.proposal_responsible)}
+                      placeholder={isAdministrativoBoard ? "Nome do responsável pelo imóvel" : "Nome do responsável"}
+                      disabled={!isEditor}
+                      className={!isAdministrativoBoard && !localProposalResponsible ? 'border-amber-400' : ''}
+                    />
+                    {!isAdministrativoBoard && !localProposalResponsible && (
+                      <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Negotiation Details */}
+                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">
+                        {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                          ? 'Observações'
+                          : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                      </Label>
+                    </div>
+                    <Textarea
+                      value={localNegotiationDetails}
+                      onChange={(e) => setLocalNegotiationDetails(e.target.value)}
+                      onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
+                      placeholder={
+                        isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                          ? ""
+                          : isAdministrativoBoard
+                            ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
+                            : "Ex: 1000,00 + taxas"
+                      }
+                      rows={2}
+                      disabled={!isEditor}
+                      className={!isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''}
+                    />
+                    {!isAdministrativoBoard && !localNegotiationDetails && (
+                      <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            {/* Negotiation Details - Different label/placeholder for special Administrativo templates, hidden for Captação (uses custom fields) */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium">
-                    {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel) 
-                      ? 'Observações' 
-                      : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                  </Label>
-                </div>
-                <Textarea
-                  value={localNegotiationDetails}
-                  onChange={(e) => setLocalNegotiationDetails(e.target.value)}
-                  onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
-                  placeholder={
-                    isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
-                      ? ""
-                      : isAdministrativoBoard 
-                        ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes" 
-                        : "Ex: 1000,00 + taxas"
-                  }
-                  rows={2}
-                  disabled={!isEditor}
-                  className={!isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''}
-                />
-                {!isAdministrativoBoard && !localNegotiationDetails && (
-                  <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                )}
-              </div>
-            )}
-
-            {/* Documentos da Proposta — apenas em boards de locação (com robust_code) */}
+            {/* === BLOCO: DOCUMENTOS DA PROPOSTA === */}
             {card.robust_code && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium">Documentos da Proposta</Label>
-                </div>
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Documentos da proposta</h3>
                 <ProposalDocumentsSection cardId={card.id} />
               </div>
             )}
@@ -1956,10 +1962,14 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
               </div>
             )}
 
-            {/* Guarantee and Contract Type - Uses board config for visibility */}
+            {/* === BLOCO: GARANTIA E TIPO DE CONTRATO === */}
             {(showGuaranteeType || showContractType) && (
-              <div className="grid grid-cols-2 gap-4">
-                {showGuaranteeType && (
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  {showGuaranteeType && showContractType ? 'Garantia e contrato' : showGuaranteeType ? 'Garantia' : 'Contrato'}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {showGuaranteeType && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -1982,8 +1992,8 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                {showContractType && (
+                  )}
+                  {showContractType && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -2006,7 +2016,8 @@ export function CardDetailDialog({ card, open, onOpenChange, onNavigatePrevious,
                       </SelectContent>
                     </Select>
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 

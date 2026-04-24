@@ -750,7 +750,8 @@ export default function PropostaPublica() {
       return;
     }
     if (step < totalSteps - 1) {
-      const next = step === 1 && !showConjuge ? 3 : step + 1;
+      // PJ: representantes (step 2) sempre exigido; PF: pula step 2 se sem cônjuge
+      const next = step === 1 && !showConjuge && !isPJ(data) ? 3 : step + 1;
       setStep(next);
       setVisited(prev => new Set(prev).add(next));
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -759,14 +760,14 @@ export default function PropostaPublica() {
 
   function goPrev() {
     if (step > 0) {
-      const prev = step === 3 && !showConjuge ? 1 : step - 1;
+      const prev = step === 3 && !showConjuge && !isPJ(data) ? 1 : step - 1;
       setStep(prev);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   function goToStep(s: number) {
-    if (s === 2 && !showConjuge) return;
+    if (s === 2 && !showConjuge && !isPJ(data)) return;
     setStep(s);
     setVisited(prev => new Set(prev).add(s));
     window.scrollTo({ top: 0, behavior: 'smooth' });

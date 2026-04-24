@@ -64,6 +64,8 @@ export interface GarantiaInfo {
   tipo_garantia: string;
   observacao: string;
   fiadores: FiadorData[];
+  /** Modalidade de assinatura/contrato escolhida pelo cliente: 'digital' ou 'fisico' */
+  tipo_contrato_assinatura?: 'digital' | 'fisico' | '';
 }
 
 export type FiadorTipo = 'renda' | 'imovel' | '';

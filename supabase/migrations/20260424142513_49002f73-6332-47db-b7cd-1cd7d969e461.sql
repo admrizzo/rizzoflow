@@ -1,0 +1,1 @@
+ALTER TABLE public.cards DROP CONSTRAINT IF EXISTS cards_negotiation_details_length;

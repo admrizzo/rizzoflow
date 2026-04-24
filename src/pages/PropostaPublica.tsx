@@ -707,31 +707,28 @@ function FormSection({ icon: Icon, title, children, className }: {
 
 // ── Main Component ──
 export default function PropostaPublica() {
-  const { codigoRobust } = useParams<{ codigoRobust: string }>();
-  const codigo = codigoRobust || '';
+  // O parâmetro de rota pode ser:
+  //  - um token público (UUID) da proposta — caminho oficial
+  //  - um codigo_robust numérico — fallback temporário p/ links antigos
+  const params = useParams<{ proposalToken?: string; codigoRobust?: string }>();
+  const routeParam = params.proposalToken || params.codigoRobust || '';
+  const isUuidToken = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(routeParam);
 
-  const { data: property, isLoading: propertyLoading, error: propertyError } = useQuery({
-    queryKey: ['public-property', codigo],
+  // 1) Busca o proposal_link primeiro: por token público (caminho novo) ou por código (fallback legado)
+  const { data: proposalLink, isLoading: linkLoading } = useQuery({
+    queryKey: ['public-proposal-link', routeParam],
     queryFn: async () => {
-      const codigoNum = parseInt(codigo, 10);
-      if (isNaN(codigoNum)) throw new Error('Código inválido');
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('codigo_robust', codigoNum)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error('not_found');
-      return data as PropertyData;
-    },
-    enabled: !!codigo,
-    retry: false,
-  });
-
-  const { data: proposalLink } = useQuery({
-    queryKey: ['public-proposal-link', codigo],
-    queryFn: async () => {
-      const codigoNum = parseInt(codigo, 10);
+      if (!routeParam) return null;
+      if (isUuidToken) {
+        const { data } = await supabase
+          .from('proposal_links')
+          .select('*')
+          .eq('public_token', routeParam)
+          .maybeSingle();
+        return data;
+      }
+      // Fallback legado: link antigo via codigo_robust — pega o mais recente
+      const codigoNum = parseInt(routeParam, 10);
       if (isNaN(codigoNum)) return null;
       const { data } = await supabase
         .from('proposal_links')
@@ -742,8 +739,32 @@ export default function PropostaPublica() {
         .maybeSingle();
       return data;
     },
-    enabled: !!codigo,
+    enabled: !!routeParam,
   });
+
+  // codigo_robust do imóvel — vem do proposal_link (token novo) ou direto da URL (fallback)
+  const codigoImovel = proposalLink?.codigo_robust ?? (isUuidToken ? null : parseInt(routeParam, 10));
+
+  // 2) Carrega o imóvel a partir do codigo_robust salvo no proposal_link
+  const { data: property, isLoading: propertyLoading, error: propertyError } = useQuery({
+    queryKey: ['public-property', codigoImovel],
+    queryFn: async () => {
+      if (!codigoImovel || isNaN(codigoImovel)) throw new Error('Código inválido');
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('codigo_robust', codigoImovel)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('not_found');
+      return data as PropertyData;
+    },
+    enabled: !!codigoImovel && !linkLoading,
+    retry: false,
+  });
+
+  // String do código do imóvel — usada por hooks que ainda esperam string
+  const codigo = codigoImovel ? String(codigoImovel) : '';
 
   useEffect(() => {
     if (proposalLink && proposalLink.status === 'nao_acessado') {

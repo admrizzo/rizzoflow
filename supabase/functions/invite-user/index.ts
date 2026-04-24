@@ -159,7 +159,7 @@ function json(body: unknown, status: number) {
 }
 
 async function syncProfileAndRole(
-  supabaseAdmin: ReturnType<typeof createClient>,
+  supabaseAdmin: any,
   userId: string,
   fullName: string,
   role: ValidRole,
@@ -172,7 +172,7 @@ async function syncProfileAndRole(
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
     .upsert(
-      { user_id: userId, full_name: fullName },
+      { user_id: userId, full_name: fullName } as any,
       { onConflict: 'user_id' },
     )
   if (profileError) return `Erro ao sincronizar perfil: ${profileError.message}`
@@ -185,7 +185,7 @@ async function syncProfileAndRole(
 
   const { error: roleError } = await supabaseAdmin
     .from('user_roles')
-    .insert({ user_id: userId, role })
+    .insert({ user_id: userId, role } as any)
   if (roleError) return `Erro ao atribuir papel: ${roleError.message}`
 
   return null

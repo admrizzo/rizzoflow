@@ -391,6 +391,8 @@ function isCasadoOuUniao(data: ProposalFormData) {
 }
 
 function needsConjuge(data: ProposalFormData) {
+  // PJ não tem cônjuge — empresa não tem estado civil
+  if (data.imovel.tipo_pessoa === 'juridica') return false;
   if (!isCasadoOuUniao(data)) return false;
   const regime = data.perfil_financeiro.regime_bens;
   if (!regime) return false;
@@ -400,13 +402,17 @@ function needsConjuge(data: ProposalFormData) {
   return true;
 }
 
+function isPJ(data: ProposalFormData) {
+  return data.imovel.tipo_pessoa === 'juridica';
+}
+
 // ── Step labels (always 9; step 4 label changes) ──
-function getStepLabels(showConjuge: boolean) {
+function getStepLabels(showConjuge: boolean, pj: boolean = false) {
   return [
     'Imóvel e Tipo',
-    'Dados Pessoais',
-    'Estado Civil e Renda',
-    showConjuge ? 'Cônjuge / Sócios' : 'Cônjuge / Sócios',
+    pj ? 'Dados da Empresa' : 'Dados Pessoais',
+    pj ? 'Capacidade Financeira' : 'Estado Civil e Renda',
+    pj ? 'Representantes Legais' : (showConjuge ? 'Cônjuge / Sócios' : 'Cônjuge / Sócios'),
     'Documentos',
     'Moradores',
     'Garantia',

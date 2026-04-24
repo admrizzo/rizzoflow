@@ -687,6 +687,30 @@ export default function PropostaPublica() {
   // ── Restore draft data ──
   useEffect(() => {
     if (restoredData) {
+      // Sanitize fiadores from older drafts that may be missing newer fields
+      const sanitizedGarantia = restoredData.garantia
+        ? {
+            ...restoredData.garantia,
+            fiadores: (restoredData.garantia.fiadores || []).map((f: any) => {
+              const base = makeEmptyFiador(f?.tipo_fiador || '');
+              return {
+                ...base,
+                ...f,
+                conjuge: { ...base.conjuge, ...(f?.conjuge || {}) },
+                documentos: Array.isArray(f?.documentos) && f.documentos.length > 0
+                  ? f.documentos
+                  : base.documentos,
+              };
+            }),
+          }
+        : undefined;
+      // Sanitize empresa/representantes for PJ drafts that may be missing fields
+      const sanitizedEmpresa = restoredData.empresa
+        ? { ...emptyEmpresa, ...restoredData.empresa }
+        : undefined;
+      const sanitizedRepresentantes = Array.isArray(restoredData.representantes)
+        ? restoredData.representantes
+        : undefined;
       setData(prev => ({
         ...prev,
         ...restoredData,
@@ -694,6 +718,9 @@ export default function PropostaPublica() {
         imovel: prev.imovel,
         // Keep original doc structure but restore non-file data
         documentos: prev.documentos,
+        ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
+        ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
+        ...(sanitizedRepresentantes ? { representantes: sanitizedRepresentantes } : {}),
       }));
       if (restoredStep !== null && restoredStep > 0) {
         setStep(restoredStep);

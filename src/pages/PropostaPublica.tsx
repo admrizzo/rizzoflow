@@ -1848,10 +1848,14 @@ export default function PropostaPublica() {
               <span className="font-semibold text-foreground text-sm flex-1">Não sei qual garantia escolher. O que fazer?</span>
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
             </summary>
-            <p className="text-sm text-muted-foreground mt-3 ml-[3.25rem]">
-              A modalidade mais prática é o <strong className="text-foreground">SG Cred</strong> (análise de crédito própria). Se preferir, o <strong className="text-foreground">Seguro Fiança</strong> também é bastante utilizado. 
-              Em caso de dúvida, prossiga com a que preferir — nosso time entrará em contato para orientá-lo.
-            </p>
+            <div className="text-sm text-muted-foreground mt-3 ml-[3.25rem] space-y-2">
+              <p>
+                A modalidade mais prática e utilizada é o <strong className="text-foreground">Seguro Fiança</strong>, pois dispensa a necessidade de fiador e agiliza o processo de aprovação.
+              </p>
+              <p>
+                Caso tenha dúvidas, você pode seguir com a opção que preferir — nosso time irá analisar sua proposta e orientá-lo na melhor escolha conforme o seu perfil.
+              </p>
+            </div>
           </details>
         </div>
 

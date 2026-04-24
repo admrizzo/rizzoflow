@@ -1986,6 +1986,63 @@ export default function PropostaPublica() {
           </p>
         </div>
 
+        {/* Tipo de contrato (Digital / Físico) */}
+        <div className="bg-card rounded-2xl border p-6 space-y-4">
+          <div>
+            <Label className="text-sm font-semibold block">
+              Como você prefere assinar o contrato? <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground mt-1">
+              Escolha a modalidade de assinatura mais conveniente para você.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              {
+                value: 'digital' as const,
+                icon: '💻',
+                title: 'Digital',
+                desc: 'Assinatura eletrônica via link enviado por e-mail. Mais rápido e prático.',
+              },
+              {
+                value: 'fisico' as const,
+                icon: '✍️',
+                title: 'Físico / Presencial',
+                desc: 'Assinatura presencial em nossa imobiliária, com documentos impressos.',
+              },
+            ].map(opt => {
+              const selected = data.garantia.tipo_contrato_assinatura === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => update(p => ({
+                    ...p,
+                    garantia: { ...p.garantia, tipo_contrato_assinatura: opt.value },
+                  }))}
+                  className={cn(
+                    'text-left rounded-xl border-2 p-4 transition-all',
+                    selected
+                      ? 'border-accent bg-accent/5 ring-2 ring-accent/20'
+                      : 'border-border bg-background hover:border-accent/40'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl leading-none">{opt.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-foreground">{opt.title}</span>
+                        {selected && <Check className="h-4 w-4 text-accent" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Observations */}
         <div className="bg-card rounded-2xl border p-6 space-y-3">
           <Label className="text-sm font-semibold block">Observações sobre a garantia <span className="text-muted-foreground font-normal">(opcional)</span></Label>

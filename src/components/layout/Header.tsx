@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3 } from 'lucide-react';
 import { useForceRefresh } from '@/hooks/useForceRefresh';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { NotificationsPopover } from './NotificationsPopover';
 import { FilterPopover } from './FilterPopover';
@@ -50,7 +51,8 @@ export interface FilterState {
 }
 
 export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, selectedBoard, archivedCount = 0, showArchivedView, onToggleArchivedView, onOpenCardFromNotification }: HeaderProps) {
-  const { user, profile, signOut, roles, isAdmin } = useAuth();
+  const { user, profile, signOut, roles } = useAuth();
+  const { isAdmin, canManageUsers, canAccessCriticalSettings, canViewAllProposals } = usePermissions();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const { triggerForceRefresh } = useForceRefresh();
@@ -159,38 +161,41 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
 
         {/* Right side */}
         <div className="flex items-center gap-1">
-          {isAdmin && (
-            <>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
-                onClick={handleForceRefresh}
-                disabled={triggerForceRefresh.isPending}
-                title="Forçar todos os usuários a atualizar a página"
-              >
-                <RefreshCw className={`h-4 w-4 ${triggerForceRefresh.isPending ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline text-xs">Atualizar Todos</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-white hover:bg-white/20"
-                onClick={() => setShowAdminPanel(true)}
-              >
-                <Settings2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
-                onClick={() => navigate('/central-propostas')}
-                title="Central de Propostas"
-              >
-                <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs">Propostas</span>
-              </Button>
-            </>
+          {canAccessCriticalSettings && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
+              onClick={handleForceRefresh}
+              disabled={triggerForceRefresh.isPending}
+              title="Forçar todos os usuários a atualizar a página"
+            >
+              <RefreshCw className={`h-4 w-4 ${triggerForceRefresh.isPending ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline text-xs">Atualizar Todos</span>
+            </Button>
+          )}
+          {canManageUsers && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white hover:bg-white/20"
+              onClick={() => setShowAdminPanel(true)}
+              title="Configurações administrativas"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+          )}
+          {canViewAllProposals && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
+              onClick={() => navigate('/central-propostas')}
+              title="Central de Propostas"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Propostas</span>
+            </Button>
           )}
 
           <NotificationsPopover onOpenCard={onOpenCardFromNotification} />

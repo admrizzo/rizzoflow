@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ForceRefreshPrompt } from "@/components/layout/ForceRefreshPrompt";
+import { usePermissions } from "@/hooks/usePermissions";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminFlow from "./pages/AdminFlow";
@@ -85,6 +86,36 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Role-gated route. `allow` is a predicate over usePermissions().
+function RoleRoute({
+  children,
+  allow,
+}: {
+  children: React.ReactNode;
+  allow: (perms: ReturnType<typeof usePermissions>) => boolean;
+}) {
+  const { user, isLoading } = useAuth();
+  const perms = usePermissions();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (!allow(perms)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -114,9 +145,9 @@ const App = () => (
               <Route
                 path="/admin-flow"
                 element={
-                  <ProtectedRoute>
+                  <RoleRoute allow={(p) => p.canManageFlows}>
                     <AdminFlow />
-                  </ProtectedRoute>
+                  </RoleRoute>
                 }
               />
               <Route path="/prestador/:token" element={<ProviderPortal />} />
@@ -138,9 +169,9 @@ const App = () => (
               <Route
                 path="/central-propostas"
                 element={
-                  <ProtectedRoute>
+                  <RoleRoute allow={(p) => p.canViewAllProposals}>
                     <CentralPropostas />
-                  </ProtectedRoute>
+                  </RoleRoute>
                 }
               />
               <Route path="*" element={<NotFound />} />

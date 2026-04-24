@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Users, Shield, UserCog, UserX, Crown, Workflow } from 'lucide-react';
+import { Users, Shield, UserCog, UserX, Crown, Workflow, Briefcase, ClipboardList, Building2 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 
 interface UserRolesManagerProps {
@@ -31,6 +31,9 @@ interface UserRolesManagerProps {
 
 const ROLE_LABELS: Record<AppRole | 'none', string> = {
   admin: 'Super Admin',
+  gestor: 'Gestor',
+  corretor: 'Corretor',
+  administrativo: 'Administrativo',
   editor: 'Editor',
   viewer: 'Visualizador',
   none: 'Sem acesso',
@@ -38,6 +41,9 @@ const ROLE_LABELS: Record<AppRole | 'none', string> = {
 
 const ROLE_ICONS: Record<AppRole | 'none', React.ReactNode> = {
   admin: <Shield className="h-4 w-4 text-red-500" />,
+  gestor: <Briefcase className="h-4 w-4 text-purple-500" />,
+  corretor: <Building2 className="h-4 w-4 text-emerald-500" />,
+  administrativo: <ClipboardList className="h-4 w-4 text-amber-600" />,
   editor: <UserCog className="h-4 w-4 text-blue-500" />,
   viewer: <Users className="h-4 w-4 text-gray-500" />,
   none: <UserX className="h-4 w-4 text-gray-400" />,
@@ -150,16 +156,34 @@ export function UserRolesManager({ open, onClose }: UserRolesManagerProps) {
                                 <span>Super Admin</span>
                               </div>
                             </SelectItem>
+                            <SelectItem value="gestor">
+                              <div className="flex items-center gap-2">
+                                <Briefcase className="h-4 w-4 text-purple-500" />
+                                <span>Gestor</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="corretor">
+                              <div className="flex items-center gap-2">
+                                <Building2 className="h-4 w-4 text-emerald-500" />
+                                <span>Corretor</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="administrativo">
+                              <div className="flex items-center gap-2">
+                                <ClipboardList className="h-4 w-4 text-amber-600" />
+                                <span>Administrativo</span>
+                              </div>
+                            </SelectItem>
                             <SelectItem value="editor">
                               <div className="flex items-center gap-2">
                                 <UserCog className="h-4 w-4 text-blue-500" />
-                                <span>Editor</span>
+                                <span>Editor (legado)</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="viewer">
                               <div className="flex items-center gap-2">
                                 <Users className="h-4 w-4 text-gray-500" />
-                                <span>Visualizador</span>
+                                <span>Visualizador (legado)</span>
                               </div>
                             </SelectItem>
                             <SelectItem value="none">

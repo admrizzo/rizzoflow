@@ -99,18 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    return { error };
+  const signUp = async (_email: string, _password: string, _fullName: string) => {
+    // Cadastro público desabilitado: este sistema é por convite (admin → usuário).
+    return {
+      error: new Error('Cadastro público desabilitado. Solicite um convite ao administrador.'),
+    };
   };
 
   const signOut = async () => {

@@ -365,6 +365,7 @@ interface PropertyData {
   seguro_incendio: number | null;
   foto_principal: string | null;
   status_imovel: number | null;
+  raw_data?: any;
 }
 
 // ── Score ──

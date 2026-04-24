@@ -21,13 +21,17 @@ import {
 } from 'lucide-react';
 import type {
   ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
-  DocumentCategory, DocCategoryKey, FiadorTipo, FiadorDocumentCategory, FiadorConjugeData
+  DocumentCategory, DocCategoryKey, FiadorTipo, FiadorDocumentCategory, FiadorConjugeData,
+  EmpresaData, RepresentanteLegal,
 } from '@/pages/PropostaLocacao';
 import {
-  calcPercentualComprometimento
+  calcPercentualComprometimento,
+  emptyEmpresa, emptyRepresentante, REGIME_TRIBUTARIO_OPTIONS, PJ_DOC_CATEGORIES,
 } from '@/pages/PropostaLocacao';
 import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { FiadorSection } from '@/components/proposta/FiadorSection';
+import { EmpresaForm } from '@/components/proposta/EmpresaForm';
+import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 
 // ── Constants ──
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
@@ -221,6 +225,8 @@ function isCasadoOuUniao(data: ProposalFormData) {
 }
 
 function needsConjuge(data: ProposalFormData) {
+  // PJ não tem cônjuge — empresa não tem estado civil
+  if (data.imovel.tipo_pessoa === 'juridica') return false;
   if (!isCasadoOuUniao(data)) return false;
   const regime = data.perfil_financeiro.regime_bens;
   if (!regime) return false;
@@ -230,11 +236,27 @@ function needsConjuge(data: ProposalFormData) {
   return true;
 }
 
+function isPJ(data: ProposalFormData) {
+  return data.imovel.tipo_pessoa === 'juridica';
+}
+
 function validateStep(step: number, data: ProposalFormData): string[] {
   const errors: string[] = [];
+  const pj = isPJ(data);
   switch (step) {
     case 0: break; // Imóvel e Tipo — auto-preenchido
     case 1:
+      if (pj) {
+        // PJ: dados da empresa
+        if (!data.empresa.razao_social.trim()) errors.push('Razão Social é obrigatória');
+        if (!data.empresa.cnpj.trim()) errors.push('CNPJ é obrigatório');
+        if (!data.empresa.ramo_atividade.trim()) errors.push('Ramo de atividade é obrigatório');
+        if (!data.empresa.telefone.trim()) errors.push('Telefone da empresa é obrigatório');
+        if (!data.empresa.email.trim()) errors.push('E-mail da empresa é obrigatório');
+        if (!data.empresa.faturamento_mensal.trim()) errors.push('Faturamento mensal é obrigatório');
+        if (!data.empresa.regime_tributario) errors.push('Regime tributário é obrigatório');
+        break;
+      }
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
@@ -246,6 +268,22 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       break;
     case 2:
+      if (pj) {
+        // PJ: representantes legais
+        if (data.representantes.length === 0) errors.push('Adicione pelo menos um representante legal');
+        data.representantes.forEach((r, i) => {
+          const label = `Representante ${i + 1}`;
+          if (!r.nome.trim()) errors.push(`${label}: nome é obrigatório`);
+          if (!r.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          if (!r.whatsapp.trim()) errors.push(`${label}: WhatsApp é obrigatório`);
+          if (!r.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
+        });
+        const hasSignatario = data.representantes.some(r => r.is_signatario);
+        if (data.representantes.length > 0 && !hasSignatario) {
+          errors.push('Indique pelo menos um representante como signatário do contrato');
+        }
+        break;
+      }
       if (needsConjuge(data) && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
       break;
     case 4:
@@ -353,11 +391,13 @@ function calcScore(data: ProposalFormData, percentual: number | null): { score: 
 function getPendingSteps(data: ProposalFormData): { step: number; label: string; errors: string[]; critical: boolean }[] {
   const pending: { step: number; label: string; errors: string[]; critical: boolean }[] = [];
   const sc = needsConjuge(data);
+  const pj = isPJ(data);
   for (let i = 0; i < 7; i++) {
-    if (i === 2 && !sc) continue;
+    // Step 2: cônjuge/sócios — só pula em PF sem cônjuge necessário
+    if (i === 2 && !sc && !pj) continue;
     const errs = validateStep(i, data);
     if (errs.length > 0) {
-      const critical = [1, 5].includes(i);
+      const critical = [1, 2, 5].includes(i) && (i !== 2 || pj || sc);
       pending.push({ step: i, label: STEP_CONFIG[i].label, errors: errs, critical });
     }
   }
@@ -379,6 +419,16 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
   progressPercent: number; isSaving: boolean; lastSavedAt: Date | null; draftStatus: string;
 }) {
   const showConjuge = needsConjuge(data);
+  const pj = isPJ(data);
+
+  // Labels dinâmicos por tipo de pessoa
+  const dynamicLabels = STEP_CONFIG.map((cfg, i) => {
+    if (pj) {
+      if (i === 1) return { ...cfg, shortLabel: 'Empresa', label: 'Empresa' };
+      if (i === 2) return { ...cfg, shortLabel: 'Representantes', label: 'Representantes' };
+    }
+    return cfg;
+  });
 
   const progressMessage = progressPercent >= 85
     ? 'Faltam poucos passos para finalizar! 🎉'
@@ -438,8 +488,9 @@ function StepperHeader({ currentStep, totalSteps, onGoToStep, visited, data, pro
         </div>
 
         <div className="flex items-start justify-between gap-0 overflow-x-auto pb-1">
-          {STEP_CONFIG.map((cfg, i) => {
-            if (i === 2 && !showConjuge) return null;
+          {dynamicLabels.map((cfg, i) => {
+            // Step 2 só aparece se PF com cônjuge OU PJ (representantes sempre exigidos)
+            if (i === 2 && !showConjuge && !pj) return null;
             const isActive = i === currentStep;
             const isDone = visited.has(i) && i !== currentStep && validateStep(i, data).length === 0;
             const displayNum = i + 1;
@@ -610,6 +661,8 @@ export default function PropostaPublica() {
     composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
     garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
     negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+    empresa: { ...emptyEmpresa },
+    representantes: [],
   });
   const [visited, setVisited] = useState<Set<number>>(new Set([0]));
   const [submitted, setSubmitted] = useState(false);
@@ -699,7 +752,8 @@ export default function PropostaPublica() {
       return;
     }
     if (step < totalSteps - 1) {
-      const next = step === 1 && !showConjuge ? 3 : step + 1;
+      // PJ: representantes (step 2) sempre exigido; PF: pula step 2 se sem cônjuge
+      const next = step === 1 && !showConjuge && !isPJ(data) ? 3 : step + 1;
       setStep(next);
       setVisited(prev => new Set(prev).add(next));
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -708,14 +762,14 @@ export default function PropostaPublica() {
 
   function goPrev() {
     if (step > 0) {
-      const prev = step === 3 && !showConjuge ? 1 : step - 1;
+      const prev = step === 3 && !showConjuge && !isPJ(data) ? 1 : step - 1;
       setStep(prev);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   function goToStep(s: number) {
-    if (s === 2 && !showConjuge) return;
+    if (s === 2 && !showConjuge && !isPJ(data)) return;
     setStep(s);
     setVisited(prev => new Set(prev).add(s));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -986,7 +1040,29 @@ export default function PropostaPublica() {
               return (
                 <div
                   key={opt.value}
-                  onClick={() => update(p => ({ ...p, imovel: { ...p.imovel, tipo_pessoa: opt.value } }))}
+                  onClick={() => update(p => {
+                    if (p.imovel.tipo_pessoa === opt.value) return p;
+                    // Ao trocar tipo de pessoa, limpa os dados específicos do tipo anterior
+                    const isNowPJ = opt.value === 'juridica';
+                    return {
+                      ...p,
+                      imovel: { ...p.imovel, tipo_pessoa: opt.value },
+                      // Limpa dados PF se virou PJ
+                      dados_pessoais: isNowPJ ? { ...emptyPerson } : p.dados_pessoais,
+                      perfil_financeiro: isNowPJ
+                        ? { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' }
+                        : p.perfil_financeiro,
+                      conjuge: isNowPJ ? { ...emptyPerson } : p.conjuge,
+                      socios: isNowPJ ? [] : p.socios,
+                      // Limpa dados PJ se virou PF
+                      empresa: !isNowPJ ? { ...emptyEmpresa } : p.empresa,
+                      representantes: !isNowPJ ? [] : p.representantes,
+                      // Reinicia documentos com o template correto
+                      documentos: isNowPJ
+                        ? PJ_DOC_CATEGORIES.map(c => ({ ...c, files: [] }))
+                        : INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
+                    };
+                  })}
                   className={cn(
                     'relative rounded-xl border text-left transition-all cursor-pointer px-3.5 py-3',
                     selected
@@ -1055,6 +1131,21 @@ export default function PropostaPublica() {
   }
 
   function renderStep1() {
+    // PJ: renderiza formulário da empresa
+    if (isPJ(data)) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+              <Building className="h-7 w-7 text-accent" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Dados da Empresa 🏢</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Informe os dados cadastrais e financeiros da empresa.</p>
+          </div>
+          <EmpresaForm data={data.empresa} onChange={d => update(p => ({ ...p, empresa: d }))} />
+        </div>
+      );
+    }
     const isCnpj = data.imovel.tipo_pessoa === 'juridica';
     return (
       <div className="space-y-6">
@@ -1250,6 +1341,24 @@ export default function PropostaPublica() {
   }
 
   function renderStep2() {
+    // PJ: renderiza formulário de representantes legais
+    if (isPJ(data)) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="h-7 w-7 text-accent" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Representantes Legais 👥</h2>
+            <p className="text-muted-foreground mt-1 text-sm">Cadastre sócios, administradores e quem assinará o contrato.</p>
+          </div>
+          <RepresentantesForm
+            representantes={data.representantes}
+            onChange={next => update(p => ({ ...p, representantes: next }))}
+          />
+        </div>
+      );
+    }
     return (
       <div className="space-y-6">
         <div className="text-center py-4">

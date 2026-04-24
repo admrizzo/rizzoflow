@@ -135,6 +135,49 @@ export interface Imovel {
   tipo_pessoa: 'fisica' | 'juridica' | '';
 }
 
+// ── Pessoa Jurídica ──
+export interface EmpresaData {
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  data_abertura: string;
+  ramo_atividade: string;
+  telefone: string;
+  email: string;
+  // Endereço da empresa
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  // Capacidade financeira PJ
+  faturamento_mensal: string;
+  regime_tributario: string;
+  tempo_atividade: string;
+}
+
+export interface RepresentanteLegal {
+  nome: string;
+  cpf: string;
+  profissao: string;
+  whatsapp: string;
+  email: string;
+  // Endereço do representante
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  // Papéis na empresa
+  is_socio: boolean;
+  is_administrador: boolean;
+  is_signatario: boolean;
+}
+
 // documentos
 export type DocCategoryKey = 'documento_foto' | 'comprovante_residencia' | 'comprovante_renda' | 'estado_civil';
 
@@ -165,11 +208,43 @@ export interface ProposalFormData {
   composicao: Composicao;
   garantia: GarantiaInfo;
   negociacao: Negociacao;
+  // ── Pessoa Jurídica ──
+  empresa: EmpresaData;
+  representantes: RepresentanteLegal[];
 }
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
 const emptyMorador: MoradorData = { tipo: '', nome: '' };
 const emptyFiadorConjuge: FiadorConjugeData = { nome: '', cpf: '', documento_identidade: '', whatsapp: '', email: '' };
+
+export const emptyEmpresa: EmpresaData = {
+  razao_social: '', nome_fantasia: '', cnpj: '', data_abertura: '',
+  ramo_atividade: '', telefone: '', email: '',
+  cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+  faturamento_mensal: '', regime_tributario: '', tempo_atividade: '',
+};
+
+export const emptyRepresentante: RepresentanteLegal = {
+  nome: '', cpf: '', profissao: '', whatsapp: '', email: '',
+  cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '',
+  is_socio: true, is_administrador: false, is_signatario: true,
+};
+
+export const REGIME_TRIBUTARIO_OPTIONS = [
+  'Simples Nacional',
+  'Lucro Presumido',
+  'Lucro Real',
+  'MEI',
+  'Outro',
+];
+
+// Categorias de documentos para Pessoa Jurídica
+export const PJ_DOC_CATEGORIES: DocumentCategory[] = [
+  { key: 'documento_foto' as DocCategoryKey, label: 'Contrato Social', help: 'Contrato social e última alteração registrada na Junta Comercial.', files: [] },
+  { key: 'comprovante_residencia' as DocCategoryKey, label: 'Cartão CNPJ', help: 'Cartão CNPJ atualizado emitido pela Receita Federal.', files: [] },
+  { key: 'comprovante_renda' as DocCategoryKey, label: 'Balanço patrimonial e balancete', help: 'Último balanço patrimonial e balancete recente assinados pelo contador.', files: [] },
+  { key: 'estado_civil' as DocCategoryKey, label: 'DRE — Demonstração do Resultado', help: 'DRE do último ano calendário assinada pelo contador.', files: [] },
+];
 
 // Categorias de documentos por tipo de fiador (regras Rizzo)
 const FIADOR_DOC_RENDA: FiadorDocumentCategory[] = [
@@ -270,6 +345,8 @@ const initialData: ProposalFormData = {
   composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
   garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+  empresa: { ...emptyEmpresa },
+  representantes: [],
 };
 
 // ── Helper: parse currency string to number ──

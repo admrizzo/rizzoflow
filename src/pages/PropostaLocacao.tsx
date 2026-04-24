@@ -648,7 +648,8 @@ export default function PropostaLocacao() {
       return;
     }
     if (step < totalSteps - 1) {
-      const next = step === 2 && !showConjuge ? 4 : step + 1;
+      // PF sem cônjuge: pula etapa 3 (Cônjuge/Sócios). PJ sempre exige etapa 3 (Representantes).
+      const next = step === 2 && !showConjuge && !isPJ(data) ? 4 : step + 1;
       setStep(next);
       setVisited((prev) => new Set(prev).add(next));
     }
@@ -656,19 +657,19 @@ export default function PropostaLocacao() {
 
   function goPrev() {
     if (step > 0) {
-      const prev = step === 4 && !showConjuge ? 2 : step - 1;
+      const prev = step === 4 && !showConjuge && !isPJ(data) ? 2 : step - 1;
       setStep(prev);
     }
   }
 
   function goToStep(s: number) {
-    if (s === 3 && !showConjuge) return;
+    if (s === 3 && !showConjuge && !isPJ(data)) return;
     if (visited.has(s)) setStep(s);
   }
 
   function getStepStatus(s: number): 'done' | 'current' | 'pending' | 'skipped' {
     if (s === step) return 'current';
-    if (s === 3 && !showConjuge) return 'skipped';
+    if (s === 3 && !showConjuge && !isPJ(data)) return 'skipped';
     if (!visited.has(s)) return 'pending';
     const errs = validateStep(s, data);
     return errs.length === 0 ? 'done' : 'pending';

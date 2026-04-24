@@ -176,11 +176,10 @@ function json(body: unknown, status: number) {
   })
 }
 
-async function syncProfileAndRole(
+async function syncProfile(
   supabaseAdmin: any,
   userId: string,
   fullName: string,
-  role: ValidRole,
 ) {
   const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     user_metadata: { full_name: fullName },
@@ -194,17 +193,6 @@ async function syncProfileAndRole(
       { onConflict: 'user_id' },
     )
   if (profileError) return `Erro ao sincronizar perfil: ${profileError.message}`
-
-  const { error: deleteRoleError } = await supabaseAdmin
-    .from('user_roles')
-    .delete()
-    .eq('user_id', userId)
-  if (deleteRoleError) return `Erro ao limpar papel anterior: ${deleteRoleError.message}`
-
-  const { error: roleError } = await supabaseAdmin
-    .from('user_roles')
-    .insert({ user_id: userId, role } as any)
-  if (roleError) return `Erro ao atribuir papel: ${roleError.message}`
 
   return null
 }

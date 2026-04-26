@@ -349,7 +349,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }
       }
     }
-  }, [card?.id, isDevBoard]);
+  }, [card?.id, card?.document_deadline, card?.deadline_met, card?.deadline_dispensed, isDevBoard]);
 
   // DEV board: load comprador name from party record
   const devCompradorParty = isDevBoard

@@ -97,7 +97,7 @@ export interface Column {
   review_deadline_days: number | null;
   default_responsible_id: string | null;
   sla_hours: number | null;
-  default_checklist_items: { title: string }[];
+  default_checklist_items: unknown;
 }
 
 export interface Label {

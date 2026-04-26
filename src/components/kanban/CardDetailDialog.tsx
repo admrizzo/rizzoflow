@@ -876,7 +876,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {hasReviewDeadline && !card.is_archived && (
               <div className={cn(
                 "p-4 rounded-lg border",
-                reviewOverdue ? "bg-orange-100 border-orange-400" : "bg-blue-50 border-blue-200"
+                reviewOverdue ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"
               )}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -884,12 +884,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     <h3 className="text-sm font-semibold">Prazo de Revisão da Coluna</h3>
                   </div>
                   {reviewOverdue ? (
-                    <Badge variant="destructive" className="bg-orange-600">
+                    <Badge variant="destructive">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Revisão Necessária
                     </Badge>
                   ) : (
-                    <Badge className="bg-blue-600">
+                    <Badge className="bg-primary text-primary-foreground">
                       <Clock className="h-3 w-3 mr-1" />
                       Em Dia
                     </Badge>
@@ -905,7 +905,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   {timeUntilReview && (
                     <p className={cn(
                       "text-sm",
-                      reviewOverdue ? "text-orange-700 font-medium" : "text-muted-foreground"
+                       reviewOverdue ? "text-warning font-medium" : "text-muted-foreground"
                     )}>
                       {timeUntilReview}
                     </p>
@@ -925,7 +925,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       size="sm"
                       className={cn(
                         "mt-2",
-                        reviewOverdue && "bg-orange-600 hover:bg-orange-700"
+                         reviewOverdue && "bg-warning text-warning-foreground hover:bg-warning/90"
                       )}
                       onClick={() => markAsReviewed.mutate(card.id)}
                       disabled={markAsReviewed.isPending}

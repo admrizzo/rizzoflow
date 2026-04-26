@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3, Inbox } from 'lucide-react';
-import { useForceRefresh } from '@/hooks/useForceRefresh';
+import { useSync, formatLastSync } from '@/hooks/useSync';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { NotificationsPopover } from './NotificationsPopover';
@@ -52,21 +52,23 @@ export interface FilterState {
 
 export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, selectedBoard, archivedCount = 0, showArchivedView, onToggleArchivedView, onOpenCardFromNotification }: HeaderProps) {
   const { user, profile, signOut, roles } = useAuth();
-  const { isAdmin, canManageUsers, canAccessCriticalSettings, canViewAllProposals, hasAnyRole } = usePermissions();
+  const { isAdmin, canManageUsers, canViewAllProposals, hasAnyRole } = usePermissions();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const { triggerForceRefresh } = useForceRefresh();
+  const { sync, isSyncing, canSync, lastSyncedAt } = useSync();
   const navigate = useNavigate();
 
-  const handleForceRefresh = async () => {
-    try {
-      await triggerForceRefresh.mutateAsync();
-      toast.success('Atualização forçada enviada para todos os usuários!');
-    } catch (error) {
-      console.error('Erro ao forçar atualização:', error);
-      toast.error('Erro ao forçar atualização');
+  const handleSync = async () => {
+    if (isSyncing) return;
+    const result = await sync();
+    if (result.success) {
+      toast.success('Sincronização concluída');
+    } else if (result.error !== 'forbidden') {
+      toast.error('Não foi possível sincronizar. Tente novamente.');
     }
   };
+
+  const lastSyncLabel = formatLastSync(lastSyncedAt);
 
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => key !== 'showArchived' && Boolean(value)).length + (filters.showArchived ? 1 : 0);
 
@@ -173,17 +175,25 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
               <span className="hidden sm:inline text-xs">Minha Fila</span>
             </Button>
           )}
-          {canAccessCriticalSettings && (
+          {canSync && (
             <Button
               variant="ghost"
               size="sm"
               className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
-              onClick={handleForceRefresh}
-              disabled={triggerForceRefresh.isPending}
-              title="Forçar todos os usuários a atualizar a página"
+              onClick={handleSync}
+              disabled={isSyncing}
+              title={
+                isSyncing
+                  ? 'Sincronizando...'
+                  : lastSyncLabel
+                    ? `Sincronizar dados do CRM\nÚltima sincronização: ${lastSyncLabel}`
+                    : 'Sincronizar dados do CRM'
+              }
             >
-              <RefreshCw className={`h-4 w-4 ${triggerForceRefresh.isPending ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline text-xs">Atualizar Todos</span>
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline text-xs">
+                {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+              </span>
             </Button>
           )}
           {canManageUsers && (

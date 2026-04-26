@@ -32,7 +32,7 @@ export function useProfiles() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Membro adicionado!' });
     },
     onError: (error) => {
@@ -55,7 +55,7 @@ export function useProfiles() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Membro removido!' });
     },
   });

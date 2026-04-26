@@ -91,7 +91,7 @@ export function useStageChecklist() {
       return { skipped: false, checklistId: checklist.id };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       if (result?.skipped) {
         toast({ title: 'Checklist da etapa já existe', description: 'Nenhum item duplicado foi criado.' });
       } else {

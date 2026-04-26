@@ -81,7 +81,7 @@ export function useLabels(boardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labels'] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Etiqueta atualizada com sucesso!' });
     },
     onError: (error) => {
@@ -104,7 +104,7 @@ export function useLabels(boardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labels'] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Etiqueta excluída com sucesso!' });
     },
     onError: (error) => {
@@ -157,7 +157,7 @@ export function useLabels(boardId?: string) {
     },
     onSettled: () => {
       // Refetch in background to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 
@@ -203,7 +203,7 @@ export function useLabels(boardId?: string) {
     },
     onSettled: () => {
       // Refetch in background to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 

@@ -288,9 +288,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [accessContactName, setAccessContactName] = useState('');
   const [accessContactPhone, setAccessContactPhone] = useState('');
 
+  const [localDocumentDeadline, setLocalDocumentDeadline] = useState<Date | null>(null);
+  const [localDeadlineMet, setLocalDeadlineMet] = useState(false);
+  const [localDeadlineDispensed, setLocalDeadlineDispensed] = useState(false);
+
   // Check if deadline is overdue - moved before early return
-  const documentDeadlineDate = parseDatabaseDate(card?.document_deadline);
-  const isDeadlineOverdue = !!documentDeadlineDate && !card?.deadline_met && !card?.deadline_dispensed && isDateOverdue(documentDeadlineDate);
+  const isDeadlineOverdue = !!localDocumentDeadline && !localDeadlineMet && !localDeadlineDispensed && isDateOverdue(localDocumentDeadline);
   // Sync local state when card changes
   useEffect(() => {
     if (card) {
@@ -301,6 +304,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       setLocalProposalResponsible(card.proposal_responsible || '');
       setLocalNegotiationDetails(card.negotiation_details || '');
       setLocalDescription(card.description || '');
+      setLocalDocumentDeadline(parseDatabaseDate(card.document_deadline));
+      setLocalDeadlineMet(!!card.deadline_met);
+      setLocalDeadlineDispensed(!!card.deadline_dispensed);
 
       // Parse access info from negotiation_details for maintenance boards
       if (card.negotiation_details) {

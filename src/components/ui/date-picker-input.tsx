@@ -1,5 +1,5 @@
 import * as React from "react";
-import { format, parse, isValid } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 

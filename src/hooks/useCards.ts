@@ -551,6 +551,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
     // Always refetch after success or error
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cardsQueryKey });
+      queryClient.invalidateQueries({ queryKey: ['my-queue'] });
     },
   });
 

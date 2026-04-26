@@ -2560,7 +2560,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
                 label="Endereço"
                 value={vv([data.empresa.logradouro, data.empresa.numero, data.empresa.bairro, data.empresa.cidade, data.empresa.uf].filter(Boolean).join(', '))}
               />
-              <ReviewRow label="Faturamento mensal" value={vv(data.empresa.faturamento_mensal)} />
+              <ReviewRow label="Faturamento mensal" value={vvCurrency(data.empresa.faturamento_mensal)} />
               <ReviewRow label="Regime tributário" value={vv(data.empresa.regime_tributario)} />
               <ReviewRow label="Tempo de atividade" value={vv(data.empresa.tempo_atividade)} />
             </ReviewBlockNew>
@@ -2604,7 +2604,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
             <ReviewRow label="Cônjuge participa" value={data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'} />
           )}
-          <ReviewRow label="Renda" value={vv(data.perfil_financeiro.renda_mensal)} />
+          <ReviewRow label="Renda" value={vvCurrency(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
         </ReviewBlockNew>
         )}
@@ -2685,7 +2685,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         {/* Negociação */}
         <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
           <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
-          {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={data.negociacao.valor_proposto} />}
+          {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={vvCurrency(data.negociacao.valor_proposto)} />}
           {data.negociacao.observacao && <ReviewRow label="Observação" value={data.negociacao.observacao} />}
         </ReviewBlockNew>
       </div>

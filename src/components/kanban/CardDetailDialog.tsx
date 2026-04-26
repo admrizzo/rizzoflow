@@ -55,8 +55,6 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Ban,
-  Eye,
   MoreVertical,
   ArrowRightCircle,
   Loader2,
@@ -81,7 +79,6 @@ import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
-import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';

@@ -317,6 +317,13 @@ function vv(val: string | undefined | null): string {
   return val && val.trim() ? val : 'Não informado';
 }
 
+function vvCurrency(val: string | undefined | null): string {
+  if (!val || !val.trim()) return 'Não informado';
+  const num = parseCurrency(val);
+  if (!num) return 'Não informado';
+  return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function formatCurrency(n: number | null | undefined): string {
   if (n == null) return 'N/A';
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

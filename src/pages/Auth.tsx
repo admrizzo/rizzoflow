@@ -148,7 +148,7 @@ export default function Auth() {
               className="h-10 object-contain"
             />
           </div>
-            <CardTitle className="text-xl">Flow Rizzo</CardTitle>
+            <CardTitle className="text-xl">Rizzo Flow</CardTitle>
             <CardDescription>
               Gestão operacional de propostas e processos
             </CardDescription>

@@ -60,6 +60,7 @@ import {
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { buildPublicUrl } from '@/lib/appUrl';
 import { useQueryClient } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -205,7 +206,7 @@ export function UsersAndAccessManager() {
           fullName: name,
           email,
           role: inviteRole,
-          redirectTo: `${window.location.origin}/auth?invite=1`,
+          redirectTo: buildPublicUrl('/auth?invite=1'),
         },
       });
       if (error || data?.error) {

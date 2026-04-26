@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, Plus, Pencil, X, Check, UserX, UserCheck, Phone, Link, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { buildPublicUrl } from '@/lib/appUrl';
 
 export function ProviderRegistryManager() {
   const { providers, isLoading, addProvider, updateProvider } = useProviderRegistry(true);
@@ -224,7 +225,7 @@ export function ProviderRegistryManager() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const url = `${window.location.origin}/prestador/${p.slug}`;
+                            const url = buildPublicUrl(`/prestador/${p.slug}`);
                             navigator.clipboard.writeText(url);
                             toast({ title: 'Link copiado!', description: `Link do portal de ${p.name} copiado para a área de transferência.` });
                           }}

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { useUserBoards } from '@/hooks/useUserBoards';
 import { logCardActivity } from '@/hooks/useCardActivityLogs';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 
 export function useCards(boardId?: string, options?: { includeArchived?: boolean }) {
   const queryClient = useQueryClient();

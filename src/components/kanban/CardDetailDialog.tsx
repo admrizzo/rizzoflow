@@ -617,6 +617,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const cardLabels = card.labels || [];
   const cardMembers = card.members || [];
   const checklists = card.checklists || [];
+  const deadlineMutationPending = updateCard.isPending || setDeadlineMet.isPending || setDeadlineDispensed.isPending;
 
   // All checklists (including party checklists) should be shown in ChecklistSection
   // CardPartiesSection only manages party CRUD operations, not checklist display

@@ -337,6 +337,53 @@ export type Database = {
           },
         ]
       }
+      card_activity_logs: {
+        Row: {
+          actor_user_id: string | null
+          card_id: string
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_value: Json | null
+          old_value: Json | null
+          title: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          card_id: string
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          title: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          card_id?: string
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_activity_logs_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_field_values: {
         Row: {
           card_id: string

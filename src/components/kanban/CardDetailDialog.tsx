@@ -67,6 +67,7 @@ import {
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';
+import { CardActivityHistory } from './CardActivityHistory';
 import { CardNotesSidebar } from './CardNotesSidebar';
 import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
@@ -1958,6 +1959,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 name: p.name,
               }))}
             />
+
+            {/* Histórico de Andamentos */}
+            <CardActivityHistory cardId={card.id} />
 
             {/* Actions Section */}
             {isEditor && !card.is_archived && (

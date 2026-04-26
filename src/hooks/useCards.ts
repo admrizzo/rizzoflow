@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { useUserBoards } from '@/hooks/useUserBoards';
+import { logCardActivity } from '@/hooks/useCardActivityLogs';
 
 export function useCards(boardId?: string, options?: { includeArchived?: boolean }) {
   const queryClient = useQueryClient();
@@ -158,6 +159,15 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       
       if (error) throw error;
 
+      // Histórico: criação do card
+      void logCardActivity({
+        cardId: newCard.id,
+        actorUserId: user?.id,
+        eventType: 'card_created',
+        title: 'Card criado',
+        description: card.title,
+      });
+
       // Fetch checklist templates for this board
       // SKIP for boards that handle checklists via card templates (Administrativo)
       const ADMINISTRATIVO_BOARD_ID = 'e9a38d52-7403-4aec-87af-c886774af748';
@@ -245,6 +255,9 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
 
   const updateCard = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Card> & { id: string }) => {
+      // Snapshot anterior para campos rastreados (responsável, próxima ação, prazo)
+      const prev = cards.find((c) => c.id === id);
+
       const { data, error } = await supabase
         .from('cards')
         .update(updates)
@@ -253,6 +266,69 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         .single();
       
       if (error) throw error;
+
+      // Histórico: alterações operacionais relevantes
+      try {
+        if (prev && Object.prototype.hasOwnProperty.call(updates, 'next_action')) {
+          const before = prev.next_action || '';
+          const after = (updates as any).next_action || '';
+          if (before !== after) {
+            void logCardActivity({
+              cardId: id,
+              actorUserId: user?.id,
+              eventType: 'next_action_changed',
+              title: after ? 'Próxima ação atualizada' : 'Próxima ação removida',
+              description: after || before,
+              oldValue: before || null,
+              newValue: after || null,
+            });
+          }
+        }
+
+        if (prev && Object.prototype.hasOwnProperty.call(updates, 'next_action_due_date')) {
+          const before = prev.next_action_due_date || null;
+          const after = (updates as any).next_action_due_date || null;
+          if (before !== after) {
+            void logCardActivity({
+              cardId: id,
+              actorUserId: user?.id,
+              eventType: 'due_date_changed',
+              title: after ? 'Prazo da próxima ação atualizado' : 'Prazo removido',
+              oldValue: before,
+              newValue: after,
+            });
+          }
+        }
+
+        if (prev && Object.prototype.hasOwnProperty.call(updates, 'responsible_user_id')) {
+          const before = prev.responsible_user_id || null;
+          const after = (updates as any).responsible_user_id || null;
+          if (before !== after) {
+            // Resolver nome do novo responsável (best-effort)
+            let newName: string | null = null;
+            if (after) {
+              const { data: prof } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', after)
+                .maybeSingle();
+              newName = prof?.full_name || null;
+            }
+            const oldName = prev.responsible_user_profile?.full_name || null;
+            void logCardActivity({
+              cardId: id,
+              actorUserId: user?.id,
+              eventType: 'responsible_changed',
+              title: after ? `Responsável alterado para ${newName || 'novo usuário'}` : 'Responsável removido',
+              oldValue: { id: before, name: oldName },
+              newValue: { id: after, name: newName },
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[useCards.updateCard] log falhou:', err);
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -373,6 +449,26 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
             from_column_id: currentCard.column_id,
             to_column_id: newColumnId,
           });
+
+        // Histórico humano (card_activity_logs)
+        try {
+          const { data: cols } = await supabase
+            .from('columns')
+            .select('id, name')
+            .in('id', [currentCard.column_id, newColumnId].filter(Boolean) as string[]);
+          const fromName = cols?.find((c) => c.id === currentCard.column_id)?.name || 'Etapa anterior';
+          const toName = cols?.find((c) => c.id === newColumnId)?.name || 'Nova etapa';
+          void logCardActivity({
+            cardId,
+            actorUserId: user?.id,
+            eventType: 'column_changed',
+            title: `Moveu de ${fromName} para ${toName}`,
+            oldValue: { id: currentCard.column_id, name: fromName },
+            newValue: { id: newColumnId, name: toName },
+          });
+        } catch (err) {
+          console.warn('[useCards.moveCard] log falhou:', err);
+        }
       }
     },
     // Optimistic update - instantly move card in UI

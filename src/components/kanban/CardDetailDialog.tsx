@@ -507,6 +507,38 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     );
   };
 
+  const handleDeadlineMetChange = (isMet: boolean) => {
+    const previous = localDeadlineMet;
+    setLocalDeadlineMet(isMet);
+    setDeadlineMet.mutate(
+      { cardId: card.id, isMet },
+      { onError: () => setLocalDeadlineMet(previous) },
+    );
+  };
+
+  const handleDeadlineDispensedChange = (isDispensed: boolean) => {
+    const previousDeadline = localDocumentDeadline;
+    const previousMet = localDeadlineMet;
+    const previousDispensed = localDeadlineDispensed;
+
+    setLocalDeadlineDispensed(isDispensed);
+    if (isDispensed) {
+      setLocalDocumentDeadline(null);
+      setLocalDeadlineMet(false);
+    }
+
+    setDeadlineDispensed.mutate(
+      { cardId: card.id, isDispensed },
+      {
+        onError: () => {
+          setLocalDocumentDeadline(previousDeadline);
+          setLocalDeadlineMet(previousMet);
+          setLocalDeadlineDispensed(previousDispensed);
+        },
+      },
+    );
+  };
+
   const handleFieldBlur = (field: string, localValue: string, originalValue: string | null) => {
     if (localValue !== (originalValue || '')) {
       updateCard.mutate({ id: card.id, [field]: localValue || null });

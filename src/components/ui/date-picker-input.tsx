@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { parseDateInput } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -54,37 +55,29 @@ export function DatePickerInput({
     }
     
     setInputValue(val);
+  };
 
-    // Try to parse when we have a complete date
-    if (val.length === 10) {
-      const parsed = parse(val, "dd/MM/yyyy", new Date());
-      if (isValid(parsed)) {
+  const commitInputValue = () => {
+    if (!inputValue) return;
+    if (inputValue.length === 10) {
+      const parsed = parseDateInput(inputValue);
+      if (parsed && isValid(parsed)) {
+        setInputValue(format(parsed, "dd/MM/yyyy"));
         onChange(parsed);
+        return;
       }
+    }
+
+    // Reset to previous valid value
+    if (value && isValid(value)) {
+      setInputValue(format(value, "dd/MM/yyyy"));
+    } else {
+      setInputValue("");
     }
   };
 
   const handleInputBlur = () => {
-    if (inputValue.length === 10) {
-      const parsed = parse(inputValue, "dd/MM/yyyy", new Date());
-      if (isValid(parsed)) {
-        onChange(parsed);
-      } else {
-        // Reset to previous valid value
-        if (value && isValid(value)) {
-          setInputValue(format(value, "dd/MM/yyyy"));
-        } else {
-          setInputValue("");
-        }
-      }
-    } else if (inputValue.length > 0 && inputValue.length < 10) {
-      // Incomplete date, reset
-      if (value && isValid(value)) {
-        setInputValue(format(value, "dd/MM/yyyy"));
-      } else {
-        setInputValue("");
-      }
-    }
+    commitInputValue();
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
@@ -107,6 +100,12 @@ export function DatePickerInput({
         value={inputValue}
         onChange={handleInputChange}
         onBlur={handleInputBlur}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            commitInputValue();
+          }
+        }}
         disabled={disabled}
         className="flex-1 h-9 text-sm"
         maxLength={10}
@@ -122,7 +121,7 @@ export function DatePickerInput({
             <CalendarIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 z-[100]" align="end">
+        <PopoverContent className="w-auto p-0 z-[80] pointer-events-auto" align="end">
           <Calendar
             mode="single"
             selected={value || undefined}

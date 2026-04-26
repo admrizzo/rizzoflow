@@ -16,9 +16,8 @@ import {
 } from '@/components/ui/select';
 import { ArrowRight, User, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isToday, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { isDateOverdue } from '@/lib/dateUtils';
+import { isToday } from 'date-fns';
+import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 
 interface AndamentoSectionProps {
   card: CardWithRelations;
@@ -36,10 +35,12 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const { profiles } = useProfiles();
 
   const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
+  const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
 
   useEffect(() => {
     setLocalNextAction(card.next_action || '');
-  }, [card.id, card.next_action]);
+    setLocalDueDate(parseDatabaseDate(card.next_action_due_date));
+  }, [card.id, card.next_action, card.next_action_due_date]);
 
   const responsibleProfile =
     card.responsible_user_profile ||
@@ -47,7 +48,7 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
       ? profiles.find((p) => p.user_id === card.responsible_user_id)
       : null);
 
-  const dueDate = card.next_action_due_date ? parseISO(card.next_action_due_date) : null;
+  const dueDate = localDueDate;
   const overdue = dueDate ? isDateOverdue(dueDate) : false;
   const today = dueDate ? isToday(dueDate) : false;
 
@@ -64,8 +65,13 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
 
   const handleDueDateChange = (date: Date | undefined) => {
     // Store as YYYY-MM-DD (DATE column)
-    const iso = date ? format(date, 'yyyy-MM-dd') : null;
-    updateCard.mutate({ id: card.id, next_action_due_date: iso });
+    const iso = date ? formatDateOnly(date) : null;
+    const previous = localDueDate;
+    setLocalDueDate(date ?? null);
+    updateCard.mutate(
+      { id: card.id, next_action_due_date: iso },
+      { onError: () => setLocalDueDate(previous) },
+    );
   };
 
   const initials = (name?: string | null) =>
@@ -88,8 +94,8 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
             className={cn(
               'gap-1',
               overdue
-                ? 'border-red-300 bg-red-50 text-red-700'
-                : 'border-amber-300 bg-amber-50 text-amber-800'
+                ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                : 'border-warning/30 bg-warning/10 text-warning'
             )}
           >
             <AlertTriangle className="h-3 w-3" />
@@ -170,7 +176,7 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
           <DatePickerInput
             value={dueDate || undefined}
             onChange={handleDueDateChange}
-            disabled={!canEdit}
+            disabled={!canEdit || updateCard.isPending}
             placeholder="dd/mm/aaaa"
           />
         </div>

@@ -81,7 +81,7 @@ import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
-import { isDateOverdue } from '@/lib/dateUtils';
+import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
@@ -288,8 +288,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [accessContactName, setAccessContactName] = useState('');
   const [accessContactPhone, setAccessContactPhone] = useState('');
 
+  const [localDocumentDeadline, setLocalDocumentDeadline] = useState<Date | null>(null);
+  const [localDeadlineMet, setLocalDeadlineMet] = useState(false);
+  const [localDeadlineDispensed, setLocalDeadlineDispensed] = useState(false);
+
   // Check if deadline is overdue - moved before early return
-  const isDeadlineOverdue = card?.document_deadline && !card?.deadline_met && isDateOverdue(new Date(card.document_deadline));
+  const isDeadlineOverdue = !!localDocumentDeadline && !localDeadlineMet && !localDeadlineDispensed && isDateOverdue(localDocumentDeadline);
   // Sync local state when card changes
   useEffect(() => {
     if (card) {
@@ -300,6 +304,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       setLocalProposalResponsible(card.proposal_responsible || '');
       setLocalNegotiationDetails(card.negotiation_details || '');
       setLocalDescription(card.description || '');
+      setLocalDocumentDeadline(parseDatabaseDate(card.document_deadline));
+      setLocalDeadlineMet(!!card.deadline_met);
+      setLocalDeadlineDispensed(!!card.deadline_dispensed);
 
       // Parse access info from negotiation_details for maintenance boards
       if (card.negotiation_details) {
@@ -342,7 +349,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }
       }
     }
-  }, [card?.id, isDevBoard]);
+  }, [card?.id, card?.document_deadline, card?.deadline_met, card?.deadline_dispensed, isDevBoard]);
 
   // DEV board: load comprador name from party record
   const devCompradorParty = isDevBoard
@@ -468,12 +475,68 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Special handler for deadline updates that tracks editor
   const handleDeadlineUpdate = (newDeadline: string | null) => {
-    updateCard.mutate({ 
-      id: card.id, 
-      document_deadline: newDeadline,
-      deadline_edited_at: new Date().toISOString(),
-      deadline_edited_by: user?.id || null
-    });
+    const previousDeadline = localDocumentDeadline;
+    const previousMet = localDeadlineMet;
+    const previousDispensed = localDeadlineDispensed;
+    const nextDate = parseDatabaseDate(newDeadline);
+
+    setLocalDocumentDeadline(nextDate);
+    setLocalDeadlineMet(false);
+    setLocalDeadlineDispensed(false);
+
+    updateCard.mutate(
+      { 
+        id: card.id, 
+        document_deadline: newDeadline,
+        deadline_met: false,
+        deadline_met_at: null,
+        deadline_met_by: null,
+        deadline_dispensed: false,
+        deadline_dispensed_at: null,
+        deadline_dispensed_by: null,
+        deadline_edited_at: new Date().toISOString(),
+        deadline_edited_by: user?.id || null
+      },
+      {
+        onError: () => {
+          setLocalDocumentDeadline(previousDeadline);
+          setLocalDeadlineMet(previousMet);
+          setLocalDeadlineDispensed(previousDispensed);
+        },
+      },
+    );
+  };
+
+  const handleDeadlineMetChange = (isMet: boolean) => {
+    const previous = localDeadlineMet;
+    setLocalDeadlineMet(isMet);
+    setDeadlineMet.mutate(
+      { cardId: card.id, isMet },
+      { onError: () => setLocalDeadlineMet(previous) },
+    );
+  };
+
+  const handleDeadlineDispensedChange = (isDispensed: boolean) => {
+    const previousDeadline = localDocumentDeadline;
+    const previousMet = localDeadlineMet;
+    const previousDispensed = localDeadlineDispensed;
+
+    setLocalDeadlineDispensed(isDispensed);
+    if (isDispensed) {
+      setLocalDocumentDeadline(null);
+      setLocalDeadlineMet(false);
+    }
+
+    setDeadlineDispensed.mutate(
+      { cardId: card.id, isDispensed },
+      {
+        onError: () => {
+          setLocalDocumentDeadline(previousDeadline);
+          setLocalDeadlineMet(previousMet);
+          setLocalDeadlineDispensed(previousDispensed);
+        },
+      },
+    );
   };
 
   const handleFieldBlur = (field: string, localValue: string, originalValue: string | null) => {
@@ -554,6 +617,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const cardLabels = card.labels || [];
   const cardMembers = card.members || [];
   const checklists = card.checklists || [];
+  const deadlineMutationPending = updateCard.isPending || setDeadlineMet.isPending || setDeadlineDispensed.isPending;
 
   // All checklists (including party checklists) should be shown in ChecklistSection
   // CardPartiesSection only manages party CRUD operations, not checklist display
@@ -869,7 +933,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {hasReviewDeadline && !card.is_archived && (
               <div className={cn(
                 "p-4 rounded-lg border",
-                reviewOverdue ? "bg-orange-100 border-orange-400" : "bg-blue-50 border-blue-200"
+                reviewOverdue ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"
               )}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -877,12 +941,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     <h3 className="text-sm font-semibold">Prazo de Revisão da Coluna</h3>
                   </div>
                   {reviewOverdue ? (
-                    <Badge variant="destructive" className="bg-orange-600">
+                    <Badge variant="destructive">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Revisão Necessária
                     </Badge>
                   ) : (
-                    <Badge className="bg-blue-600">
+                    <Badge className="bg-primary text-primary-foreground">
                       <Clock className="h-3 w-3 mr-1" />
                       Em Dia
                     </Badge>
@@ -898,7 +962,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   {timeUntilReview && (
                     <p className={cn(
                       "text-sm",
-                      reviewOverdue ? "text-orange-700 font-medium" : "text-muted-foreground"
+                       reviewOverdue ? "text-warning font-medium" : "text-muted-foreground"
                     )}>
                       {timeUntilReview}
                     </p>
@@ -918,7 +982,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       size="sm"
                       className={cn(
                         "mt-2",
-                        reviewOverdue && "bg-orange-600 hover:bg-orange-700"
+                         reviewOverdue && "bg-warning text-warning-foreground hover:bg-warning/90"
                       )}
                       onClick={() => markAsReviewed.mutate(card.id)}
                       disabled={markAsReviewed.isPending}
@@ -935,30 +999,31 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isManutencaoBoard && (
               <div className={cn(
                 "p-4 rounded-lg border",
-                card.deadline_dispensed ? "bg-muted/50 border-muted" :
-                isDeadlineOverdue ? "bg-amber-100 border-amber-400" : 
-                card.deadline_met ? "bg-green-50 border-green-300" : 
-                "bg-blue-50 border-blue-200"
+                localDeadlineDispensed ? "bg-muted/50 border-muted" :
+                localDeadlineMet ? "bg-success/10 border-success/30" :
+                isDeadlineOverdue ? "bg-destructive/10 border-destructive/30" : 
+                localDocumentDeadline ? "bg-primary/5 border-primary/20" :
+                "bg-card border-border"
               )}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">Prazo para Documentos</h3>
                   </div>
-                  {card.deadline_dispensed && (
+                  {localDeadlineDispensed && (
                     <Badge variant="secondary" className="bg-muted">
                       <Ban className="h-3 w-3 mr-1" />
                       Dispensado
                     </Badge>
                   )}
-                  {!card.deadline_dispensed && isDeadlineOverdue && (
-                    <Badge variant="destructive" className="bg-amber-600">
+                  {!localDeadlineDispensed && !localDeadlineMet && isDeadlineOverdue && (
+                    <Badge variant="destructive">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Prazo Vencido
                     </Badge>
                   )}
-                  {!card.deadline_dispensed && card.deadline_met && (
-                    <Badge className="bg-green-600">
+                  {!localDeadlineDispensed && localDeadlineMet && (
+                    <Badge className="bg-success text-success-foreground">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Prazo Cumprido
                     </Badge>
@@ -966,7 +1031,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 </div>
 
                 {/* Dispensed state */}
-                {card.deadline_dispensed ? (
+                {localDeadlineDispensed ? (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
                       Este card não requer prazo para documentos.
@@ -982,8 +1047,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setDeadlineDispensed.mutate({ cardId: card.id, isDispensed: false })}
-                        disabled={setDeadlineDispensed.isPending}
+                        onClick={() => handleDeadlineDispensedChange(false)}
+                        disabled={deadlineMutationPending}
                       >
                         <Clock className="h-4 w-4 mr-2" />
                         Definir prazo
@@ -996,24 +1061,22 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       {/* Date Picker with Input */}
                       <div className="flex-1 min-w-[200px]">
                         <DatePickerInput
-                          value={card.document_deadline ? new Date(card.document_deadline) : undefined}
+                          value={localDocumentDeadline || undefined}
                           onChange={(date) => {
-                            if (date) {
-                              handleDeadlineUpdate(date.toISOString());
-                            }
+                            handleDeadlineUpdate(date ? formatDateOnly(date) : null);
                           }}
-                          disabled={!isEditor || card.deadline_met}
+                          disabled={!isEditor || localDeadlineMet || deadlineMutationPending}
                           placeholder="dd/mm/aaaa"
                         />
                       </div>
 
                       {/* Dispense deadline button - shows when no deadline set */}
-                      {!card.document_deadline && isEditor && (
+                      {!localDocumentDeadline && isEditor && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setDeadlineDispensed.mutate({ cardId: card.id, isDispensed: true })}
-                          disabled={setDeadlineDispensed.isPending}
+                          onClick={() => handleDeadlineDispensedChange(true)}
+                          disabled={deadlineMutationPending}
                           className="text-muted-foreground"
                         >
                           <Ban className="h-4 w-4 mr-1" />
@@ -1022,11 +1085,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Clear deadline button - shows when deadline is set */}
-                      {card.document_deadline && isEditor && !card.deadline_met && (
+                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeadlineUpdate(null)}
+                          disabled={deadlineMutationPending}
                           className="text-muted-foreground hover:text-destructive"
                         >
                           <X className="h-4 w-4 mr-1" />
@@ -1035,13 +1099,13 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Deadline Met Button */}
-                      {card.document_deadline && isEditor && !card.deadline_met && (
+                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => setDeadlineMet.mutate({ cardId: card.id, isMet: true })}
-                          disabled={setDeadlineMet.isPending}
+                          className="bg-success text-success-foreground hover:bg-success/90"
+                          onClick={() => handleDeadlineMetChange(true)}
+                          disabled={deadlineMutationPending}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
                           Prazo Cumprido
@@ -1049,12 +1113,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Reopen Deadline Button */}
-                      {card.deadline_met && isEditor && (
+                      {localDeadlineMet && isEditor && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setDeadlineMet.mutate({ cardId: card.id, isMet: false })}
-                          disabled={setDeadlineMet.isPending}
+                          onClick={() => handleDeadlineMetChange(false)}
+                          disabled={deadlineMutationPending}
                         >
                           Reabrir Prazo
                         </Button>
@@ -1062,8 +1126,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </div>
 
                     {/* Deadline Met Info */}
-                    {card.deadline_met && card.deadline_met_at && (
-                      <p className="text-xs text-green-700 mt-2">
+                    {localDeadlineMet && card.deadline_met_at && (
+                      <p className="text-xs text-success mt-2">
                         Marcado como cumprido em{' '}
                         {format(new Date(card.deadline_met_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         {card.deadline_met_by_profile && ` por ${card.deadline_met_by_profile.full_name}`}
@@ -1071,7 +1135,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     )}
 
                     {/* Deadline Edited Info */}
-                    {card.deadline_edited_at && !card.deadline_met && (
+                    {card.deadline_edited_at && !localDeadlineMet && (
                       <p className="text-xs text-muted-foreground mt-2">
                         Prazo editado em{' '}
                         {format(new Date(card.deadline_edited_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

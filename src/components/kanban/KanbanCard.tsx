@@ -246,6 +246,39 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             <p className="text-[10px] text-muted-foreground truncate mb-1">{card.building_name}</p>
           )}
 
+          {/* Andamento: próxima ação + prazo */}
+          {!isArchived && (nextAction || nextActionDue) && (
+            <div
+              className={cn(
+                "flex items-start gap-1 mt-1 mb-1 px-1.5 py-1 rounded border text-[10px]",
+                isNextActionOverdue
+                  ? "border-red-300 bg-red-50 text-red-700"
+                  : isNextActionToday
+                  ? "border-amber-300 bg-amber-50 text-amber-800"
+                  : "border-border bg-muted/40 text-foreground"
+              )}
+            >
+              <ArrowRight className="h-3 w-3 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                {nextAction ? (
+                  <p className="leading-snug line-clamp-2 break-words">{nextAction}</p>
+                ) : (
+                  <p className="leading-snug italic opacity-70">Sem próxima ação</p>
+                )}
+                {nextActionDue && (
+                  <div className="flex items-center gap-0.5 mt-0.5 font-medium">
+                    <Calendar className="h-2.5 w-2.5" />
+                    <span>
+                      {format(nextActionDue, "d/MM", { locale: ptBR })}
+                      {isNextActionOverdue && " · vencido"}
+                      {!isNextActionOverdue && isNextActionToday && " · hoje"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Responsible + Time in stage row */}
           {(!isArchived && (responsibleName || card.column_entered_at)) && (
             <div className="flex items-center justify-between gap-1 mb-1">

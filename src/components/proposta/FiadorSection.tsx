@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
@@ -281,7 +282,12 @@ export function FiadorSection({
                             </span>
                           )}
                         </Label>
-                        <Input value={fiador.renda_mensal} onChange={e => onUpdateFiador(idx, { renda_mensal: e.target.value })} placeholder="R$ 0,00" className="mt-1.5 h-11" />
+                        <CurrencyInput
+                          value={fiador.renda_mensal}
+                          onValueChange={v => onUpdateFiador(idx, { renda_mensal: v })}
+                          placeholder="0,00"
+                          className="mt-1.5 h-11"
+                        />
                       </div>
                     )}
                     <div>

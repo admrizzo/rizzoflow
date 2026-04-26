@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Building, DollarSign, MapPin } from 'lucide-react';
@@ -129,7 +130,12 @@ export function EmpresaForm({ data, onChange }: EmpresaFormProps) {
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-medium">Faturamento médio mensal <span className="text-red-500">*</span></Label>
-            <Input value={data.faturamento_mensal} onChange={e => set('faturamento_mensal', e.target.value)} placeholder="R$ 0,00" className="mt-1.5" />
+            <CurrencyInput
+              value={data.faturamento_mensal}
+              onValueChange={v => set('faturamento_mensal', v)}
+              placeholder="0,00"
+              className="mt-1.5"
+            />
             <p className="text-xs text-muted-foreground mt-1.5">Faturamento médio considerando os últimos 12 meses.</p>
           </div>
 

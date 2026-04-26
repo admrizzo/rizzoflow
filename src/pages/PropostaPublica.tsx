@@ -1600,10 +1600,10 @@ export default function PropostaPublica() {
 
             <div>
               <Label className="text-sm font-medium">Renda Mensal <span className="text-red-500">*</span></Label>
-              <Input
+              <CurrencyInput
                 value={data.perfil_financeiro.renda_mensal}
-                onChange={e => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, renda_mensal: e.target.value } }))}
-                placeholder="R$ 0,00"
+                onValueChange={v => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, renda_mensal: v } }))}
+                placeholder="0,00"
                 className="mt-1.5"
               />
               {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
@@ -2355,7 +2355,12 @@ export default function PropostaPublica() {
         {data.negociacao.aceitou_valor === 'nao' && (
           <div className="bg-card rounded-2xl border p-6 space-y-4">
             <Label className="text-sm font-semibold block">Qual valor você propõe? (R$)</Label>
-            <Input value={data.negociacao.valor_proposto} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: e.target.value } }))} placeholder="R$ 0,00" className="text-lg h-12" />
+            <CurrencyInput
+              value={data.negociacao.valor_proposto}
+              onValueChange={v => update(p => ({ ...p, negociacao: { ...p.negociacao, valor_proposto: v } }))}
+              placeholder="0,00"
+              className="text-lg h-12"
+            />
           </div>
         )}
 

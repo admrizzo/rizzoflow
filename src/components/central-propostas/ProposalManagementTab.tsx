@@ -185,7 +185,7 @@ export function ProposalManagementTab({ allLinks }: Props) {
                 ) : (
                   filtered.slice(0, 50).map((link: any) => {
                     const statusInfo = STATUS_LABELS[link.status] || STATUS_LABELS.nao_acessado;
-                    const linkUrl = `${window.location.origin}/proposta/${link.codigo_robust}`;
+                    const linkUrl = buildPublicUrl(`/proposta/${link.codigo_robust}`);
                     return (
                       <TableRow key={link.id} className={selected.has(link.id) ? 'bg-muted/50' : ''}>
                         <TableCell>

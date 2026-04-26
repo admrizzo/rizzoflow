@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useMyQueue, type QueueItem } from '@/hooks/useMyQueue';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CardDetailDialog } from '@/components/kanban/CardDetailDialog';
+import type { CardWithRelations } from '@/types/database';
 import {
   ArrowLeft,
   Inbox,
@@ -126,7 +129,29 @@ export default function MinhaFila() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [openCardId, setOpenCardId] = useState<string | null>(null);
-  const [openCardBoardId, setOpenCardBoardId] = useState<string | null>(null);
+
+  // Carrega o card completo (com relações) ao abrir o modal a partir da fila.
+  const { data: openCard } = useQuery({
+    queryKey: ['card-detail-from-queue', openCardId],
+    enabled: !!openCardId,
+    queryFn: async (): Promise<CardWithRelations | null> => {
+      const { data, error } = await supabase
+        .from('cards')
+        .select(`
+          *,
+          column:columns(*),
+          card_labels(label:labels(*)),
+          card_members(user_id, assigned_at),
+          checklists(*, items:checklist_items(*))
+        `)
+        .eq('id', openCardId!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const labels = (data.card_labels ?? []).map((cl: any) => cl.label).filter(Boolean);
+      return { ...(data as any), labels } as CardWithRelations;
+    },
+  });
 
   const counts = useMemo(() => {
     const c: Record<FilterKey, number> = {
@@ -279,7 +304,6 @@ export default function MinhaFila() {
                     className="px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer group"
                     onClick={() => {
                       setOpenCardId(it.id);
-                      setOpenCardBoardId(it.board_id);
                     }}
                   >
                     <div className="flex items-start gap-3">
@@ -361,7 +385,6 @@ export default function MinhaFila() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpenCardId(it.id);
-                          setOpenCardBoardId(it.board_id);
                         }}
                       >
                         Abrir
@@ -375,15 +398,13 @@ export default function MinhaFila() {
         </div>
       </main>
 
-      {openCardId && openCardBoardId && (
+      {openCardId && (
         <CardDetailDialog
-          cardId={openCardId}
-          boardId={openCardBoardId}
-          open={!!openCardId}
+          card={openCard ?? null}
+          open={!!openCardId && !!openCard}
           onOpenChange={(open) => {
             if (!open) {
               setOpenCardId(null);
-              setOpenCardBoardId(null);
             }
           }}
         />

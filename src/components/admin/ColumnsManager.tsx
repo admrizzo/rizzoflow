@@ -25,6 +25,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Pencil, Trash2, GripVertical, Columns as ColumnsIcon, Clock, X, Check } from 'lucide-react';
 import { Board, Column, Department } from '@/types/database';
+import { Textarea } from '@/components/ui/textarea';
+import { parseStageDefaultItems } from '@/hooks/useStageChecklist';
 
 const PRESET_COLORS = [
   '#f97316', '#ef4444', '#8b5cf6', '#3b82f6', '#06b6d4',
@@ -56,6 +58,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
   const [department, setDepartment] = useState<Department | 'none'>('none');
   const [reviewDeadlineDays, setReviewDeadlineDays] = useState<string>('');
   const [slaHours, setSlaHours] = useState<string>('');
+  const [defaultChecklistText, setDefaultChecklistText] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
@@ -64,6 +67,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
     setDepartment('none');
     setReviewDeadlineDays('');
     setSlaHours('');
+    setDefaultChecklistText('');
     setEditingColumn(null);
   };
 
@@ -75,6 +79,8 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
       setDepartment(column.department || 'none');
       setReviewDeadlineDays(column.review_deadline_days?.toString() || '');
       setSlaHours(column.sla_hours?.toString() || '');
+      const items = parseStageDefaultItems(column);
+      setDefaultChecklistText(items.map((it) => it.title).join('\n'));
     } else {
       resetForm();
     }
@@ -93,6 +99,13 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
     const reviewDays = reviewDeadlineDays ? parseInt(reviewDeadlineDays, 10) : null;
     const slaH = slaHours ? parseInt(slaHours, 10) : null;
 
+    // Parse default checklist items from textarea (one per line)
+    const defaultItems = defaultChecklistText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((title) => ({ title }));
+
     setIsSubmitting(true);
     try {
       if (editingColumn) {
@@ -103,6 +116,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
           department: department === 'none' ? null : department,
           review_deadline_days: reviewDays,
           sla_hours: slaH,
+          default_checklist_items: defaultItems as any,
         });
       } else {
         await createColumn.mutateAsync({
@@ -112,6 +126,7 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
           board_id: board.id,
           review_deadline_days: reviewDays,
         });
+        // Note: createColumn doesn't accept default_checklist_items yet — set on edit.
       }
       handleCloseForm();
     } finally {
@@ -261,6 +276,20 @@ export function ColumnsManager({ board, onClose }: ColumnsManagerProps) {
                 />
                 <p className="text-xs text-muted-foreground">
                   Tempo máximo esperado nesta etapa. Cards ultrapassando o SLA ficam destacados em vermelho.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="defaultChecklistItems">Checklist padrão da etapa</Label>
+                <Textarea
+                  id="defaultChecklistItems"
+                  value={defaultChecklistText}
+                  onChange={(e) => setDefaultChecklistText(e.target.value)}
+                  placeholder={'Um item por linha. Exemplo:\nConferir documentos do inquilino\nAvisar corretor sobre pendências'}
+                  rows={5}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Itens criados automaticamente quando o usuário clicar em "Criar checklist da etapa" no card. Um por linha.
                 </p>
               </div>
 

@@ -55,8 +55,6 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Ban,
-  Eye,
   MoreVertical,
   ArrowRightCircle,
   Loader2,
@@ -81,7 +79,6 @@ import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
-import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
@@ -144,7 +141,7 @@ const contractLabels: Record<ContractType, string> = {
 };
 
 export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
-  const { updateCard, deleteCard, archiveCard, setDeadlineMet, setDeadlineDispensed, notifyDeadlineOverdue, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
+  const { updateCard, deleteCard, archiveCard, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
   const { labels, addLabelToCard, removeLabelFromCard } = useLabels(card?.board_id);
   const { profiles, addMemberToCard, removeMemberFromCard } = useProfiles();
   const { isEditor, isAdmin, user } = useAuth();
@@ -192,7 +189,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [hasNotifiedOverdue, setHasNotifiedOverdue] = useState(false);
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedTransferUser, setSelectedTransferUser] = useState<string>('');
@@ -288,12 +284,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [accessContactName, setAccessContactName] = useState('');
   const [accessContactPhone, setAccessContactPhone] = useState('');
 
-  const [localDocumentDeadline, setLocalDocumentDeadline] = useState<Date | null>(null);
-  const [localDeadlineMet, setLocalDeadlineMet] = useState(false);
-  const [localDeadlineDispensed, setLocalDeadlineDispensed] = useState(false);
-
-  // Check if deadline is overdue - moved before early return
-  const isDeadlineOverdue = !!localDocumentDeadline && !localDeadlineMet && !localDeadlineDispensed && isDateOverdue(localDocumentDeadline);
   // Sync local state when card changes
   useEffect(() => {
     if (card) {
@@ -304,9 +294,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       setLocalProposalResponsible(card.proposal_responsible || '');
       setLocalNegotiationDetails(card.negotiation_details || '');
       setLocalDescription(card.description || '');
-      setLocalDocumentDeadline(parseDatabaseDate(card.document_deadline));
-      setLocalDeadlineMet(!!card.deadline_met);
-      setLocalDeadlineDispensed(!!card.deadline_dispensed);
 
       // Parse access info from negotiation_details for maintenance boards
       if (card.negotiation_details) {
@@ -349,7 +336,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }
       }
     }
-  }, [card?.id, card?.document_deadline, card?.deadline_met, card?.deadline_dispensed, isDevBoard]);
+  }, [card?.id, isDevBoard]);
 
   // DEV board: load comprador name from party record
   const devCompradorParty = isDevBoard
@@ -380,27 +367,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     setLocalSellerName(vendedorPrincipal?.name || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVendaBoard, compradorPrincipal?.id, vendedorPrincipal?.id]);
-
-  // Send notification when deadline is overdue (only once) - MUST be before early return
-  useEffect(() => {
-    // Only run if all required values are present
-    if (!card?.id || !card?.created_by || !open) return;
-    if (!isDeadlineOverdue || hasNotifiedOverdue) return;
-    
-    notifyDeadlineOverdue.mutate({
-      cardId: card.id,
-      userId: card.created_by,
-      cardTitle: card.title || card.building_name || 'Card'
-    });
-    setHasNotifiedOverdue(true);
-  }, [isDeadlineOverdue, hasNotifiedOverdue, card?.id, card?.created_by, open]);
-
-  // Reset notification state when dialog closes or card changes
-  useEffect(() => {
-    if (!open) {
-      setHasNotifiedOverdue(false);
-    }
-  }, [open, card?.id]);
 
   // Helper to build title context for current card state - MUST be before early return
   const buildCurrentTitleContext = useCallback((overrides?: Partial<TitleContext>): TitleContext => {
@@ -474,71 +440,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   };
 
   // Special handler for deadline updates that tracks editor
-  const handleDeadlineUpdate = (newDeadline: string | null) => {
-    const previousDeadline = localDocumentDeadline;
-    const previousMet = localDeadlineMet;
-    const previousDispensed = localDeadlineDispensed;
-    const nextDate = parseDatabaseDate(newDeadline);
-
-    setLocalDocumentDeadline(nextDate);
-    setLocalDeadlineMet(false);
-    setLocalDeadlineDispensed(false);
-
-    updateCard.mutate(
-      { 
-        id: card.id, 
-        document_deadline: newDeadline,
-        deadline_met: false,
-        deadline_met_at: null,
-        deadline_met_by: null,
-        deadline_dispensed: false,
-        deadline_dispensed_at: null,
-        deadline_dispensed_by: null,
-        deadline_edited_at: new Date().toISOString(),
-        deadline_edited_by: user?.id || null
-      },
-      {
-        onError: () => {
-          setLocalDocumentDeadline(previousDeadline);
-          setLocalDeadlineMet(previousMet);
-          setLocalDeadlineDispensed(previousDispensed);
-        },
-      },
-    );
-  };
-
-  const handleDeadlineMetChange = (isMet: boolean) => {
-    const previous = localDeadlineMet;
-    setLocalDeadlineMet(isMet);
-    setDeadlineMet.mutate(
-      { cardId: card.id, isMet },
-      { onError: () => setLocalDeadlineMet(previous) },
-    );
-  };
-
-  const handleDeadlineDispensedChange = (isDispensed: boolean) => {
-    const previousDeadline = localDocumentDeadline;
-    const previousMet = localDeadlineMet;
-    const previousDispensed = localDeadlineDispensed;
-
-    setLocalDeadlineDispensed(isDispensed);
-    if (isDispensed) {
-      setLocalDocumentDeadline(null);
-      setLocalDeadlineMet(false);
-    }
-
-    setDeadlineDispensed.mutate(
-      { cardId: card.id, isDispensed },
-      {
-        onError: () => {
-          setLocalDocumentDeadline(previousDeadline);
-          setLocalDeadlineMet(previousMet);
-          setLocalDeadlineDispensed(previousDispensed);
-        },
-      },
-    );
-  };
-
   const handleFieldBlur = (field: string, localValue: string, originalValue: string | null) => {
     if (localValue !== (originalValue || '')) {
       updateCard.mutate({ id: card.id, [field]: localValue || null });
@@ -617,7 +518,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const cardLabels = card.labels || [];
   const cardMembers = card.members || [];
   const checklists = card.checklists || [];
-  const deadlineMutationPending = updateCard.isPending || setDeadlineMet.isPending || setDeadlineDispensed.isPending;
 
   // All checklists (including party checklists) should be shown in ChecklistSection
   // CardPartiesSection only manages party CRUD operations, not checklist display
@@ -930,222 +830,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <AndamentoSection card={card} canEdit={isEditor} />
             )}
 
-            {hasReviewDeadline && !card.is_archived && (
-              <div className={cn(
-                "p-4 rounded-lg border",
-                reviewOverdue ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"
-              )}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">Prazo de Revisão da Coluna</h3>
-                  </div>
-                  {reviewOverdue ? (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Revisão Necessária
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-primary text-primary-foreground">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Em Dia
-                    </Badge>
-                  )}
+            {hasReviewDeadline && !card.is_archived && reviewOverdue && (
+              <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-warning/40 bg-warning/10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning flex-shrink-0" />
+                  <span className="text-xs text-warning font-medium truncate">
+                    Revisão da etapa pendente
+                    {timeUntilReview ? ` · ${timeUntilReview}` : ''}
+                  </span>
                 </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Esta coluna requer revisão a cada <strong>{currentColumn?.review_deadline_days}</strong>{' '}
-                    {currentColumn?.review_deadline_days === 1 ? 'dia' : 'dias'}.
-                  </p>
-                  
-                  {timeUntilReview && (
-                    <p className={cn(
-                      "text-sm",
-                       reviewOverdue ? "text-warning font-medium" : "text-muted-foreground"
-                    )}>
-                      {timeUntilReview}
-                    </p>
-                  )}
-
-                  {card.last_reviewed_at && (
-                    <p className="text-xs text-muted-foreground">
-                      Última revisão em{' '}
-                      {format(new Date(card.last_reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      {card.last_reviewed_by_profile && ` por ${card.last_reviewed_by_profile.full_name}`}
-                    </p>
-                  )}
-
-                  {isEditor && (
-                    <Button
-                      variant={reviewOverdue ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "mt-2",
-                         reviewOverdue && "bg-warning text-warning-foreground hover:bg-warning/90"
-                      )}
-                      onClick={() => markAsReviewed.mutate(card.id)}
-                      disabled={markAsReviewed.isPending}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Marcar como Checado
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Document Deadline Section - Only show for non-Rescisão, non-Venda, and non-DEV boards */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isManutencaoBoard && (
-              <div className={cn(
-                "p-4 rounded-lg border",
-                localDeadlineDispensed ? "bg-muted/50 border-muted" :
-                localDeadlineMet ? "bg-success/10 border-success/30" :
-                isDeadlineOverdue ? "bg-destructive/10 border-destructive/30" : 
-                localDocumentDeadline ? "bg-primary/5 border-primary/20" :
-                "bg-card border-border"
-              )}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">Prazo para Documentos</h3>
-                  </div>
-                  {localDeadlineDispensed && (
-                    <Badge variant="secondary" className="bg-muted">
-                      <Ban className="h-3 w-3 mr-1" />
-                      Dispensado
-                    </Badge>
-                  )}
-                  {!localDeadlineDispensed && !localDeadlineMet && isDeadlineOverdue && (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Prazo Vencido
-                    </Badge>
-                  )}
-                  {!localDeadlineDispensed && localDeadlineMet && (
-                    <Badge className="bg-success text-success-foreground">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Prazo Cumprido
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Dispensed state */}
-                {localDeadlineDispensed ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Este card não requer prazo para documentos.
-                    </p>
-                    {card.deadline_dispensed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Dispensado em{' '}
-                        {format(new Date(card.deadline_dispensed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_dispensed_by_profile && ` por ${card.deadline_dispensed_by_profile.full_name}`}
-                      </p>
-                    )}
-                    {isEditor && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeadlineDispensedChange(false)}
-                        disabled={deadlineMutationPending}
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Definir prazo
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {/* Date Picker with Input */}
-                      <div className="flex-1 min-w-[200px]">
-                        <DatePickerInput
-                          value={localDocumentDeadline || undefined}
-                          onChange={(date) => {
-                            handleDeadlineUpdate(date ? formatDateOnly(date) : null);
-                          }}
-                          disabled={!isEditor || localDeadlineMet || deadlineMutationPending}
-                          placeholder="dd/mm/aaaa"
-                        />
-                      </div>
-
-                      {/* Dispense deadline button - shows when no deadline set */}
-                      {!localDocumentDeadline && isEditor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineDispensedChange(true)}
-                          disabled={deadlineMutationPending}
-                          className="text-muted-foreground"
-                        >
-                          <Ban className="h-4 w-4 mr-1" />
-                          Dispensar prazo
-                        </Button>
-                      )}
-
-                      {/* Clear deadline button - shows when deadline is set */}
-                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineUpdate(null)}
-                          disabled={deadlineMutationPending}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Remover
-                        </Button>
-                      )}
-
-                      {/* Deadline Met Button */}
-                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-success text-success-foreground hover:bg-success/90"
-                          onClick={() => handleDeadlineMetChange(true)}
-                          disabled={deadlineMutationPending}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Prazo Cumprido
-                        </Button>
-                      )}
-
-                      {/* Reopen Deadline Button */}
-                      {localDeadlineMet && isEditor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineMetChange(false)}
-                          disabled={deadlineMutationPending}
-                        >
-                          Reabrir Prazo
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Deadline Met Info */}
-                    {localDeadlineMet && card.deadline_met_at && (
-                      <p className="text-xs text-success mt-2">
-                        Marcado como cumprido em{' '}
-                        {format(new Date(card.deadline_met_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_met_by_profile && ` por ${card.deadline_met_by_profile.full_name}`}
-                      </p>
-                    )}
-
-                    {/* Deadline Edited Info */}
-                    {card.deadline_edited_at && !localDeadlineMet && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Prazo editado em{' '}
-                        {format(new Date(card.deadline_edited_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_edited_by_profile && ` por ${card.deadline_edited_by_profile.full_name}`}
-                      </p>
-                    )}
-                  </>
+                {isEditor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-warning hover:text-warning hover:bg-warning/20"
+                    onClick={() => markAsReviewed.mutate(card.id)}
+                    disabled={markAsReviewed.isPending}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Marcar checado
+                  </Button>
                 )}
               </div>
             )}
+
 
             {/* Card Identification Fields - Different for each board type */}
             {isRescisaoBoard ? (

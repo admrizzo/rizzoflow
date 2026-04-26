@@ -153,6 +153,10 @@ export interface Card {
   // Movement tracking
   last_moved_by: string | null;
   last_moved_at: string | null;
+  // Andamento (próxima ação operacional)
+  next_action: string | null;
+  responsible_user_id: string | null;
+  next_action_due_date: string | null;
 }
 
 export interface CardParty {
@@ -270,6 +274,7 @@ export interface CardWithRelations extends Card {
   vacancy_deadline_met_by_profile?: Profile | null;
   last_reviewed_by_profile?: Profile | null;
   last_moved_by_profile?: Profile | null;
+  responsible_user_profile?: Profile | null;
   parties?: CardPartyWithChecklist[];
 }
 

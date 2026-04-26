@@ -2,9 +2,9 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
@@ -109,6 +109,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const slaColors = getSlaColors(slaStatus);
     const timeInStage = formatTimeElapsed(card.column_entered_at);
     const hasSla = !!column?.sla_hours;
+
+    // Andamento: próxima ação + prazo
+    const nextAction = card.next_action?.trim() || null;
+    const nextActionDue = card.next_action_due_date
+      ? parseISO(card.next_action_due_date)
+      : null;
+    const isNextActionOverdue = nextActionDue ? isDateOverdue(nextActionDue) : false;
+    const isNextActionToday = nextActionDue ? isToday(nextActionDue) : false;
 
     return (
       <Card 
@@ -236,6 +244,39 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           {/* Building/Address subtitle */}
           {card.building_name && card.building_name !== card.title && (
             <p className="text-[10px] text-muted-foreground truncate mb-1">{card.building_name}</p>
+          )}
+
+          {/* Andamento: próxima ação + prazo */}
+          {!isArchived && (nextAction || nextActionDue) && (
+            <div
+              className={cn(
+                "flex items-start gap-1 mt-1 mb-1 px-1.5 py-1 rounded border text-[10px]",
+                isNextActionOverdue
+                  ? "border-red-300 bg-red-50 text-red-700"
+                  : isNextActionToday
+                  ? "border-amber-300 bg-amber-50 text-amber-800"
+                  : "border-border bg-muted/40 text-foreground"
+              )}
+            >
+              <ArrowRight className="h-3 w-3 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                {nextAction ? (
+                  <p className="leading-snug line-clamp-2 break-words">{nextAction}</p>
+                ) : (
+                  <p className="leading-snug italic opacity-70">Sem próxima ação</p>
+                )}
+                {nextActionDue && (
+                  <div className="flex items-center gap-0.5 mt-0.5 font-medium">
+                    <Calendar className="h-2.5 w-2.5" />
+                    <span>
+                      {format(nextActionDue, "d/MM", { locale: ptBR })}
+                      {isNextActionOverdue && " · vencido"}
+                      {!isNextActionOverdue && isNextActionToday && " · hoje"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Responsible + Time in stage row */}

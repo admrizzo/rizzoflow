@@ -60,6 +60,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         if (card.vacancy_deadline_met_by) allUserIds.add(card.vacancy_deadline_met_by);
         if (card.last_reviewed_by) allUserIds.add(card.last_reviewed_by);
         if (card.last_moved_by) allUserIds.add(card.last_moved_by);
+        if (card.responsible_user_id) allUserIds.add(card.responsible_user_id);
         
         card.checklists?.forEach((c: any) => {
           c.items?.forEach((item: any) => {
@@ -98,6 +99,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         vacancy_deadline_met_by_profile: card.vacancy_deadline_met_by ? profilesMap[card.vacancy_deadline_met_by] : null,
         last_reviewed_by_profile: card.last_reviewed_by ? profilesMap[card.last_reviewed_by] : null,
         last_moved_by_profile: card.last_moved_by ? profilesMap[card.last_moved_by] : null,
+        responsible_user_profile: card.responsible_user_id ? profilesMap[card.responsible_user_id] : null,
         checklists: card.checklists?.map((c: any) => ({
           ...c,
           items: (c.items || []).map((item: any) => ({

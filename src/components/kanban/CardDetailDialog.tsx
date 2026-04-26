@@ -63,6 +63,7 @@ import {
   UserPlus,
   Home,
   Search,
+  ArrowRight,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { CardNotesSidebar } from './CardNotesSidebar';
@@ -72,6 +73,7 @@ import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
 import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
+import { AndamentoSection } from './AndamentoSection';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
@@ -855,6 +857,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   )}
                 </div>
               </div>
+            )}
+
+            {/* === BLOCO: ANDAMENTO === */}
+            {!card.is_archived && (
+              <AndamentoSection card={card} canEdit={isEditor} />
             )}
 
             {hasReviewDeadline && !card.is_archived && (

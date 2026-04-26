@@ -711,10 +711,13 @@ export type Database = {
           last_reviewed_at: string | null
           last_reviewed_by: string | null
           negotiation_details: string | null
+          next_action: string | null
+          next_action_due_date: string | null
           position: number
           proposal_link_id: string | null
           proposal_responsible: string | null
           proposal_submitted_at: string | null
+          responsible_user_id: string | null
           robust_code: string | null
           superlogica_id: string | null
           title: string
@@ -756,10 +759,13 @@ export type Database = {
           last_reviewed_at?: string | null
           last_reviewed_by?: string | null
           negotiation_details?: string | null
+          next_action?: string | null
+          next_action_due_date?: string | null
           position?: number
           proposal_link_id?: string | null
           proposal_responsible?: string | null
           proposal_submitted_at?: string | null
+          responsible_user_id?: string | null
           robust_code?: string | null
           superlogica_id?: string | null
           title: string
@@ -801,10 +807,13 @@ export type Database = {
           last_reviewed_at?: string | null
           last_reviewed_by?: string | null
           negotiation_details?: string | null
+          next_action?: string | null
+          next_action_due_date?: string | null
           position?: number
           proposal_link_id?: string | null
           proposal_responsible?: string | null
           proposal_submitted_at?: string | null
+          responsible_user_id?: string | null
           robust_code?: string | null
           superlogica_id?: string | null
           title?: string

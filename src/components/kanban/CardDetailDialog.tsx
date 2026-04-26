@@ -842,222 +842,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <AndamentoSection card={card} canEdit={isEditor} />
             )}
 
-            {hasReviewDeadline && !card.is_archived && (
-              <div className={cn(
-                "p-4 rounded-lg border",
-                reviewOverdue ? "bg-warning/10 border-warning/40" : "bg-primary/5 border-primary/20"
-              )}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">Prazo de Revisão da Coluna</h3>
-                  </div>
-                  {reviewOverdue ? (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Revisão Necessária
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-primary text-primary-foreground">
-                      <Clock className="h-3 w-3 mr-1" />
-                      Em Dia
-                    </Badge>
-                  )}
+            {hasReviewDeadline && !card.is_archived && reviewOverdue && (
+              <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-warning/40 bg-warning/10">
+                <div className="flex items-center gap-2 min-w-0">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning flex-shrink-0" />
+                  <span className="text-xs text-warning font-medium truncate">
+                    Revisão da etapa pendente
+                    {timeUntilReview ? ` · ${timeUntilReview}` : ''}
+                  </span>
                 </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Esta coluna requer revisão a cada <strong>{currentColumn?.review_deadline_days}</strong>{' '}
-                    {currentColumn?.review_deadline_days === 1 ? 'dia' : 'dias'}.
-                  </p>
-                  
-                  {timeUntilReview && (
-                    <p className={cn(
-                      "text-sm",
-                       reviewOverdue ? "text-warning font-medium" : "text-muted-foreground"
-                    )}>
-                      {timeUntilReview}
-                    </p>
-                  )}
-
-                  {card.last_reviewed_at && (
-                    <p className="text-xs text-muted-foreground">
-                      Última revisão em{' '}
-                      {format(new Date(card.last_reviewed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      {card.last_reviewed_by_profile && ` por ${card.last_reviewed_by_profile.full_name}`}
-                    </p>
-                  )}
-
-                  {isEditor && (
-                    <Button
-                      variant={reviewOverdue ? "default" : "outline"}
-                      size="sm"
-                      className={cn(
-                        "mt-2",
-                         reviewOverdue && "bg-warning text-warning-foreground hover:bg-warning/90"
-                      )}
-                      onClick={() => markAsReviewed.mutate(card.id)}
-                      disabled={markAsReviewed.isPending}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Marcar como Checado
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Document Deadline Section - Only show for non-Rescisão, non-Venda, and non-DEV boards */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isManutencaoBoard && (
-              <div className={cn(
-                "p-4 rounded-lg border",
-                localDeadlineDispensed ? "bg-muted/50 border-muted" :
-                localDeadlineMet ? "bg-success/10 border-success/30" :
-                isDeadlineOverdue ? "bg-destructive/10 border-destructive/30" : 
-                localDocumentDeadline ? "bg-primary/5 border-primary/20" :
-                "bg-card border-border"
-              )}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">Prazo para Documentos</h3>
-                  </div>
-                  {localDeadlineDispensed && (
-                    <Badge variant="secondary" className="bg-muted">
-                      <Ban className="h-3 w-3 mr-1" />
-                      Dispensado
-                    </Badge>
-                  )}
-                  {!localDeadlineDispensed && !localDeadlineMet && isDeadlineOverdue && (
-                    <Badge variant="destructive">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Prazo Vencido
-                    </Badge>
-                  )}
-                  {!localDeadlineDispensed && localDeadlineMet && (
-                    <Badge className="bg-success text-success-foreground">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Prazo Cumprido
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Dispensed state */}
-                {localDeadlineDispensed ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Este card não requer prazo para documentos.
-                    </p>
-                    {card.deadline_dispensed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        Dispensado em{' '}
-                        {format(new Date(card.deadline_dispensed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_dispensed_by_profile && ` por ${card.deadline_dispensed_by_profile.full_name}`}
-                      </p>
-                    )}
-                    {isEditor && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeadlineDispensedChange(false)}
-                        disabled={deadlineMutationPending}
-                      >
-                        <Clock className="h-4 w-4 mr-2" />
-                        Definir prazo
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {/* Date Picker with Input */}
-                      <div className="flex-1 min-w-[200px]">
-                        <DatePickerInput
-                          value={localDocumentDeadline || undefined}
-                          onChange={(date) => {
-                            handleDeadlineUpdate(date ? formatDateOnly(date) : null);
-                          }}
-                          disabled={!isEditor || localDeadlineMet || deadlineMutationPending}
-                          placeholder="dd/mm/aaaa"
-                        />
-                      </div>
-
-                      {/* Dispense deadline button - shows when no deadline set */}
-                      {!localDocumentDeadline && isEditor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineDispensedChange(true)}
-                          disabled={deadlineMutationPending}
-                          className="text-muted-foreground"
-                        >
-                          <Ban className="h-4 w-4 mr-1" />
-                          Dispensar prazo
-                        </Button>
-                      )}
-
-                      {/* Clear deadline button - shows when deadline is set */}
-                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineUpdate(null)}
-                          disabled={deadlineMutationPending}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Remover
-                        </Button>
-                      )}
-
-                      {/* Deadline Met Button */}
-                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-success text-success-foreground hover:bg-success/90"
-                          onClick={() => handleDeadlineMetChange(true)}
-                          disabled={deadlineMutationPending}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Prazo Cumprido
-                        </Button>
-                      )}
-
-                      {/* Reopen Deadline Button */}
-                      {localDeadlineMet && isEditor && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeadlineMetChange(false)}
-                          disabled={deadlineMutationPending}
-                        >
-                          Reabrir Prazo
-                        </Button>
-                      )}
-                    </div>
-
-                    {/* Deadline Met Info */}
-                    {localDeadlineMet && card.deadline_met_at && (
-                      <p className="text-xs text-success mt-2">
-                        Marcado como cumprido em{' '}
-                        {format(new Date(card.deadline_met_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_met_by_profile && ` por ${card.deadline_met_by_profile.full_name}`}
-                      </p>
-                    )}
-
-                    {/* Deadline Edited Info */}
-                    {card.deadline_edited_at && !localDeadlineMet && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Prazo editado em{' '}
-                        {format(new Date(card.deadline_edited_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        {card.deadline_edited_by_profile && ` por ${card.deadline_edited_by_profile.full_name}`}
-                      </p>
-                    )}
-                  </>
+                {isEditor && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-warning hover:text-warning hover:bg-warning/20"
+                    onClick={() => markAsReviewed.mutate(card.id)}
+                    disabled={markAsReviewed.isPending}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Marcar checado
+                  </Button>
                 )}
               </div>
             )}
+
 
             {/* Card Identification Fields - Different for each board type */}
             {isRescisaoBoard ? (

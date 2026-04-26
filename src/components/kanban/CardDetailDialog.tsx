@@ -1031,7 +1031,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 </div>
 
                 {/* Dispensed state */}
-                {card.deadline_dispensed ? (
+                {localDeadlineDispensed ? (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
                       Este card não requer prazo para documentos.
@@ -1047,8 +1047,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setDeadlineDispensed.mutate({ cardId: card.id, isDispensed: false })}
-                        disabled={setDeadlineDispensed.isPending}
+                        onClick={() => handleDeadlineDispensedChange(false)}
+                        disabled={deadlineMutationPending}
                       >
                         <Clock className="h-4 w-4 mr-2" />
                         Definir prazo
@@ -1061,24 +1061,22 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       {/* Date Picker with Input */}
                       <div className="flex-1 min-w-[200px]">
                         <DatePickerInput
-                          value={card.document_deadline ? new Date(card.document_deadline) : undefined}
+                          value={localDocumentDeadline || undefined}
                           onChange={(date) => {
-                            if (date) {
-                              handleDeadlineUpdate(date.toISOString());
-                            }
+                            handleDeadlineUpdate(date ? formatDateOnly(date) : null);
                           }}
-                          disabled={!isEditor || card.deadline_met}
+                          disabled={!isEditor || localDeadlineMet || deadlineMutationPending}
                           placeholder="dd/mm/aaaa"
                         />
                       </div>
 
                       {/* Dispense deadline button - shows when no deadline set */}
-                      {!card.document_deadline && isEditor && (
+                      {!localDocumentDeadline && isEditor && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setDeadlineDispensed.mutate({ cardId: card.id, isDispensed: true })}
-                          disabled={setDeadlineDispensed.isPending}
+                          onClick={() => handleDeadlineDispensedChange(true)}
+                          disabled={deadlineMutationPending}
                           className="text-muted-foreground"
                         >
                           <Ban className="h-4 w-4 mr-1" />
@@ -1087,11 +1085,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Clear deadline button - shows when deadline is set */}
-                      {card.document_deadline && isEditor && !card.deadline_met && (
+                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeadlineUpdate(null)}
+                          disabled={deadlineMutationPending}
                           className="text-muted-foreground hover:text-destructive"
                         >
                           <X className="h-4 w-4 mr-1" />
@@ -1100,13 +1099,13 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Deadline Met Button */}
-                      {card.document_deadline && isEditor && !card.deadline_met && (
+                      {localDocumentDeadline && isEditor && !localDeadlineMet && (
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => setDeadlineMet.mutate({ cardId: card.id, isMet: true })}
-                          disabled={setDeadlineMet.isPending}
+                          className="bg-success text-success-foreground hover:bg-success/90"
+                          onClick={() => handleDeadlineMetChange(true)}
+                          disabled={deadlineMutationPending}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-2" />
                           Prazo Cumprido
@@ -1114,12 +1113,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       )}
 
                       {/* Reopen Deadline Button */}
-                      {card.deadline_met && isEditor && (
+                      {localDeadlineMet && isEditor && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setDeadlineMet.mutate({ cardId: card.id, isMet: false })}
-                          disabled={setDeadlineMet.isPending}
+                          onClick={() => handleDeadlineMetChange(false)}
+                          disabled={deadlineMutationPending}
                         >
                           Reabrir Prazo
                         </Button>

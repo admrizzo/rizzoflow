@@ -88,6 +88,13 @@ export function DatePickerInput({
   };
 
   const handleCalendarSelect = (date: Date | undefined) => {
+    // Atualiza o input imediatamente para evitar atraso visual até
+    // o re-render do componente pai vir com o novo `value`.
+    if (date && isValid(date)) {
+      setInputValue(format(date, "dd/MM/yyyy"));
+    } else {
+      setInputValue("");
+    }
     onChange(date);
     setOpen(false);
   };

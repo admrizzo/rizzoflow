@@ -10,4 +10,8 @@ import type { QueryClient } from '@tanstack/react-query';
 export function invalidateCardQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ['cards'] });
   queryClient.invalidateQueries({ queryKey: ['my-queue'] });
+  // Modal aberto a partir da Minha Fila usa essa query para hidratar o card.
+  // Sem invalidar aqui, alterações feitas dentro do modal não refletiriam
+  // no próprio modal nem na fila imediatamente.
+  queryClient.invalidateQueries({ queryKey: ['card-detail-from-queue'] });
 }

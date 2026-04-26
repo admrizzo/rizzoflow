@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { ListChecks, Loader2 } from 'lucide-react';
 import { Column, CardWithRelations } from '@/types/database';
 import { useStageChecklist, parseStageDefaultItems } from '@/hooks/useStageChecklist';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface StageChecklistButtonProps {
   card: CardWithRelations;
@@ -16,10 +16,11 @@ interface StageChecklistButtonProps {
  * - the user has edit permission.
  */
 export function StageChecklistButton({ card, column }: StageChecklistButtonProps) {
-  const { isEditor } = useAuth();
+  const { isAdmin, isGestor, isAdministrativo } = usePermissions();
   const { createStageChecklist } = useStageChecklist();
 
-  if (!isEditor || !column) return null;
+  const canManageChecklist = isAdmin || isGestor || isAdministrativo;
+  if (!canManageChecklist || !column) return null;
 
   const defaultItems = parseStageDefaultItems(column);
   if (defaultItems.length === 0) return null;

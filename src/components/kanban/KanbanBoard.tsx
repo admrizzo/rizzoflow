@@ -62,6 +62,18 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
   const responsibleNames = useMemo(() => {
     const map: Record<string, string> = {};
     cards.forEach(card => {
+      // Priority 1: explicit responsible user assigned to the card
+      if (card.responsible_user_profile?.full_name) {
+        map[card.id] = card.responsible_user_profile.full_name;
+        return;
+      }
+      if (card.responsible_user_id) {
+        const profile = profiles.find(p => p.user_id === card.responsible_user_id);
+        if (profile) {
+          map[card.id] = profile.full_name;
+          return;
+        }
+      }
       const col = columns.find(c => c.id === card.column_id);
       if (col?.default_responsible_id) {
         const profile = profiles.find(p => p.user_id === col.default_responsible_id);

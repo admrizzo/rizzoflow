@@ -66,6 +66,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
+import { StageChecklistButton } from './StageChecklistButton';
 import { CardNotesSidebar } from './CardNotesSidebar';
 import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
@@ -1946,6 +1947,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* Checklists */}
+            <StageChecklistButton card={card} column={currentColumn} />
             <ChecklistSection 
               checklists={filteredChecklists} 
               cardId={card.id} 

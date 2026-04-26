@@ -60,6 +60,7 @@ import {
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { buildPublicUrl } from '@/lib/appUrl';
 import { useQueryClient } from '@tanstack/react-query';
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -475,18 +475,36 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Special handler for deadline updates that tracks editor
   const handleDeadlineUpdate = (newDeadline: string | null) => {
-    updateCard.mutate({ 
-      id: card.id, 
-      document_deadline: newDeadline,
-      deadline_met: false,
-      deadline_met_at: null,
-      deadline_met_by: null,
-      deadline_dispensed: false,
-      deadline_dispensed_at: null,
-      deadline_dispensed_by: null,
-      deadline_edited_at: new Date().toISOString(),
-      deadline_edited_by: user?.id || null
-    });
+    const previousDeadline = localDocumentDeadline;
+    const previousMet = localDeadlineMet;
+    const previousDispensed = localDeadlineDispensed;
+    const nextDate = parseDatabaseDate(newDeadline);
+
+    setLocalDocumentDeadline(nextDate);
+    setLocalDeadlineMet(false);
+    setLocalDeadlineDispensed(false);
+
+    updateCard.mutate(
+      { 
+        id: card.id, 
+        document_deadline: newDeadline,
+        deadline_met: false,
+        deadline_met_at: null,
+        deadline_met_by: null,
+        deadline_dispensed: false,
+        deadline_dispensed_at: null,
+        deadline_dispensed_by: null,
+        deadline_edited_at: new Date().toISOString(),
+        deadline_edited_by: user?.id || null
+      },
+      {
+        onError: () => {
+          setLocalDocumentDeadline(previousDeadline);
+          setLocalDeadlineMet(previousMet);
+          setLocalDeadlineDispensed(previousDispensed);
+        },
+      },
+    );
   };
 
   const handleFieldBlur = (field: string, localValue: string, originalValue: string | null) => {

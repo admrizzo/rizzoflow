@@ -63,6 +63,7 @@ import {
   UserPlus,
   Home,
   Search,
+  ArrowRight,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { CardNotesSidebar } from './CardNotesSidebar';

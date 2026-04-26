@@ -858,6 +858,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
+            {/* === BLOCO: ANDAMENTO === */}
+            {!card.is_archived && (
+              <AndamentoSection card={card} canEdit={isEditor} />
+            )}
+
             {hasReviewDeadline && !card.is_archived && (
               <div className={cn(
                 "p-4 rounded-lg border",

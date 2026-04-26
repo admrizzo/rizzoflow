@@ -372,20 +372,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVendaBoard, compradorPrincipal?.id, vendedorPrincipal?.id]);
 
-  // Send notification when deadline is overdue (only once) - MUST be before early return
-  useEffect(() => {
-    // Only run if all required values are present
-    if (!card?.id || !card?.created_by || !open) return;
-    if (!isDeadlineOverdue || hasNotifiedOverdue) return;
-    
-    notifyDeadlineOverdue.mutate({
-      cardId: card.id,
-      userId: card.created_by,
-      cardTitle: card.title || card.building_name || 'Card'
-    });
-    setHasNotifiedOverdue(true);
-  }, [isDeadlineOverdue, hasNotifiedOverdue, card?.id, card?.created_by, open]);
-
   // Reset notification state when dialog closes or card changes
   useEffect(() => {
     if (!open) {

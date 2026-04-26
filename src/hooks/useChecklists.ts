@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { logCardActivity } from '@/hooks/useCardActivityLogs';
 
 export function useChecklists() {
   const queryClient = useQueryClient();
@@ -65,6 +66,13 @@ export function useChecklists() {
 
   const toggleChecklistItem = useMutation({
     mutationFn: async ({ itemId, isCompleted }: { itemId: string; isCompleted: boolean }) => {
+      // Buscar item + checklist + card para log humano
+      const { data: item } = await supabase
+        .from('checklist_items')
+        .select('content, checklist_id, checklists(card_id, name)')
+        .eq('id', itemId)
+        .maybeSingle();
+
       const { error } = await supabase
         .from('checklist_items')
         .update({ 
@@ -75,6 +83,21 @@ export function useChecklists() {
         .eq('id', itemId);
       
       if (error) throw error;
+
+      const cardId = (item as any)?.checklists?.card_id as string | undefined;
+      const checklistName = (item as any)?.checklists?.name as string | undefined;
+      if (cardId) {
+        void logCardActivity({
+          cardId,
+          actorUserId: user?.id,
+          eventType: isCompleted ? 'checklist_item_completed' : 'checklist_item_reopened',
+          title: isCompleted
+            ? `Concluiu: ${item?.content || 'item do checklist'}`
+            : `Reabriu: ${item?.content || 'item do checklist'}`,
+          description: checklistName || null,
+          metadata: { checklist_id: item?.checklist_id, item_id: itemId },
+        });
+      }
     },
     // No onMutate - we handle optimistic updates in ChecklistSection with local state
     // This prevents double updates and race conditions

@@ -141,7 +141,7 @@ const contractLabels: Record<ContractType, string> = {
 };
 
 export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
-  const { updateCard, deleteCard, archiveCard, setDeadlineMet, setDeadlineDispensed, notifyDeadlineOverdue, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
+  const { updateCard, deleteCard, archiveCard, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
   const { labels, addLabelToCard, removeLabelFromCard } = useLabels(card?.board_id);
   const { profiles, addMemberToCard, removeMemberFromCard } = useProfiles();
   const { isEditor, isAdmin, user } = useAuth();
@@ -189,7 +189,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [hasNotifiedOverdue, setHasNotifiedOverdue] = useState(false);
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedTransferUser, setSelectedTransferUser] = useState<string>('');
@@ -369,13 +368,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVendaBoard, compradorPrincipal?.id, vendedorPrincipal?.id]);
 
-  // Reset notification state when dialog closes or card changes
-  useEffect(() => {
-    if (!open) {
-      setHasNotifiedOverdue(false);
-    }
-  }, [open, card?.id]);
-
   // Helper to build title context for current card state - MUST be before early return
   const buildCurrentTitleContext = useCallback((overrides?: Partial<TitleContext>): TitleContext => {
     return {
@@ -526,7 +518,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const cardLabels = card.labels || [];
   const cardMembers = card.members || [];
   const checklists = card.checklists || [];
-  const deadlineMutationPending = updateCard.isPending || setDeadlineMet.isPending || setDeadlineDispensed.isPending;
 
   // All checklists (including party checklists) should be shown in ChecklistSection
   // CardPartiesSection only manages party CRUD operations, not checklist display

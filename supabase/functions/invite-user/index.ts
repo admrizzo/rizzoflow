@@ -115,7 +115,11 @@ Deno.serve(async (req) => {
 
     // 5. Convida via e-mail (Supabase manda link p/ definir senha)
     const requestOrigin = req.headers.get('origin')
-    const redirectTo = body.redirectTo || (requestOrigin ? `${requestOrigin}/auth?invite=1` : undefined)
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.seurizzo.com.br'
+    // Prioridade: redirectTo explícito do body > origin do request (preview/local) > SITE_URL (produção)
+    const redirectTo =
+      body.redirectTo ||
+      (requestOrigin ? `${requestOrigin}/auth?invite=1` : `${siteUrl}/auth?invite=1`)
     const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {

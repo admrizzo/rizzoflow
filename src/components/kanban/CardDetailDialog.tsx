@@ -1126,8 +1126,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </div>
 
                     {/* Deadline Met Info */}
-                    {card.deadline_met && card.deadline_met_at && (
-                      <p className="text-xs text-green-700 mt-2">
+                    {localDeadlineMet && card.deadline_met_at && (
+                      <p className="text-xs text-success mt-2">
                         Marcado como cumprido em{' '}
                         {format(new Date(card.deadline_met_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         {card.deadline_met_by_profile && ` por ${card.deadline_met_by_profile.full_name}`}
@@ -1135,7 +1135,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     )}
 
                     {/* Deadline Edited Info */}
-                    {card.deadline_edited_at && !card.deadline_met && (
+                    {card.deadline_edited_at && !localDeadlineMet && (
                       <p className="text-xs text-muted-foreground mt-2">
                         Prazo editado em{' '}
                         {format(new Date(card.deadline_edited_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

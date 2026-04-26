@@ -224,7 +224,7 @@ export function ProviderRegistryManager() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            const url = `${window.location.origin}/prestador/${p.slug}`;
+                            const url = buildPublicUrl(`/prestador/${p.slug}`);
                             navigator.clipboard.writeText(url);
                             toast({ title: 'Link copiado!', description: `Link do portal de ${p.name} copiado para a área de transferência.` });
                           }}

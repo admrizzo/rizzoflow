@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { CardParty, CardPartyWithChecklist, PartyType } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -274,7 +275,7 @@ export function useCardParties(cardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['card-parties', cardId] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Parte adicionada com sucesso!' });
     },
     onError: (error) => {
@@ -309,7 +310,7 @@ export function useCardParties(cardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['card-parties', cardId] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Parte removida com sucesso!' });
     },
     onError: (error) => {

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +33,7 @@ export function useProfiles() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Membro adicionado!' });
     },
     onError: (error) => {
@@ -55,7 +56,7 @@ export function useProfiles() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Membro removido!' });
     },
   });

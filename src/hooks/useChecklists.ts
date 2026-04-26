@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,7 +22,7 @@ export function useChecklists() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Checklist criado!' });
     },
     onError: (error) => {
@@ -43,7 +44,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Checklist excluído!' });
     },
   });
@@ -60,7 +61,7 @@ export function useChecklists() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 
@@ -111,7 +112,7 @@ export function useChecklists() {
     onSettled: () => {
       // Sync with server - short delay to avoid blocking UI
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['cards'] });
+        invalidateCardQueries(queryClient);
       }, 800);
     },
   });
@@ -126,7 +127,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 
@@ -140,7 +141,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 
@@ -167,7 +168,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -189,7 +190,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -211,7 +212,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -244,7 +245,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -277,7 +278,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -299,7 +300,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -321,7 +322,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -343,7 +344,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -388,7 +389,7 @@ export function useChecklists() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Checklist dispensado com sucesso!' });
     },
     onError: (error) => {

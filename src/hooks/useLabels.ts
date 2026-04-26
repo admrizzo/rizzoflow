@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -81,7 +82,7 @@ export function useLabels(boardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labels'] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Etiqueta atualizada com sucesso!' });
     },
     onError: (error) => {
@@ -104,7 +105,7 @@ export function useLabels(boardId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labels'] });
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Etiqueta excluída com sucesso!' });
     },
     onError: (error) => {
@@ -157,7 +158,7 @@ export function useLabels(boardId?: string) {
     },
     onSettled: () => {
       // Refetch in background to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 
@@ -203,7 +204,7 @@ export function useLabels(boardId?: string) {
     },
     onSettled: () => {
       // Refetch in background to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
   });
 

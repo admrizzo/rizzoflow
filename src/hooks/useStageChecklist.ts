@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Column } from '@/types/database';
@@ -91,7 +92,7 @@ export function useStageChecklist() {
       return { skipped: false, checklistId: checklist.id };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       if (result?.skipped) {
         toast({ title: 'Checklist da etapa já existe', description: 'Nenhum item duplicado foi criado.' });
       } else {

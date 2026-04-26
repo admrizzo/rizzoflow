@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { useUserBoards } from '@/hooks/useUserBoards';
 import { logCardActivity } from '@/hooks/useCardActivityLogs';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 
 export function useCards(boardId?: string, options?: { includeArchived?: boolean }) {
   const queryClient = useQueryClient();
@@ -241,7 +242,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       return newCard;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Card criado com sucesso!' });
     },
     onError: (error) => {
@@ -332,7 +333,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
     },
     onError: (error) => {
       toast({ 
@@ -353,7 +354,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Card excluído com sucesso!' });
     },
     onError: (error) => {
@@ -550,6 +551,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
     // Always refetch after success or error
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cardsQueryKey });
+      queryClient.invalidateQueries({ queryKey: ['my-queue'] });
     },
   });
 
@@ -576,7 +578,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ 
         title: variables.isArchived ? 'Card arquivado!' : 'Card restaurado!' 
       });
@@ -610,7 +612,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ 
         title: variables.isMet ? 'Prazo marcado como cumprido!' : 'Prazo reaberto!' 
       });
@@ -675,7 +677,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ 
         title: variables.isDispensed ? 'Prazo dispensado!' : 'Prazo reativado!' 
       });
@@ -709,7 +711,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ 
         title: variables.isMet ? 'Entrega confirmada!' : 'Confirmação removida!' 
       });
@@ -774,7 +776,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      invalidateCardQueries(queryClient);
       toast({ title: 'Card transferido com sucesso!' });
     },
     onError: (error) => {

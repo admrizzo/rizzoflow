@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3 } from 'lucide-react';
+import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3, Inbox } from 'lucide-react';
 import { useForceRefresh } from '@/hooks/useForceRefresh';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
@@ -52,7 +52,7 @@ export interface FilterState {
 
 export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, selectedBoard, archivedCount = 0, showArchivedView, onToggleArchivedView, onOpenCardFromNotification }: HeaderProps) {
   const { user, profile, signOut, roles } = useAuth();
-  const { isAdmin, canManageUsers, canAccessCriticalSettings, canViewAllProposals } = usePermissions();
+  const { isAdmin, canManageUsers, canAccessCriticalSettings, canViewAllProposals, hasAnyRole } = usePermissions();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const { triggerForceRefresh } = useForceRefresh();
@@ -161,6 +161,18 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
 
         {/* Right side */}
         <div className="flex items-center gap-1">
+          {hasAnyRole && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-white hover:bg-white/20 gap-1.5 px-2"
+              onClick={() => navigate('/minha-fila')}
+              title="Minha Fila — processos que precisam de ação"
+            >
+              <Inbox className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">Minha Fila</span>
+            </Button>
+          )}
           {canAccessCriticalSettings && (
             <Button
               variant="ghost"

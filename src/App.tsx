@@ -16,6 +16,7 @@ import Demo from "./pages/Demo";
 import PropostaLocacao from "./pages/PropostaLocacao";
 import CentralPropostas from "./pages/CentralPropostas";
 import PropostaPublica from "./pages/PropostaPublica";
+import MinhaFila from "./pages/MinhaFila";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -178,6 +179,14 @@ const App = () => (
                 element={
                   <RoleRoute allow={(p) => p.canViewAllProposals}>
                     <CentralPropostas />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/minha-fila"
+                element={
+                  <RoleRoute allow={(p) => p.hasAnyRole}>
+                    <MinhaFila />
                   </RoleRoute>
                 }
               />

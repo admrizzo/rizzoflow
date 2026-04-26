@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Column } from '@/types/database';
+import { logCardActivity } from '@/hooks/useCardActivityLogs';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Parse the default_checklist_items JSON field from a column into a safe array.
@@ -23,6 +25,7 @@ export function parseStageDefaultItems(column?: Column | null): { title: string 
 export function useStageChecklist() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   /**
    * Creates a checklist on the given card using the column's default items.
@@ -74,6 +77,16 @@ export function useStageChecklist() {
         .insert(safeRows);
 
       if (itemsErr) throw itemsErr;
+
+      // Histórico
+      void logCardActivity({
+        cardId,
+        actorUserId: user?.id,
+        eventType: 'checklist_created',
+        title: `Criou checklist da etapa: ${column.name}`,
+        description: `${items.length} ${items.length === 1 ? 'item criado' : 'itens criados'}`,
+        metadata: { checklist_id: checklist.id, stage: column.name, item_count: items.length },
+      });
 
       return { skipped: false, checklistId: checklist.id };
     },

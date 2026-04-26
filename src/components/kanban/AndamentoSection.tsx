@@ -35,10 +35,12 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const { profiles } = useProfiles();
 
   const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
+  const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
 
   useEffect(() => {
     setLocalNextAction(card.next_action || '');
-  }, [card.id, card.next_action]);
+    setLocalDueDate(parseDatabaseDate(card.next_action_due_date));
+  }, [card.id, card.next_action, card.next_action_due_date]);
 
   const responsibleProfile =
     card.responsible_user_profile ||
@@ -46,7 +48,7 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
       ? profiles.find((p) => p.user_id === card.responsible_user_id)
       : null);
 
-  const dueDate = parseDatabaseDate(card.next_action_due_date);
+  const dueDate = localDueDate;
   const overdue = dueDate ? isDateOverdue(dueDate) : false;
   const today = dueDate ? isToday(dueDate) : false;
 
@@ -64,7 +66,12 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const handleDueDateChange = (date: Date | undefined) => {
     // Store as YYYY-MM-DD (DATE column)
     const iso = date ? formatDateOnly(date) : null;
-    updateCard.mutate({ id: card.id, next_action_due_date: iso });
+    const previous = localDueDate;
+    setLocalDueDate(date ?? null);
+    updateCard.mutate(
+      { id: card.id, next_action_due_date: iso },
+      { onError: () => setLocalDueDate(previous) },
+    );
   };
 
   const initials = (name?: string | null) =>

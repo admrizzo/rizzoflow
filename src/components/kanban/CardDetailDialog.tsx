@@ -472,6 +472,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     updateCard.mutate({ 
       id: card.id, 
       document_deadline: newDeadline,
+      deadline_met: false,
+      deadline_met_at: null,
+      deadline_met_by: null,
+      deadline_dispensed: false,
+      deadline_dispensed_at: null,
+      deadline_dispensed_by: null,
       deadline_edited_at: new Date().toISOString(),
       deadline_edited_by: user?.id || null
     });

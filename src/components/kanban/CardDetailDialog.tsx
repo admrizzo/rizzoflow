@@ -81,7 +81,7 @@ import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
-import { isDateOverdue } from '@/lib/dateUtils';
+import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
@@ -289,7 +289,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [accessContactPhone, setAccessContactPhone] = useState('');
 
   // Check if deadline is overdue - moved before early return
-  const isDeadlineOverdue = card?.document_deadline && !card?.deadline_met && isDateOverdue(new Date(card.document_deadline));
+  const documentDeadlineDate = parseDatabaseDate(card?.document_deadline);
+  const isDeadlineOverdue = !!documentDeadlineDate && !card?.deadline_met && !card?.deadline_dispensed && isDateOverdue(documentDeadlineDate);
   // Sync local state when card changes
   useEffect(() => {
     if (card) {

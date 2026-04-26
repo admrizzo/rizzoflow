@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMyQueue, type QueueItem } from '@/hooks/useMyQueue';
@@ -128,7 +128,25 @@ export default function MinhaFila() {
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
-  const [openCardId, setOpenCardId] = useState<string | null>(null);
+
+  // Persistimos o card aberto na URL (?card=ID) para que:
+  // - trocar de aba/janela e voltar não feche o modal,
+  // - recarregar a página mantenha o card aberto,
+  // - links possam ser compartilhados apontando direto para o card.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openCardId = searchParams.get('card');
+
+  const setOpenCardId = (id: string | null) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set('card', id);
+        else next.delete('card');
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   // Carrega o card completo (com relações) ao abrir o modal a partir da fila.
   const { data: openCard } = useQuery({

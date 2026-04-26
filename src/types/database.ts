@@ -97,6 +97,8 @@ export interface Column {
   review_deadline_days: number | null;
   default_responsible_id: string | null;
   sla_hours: number | null;
+  // Configurable default checklist items per stage. Stored as JSON; expected shape: { title: string }[]
+  default_checklist_items: any;
 }
 
 export interface Label {

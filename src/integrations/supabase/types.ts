@@ -1048,6 +1048,7 @@ export type Database = {
           board_id: string | null
           color: string | null
           created_at: string
+          default_checklist_items: Json
           default_responsible_id: string | null
           department: Database["public"]["Enums"]["department"] | null
           id: string
@@ -1061,6 +1062,7 @@ export type Database = {
           board_id?: string | null
           color?: string | null
           created_at?: string
+          default_checklist_items?: Json
           default_responsible_id?: string | null
           department?: Database["public"]["Enums"]["department"] | null
           id?: string
@@ -1074,6 +1076,7 @@ export type Database = {
           board_id?: string | null
           color?: string | null
           created_at?: string
+          default_checklist_items?: Json
           default_responsible_id?: string | null
           department?: Database["public"]["Enums"]["department"] | null
           id?: string

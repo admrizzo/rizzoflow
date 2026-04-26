@@ -73,6 +73,7 @@ import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
 import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
+import { AndamentoSection } from './AndamentoSection';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { useProperties, Property } from '@/hooks/useProperties';

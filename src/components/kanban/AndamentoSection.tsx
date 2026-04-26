@@ -17,7 +17,6 @@ import {
 import { ArrowRight, User, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isToday } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 
 interface AndamentoSectionProps {

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { supabase } from '@/integrations/supabase/client';
 import { CardParty, CardPartyWithChecklist, PartyType } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';

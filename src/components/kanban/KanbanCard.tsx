@@ -2,9 +2,9 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
@@ -109,6 +109,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const slaColors = getSlaColors(slaStatus);
     const timeInStage = formatTimeElapsed(card.column_entered_at);
     const hasSla = !!column?.sla_hours;
+
+    // Andamento: próxima ação + prazo
+    const nextAction = card.next_action?.trim() || null;
+    const nextActionDue = card.next_action_due_date
+      ? parseISO(card.next_action_due_date)
+      : null;
+    const isNextActionOverdue = nextActionDue ? isDateOverdue(nextActionDue) : false;
+    const isNextActionToday = nextActionDue ? isToday(nextActionDue) : false;
 
     return (
       <Card 

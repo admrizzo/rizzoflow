@@ -999,30 +999,31 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isManutencaoBoard && (
               <div className={cn(
                 "p-4 rounded-lg border",
-                card.deadline_dispensed ? "bg-muted/50 border-muted" :
-                isDeadlineOverdue ? "bg-amber-100 border-amber-400" : 
-                card.deadline_met ? "bg-green-50 border-green-300" : 
-                "bg-blue-50 border-blue-200"
+                localDeadlineDispensed ? "bg-muted/50 border-muted" :
+                localDeadlineMet ? "bg-success/10 border-success/30" :
+                isDeadlineOverdue ? "bg-destructive/10 border-destructive/30" : 
+                localDocumentDeadline ? "bg-primary/5 border-primary/20" :
+                "bg-card border-border"
               )}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <h3 className="text-sm font-semibold">Prazo para Documentos</h3>
                   </div>
-                  {card.deadline_dispensed && (
+                  {localDeadlineDispensed && (
                     <Badge variant="secondary" className="bg-muted">
                       <Ban className="h-3 w-3 mr-1" />
                       Dispensado
                     </Badge>
                   )}
-                  {!card.deadline_dispensed && isDeadlineOverdue && (
-                    <Badge variant="destructive" className="bg-amber-600">
+                  {!localDeadlineDispensed && !localDeadlineMet && isDeadlineOverdue && (
+                    <Badge variant="destructive">
                       <AlertTriangle className="h-3 w-3 mr-1" />
                       Prazo Vencido
                     </Badge>
                   )}
-                  {!card.deadline_dispensed && card.deadline_met && (
-                    <Badge className="bg-green-600">
+                  {!localDeadlineDispensed && localDeadlineMet && (
+                    <Badge className="bg-success text-success-foreground">
                       <CheckCircle2 className="h-3 w-3 mr-1" />
                       Prazo Cumprido
                     </Badge>

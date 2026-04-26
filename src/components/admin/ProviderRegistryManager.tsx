@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, Plus, Pencil, X, Check, UserX, UserCheck, Phone, Link, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { buildPublicUrl } from '@/lib/appUrl';
 
 export function ProviderRegistryManager() {
   const { providers, isLoading, addProvider, updateProvider } = useProviderRegistry(true);

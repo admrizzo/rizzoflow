@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,15 +9,26 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ForceRefreshPrompt } from "@/components/layout/ForceRefreshPrompt";
 import { usePermissions } from "@/hooks/usePermissions";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import AdminFlow from "./pages/AdminFlow";
-import ProviderPortal from "./pages/ProviderPortal";
 import NotFound from "./pages/NotFound";
-import Demo from "./pages/Demo";
 import PropostaLocacao from "./pages/PropostaLocacao";
-import CentralPropostas from "./pages/CentralPropostas";
-import PropostaPublica from "./pages/PropostaPublica";
-import MinhaFila from "./pages/MinhaFila";
+
+// Code splitting: rotas pesadas viram chunks separados.
+// Carregamento sob demanda evita custo no bundle inicial pós-login.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const MinhaFila = lazy(() => import("./pages/MinhaFila"));
+const CentralPropostas = lazy(() => import("./pages/CentralPropostas"));
+const AdminFlow = lazy(() => import("./pages/AdminFlow"));
+const PropostaPublica = lazy(() => import("./pages/PropostaPublica"));
+const ProviderPortal = lazy(() => import("./pages/ProviderPortal"));
+const Demo = lazy(() => import("./pages/Demo"));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -132,6 +144,7 @@ const App = () => (
       <ErrorBoundary label="app">
         <BrowserRouter>
           <AuthProvider>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<IndexRedirect />} />
               <Route
@@ -192,6 +205,7 @@ const App = () => (
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             <ForceRefreshPrompt />
           </AuthProvider>
         </BrowserRouter>

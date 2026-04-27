@@ -178,7 +178,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (role: AppRole) => roles.includes(role);
   const isAdmin = hasRole('admin');
-  const isEditor = hasRole('editor') || isAdmin;
+  // "isEditor" representa hoje a CAPACIDADE OPERACIONAL de editar cards,
+  // checklists, andamento e propostas. Inclui:
+  //  - admin           → acesso total
+  //  - gestor          → opera fluxos e propostas
+  //  - administrativo  → opera cards/checklists/documentos
+  //  - editor          → alias legado (mantido durante a transição)
+  // Corretor NÃO entra aqui: continua restrito apenas às próprias propostas.
+  const isEditor =
+    isAdmin ||
+    hasRole('editor') ||
+    hasRole('gestor') ||
+    hasRole('administrativo');
 
   const refreshProfile = async () => {
     if (user?.id) {

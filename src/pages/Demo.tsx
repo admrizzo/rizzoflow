@@ -24,7 +24,7 @@ function DemoHeader({ selectedBoard, onSelectBoard }: {
     <header className="bg-card/80 backdrop-blur border-b border-border px-4 py-2 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <img src={logoImg} alt="ia.naimobiliária" className="h-7" />
-        <span className="text-xs text-muted-foreground hidden sm:inline">Automação de Fluxos</span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">Demonstração</span>
       </div>
       <div className="flex items-center gap-2">
         {DEMO_MEMBERS.slice(0, 4).map((m) => (

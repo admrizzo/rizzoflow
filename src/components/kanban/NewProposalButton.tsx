@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPropertyIdentification } from '@/lib/propertyIdentification';
+import { buildPublicUrl } from '@/lib/appUrl';
 
 function formatCurrency(v: number | null) {
   if (v == null) return '—';
@@ -119,7 +120,8 @@ export function NewProposalButton() {
     },
     onSuccess: (data) => {
       // Link público SEMPRE usa public_token. id é apenas relacionamento interno.
-      const link = `${window.location.origin}/proposta/${data.public_token}`;
+      // Em produção força o domínio canônico (https://www.seurizzo.com.br).
+      const link = buildPublicUrl(`/proposta/${data.public_token}`);
       setGeneratedLink(link);
       setGeneratedCode(data.codigo_robust);
       queryClient.invalidateQueries({ queryKey: ['proposal-links'] });
@@ -149,7 +151,7 @@ export function NewProposalButton() {
 
   const handleWhatsApp = () => {
     if (generatedLink) {
-      const text = encodeURIComponent(`Olá! Segue o link para preencher a proposta de locação do imóvel Cód. ${generatedCode}:\n\n${generatedLink}`);
+      const text = encodeURIComponent(`Olá! Segue o link para preencher sua proposta de locação:\n\n${generatedLink}`);
       window.open(`https://wa.me/?text=${text}`, '_blank');
     }
   };

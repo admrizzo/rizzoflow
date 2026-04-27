@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CardDetailDialog } from '@/components/kanban/CardDetailDialog';
 import type { CardWithRelations } from '@/types/database';
+import { perfMark, perfMeasure } from '@/lib/perfMark';
 import {
   ArrowLeft,
   Inbox,
@@ -148,11 +149,20 @@ export default function MinhaFila() {
     );
   };
 
-  // Carrega o card completo (com relações) ao abrir o modal a partir da fila.
-  const { data: openCard } = useQuery({
+  // Card "leve" feito a partir do item da fila — usado para abrir o modal IMEDIATAMENTE,
+  // sem esperar a query pesada de relações. Cobre os campos básicos exibidos no header
+  // do CardDetailDialog (título, número, board_id, column_id, responsável, prazo).
+  const queueItemForOpen = useMemo<QueueItem | undefined>(
+    () => items.find((it) => it.id === openCardId),
+    [items, openCardId],
+  );
+
+  // Carrega o card completo (com relações) em paralelo. Quando chega, substitui o "leve".
+  const { data: openCardFull } = useQuery({
     queryKey: ['card-detail-from-queue', openCardId],
     enabled: !!openCardId,
     queryFn: async (): Promise<CardWithRelations | null> => {
+      perfMark('card-open:fetch:start');
       const { data, error } = await supabase
         .from('cards')
         .select(`
@@ -167,9 +177,68 @@ export default function MinhaFila() {
       if (error) throw error;
       if (!data) return null;
       const labels = (data.card_labels ?? []).map((cl: any) => cl.label).filter(Boolean);
+      perfMeasure('card-open:fetch', 'card-open:fetch:start');
       return { ...(data as any), labels } as CardWithRelations;
     },
   });
+
+  // Card mínimo "otimista" — abre o modal na hora.
+  const openCardOptimistic = useMemo<CardWithRelations | null>(() => {
+    if (!openCardId) return null;
+    if (openCardFull) return openCardFull;
+    if (!queueItemForOpen) return null;
+    // Construímos um CardWithRelations com os campos essenciais. Os demais entram como
+    // null/[] e serão preenchidos quando `openCardFull` chegar (≈300-500ms).
+    return {
+      id: queueItemForOpen.id,
+      card_number: queueItemForOpen.card_number,
+      title: queueItemForOpen.title,
+      board_id: queueItemForOpen.board_id,
+      column_id: queueItemForOpen.column_id,
+      next_action: queueItemForOpen.next_action,
+      next_action_due_date: queueItemForOpen.next_action_due_date,
+      responsible_user_id: queueItemForOpen.responsible_user_id,
+      created_by: queueItemForOpen.created_by,
+      column_entered_at: queueItemForOpen.column_entered_at,
+      // Defaults seguros para um CardWithRelations mínimo
+      robust_code: null,
+      building_name: null,
+      superlogica_id: null,
+      address: null,
+      description: null,
+      proposal_responsible: null,
+      negotiation_details: null,
+      guarantee_type: null,
+      contract_type: null,
+      position: 0,
+      due_date: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      is_archived: false,
+      archived_at: null,
+      archived_by: null,
+      archive_reason: null,
+      document_deadline: null,
+      deadline_met: false,
+      deadline_met_at: null,
+      deadline_met_by: null,
+      deadline_dispensed: false,
+      deadline_dispensed_at: null,
+      deadline_dispensed_by: null,
+      deadline_edited_at: null,
+      deadline_edited_by: null,
+      vacancy_deadline_met: false,
+      vacancy_deadline_met_at: null,
+      vacancy_deadline_met_by: null,
+      last_reviewed_at: null,
+      last_reviewed_by: null,
+      card_type: null,
+      last_moved_by: null,
+      last_moved_at: null,
+      labels: [],
+      checklists: [],
+    } as CardWithRelations;
+  }, [openCardId, queueItemForOpen, openCardFull]);
 
   const counts = useMemo(() => {
     const c: Record<FilterKey, number> = {
@@ -418,8 +487,8 @@ export default function MinhaFila() {
 
       {openCardId && (
         <CardDetailDialog
-          card={openCard ?? null}
-          open={!!openCardId && !!openCard}
+          card={openCardOptimistic}
+          open={!!openCardId && !!openCardOptimistic}
           onOpenChange={(open) => {
             if (!open) {
               setOpenCardId(null);

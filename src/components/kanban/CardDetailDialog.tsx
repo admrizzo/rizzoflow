@@ -664,14 +664,21 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           }
         }}
         onPointerDownOutside={(e) => {
-          if (archiveDialogOpen || deleteConfirmOpen || cloneDialogOpen || transferDialogOpen) {
-            e.preventDefault();
-          }
+          // Sempre prevenimos o fechamento por clique fora.
+          // O usuário pode estar interagindo com popovers/menus que renderizam
+          // em portais separados — o card só deve fechar via X, Voltar ou Esc.
+          e.preventDefault();
+        }}
+        onFocusOutside={(e) => {
+          // Trocar de aba/janela e voltar não deve fechar o card aberto.
+          // O Radix dispara este evento quando o foco vai para fora do dialog
+          // (incluindo mudanças de aba), então prevenimos sempre.
+          e.preventDefault();
         }}
         onInteractOutside={(e) => {
-          if (archiveDialogOpen || deleteConfirmOpen || cloneDialogOpen || transferDialogOpen) {
-            e.preventDefault();
-          }
+          // Cobre clique e foco fora — bloqueamos qualquer fechamento
+          // implícito. Fechamentos só acontecem via X, Voltar ou Esc.
+          e.preventDefault();
         }}
       >
         {/* Mobile header with back button */}

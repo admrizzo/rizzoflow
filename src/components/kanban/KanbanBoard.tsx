@@ -26,9 +26,14 @@ interface KanbanBoardProps {
   filters?: FilterState;
   initialCardId?: string | null;
   onCardOpened?: () => void;
+  /**
+   * Disparado quando o card aberto é fechado pelo usuário (X / Esc / Voltar).
+   * Usado pelo Dashboard para sincronizar o parâmetro `?card=` na URL.
+   */
+  onCardClosed?: () => void;
 }
 
-export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, onCardOpened }: KanbanBoardProps) {
+export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, onCardOpened, onCardClosed }: KanbanBoardProps) {
   const { columns, isLoading: columnsLoading, reorderColumns } = useColumns(board.id);
   const { cards, isLoading: cardsLoading, moveCard } = useCards(board.id);
   const { fields } = useBoardFields(board.id);
@@ -679,6 +684,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
         onOpenChange={(open) => {
           if (!open) {
             setSelectedCardId(null);
+            onCardClosed?.();
           }
         }}
       />

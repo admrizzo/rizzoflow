@@ -2042,6 +2042,32 @@ export type Database = {
           user_name: string
         }[]
       }
+      get_my_queue: {
+        Args: never
+        Returns: {
+          board_id: string
+          board_name: string
+          card_number: number
+          checklist_done: number
+          checklist_open_doc_items: number
+          checklist_total: number
+          column_entered_at: string
+          column_id: string
+          column_name: string
+          created_by: string
+          has_no_due_date: boolean
+          has_no_responsible: boolean
+          id: string
+          is_due_today: boolean
+          is_overdue: boolean
+          is_waiting_client: boolean
+          next_action: string
+          next_action_due_date: string
+          responsible_name: string
+          responsible_user_id: string
+          title: string
+        }[]
+      }
       get_user_interaction_ranking: {
         Args: { _board_id?: string; _end_date?: string; _start_date?: string }
         Returns: {

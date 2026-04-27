@@ -14,6 +14,7 @@ import { Board } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, Users } from 'lucide-react';
 import { NewProposalButton } from '@/components/kanban/NewProposalButton';
+import { perfMark, perfMeasure } from '@/lib/perfMark';
 
 const SELECTED_BOARD_KEY = 'fluxos-sg-selected-board';
 
@@ -21,6 +22,17 @@ export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { boards, isLoading: boardsLoading } = useBoards();
   const queryClient = useQueryClient();
+
+  // Medição em dev: tempo até Dashboard pronto.
+  useEffect(() => {
+    perfMark('dashboard:mount');
+  }, []);
+  useEffect(() => {
+    if (!authLoading && !boardsLoading) {
+      perfMeasure('dashboard:ready', 'dashboard:mount');
+    }
+  }, [authLoading, boardsLoading]);
+
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [initialBoardLoaded, setInitialBoardLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

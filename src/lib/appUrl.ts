@@ -5,7 +5,7 @@
  * https://www.seurizzo.com.br em produção, e funcionem em preview/local
  * com o domínio atual.
  */
-export const CANONICAL_APP_URL = 'https://www.seurizzo.com.br';
+export const CANONICAL_APP_URL = 'https://seurizzo.com.br';
 
 const PRODUCTION_HOSTS = new Set([
   'seurizzo.com.br',

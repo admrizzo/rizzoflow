@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
     // 5. Convida via e-mail (Supabase manda link p/ definir senha)
     const requestOrigin = req.headers.get('origin')
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://www.seurizzo.com.br'
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://seurizzo.com.br'
     // Prioridade: redirectTo explícito do body > origin do request (preview/local) > SITE_URL (produção)
     const redirectTo =
       body.redirectTo ||

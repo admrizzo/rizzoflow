@@ -2,10 +2,14 @@
  * Domínio canônico de produção.
  * Sempre que precisar gerar links públicos (proposta, prestador, convite),
  * use `getPublicAppUrl()` para que os links saiam padronizados em
- * https://www.seurizzo.com.br em produção, e funcionem em preview/local
+ * https://seurizzo.com.br em produção, e funcionem em preview/local
  * com o domínio atual.
+ *
+ * NOTA: temporariamente usando domínio sem www enquanto o registro DNS
+ * de www.seurizzo.com.br não está configurado. Quando estiver, voltar
+ * para https://www.seurizzo.com.br.
  */
-export const CANONICAL_APP_URL = 'https://www.seurizzo.com.br';
+export const CANONICAL_APP_URL = 'https://seurizzo.com.br';
 
 const PRODUCTION_HOSTS = new Set([
   'seurizzo.com.br',
@@ -14,7 +18,7 @@ const PRODUCTION_HOSTS = new Set([
 
 /**
  * Retorna a base URL para gerar links públicos.
- * - Em produção (qualquer host de seurizzo.com.br): força o canônico com www.
+ * - Em produção (qualquer host de seurizzo.com.br): força o canônico (sem www por ora).
  * - Em preview/local: usa window.location.origin para não quebrar testes.
  */
 export function getPublicAppUrl(): string {

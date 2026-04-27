@@ -120,7 +120,7 @@ export function NewProposalButton() {
     },
     onSuccess: (data) => {
       // Link público SEMPRE usa public_token. id é apenas relacionamento interno.
-      // Em produção força o domínio canônico (https://www.seurizzo.com.br).
+      // Em produção força o domínio canônico (https://seurizzo.com.br por enquanto, sem www).
       const link = buildPublicUrl(`/proposta/${data.public_token}`);
       setGeneratedLink(link);
       setGeneratedCode(data.codigo_robust);

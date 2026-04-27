@@ -186,7 +186,9 @@ export function ProposalManagementTab({ allLinks }: Props) {
                 ) : (
                   filtered.slice(0, 50).map((link: any) => {
                     const statusInfo = STATUS_LABELS[link.status] || STATUS_LABELS.nao_acessado;
-                    const linkUrl = buildPublicUrl(`/proposta/${link.codigo_robust}`);
+                    // Sempre usar o token público (UUID) — codigo_robust não é
+                    // identificador único e seguro de proposta.
+                    const linkUrl = buildPublicUrl(`/proposta/${link.public_token}`);
                     return (
                       <TableRow key={link.id} className={selected.has(link.id) ? 'bg-muted/50' : ''}>
                         <TableCell>

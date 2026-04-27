@@ -3,17 +3,22 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
+import { useBrokers } from '@/hooks/useBrokers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Search, Link2, Copy, ExternalLink, MessageCircle,
-  Plus, Building2, MapPin, CheckCircle2
+  Plus, Building2, MapPin, CheckCircle2, UserCircle2, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPropertyIdentification } from '@/lib/propertyIdentification';
@@ -31,19 +36,26 @@ export function NewProposalButton() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const { properties } = usePropertiesLocacao();
+  const { brokers, isLoading: loadingBrokers } = useBrokers();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [brokerName, setBrokerName] = useState('');
+  const [brokerUserId, setBrokerUserId] = useState<string>('');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<number | null>(null);
 
+  const selectedBroker = useMemo(
+    () => brokers.find((b) => b.user_id === brokerUserId) || null,
+    [brokers, brokerUserId]
+  );
+
+  // Pré-seleciona o usuário logado se ele for um corretor cadastrado.
   useEffect(() => {
-    if (profile?.full_name && !brokerName) {
-      setBrokerName(profile.full_name);
+    if (!brokerUserId && user?.id && brokers.some((b) => b.user_id === user.id)) {
+      setBrokerUserId(user.id);
     }
-  }, [profile]);
+  }, [user, brokers, brokerUserId]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
@@ -63,7 +75,9 @@ export function NewProposalButton() {
   const createLink = useMutation({
     mutationFn: async () => {
       if (!selectedProperty) throw new Error('Selecione um imóvel');
-      if (!brokerName.trim()) throw new Error('Informe o corretor');
+      if (!selectedBroker) throw new Error('Selecione o corretor responsável');
+
+      const brokerName = selectedBroker.full_name;
 
       const identification = getPropertyIdentification(selectedProperty);
       const addressParts = [selectedProperty.logradouro, selectedProperty.numero, selectedProperty.bairro, selectedProperty.cidade].filter(Boolean);
@@ -76,8 +90,8 @@ export function NewProposalButton() {
           property_name: identification,
           address_summary: addressParts.join(', ') || null,
           rent_value: selectedProperty.valor_aluguel,
-          broker_name: brokerName.trim(),
-          broker_user_id: user?.id || null,
+          broker_name: brokerName,
+          broker_user_id: selectedBroker.user_id,
           created_by: user?.id || null,
         })
         // Selecionamos explicitamente public_token para falhar cedo se não vier
@@ -107,9 +121,9 @@ export function NewProposalButton() {
           robust_code: String(selectedProperty.codigo_robust),
           building_name: identification,
           address: addressParts.join(', ') || null,
-          proposal_responsible: brokerName.trim(),
+          proposal_responsible: brokerName,
           proposal_link_id: linkData.id,
-          description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName.trim()}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
+          description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: 0,
           column_entered_at: new Date().toISOString(),
@@ -138,7 +152,9 @@ export function NewProposalButton() {
     setSearchQuery('');
     setGeneratedLink(null);
     setGeneratedCode(null);
-    if (profile?.full_name) setBrokerName(profile.full_name);
+    if (user?.id && brokers.some((b) => b.user_id === user.id)) {
+      setBrokerUserId(user.id);
+    }
     setModalOpen(true);
   };
 
@@ -268,10 +284,91 @@ export function NewProposalButton() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Corretor responsável</Label>
-                  <Input value={brokerName} onChange={e => setBrokerName(e.target.value)} placeholder="Nome do corretor" />
+                  <Label className="flex items-center gap-1.5 text-sm font-medium">
+                    <UserCircle2 className="h-4 w-4 text-muted-foreground" />
+                    Corretor responsável
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={brokerUserId}
+                    onValueChange={setBrokerUserId}
+                    disabled={loadingBrokers}
+                  >
+                    <SelectTrigger
+                      className={`h-11 ${!brokerUserId ? 'border-amber-400/70' : ''}`}
+                    >
+                      <SelectValue
+                        placeholder={
+                          loadingBrokers
+                            ? 'Carregando corretores...'
+                            : 'Selecione um corretor'
+                        }
+                      >
+                        {selectedBroker && (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              {selectedBroker.avatar_url && (
+                                <AvatarImage src={selectedBroker.avatar_url} alt={selectedBroker.full_name} />
+                              )}
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+                                {selectedBroker.full_name
+                                  .split(' ')
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{selectedBroker.full_name}</span>
+                          </div>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {brokers.length === 0 && !loadingBrokers && (
+                        <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                          <AlertCircle className="h-4 w-4 mx-auto mb-2 text-amber-500" />
+                          Nenhum corretor cadastrado.
+                          <br />
+                          <span className="text-xs">
+                            Cadastre usuários com papel <strong>Corretor</strong> em Administração → Usuários.
+                          </span>
+                        </div>
+                      )}
+                      {brokers.map((b) => (
+                        <SelectItem key={b.user_id} value={b.user_id} className="py-2">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar className="h-7 w-7">
+                              {b.avatar_url && <AvatarImage src={b.avatar_url} alt={b.full_name} />}
+                              <AvatarFallback className="text-[11px] bg-primary/10 text-primary font-semibold">
+                                {b.full_name
+                                  .split(' ')
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium leading-tight">{b.full_name}</span>
+                              {b.email && (
+                                <span className="text-[11px] text-muted-foreground leading-tight">
+                                  {b.email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!brokerUserId && brokers.length > 0 && (
+                    <p className="text-xs text-amber-600">Selecione o corretor para gerar o link.</p>
+                  )}
                 </div>
-                <Button className="w-full" size="lg" disabled={!brokerName.trim() || createLink.isPending} onClick={() => createLink.mutate()}>
+                <Button className="w-full" size="lg" disabled={!selectedBroker || createLink.isPending} onClick={() => createLink.mutate()}>
                   <Link2 className="h-4 w-4 mr-2" />
                   {createLink.isPending ? 'Gerando...' : 'Gerar link da proposta'}
                 </Button>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header, FilterState } from '@/components/layout';
 import { BoardSelector } from '@/components/layout/BoardSelector';
@@ -73,6 +74,32 @@ export default function Dashboard() {
 
   // State for opening a card directly from notification
   const [pendingCardId, setPendingCardId] = useState<string | null>(null);
+
+  // Persistência do card aberto via URL (?card=ID).
+  // - Trocar de aba/janela e voltar mantém o card aberto.
+  // - Reload na URL com ?card=ID reabre o card automaticamente.
+  // - Fechar o card remove o parâmetro.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlCardId = searchParams.get('card');
+
+  // Quando a URL traz ?card=ID, propaga para o Kanban via initialCardId.
+  useEffect(() => {
+    if (urlCardId) {
+      setPendingCardId(urlCardId);
+    }
+  }, [urlCardId]);
+
+  const setUrlCardId = useCallback((id: string | null) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id) next.set('card', id);
+        else next.delete('card');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   // Persisted archived view state per board
   const { showArchivedView, toggleArchivedView } = useArchivedViewState(selectedBoard?.id ?? null);
@@ -195,13 +222,23 @@ export default function Dashboard() {
     if (targetBoard) {
       handleSelectBoard(targetBoard);
       setPendingCardId(cardId);
+      setUrlCardId(cardId);
     }
-  }, [boards, handleSelectBoard]);
+  }, [boards, handleSelectBoard, setUrlCardId]);
 
   // Clear pending card after it's been opened
   const handleCardOpened = useCallback(() => {
     setPendingCardId(null);
-  }, []);
+    // Garante que a URL reflete o card aberto, mesmo quando a abertura
+    // veio de uma notificação (não da URL).
+    if (urlCardId !== pendingCardId && pendingCardId) {
+      setUrlCardId(pendingCardId);
+    }
+  }, [pendingCardId, urlCardId, setUrlCardId]);
+
+  const handleCardClosed = useCallback(() => {
+    setUrlCardId(null);
+  }, [setUrlCardId]);
 
   // Set up realtime subscriptions for instant updates across all users
   useEffect(() => {

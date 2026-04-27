@@ -30,7 +30,21 @@ export function useSync() {
     try {
       // 1. Sincronização remota: imóveis do CRM via edge function
       const { data, error } = await supabase.functions.invoke('sync-properties');
-      if (error) throw error;
+
+      // FunctionsHttpError: payload de erro vem em data quando o status != 2xx,
+      // mas supabase-js também popula `error`. Tratamos os dois caminhos.
+      const payload = (data ?? null) as
+        | { success?: boolean; error?: string; code?: string; upserted?: number; errors?: number; total_from_crm?: number }
+        | null;
+
+      if (error || (payload && payload.success === false)) {
+        const message =
+          payload?.error ||
+          (error as { message?: string } | null)?.message ||
+          'Não foi possível sincronizar. Tente novamente.';
+        console.error('[useSync] sync failed:', { error, payload });
+        return { success: false as const, error: message, code: payload?.code };
+      }
 
       // 2. Invalidar queries locais que dependem dos dados sincronizados
       await Promise.all([
@@ -49,10 +63,18 @@ export function useSync() {
       if (typeof window !== 'undefined') {
         localStorage.setItem(LAST_SYNC_KEY, now);
       }
-      return { success: true as const, data };
+      return {
+        success: true as const,
+        upserted: payload?.upserted ?? 0,
+        errors: payload?.errors ?? 0,
+        totalFromCrm: payload?.total_from_crm ?? 0,
+      };
     } catch (err) {
       console.error('[useSync] sync error:', err);
-      return { success: false as const, error: err };
+      const message =
+        (err as { message?: string } | null)?.message ||
+        'Não foi possível sincronizar. Tente novamente.';
+      return { success: false as const, error: message };
     } finally {
       setIsSyncing(false);
     }

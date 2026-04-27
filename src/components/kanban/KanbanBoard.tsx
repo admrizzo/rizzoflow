@@ -684,6 +684,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
         onOpenChange={(open) => {
           if (!open) {
             setSelectedCardId(null);
+            onCardClosed?.();
           }
         }}
       />

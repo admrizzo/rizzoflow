@@ -33,6 +33,22 @@ export default function Dashboard() {
     }
   }, [authLoading, boardsLoading]);
 
+  // Prefetch dos chunks mais usados após o Dashboard montar.
+  // Isso elimina a latência de download na primeira navegação para
+  // /minha-fila e /central-propostas (reload direto na rota ainda paga
+  // o download, mas navegação interna fica instantânea).
+  useEffect(() => {
+    if (authLoading || boardsLoading) return;
+    const idle =
+      typeof (window as any).requestIdleCallback === 'function'
+        ? (window as any).requestIdleCallback
+        : (cb: () => void) => setTimeout(cb, 200);
+    idle(() => {
+      void import('./MinhaFila');
+      void import('./CentralPropostas');
+    });
+  }, [authLoading, boardsLoading]);
+
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [initialBoardLoaded, setInitialBoardLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

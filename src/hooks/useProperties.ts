@@ -26,12 +26,92 @@ export interface Property {
   raw_data?: any;
 }
 
+/**
+ * Versão leve para listagens e seletor de imóvel.
+ * NÃO traz `raw_data` (pode ser MB de JSON por imóvel).
+ * Use `useProperties()` (completo) ou `useProperty(id)` quando precisar de raw_data.
+ */
+export type PropertyLight = Pick<
+  Property,
+  | 'id'
+  | 'codigo_robust'
+  | 'titulo'
+  | 'tipo_imovel'
+  | 'finalidade'
+  | 'logradouro'
+  | 'bairro'
+  | 'cidade'
+  | 'estado'
+  | 'numero'
+  | 'valor_aluguel'
+  | 'valor_venda'
+  | 'condominio'
+  | 'iptu'
+  | 'status_imovel'
+  | 'foto_principal'
+  | 'last_synced_at'
+>;
+
+const LIGHT_COLUMNS =
+  'id, codigo_robust, titulo, tipo_imovel, finalidade, logradouro, bairro, cidade, estado, numero, valor_aluguel, valor_venda, condominio, iptu, status_imovel, foto_principal, last_synced_at';
+
 export function useProperties() {
   return usePropertiesBase();
 }
 
 export function usePropertiesLocacao() {
   return usePropertiesBase('locacao');
+}
+
+/**
+ * Hook leve para telas que listam imóveis (Central de Propostas, seletor no card,
+ * dashboards). Não retorna `raw_data` nem mutation de sync.
+ */
+export function usePropertiesLight(finalidade?: string) {
+  const { data: properties = [], isLoading } = useQuery({
+    queryKey: ['properties-light', finalidade ?? 'all'],
+    queryFn: async (): Promise<PropertyLight[]> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(LIGHT_COLUMNS)
+        .order('codigo_robust');
+      if (error) throw error;
+      let results = (data ?? []) as PropertyLight[];
+      if (finalidade) {
+        const normalize = (s: string) =>
+          s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const needle = normalize(finalidade);
+        results = results.filter(
+          (p) => p.finalidade && normalize(p.finalidade).includes(needle),
+        );
+      }
+      return results;
+    },
+    staleTime: 60_000,
+  });
+
+  return { properties, isLoading };
+}
+
+/**
+ * Carrega um único imóvel COM raw_data. Usar apenas quando o consumidor realmente
+ * precisa do payload bruto (ex.: detalhe da proposta pública).
+ */
+export function useProperty(codigoRobust?: number | string | null) {
+  return useQuery({
+    queryKey: ['property', codigoRobust],
+    enabled: codigoRobust != null && String(codigoRobust).length > 0,
+    queryFn: async (): Promise<Property | null> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('codigo_robust', Number(codigoRobust))
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Property) ?? null;
+    },
+    staleTime: 60_000,
+  });
 }
 
 function usePropertiesBase(finalidade?: string) {

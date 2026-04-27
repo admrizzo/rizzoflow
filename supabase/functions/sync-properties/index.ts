@@ -3,6 +3,15 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
 const CRM_ENDPOINT = "https://api.robustcrm.io/feeds/ext-6f64sf64f6eq46";
 
+const ALLOWED_ROLES = new Set(["admin", "gestor", "administrativo"]);
+
+function jsonResponse(body: Record<string, unknown>, status: number) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -10,13 +19,76 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // 1) Validar sessão do chamador
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonResponse(
+        { success: false, code: "no_session", error: "Sessão não encontrada. Faça login novamente." },
+        401,
+      );
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      return jsonResponse(
+        { success: false, code: "invalid_session", error: "Sessão inválida ou expirada. Entre novamente." },
+        401,
+      );
+    }
+
+    const userId = claimsData.claims.sub as string;
+
+    // 2) Cliente service-role para checagem de role e upsert
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // 3) Validar role: admin / gestor / administrativo
+    const { data: rolesRows, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    if (rolesError) {
+      console.error("Roles lookup error:", rolesError);
+      return jsonResponse(
+        { success: false, code: "roles_error", error: "Não foi possível validar suas permissões." },
+        500,
+      );
+    }
+
+    const userRoles = (rolesRows ?? []).map((r) => r.role);
+    const hasPermission = userRoles.some((r) => ALLOWED_ROLES.has(r));
+    if (!hasPermission) {
+      return jsonResponse(
+        { success: false, code: "forbidden", error: "Você não tem permissão para sincronizar." },
+        403,
+      );
+    }
 
     // Fetch from CRM
-    const crmResponse = await fetch(CRM_ENDPOINT);
+    let crmResponse: Response;
+    try {
+      crmResponse = await fetch(CRM_ENDPOINT);
+    } catch (fetchErr) {
+      console.error("CRM fetch failed:", fetchErr);
+      return jsonResponse(
+        { success: false, code: "crm_unreachable", error: "Não foi possível acessar o CRM agora." },
+        502,
+      );
+    }
     if (!crmResponse.ok) {
-      throw new Error(`CRM API returned ${crmResponse.status}`);
+      console.error("CRM API non-OK:", crmResponse.status);
+      return jsonResponse(
+        { success: false, code: "crm_error", error: `CRM respondeu com status ${crmResponse.status}.` },
+        502,
+      );
     }
 
     const crmData = await crmResponse.json();
@@ -70,26 +142,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: true,
         total_from_crm: items.length,
         upserted,
         errors,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      },
+      200,
     );
   } catch (error) {
     console.error("Sync error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+    return jsonResponse(
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+        success: false,
+        code: "unexpected_error",
+        error: "Erro inesperado ao sincronizar. Tente novamente.",
+      },
+      500,
     );
   }
 });

@@ -62,10 +62,22 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
     if (isSyncing) return;
     const result = await sync();
     if (result.success) {
-      toast.success('Sincronização concluída');
-    } else if (result.error !== 'forbidden') {
-      toast.error('Não foi possível sincronizar. Tente novamente.');
+      const { upserted, errors } = result;
+      if (errors > 0) {
+        toast.warning(`Sincronização concluída com ${errors} erro(s).`);
+      } else if (upserted === 0) {
+        toast.success('Sincronização concluída. Nenhuma alteração encontrada.');
+      } else {
+        toast.success(`Sincronização concluída: ${upserted} imóveis atualizados.`);
+      }
+      return;
     }
+    if (result.error === 'forbidden') return;
+    const message =
+      typeof result.error === 'string' && result.error.length > 0
+        ? result.error
+        : 'Não foi possível sincronizar. Tente novamente.';
+    toast.error(message);
   };
 
   const lastSyncLabel = formatLastSync(lastSyncedAt);

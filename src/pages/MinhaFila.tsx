@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,6 +126,14 @@ export default function MinhaFila() {
   const { user } = useAuth();
   const { isAdmin, isGestor, isCorretor, isAdministrativo } = usePermissions();
   const { data: items = [], isLoading } = useMyQueue();
+
+  // Medição em dev: mount -> primeira lista pronta.
+  useEffect(() => {
+    perfMark('minha-fila:mount');
+  }, []);
+  useEffect(() => {
+    if (!isLoading) perfMeasure('minha-fila:ready', 'minha-fila:mount');
+  }, [isLoading]);
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');

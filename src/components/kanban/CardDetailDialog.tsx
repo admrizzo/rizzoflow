@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { CardWithRelations, GuaranteeType, ContractType, CardType } from '@/types/database';
-import { useCards } from '@/hooks/useCards';
+import { useCardMutations } from '@/hooks/useCardMutations';
 import { useLabels } from '@/hooks/useLabels';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useBoards } from '@/hooks/useBoards';
 import { useColumns } from '@/hooks/useColumns';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
@@ -76,7 +77,7 @@ import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
-import { useProperties, Property } from '@/hooks/useProperties';
+import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -141,10 +142,18 @@ const contractLabels: Record<ContractType, string> = {
 };
 
 export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
-  const { updateCard, deleteCard, archiveCard, transferCard, ownerOnlyVisibility } = useCards(card?.board_id);
+  // Hook leve: traz APENAS as mutations necessárias, sem carregar a lista
+  // do board inteiro. Reduz o tempo de abertura do card em ~1-2s quando o
+  // dialog é aberto a partir de fora do Kanban (ex: Minha Fila, notificações).
+  const { updateCard, deleteCard, archiveCard, transferCard, ownerOnlyVisibility } =
+    useCardMutations(card?.board_id);
   const { labels, addLabelToCard, removeLabelFromCard } = useLabels(card?.board_id);
   const { profiles, addMemberToCard, removeMemberFromCard } = useProfiles();
-  const { isEditor, isAdmin, user } = useAuth();
+  const { isAdmin, user } = useAuth();
+  // Permissões operacionais centralizadas: admin, gestor e administrativo
+  // podem editar; corretor permanece restrito.
+  const { canMoveCards } = usePermissions();
+  const isEditor = canMoveCards;
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);
@@ -194,7 +203,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const [selectedTransferUser, setSelectedTransferUser] = useState<string>('');
   const [propertySearchOpen, setPropertySearchOpen] = useState(false);
   const [propertySearchQuery, setPropertySearchQuery] = useState('');
-  const { properties: allProperties } = useProperties();
+  // Lista leve de imóveis (sem `raw_data`). Antes carregávamos MB de JSON
+  // por imóvel só para resolver o seletor de imóvel dentro do card.
+  const { properties: allProperties } = usePropertiesLight();
 
   // Check if property is still available in CRM
   const linkedProperty = card?.robust_code ? allProperties.find(p => String(p.codigo_robust) === card.robust_code) : null;
@@ -211,7 +222,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     );
   }).slice(0, 15);
 
-  const selectProperty = (p: Property) => {
+  const selectProperty = (p: PropertyLight) => {
     const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
     const displayName = getPropertyDisplayName(p);
     setLocalRobustCode(String(p.codigo_robust));

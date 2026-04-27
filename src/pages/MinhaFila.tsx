@@ -190,6 +190,21 @@ export default function MinhaFila() {
     },
   });
 
+  // Mede tempo de "click no item da fila" -> "modal mostrado com dados otimistas".
+  // Esse tempo deve ser ~0ms (abertura síncrona) — se não for, há regressão.
+  useEffect(() => {
+    if (!openCardId) return;
+    perfMark('card-open:click');
+  }, [openCardId]);
+  useEffect(() => {
+    if (openCardId && (queueItemForOpen || openCardFull)) {
+      perfMeasure('card-open:visible', 'card-open:click');
+    }
+    // queueItemForOpen é resolvido sincronicamente via useMemo na mesma render
+    // do click; openCardFull chega depois do fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openCardId, !!queueItemForOpen, !!openCardFull]);
+
   // Card mínimo "otimista" — abre o modal na hora.
   const openCardOptimistic = useMemo<CardWithRelations | null>(() => {
     if (!openCardId) return null;

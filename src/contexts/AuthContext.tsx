@@ -31,6 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    // Track which user we've already fetched profile/roles for, so events
+    // like TOKEN_REFRESHED (disparado ao voltar para a aba) não recarreguem
+    // tudo e desmontem componentes (ex.: card aberto fechando sozinho).
+    let loadedUserId: string | null = null;
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -42,21 +46,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setRoles([]);
           setIsLoading(false);
+          loadedUserId = null;
           // Limpa caches sensíveis sem await dentro do listener
           queryClient.clear();
           return;
         }
 
         if (session?.user) {
-          setIsLoading(true);
-          // Defer fetching to avoid blocking
-          setTimeout(() => {
-            if (mounted) fetchUserData(session.user.id);
-          }, 0);
+          // Só refazer fetch (e mostrar loading) quando o usuário muda
+          // de fato — não em TOKEN_REFRESHED, USER_UPDATED, etc.
+          // Isso evita desmontar a árvore ao voltar para a aba.
+          if (loadedUserId !== session.user.id) {
+            loadedUserId = session.user.id;
+            setIsLoading(true);
+            // Defer fetching to avoid blocking
+            setTimeout(() => {
+              if (mounted) fetchUserData(session.user.id);
+            }, 0);
+          }
         } else {
           setProfile(null);
           setRoles([]);
           setIsLoading(false);
+          loadedUserId = null;
         }
       }
     );
@@ -86,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        loadedUserId = session.user.id;
         fetchUserData(session.user.id);
       } else {
         setIsLoading(false);

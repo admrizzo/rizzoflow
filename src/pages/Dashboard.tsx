@@ -420,6 +420,7 @@ export default function Dashboard() {
                   filters={filters}
                   initialCardId={pendingCardId}
                   onCardOpened={handleCardOpened}
+                  onCardClosed={handleCardClosed}
                 />
               )}
             </>

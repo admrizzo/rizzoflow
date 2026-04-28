@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { LayoutGrid, Users } from 'lucide-react';
 import { NewProposalButton } from '@/components/kanban/NewProposalButton';
 import { perfMark, perfMeasure } from '@/lib/perfMark';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useMyAccessRealtime } from '@/hooks/useMyAccessRealtime';
 
 const SELECTED_BOARD_KEY = 'fluxos-sg-selected-board';
 
@@ -23,6 +25,10 @@ export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const { boards, isLoading: boardsLoading } = useBoards();
   const queryClient = useQueryClient();
+  const { isCorretor, canCreateProposal } = usePermissions();
+
+  // Reflete em tempo real alterações de papel/acessos feitas pelo admin
+  useMyAccessRealtime();
 
   // Medição em dev: tempo até Dashboard pronto.
   useEffect(() => {
@@ -426,12 +432,20 @@ export default function Dashboard() {
             </>
           )
         ) : (
-          <FlowsOverview 
-            boards={boards}
-            onSelectBoard={handleSelectBoard}
-            cardCounts={cardCounts}
-            isLoading={boardsLoading}
-          />
+          <>
+            {/* Corretor sem board selecionado: garantir acesso ao botão de proposta */}
+            {isCorretor && canCreateProposal && (
+              <div className="flex items-center justify-center gap-1 px-3 pt-4">
+                <NewProposalButton />
+              </div>
+            )}
+            <FlowsOverview
+              boards={boards}
+              onSelectBoard={handleSelectBoard}
+              cardCounts={cardCounts}
+              isLoading={boardsLoading}
+            />
+          </>
         )}
       </main>
     </div>

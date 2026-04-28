@@ -41,6 +41,9 @@ export function useInternalUsers() {
       queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
       toast.success('Papel atualizado com sucesso');
     },
     onError: (err: Error) => {
@@ -58,6 +61,9 @@ export function useInternalUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
       toast.success('Acesso removido');
     },
     onError: (err: Error) => {

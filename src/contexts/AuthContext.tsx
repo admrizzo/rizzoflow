@@ -17,6 +17,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isEditor: boolean;
   refreshProfile: () => Promise<void>;
+  refreshRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -247,6 +248,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshRoles = async () => {
+    if (!user?.id) return;
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+    if (rolesData) {
+      setRoles(rolesData.map((r) => r.role as AppRole));
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -262,6 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isEditor,
         refreshProfile,
+        refreshRoles,
       }}
     >
       {children}

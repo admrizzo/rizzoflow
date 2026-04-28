@@ -1114,102 +1114,35 @@ export default function PropostaPublica() {
     ];
 
     try {
-      // 1) Tenta localizar o card pré-criado vinculado a este proposal_link
-      let targetCardId: string | null = null;
-      let targetCardBoardId: string | null = null;
-      let targetCardColumnId: string | null = null;
-      if (proposalLink?.id) {
-        const { data: linkedCard } = await supabase
-          .from('cards')
-          .select('id, board_id, column_id')
-          .eq('proposal_link_id', proposalLink.id)
-          .eq('is_archived', false)
-          .maybeSingle();
-        targetCardId = linkedCard?.id || null;
-        targetCardBoardId = (linkedCard as any)?.board_id || null;
-        targetCardColumnId = (linkedCard as any)?.column_id || null;
+      // 1) Finaliza a proposta via RPC SECURITY DEFINER.
+      //    O frontend público NÃO faz mais INSERT/UPDATE direto em `cards`.
+      //    A função garante anti-duplicidade (1 card por proposal_link_id),
+      //    move para "Aguardando documentação" e registra atividade.
+      if (!proposalLink?.public_token) {
+        throw new Error('Token público da proposta não encontrado.');
       }
 
-      // 1.1) Tenta localizar a coluna "Aguardando Documentação" do mesmo board
-      // para mover automaticamente o card após o recebimento.
-      // Comparação tolerante a acentos/caixa.
-      const normalize = (s: string) =>
-        s
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .toLowerCase()
-          .trim();
-      let aguardandoDocColumnId: string | null = null;
-      if (targetCardBoardId) {
-        const { data: cols } = await supabase
-          .from('columns')
-          .select('id, name, position')
-          .eq('board_id', targetCardBoardId)
-          .order('position', { ascending: true });
-        const match = (cols || []).find((c: any) => {
-          const n = normalize(c.name || '');
-          return n === 'aguardando documentacao' || n.includes('aguardando documentacao');
-        });
-        aguardandoDocColumnId = match?.id || null;
-        if (!match) {
-          console.warn('[PropostaPublica] Coluna "Aguardando Documentação" não encontrada no board', targetCardBoardId);
-        }
-      }
-
-      // Se já está na coluna correta, não move novamente.
-      const shouldMoveColumn =
-        !!aguardandoDocColumnId && aguardandoDocColumnId !== targetCardColumnId;
-
-      const cardPayload = {
-        title: cardTitle,
-        description: descriptionLines.filter(Boolean).join('\n'),
-        address: data.imovel.endereco || null,
-        robust_code: imovelCodigo || null,
-        building_name: buildingName,
-        guarantee_type: mapGarantia(garantiaLabel) as any,
-        contract_type: contractType,
-        proposal_responsible: brokerName,
-        negotiation_details: negotiationDetailsLines || null,
-        proposal_submitted_at: new Date().toISOString(),
-        ...(shouldMoveColumn
-          ? {
-              column_id: aguardandoDocColumnId,
-              column_entered_at: new Date().toISOString(),
-              last_moved_at: new Date().toISOString(),
-              last_moved_by: null,
-            }
-          : {}),
-      };
-
-      if (targetCardId) {
-        // 2a) Atualiza o card pré-criado (não cria duplicata)
-        const { error: updErr } = await supabase
-          .from('cards')
-          .update(cardPayload)
-          .eq('id', targetCardId);
-        if (updErr) throw updErr;
-      } else {
-        // 2b) Fallback: link sem card vinculado (legado) — cria novo
-        const { data: existingCards } = await supabase
-          .from('cards')
-          .select('position')
-          .eq('column_id', CADASTRO_INICIADO_COLUMN_ID)
-          .eq('is_archived', false)
-          .order('position', { ascending: false })
-          .limit(1);
-        const nextPosition = existingCards && existingCards.length > 0 ? existingCards[0].position + 1 : 0;
-        const { data: insertedCard, error: insErr } = await supabase.from('cards').insert({
-          ...cardPayload,
-          board_id: LOCACAO_BOARD_ID,
-          column_id: CADASTRO_INICIADO_COLUMN_ID,
-          position: nextPosition,
-          created_by: proposalLink?.broker_user_id || null,
-          proposal_link_id: proposalLink?.id || null,
-          column_entered_at: new Date().toISOString(),
-        }).select('id').single();
-        if (insErr) throw insErr;
-        targetCardId = insertedCard?.id || null;
-      }
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+        'finalize_public_proposal' as any,
+        {
+          _public_token: proposalLink.public_token,
+          _payload: {
+            title: cardTitle,
+            description: descriptionLines.filter(Boolean).join('\n'),
+            address: data.imovel.endereco || null,
+            robust_code: imovelCodigo || null,
+            building_name: buildingName,
+            guarantee_type: mapGarantia(garantiaLabel),
+            contract_type: contractType,
+            proposal_responsible: brokerName,
+            negotiation_details: negotiationDetailsLines || null,
+            client_name: clientName,
+            imovel_codigo: imovelCodigo,
+          },
+        } as any,
+      );
+      if (rpcErr) throw rpcErr;
+      const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
       // 3) Upload de documentos (proponente + cônjuge + empresa + fiadores)
       if (targetCardId) {
@@ -1221,54 +1154,7 @@ export default function PropostaPublica() {
         }
       }
 
-      // 4) Marca o link como enviado
-      if (proposalLink) {
-        await supabase
-          .from('proposal_links')
-          .update({ status: 'enviada' })
-          .eq('id', proposalLink.id);
-      }
-
-      // 4.1) Registra atividade automática no card (visível em "Comentários e atividade")
-      if (targetCardId) {
-        try {
-          await supabase.from('card_activity_logs').insert({
-            card_id: targetCardId,
-            actor_user_id: null,
-            event_type: 'proposal_submitted',
-            title: '📬 Documentos/proposta recebidos pelo cliente',
-            description: `${clientName} enviou a proposta para o imóvel ${imovelCodigo}.`,
-            metadata: {
-              proposal_link_id: proposalLink?.id || null,
-              broker_name: brokerName,
-              client_name: clientName,
-            },
-          });
-        } catch (logErr) {
-          console.warn('Falha ao registrar atividade de proposta enviada:', logErr);
-        }
-
-        // 4.2) Atividade automática informando a movimentação de coluna.
-        if (shouldMoveColumn) {
-          try {
-            await supabase.from('card_activity_logs').insert({
-              card_id: targetCardId,
-              actor_user_id: null,
-              event_type: 'auto_column_move',
-              title: '➡️ Movido para Aguardando Documentação',
-              description:
-                'Card movido automaticamente para Aguardando Documentação após recebimento da proposta.',
-              metadata: {
-                from_column_id: targetCardColumnId,
-                to_column_id: aguardandoDocColumnId,
-                reason: 'proposal_submitted',
-              },
-            });
-          } catch (mvLogErr) {
-            console.warn('Falha ao registrar atividade de movimentação automática:', mvLogErr);
-          }
-        }
-      }
+      // 4) Status do link e atividades já são tratados pela RPC finalize_public_proposal.
 
       // 5) Notifica o time administrativo (admins) que a proposta foi enviada
       if (targetCardId) {

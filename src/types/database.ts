@@ -281,6 +281,7 @@ export interface CardWithRelations extends Card {
   last_moved_by_profile?: Profile | null;
   responsible_user_profile?: Profile | null;
   parties?: CardPartyWithChecklist[];
+  proposal_link?: { id: string; status: string } | null;
 }
 
 export interface CardPartyWithChecklist extends CardParty {

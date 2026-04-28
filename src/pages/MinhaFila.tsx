@@ -22,6 +22,7 @@ import {
   UserX,
   ListChecks,
   Hourglass,
+  FileEdit,
   Loader2,
   ChevronRight,
   FileWarning,
@@ -434,9 +435,12 @@ export default function MinhaFila() {
                             </span>
                           )}
                           {it.is_waiting_client && !it.proposal_submitted_at && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-medium px-2 py-0.5">
-                              <Hourglass className="h-3 w-3" />
-                              Aguardando cliente
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold px-2 py-0.5"
+                              title="Cliente ainda preenchendo a proposta"
+                            >
+                              <FileEdit className="h-3 w-3" />
+                              Em preenchimento
                             </span>
                           )}
                           {it.checklist_open_doc_items > 0 && (

@@ -32,7 +32,8 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
           column:columns(*),
           card_labels(label:labels(*)),
           card_members(user_id, assigned_at),
-          checklists(*, items:checklist_items(*))
+          checklists(*, items:checklist_items(*)),
+          proposal_link:proposal_links(id, status)
         `)
         .order('position');
 

@@ -81,6 +81,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // like TOKEN_REFRESHED (disparado ao voltar para a aba) não recarreguem
     // tudo e desmontem componentes (ex.: card aberto fechando sozinho).
     let loadedUserId: string | null = null;
+    let sessionExpiredNotified = false;
+
+    /**
+     * Handler central de "sessão expirou / inválida / sem rede".
+     * - limpa estado local
+     * - limpa storage do supabase
+     * - mostra toast amigável (uma vez)
+     * - redireciona para /auth se não estivermos em rota pública
+     */
+    const handleInvalidSession = (reason: string) => {
+      if (!mounted) return;
+      console.warn('[Auth] sessão inválida:', reason);
+
+      // Limpa estado em memória
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setRoles([]);
+      setIsLoading(false);
+      loadedUserId = null;
+
+      // Tenta encerrar localmente (sem await, sem bloquear)
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+
+      // Limpa storage residual do Supabase
+      clearSupabaseStorage();
+
+      // Limpa caches do React Query
+      try {
+        queryClient.clear();
+      } catch {
+        // ignore
+      }
+
+      // Notifica e redireciona — apenas se não estivermos em rotas públicas
+      const path = window.location.pathname;
+      const isPublicRoute =
+        path === '/auth' ||
+        path === '/redefinir-senha' ||
+        path === '/demo' ||
+        path.startsWith('/proposta/') ||
+        path.startsWith('/prestador/');
+
+      if (!sessionExpiredNotified) {
+        sessionExpiredNotified = true;
+        try {
+          toast({
+            title: 'Sessão expirada',
+            description: 'Sua sessão expirou. Entre novamente.',
+            variant: 'destructive',
+          });
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!isPublicRoute) {
+        // Pequeno delay para o toast aparecer antes do redirect
+        setTimeout(() => {
+          if (mounted) window.location.replace('/auth');
+        }, 50);
+      }
+    };
+
     // Detecta logo de cara se a URL atual é um link de recovery/invite
     // (hash com type=recovery / type=invite, ou query ?invite=1 / ?type=...).
     // Nesse caso, marca a flag ANTES do Supabase consumir o hash, para
@@ -99,6 +163,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
+
+        // Falha ao renovar token: força logout limpo.
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          handleInvalidSession('TOKEN_REFRESHED sem sessão');
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -149,39 +220,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    // Watchdog: nunca deixe o app preso em loading. Se em 8s ainda não
+    // resolvemos a sessão (ex.: rede caiu, fetch nunca volta), encerra.
+    const loadingWatchdog = window.setTimeout(() => {
       if (!mounted) return;
-
-      // Se houver erro ao obter a sessão (token inválido/expirado/corrompido),
-      // limpa tudo para evitar estado "logado fantasma".
-      if (error) {
-        console.warn('Sessão inválida detectada, limpando:', error.message);
-        try {
-          await supabase.auth.signOut({ scope: 'local' });
-        } catch {
-          // ignora
+      // Se ainda está carregando e não temos usuário, libera.
+      setIsLoading((prev) => {
+        if (prev) {
+          console.warn('[Auth] watchdog: liberando loading após timeout.');
         }
-        if (!mounted) return;
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setRoles([]);
-        setIsLoading(false);
-        return;
-      }
+        return false;
+      });
+    }, 8000);
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadedUserId = session.user.id;
-        fetchUserData(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
+    // getSession pode REJEITAR a promise em "Failed to fetch" — sempre cercar com try/catch.
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session }, error }) => {
+        if (!mounted) return;
+
+        if (error) {
+          if (isAuthFatalError(error)) {
+            handleInvalidSession(`getSession error: ${error.message}`);
+          } else {
+            // Erro não fatal — apenas limpa estado local sem redirect agressivo.
+            console.warn('Sessão inválida detectada, limpando:', error.message);
+            try {
+              await supabase.auth.signOut({ scope: 'local' });
+            } catch {
+              // ignora
+            }
+            if (!mounted) return;
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+            setRoles([]);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          loadedUserId = session.user.id;
+          fetchUserData(session.user.id);
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        // Tipicamente "Failed to fetch" / NetworkError quando o cliente está offline
+        // ou um bloqueador (uBlock/Brave) impediu a chamada.
+        if (isAuthFatalError(err)) {
+          handleInvalidSession(`getSession threw: ${(err as Error)?.message}`);
+        } else {
+          console.error('[Auth] erro inesperado em getSession:', err);
+          setIsLoading(false);
+        }
+      });
 
     return () => {
       mounted = false;
+      window.clearTimeout(loadingWatchdog);
       subscription.unsubscribe();
     };
   }, [queryClient]);

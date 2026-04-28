@@ -55,14 +55,21 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
         const win = window.open(url, '_blank', 'noopener,noreferrer');
         if (win) win.opener = null;
       } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = doc.file_name;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('fetch failed');
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = doc.file_name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        } catch {
+          toast.error('Não foi possível baixar o arquivo');
+        }
       }
     } finally {
       setBusyId(null);

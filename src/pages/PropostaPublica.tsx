@@ -1857,11 +1857,16 @@ export default function PropostaPublica() {
       if (proposalLink?.id) {
         try {
           partyMap = await persistProposalParties(proposalLink.id, null, data);
-        } catch (partiesErr) {
+        } catch (partiesErr: any) {
           console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
-          toast.error('Não foi possível preparar os envolvidos da proposta', {
-            description: 'Revise os dados preenchidos e tente novamente.',
-          });
+          const isStruct = partiesErr instanceof ProposalPartiesError;
+          const userMsg = isStruct
+            ? partiesErr.userMessage
+            : 'Não foi possível preparar os envolvidos da proposta.';
+          const detail = isStruct
+            ? undefined
+            : (partiesErr?.message || partiesErr?.details || partiesErr?.hint || 'Revise os dados preenchidos e tente novamente.');
+          toast.error(userMsg, detail ? { description: detail } : undefined);
           setIsSubmitting(false);
           return;
         }

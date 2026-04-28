@@ -1276,7 +1276,7 @@ export default function PropostaPublica() {
     imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: 'fisica' },
     dados_pessoais: { ...emptyPerson },
     perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' },
-    conjuge: { ...emptyPerson },
+    conjuge: { ...emptyPerson, documentos: buildConjugeDocs() },
     socios: [],
     documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
     documentos_observacao: '',
@@ -1339,7 +1339,11 @@ export default function PropostaPublica() {
         ? restoredData.locatarios_adicionais.map((loc: any) => ({
             ...emptyLocatarioAdicional,
             ...loc,
-            conjuge: { ...emptyLocatarioAdicional.conjuge, ...(loc?.conjuge || {}) },
+            conjuge: {
+              ...emptyLocatarioAdicional.conjuge,
+              ...(loc?.conjuge || {}),
+              documentos: ensureConjugeDocs(loc?.conjuge?.documentos),
+            },
             documentos: Array.isArray(loc?.documentos) && loc.documentos.length > 0
               ? loc.documentos
               : buildLocatarioAdicionalDocs(),

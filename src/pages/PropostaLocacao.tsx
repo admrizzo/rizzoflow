@@ -31,6 +31,7 @@ export interface DadosPessoais {
   profissao: string;
   whatsapp: string;
   email: string;
+  documentos?: DocumentCategory[];
 }
 
 // Locatário adicional (multi-locatários no contrato)
@@ -41,6 +42,7 @@ export interface LocatarioAdicionalConjuge {
   rg: string;
   whatsapp: string;
   email: string;
+  documentos?: DocumentCategory[];
 }
 
 export interface LocatarioAdicional {
@@ -224,7 +226,7 @@ export interface RepresentanteLegal {
 }
 
 // documentos
-export type DocCategoryKey = 'documento_foto' | 'comprovante_residencia' | 'comprovante_renda' | 'estado_civil';
+export type DocCategoryKey = 'documento_foto' | 'comprovante_residencia' | 'comprovante_renda' | 'estado_civil' | 'documento_conjuge' | 'renda_conjuge';
 
 export interface UploadedFile {
   id: string;

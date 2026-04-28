@@ -64,7 +64,16 @@ async function uploadProposalDocuments(
   proposalLinkId: string | null,
   data: ProposalFormData,
 ): Promise<void> {
-  type Job = { ownerType: string; ownerKey: string; ownerLabel: string; category: string; files: UploadedFile[] };
+  type Job = {
+    ownerType: string;
+    ownerKey: string;
+    ownerLabel: string;
+    ownerPersonName: string;
+    ownerPersonRole: string;
+    spouseName?: string;
+    category: string;
+    files: UploadedFile[];
+  };
   const jobs: Job[] = [];
 
   // Proponente / Empresa
@@ -74,12 +83,16 @@ async function uploadProposalDocuments(
     : (data.dados_pessoais.nome || 'Proponente');
   const proponentOwnerType = isPj ? 'empresa' : 'proponente';
   const proponentOwnerKey = proponentOwnerType; // único por proposta
+  const spouseName = (data.conjuge?.nome || '').trim();
   for (const cat of data.documentos || []) {
     if (cat.files.length > 0) {
       jobs.push({
         ownerType: proponentOwnerType,
         ownerKey: proponentOwnerKey,
         ownerLabel: proponentLabel,
+        ownerPersonName: proponentLabel,
+        ownerPersonRole: isPj ? 'EMPRESA' : 'TITULAR',
+        spouseName,
         category: cat.key,
         files: cat.files,
       });
@@ -90,12 +103,16 @@ async function uploadProposalDocuments(
   (data.garantia.fiadores || []).forEach((f, idx) => {
     const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
     const ownerKey = `fiador-${idx + 1}`;
+    const fiadorSpouseName = (f.conjuge?.nome || '').trim();
     for (const cat of f.documentos || []) {
       if (cat.files.length > 0) {
         jobs.push({
           ownerType: 'fiador',
           ownerKey,
           ownerLabel: label,
+          ownerPersonName: f.nome || `Fiador ${idx + 1}`,
+          ownerPersonRole: 'FIADOR',
+          spouseName: fiadorSpouseName,
           category: cat.key,
           files: cat.files,
         });
@@ -105,6 +122,8 @@ async function uploadProposalDocuments(
 
   // Dedup: evita enviar duas vezes o mesmo arquivo (mesmo ownerKey + categoria + nome + tamanho)
   const seen = new Set<string>();
+  // Controle de duplicidade do nome final padronizado por proposta
+  const usedFinalNames = new Map<string, number>();
   for (const job of jobs) {
     for (const file of job.files) {
       if (!file.dataUrl) continue;
@@ -113,6 +132,12 @@ async function uploadProposalDocuments(
       seen.add(dedupKey);
       const blob = dataUrlToBlob(file.dataUrl);
       if (!blob) continue;
+      // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
+      const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
+      const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
+      const personRole = isSpouseDoc ? 'CONJUGE' : job.ownerPersonRole;
+      const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
+      const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
       // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores
       const path = `${cardId}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
@@ -127,13 +152,53 @@ async function uploadProposalDocuments(
         category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
         owner_type: job.ownerType,
         owner_label: job.ownerLabel,
-        file_name: file.name,
+        file_name: standardized,
         file_size: file.size,
         mime_type: file.type,
         storage_path: path,
       });
     }
   }
+}
+
+// Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.
+function sanitizeForFilename(value: string): string {
+  if (!value) return '';
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[\\/:*?"<>|]/g, ' ') // remove inválidos do filesystem
+    .replace(/[^\w\s\-]/g, ' ') // permite letra/número/_/-/espaço
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function getFileExtension(originalName: string): string {
+  const idx = originalName.lastIndexOf('.');
+  if (idx <= 0 || idx === originalName.length - 1) return '';
+  return originalName.slice(idx + 1).toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function buildStandardDocName(
+  originalName: string,
+  docType: string,
+  personName: string,
+  personRole: string,
+  usedNames: Map<string, number>,
+): string {
+  const ext = getFileExtension(originalName);
+  const docPart = sanitizeForFilename(docType) || 'DOCUMENTO';
+  const namePart = sanitizeForFilename(personName) || 'SEM NOME';
+  const rolePart = sanitizeForFilename(personRole) || 'OUTROS';
+  const base = `${docPart} - ${namePart} - ${rolePart}`;
+  const finalBase = ext ? `${base}.${ext}` : base;
+  const count = usedNames.get(finalBase) || 0;
+  usedNames.set(finalBase, count + 1);
+  if (count === 0) return finalBase;
+  // duplicidade: insere (n) antes da extensão
+  if (ext) return `${base} (${count + 1}).${ext}`;
+  return `${base} (${count + 1})`;
 }
 
 // ── Constants ──

@@ -547,3 +547,105 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
 
   return parties;
 }
+
+/**
+ * Mesmo formato de id usado por buildPartiesFromFormData:
+ * `tmp-{role}#{idx}` — permite associar documentos do form às parties virtuais.
+ */
+function partyTmpId(role: string, idx = 0) {
+  return `tmp-${role}#${idx}`;
+}
+
+const SPOUSE_DOC_KEYS = new Set(['documento_conjuge', 'renda_conjuge']);
+
+/**
+ * Constrói o mapa { partyId → documentos[] } a partir do estado do formulário,
+ * para uso em ProposalPartiesView na tela de Revisão.
+ */
+export function buildDocsByPartyFromFormData(data: any): Record<string, PartyDocSummary[]> {
+  const map: Record<string, PartyDocSummary[]> = {};
+
+  const isOptional = (cat: any): boolean => {
+    if (cat?.optional === true) return true;
+    const label = String(cat?.label || '').toLowerCase();
+    if (label.includes('(opcional)') || label.includes('opcional')) return true;
+    if (cat?.key === 'renda_conjuge') return true;
+    return false;
+  };
+
+  const toSummary = (cat: any): PartyDocSummary => ({
+    key: String(cat?.key || cat?.label || Math.random()),
+    label: String(cat?.label || cat?.key || 'Documento'),
+    optional: isOptional(cat),
+    fileCount: Array.isArray(cat?.files) ? cat.files.length : 0,
+    fileNames: Array.isArray(cat?.files) ? cat.files.map((f: any) => f?.name).filter(Boolean) : [],
+  });
+
+  const isPj = data?.imovel?.tipo_pessoa === 'juridica';
+
+  if (isPj) {
+    const docs = (data?.documentos || []).map(toSummary);
+    if (docs.length > 0) map[partyTmpId('company', 0)] = docs;
+  } else {
+    // Locatário principal
+    const docs = (data?.documentos || []).map(toSummary);
+    if (docs.length > 0) map[partyTmpId('primary_tenant', 0)] = docs;
+    // Cônjuge do principal
+    const cjDocs = (data?.conjuge?.documentos || []).map(toSummary);
+    if (cjDocs.length > 0) map[partyTmpId('tenant_spouse', 0)] = cjDocs;
+    // Locatários adicionais + cônjuges
+    (data?.locatarios_adicionais || []).forEach((loc: any, idx: number) => {
+      const ld = (loc?.documentos || []).map(toSummary);
+      if (ld.length > 0) map[partyTmpId('additional_tenant', idx)] = ld;
+      const lcd = (loc?.conjuge?.documentos || []).map(toSummary);
+      if (lcd.length > 0) map[partyTmpId('tenant_spouse_of_additional', idx)] = lcd;
+    });
+  }
+
+  // Fiadores: separa documentos do próprio fiador e do cônjuge (categorias mistas)
+  (data?.garantia?.fiadores || []).forEach((f: any, idx: number) => {
+    const own: PartyDocSummary[] = [];
+    const spouse: PartyDocSummary[] = [];
+    (f?.documentos || []).forEach((cat: any) => {
+      if (cat?.key && SPOUSE_DOC_KEYS.has(cat.key)) spouse.push(toSummary(cat));
+      else own.push(toSummary(cat));
+    });
+    if (own.length > 0) map[partyTmpId('guarantor', idx)] = own;
+    if (spouse.length > 0) map[partyTmpId('guarantor_spouse', idx)] = spouse;
+  });
+
+  return map;
+}
+
+/** Soma o total de arquivos enviados em todo o formulário. */
+export function countAllUploadedFiles(data: any): number {
+  let total = 0;
+  const sumCats = (cats: any[] | undefined) =>
+    (cats || []).reduce((acc, c) => acc + (Array.isArray(c?.files) ? c.files.length : 0), 0);
+  total += sumCats(data?.documentos);
+  total += sumCats(data?.conjuge?.documentos);
+  (data?.locatarios_adicionais || []).forEach((loc: any) => {
+    total += sumCats(loc?.documentos);
+    total += sumCats(loc?.conjuge?.documentos);
+  });
+  (data?.garantia?.fiadores || []).forEach((f: any) => {
+    total += sumCats(f?.documentos);
+  });
+  return total;
+}
+
+/** Conta documentos obrigatórios pendentes (sem arquivo) em todas as partes. */
+export function countPendingRequired(data: any): { required: number; ok: number } {
+  const map = buildDocsByPartyFromFormData(data);
+  let required = 0;
+  let ok = 0;
+  Object.values(map).forEach((docs) => {
+    docs.forEach((d) => {
+      if (!d.optional) {
+        required += 1;
+        if (d.fileCount > 0) ok += 1;
+      }
+    });
+  });
+  return { required, ok };
+}

@@ -35,6 +35,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // like TOKEN_REFRESHED (disparado ao voltar para a aba) não recarreguem
     // tudo e desmontem componentes (ex.: card aberto fechando sozinho).
     let loadedUserId: string | null = null;
+    // Detecta logo de cara se a URL atual é um link de recovery/invite
+    // (hash com type=recovery / type=invite, ou query ?invite=1 / ?type=...).
+    // Nesse caso, marca a flag ANTES do Supabase consumir o hash, para
+    // garantir que o usuário caia em /redefinir-senha mesmo após refresh.
+    try {
+      const search = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const t = search.get('type') || hash.get('type');
+      if (search.get('invite') === '1' || t === 'recovery' || t === 'invite') {
+        sessionStorage.setItem('rizzo:needs-password-reset', '1');
+      }
+    } catch {
+      // ignore
+    }
     // Set up auth state listener BEFORE getting session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -42,11 +56,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Sessão de recuperação de senha do Supabase: o usuário NÃO deve
+        // entrar no sistema antes de definir uma nova senha.
+        if (event === 'PASSWORD_RECOVERY') {
+          try {
+            sessionStorage.setItem('rizzo:needs-password-reset', '1');
+          } catch {
+            // ignore
+          }
+        }
+
         if (event === 'SIGNED_OUT') {
           setProfile(null);
           setRoles([]);
           setIsLoading(false);
           loadedUserId = null;
+          try {
+            sessionStorage.removeItem('rizzo:needs-password-reset');
+          } catch {
+            // ignore
+          }
           // Limpa caches sensíveis sem await dentro do listener
           queryClient.clear();
           return;

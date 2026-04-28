@@ -84,7 +84,7 @@ export default function Auth() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(emailValue, {
-      redirectTo: buildPublicUrl('/auth'),
+      redirectTo: buildPublicUrl('/redefinir-senha'),
     });
 
     // Por segurança, não revelar se o e-mail existe.

@@ -2292,6 +2292,86 @@ export default function PropostaPublica() {
   }
 
   function renderStep3() {
+    const isPj = isPJ(data);
+    const principalLabel = isPj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa')
+      : (data.dados_pessoais.nome || 'Locatário principal');
+    const principalRoleLabel = isPj ? 'Empresa / Pessoa Jurídica' : 'Locatário principal';
+
+    // Helper para renderizar a lista de categorias de documentos de uma pessoa.
+    const renderDocList = (
+      categorias: DocumentCategory[],
+      onUpdate: (mutator: (cats: DocumentCategory[]) => DocumentCategory[]) => void,
+      keyPrefix: string,
+    ) => (
+      <div className="space-y-3">
+        {categorias.map((cat, catIdx) => {
+          const done = cat.files.length > 0;
+          return (
+            <div key={`${keyPrefix}-${cat.key}-${catIdx}`} className={cn('bg-white rounded-2xl border p-4 space-y-3', done && 'border-green-200')}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
+                    <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                      done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+                      {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+                    <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
+                  </p>
+                </div>
+              </div>
+              {cat.files.length > 0 && (
+                <div className="space-y-1.5">
+                  {cat.files.map(file => (
+                    <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
+                      {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                      <span className="truncate flex-1 text-foreground">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                      <button className="text-red-400 hover:text-red-600 p-1"
+                        onClick={() => onUpdate(cats => {
+                          const next = [...cats];
+                          next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
+                          return next;
+                        })}>
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
+                <Upload className="h-4 w-4" /> Adicionar arquivo
+                <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
+                  const fileList = e.target.files;
+                  if (!fileList) return;
+                  let rejected = 0;
+                  Array.from(fileList).forEach(file => {
+                    if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
+                    if (file.size > MAX_FILE_SIZE) { rejected++; return; }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
+                      onUpdate(cats => {
+                        const next = [...cats];
+                        next[catIdx] = { ...next[catIdx], files: [...next[catIdx].files, uploaded] };
+                        return next;
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                  if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
+                  e.target.value = '';
+                }} />
+              </label>
+            </div>
+          );
+        })}
+      </div>
+    );
+
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
@@ -2299,67 +2379,64 @@ export default function PropostaPublica() {
             <FileCheck className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Envie os documentos necessários para análise da proposta.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Envie os documentos de cada pessoa envolvida na proposta.</p>
         </div>
 
-        <div className="space-y-4">
-          {data.documentos.map((cat, catIdx) => {
-            const done = cat.files.length > 0;
-            return (
-              <div key={cat.key} className={cn('bg-white rounded-2xl border p-5 space-y-3', done && 'border-green-200')}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
-                      <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
-                        done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                        {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
-                      <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
-                    </p>
-                  </div>
-                </div>
-                {cat.files.length > 0 && (
-                  <div className="space-y-1.5">
-                    {cat.files.map(file => (
-                      <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
-                        {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                        <span className="truncate flex-1 text-foreground">{file.name}</span>
-                        <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                        <button className="text-red-400 hover:text-red-600 p-1"
-                          onClick={() => update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== file.id) }; return { ...p, documentos: docs }; })}>
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
-                  <Upload className="h-4 w-4" /> Adicionar arquivo
-                  <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
-                    const fileList = e.target.files;
-                    if (!fileList) return;
-                    let rejected = 0;
-                    Array.from(fileList).forEach(file => {
-                      if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
-                      if (file.size > MAX_FILE_SIZE) { rejected++; return; }
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
-                        update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, uploaded] }; return { ...p, documentos: docs }; });
-                      };
-                      reader.readAsDataURL(file);
-                    });
-                    if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
-                    e.target.value = '';
-                  }} />
-                </label>
-              </div>
-            );
-          })}
+        {/* Bloco do locatário principal / empresa */}
+        <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+              {isPj ? <Building className="h-4 w-4 text-accent" /> : <User className="h-4 w-4 text-accent" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{principalRoleLabel}</p>
+              <p className="text-sm font-bold text-foreground">{principalLabel}</p>
+            </div>
+          </div>
+          {renderDocList(
+            data.documentos,
+            (mutator) => update(p => ({ ...p, documentos: mutator(p.documentos) })),
+            'principal',
+          )}
         </div>
+
+        {/* Blocos de documentos de cada locatário adicional (somente PF) */}
+        {!isPj && (data.locatarios_adicionais || []).map((loc, idx) => {
+          const docs = loc.documentos && loc.documentos.length > 0 ? loc.documentos : buildLocatarioAdicionalDocs();
+          return (
+            <div key={`loc-add-${idx}`} className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Locatário adicional {idx + 1}</p>
+                  <p className="text-sm font-bold text-foreground">{loc.nome || `Locatário ${idx + 2}`}</p>
+                </div>
+              </div>
+              {renderDocList(
+                docs,
+                (mutator) => update(p => {
+                  const arr = [...(p.locatarios_adicionais || [])];
+                  const current = arr[idx]?.documentos && arr[idx]!.documentos!.length > 0
+                    ? arr[idx]!.documentos!
+                    : buildLocatarioAdicionalDocs();
+                  arr[idx] = { ...arr[idx], documentos: mutator(current) };
+                  return { ...p, locatarios_adicionais: arr };
+                }),
+                `loc-${idx}`,
+              )}
+            </div>
+          );
+        })}
+
+        {/* Aviso sobre fiadores: documentos vivem na etapa de Garantia */}
+        {(data.garantia.fiadores || []).length > 0 && (
+          <div className="rounded-xl border border-dashed bg-muted/10 p-3 text-xs text-muted-foreground flex items-start gap-2">
+            <Info className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>Os documentos dos fiadores são anexados na etapa de <strong>Garantia</strong>, dentro do bloco de cada fiador.</span>
+          </div>
+        )}
 
         <FormSection icon={FileText} title="Observações">
           <Textarea value={data.documentos_observacao} onChange={e => update(p => ({ ...p, documentos_observacao: e.target.value }))} placeholder="Alguma observação sobre seus documentos?" rows={3} />

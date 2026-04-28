@@ -2602,9 +2602,29 @@ export default function PropostaPublica() {
           )}
         </div>
 
+        {!isPj && needsConjuge(data) && (
+          <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cônjuge do locatário principal</p>
+                <p className="text-sm font-bold text-foreground">{data.conjuge.nome || 'Cônjuge'}</p>
+              </div>
+            </div>
+            {renderDocList(
+              ensureConjugeDocs(data.conjuge.documentos),
+              (mutator) => update(p => ({ ...p, conjuge: { ...p.conjuge, documentos: mutator(ensureConjugeDocs(p.conjuge.documentos)) } })),
+              'principal-conjuge',
+            )}
+          </div>
+        )}
+
         {/* Blocos de documentos de cada locatário adicional (somente PF) */}
         {!isPj && (data.locatarios_adicionais || []).map((loc, idx) => {
           const docs = loc.documentos && loc.documentos.length > 0 ? loc.documentos : buildLocatarioAdicionalDocs();
+          const spouseDocs = ensureConjugeDocs(loc.conjuge?.documentos);
           return (
             <div key={`loc-add-${idx}`} className="rounded-2xl border bg-muted/20 p-4 space-y-3">
               <div className="flex items-center gap-2">
@@ -2627,6 +2647,24 @@ export default function PropostaPublica() {
                   return { ...p, locatarios_adicionais: arr };
                 }),
                 `loc-${idx}`,
+              )}
+              {locatarioNeedsConjuge(loc) && (
+                <div className="mt-4 rounded-xl border bg-background p-3 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cônjuge do locatário adicional {idx + 1}</p>
+                    <p className="text-sm font-bold text-foreground">{loc.conjuge.nome || 'Cônjuge'}</p>
+                  </div>
+                  {renderDocList(
+                    spouseDocs,
+                    (mutator) => update(p => {
+                      const arr = [...(p.locatarios_adicionais || [])];
+                      const currentSpouseDocs = ensureConjugeDocs(arr[idx]?.conjuge?.documentos);
+                      arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, documentos: mutator(currentSpouseDocs) } };
+                      return { ...p, locatarios_adicionais: arr };
+                    }),
+                    `loc-${idx}-conjuge`,
+                  )}
+                </div>
               )}
             </div>
           );

@@ -122,10 +122,59 @@ function PartyCard({
               parentName={party.name}
               icon={<Heart className="h-4 w-4" />}
               compact={compact}
+              docs={docsByPartyId?.[s.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </div>
       )}
+      {docs && docs.length > 0 && <PartyDocsList docs={docs} />}
+    </div>
+  );
+}
+
+function PartyDocsList({ docs }: { docs: PartyDocSummary[] }) {
+  const required = docs.filter((d) => !d.optional);
+  const requiredOk = required.filter((d) => d.fileCount > 0).length;
+  const totalFiles = docs.reduce((acc, d) => acc + d.fileCount, 0);
+  const allOk = required.length === 0 || requiredOk === required.length;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+          {allOk ? (
+            <FileCheck2 className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <FileWarning className="h-3.5 w-3.5 text-amber-600" />
+          )}
+          Documentos enviados
+        </span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {required.length > 0 ? `${requiredOk}/${required.length}` : `${totalFiles} arquivo(s)`}
+        </span>
+      </div>
+      <ul className="space-y-0.5">
+        {docs.map((d) => {
+          const ok = d.fileCount > 0;
+          return (
+            <li key={d.key} className="flex items-center justify-between gap-2 text-xs">
+              <span className={cn('truncate', ok ? 'text-foreground' : 'text-muted-foreground')}>
+                {ok ? '✅' : d.optional ? '◻️' : '⚠️'} {d.label}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {ok
+                  ? d.fileCount > 1
+                    ? `${d.fileCount} arquivos`
+                    : 'enviado'
+                  : d.optional
+                  ? 'opcional'
+                  : 'pendente'}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

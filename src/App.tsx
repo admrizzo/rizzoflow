@@ -153,6 +153,10 @@ function RoleRoute({
     return <Navigate to="/auth" replace />;
   }
 
+  if (needsPasswordReset()) {
+    return <Navigate to="/redefinir-senha" replace />;
+  }
+
   if (!allow(perms)) {
     return <Navigate to="/dashboard" replace />;
   }

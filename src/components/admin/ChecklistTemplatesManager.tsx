@@ -384,33 +384,94 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Esses checklists serão criados automaticamente em cada novo card deste fluxo.
+        Marque os checklists que devem ser criados automaticamente em cada novo card deste fluxo.
       </p>
 
-      {/* Selection actions bar */}
+      {/* Active templates bar (persisted) */}
       {templates.length > 0 && (
-        <div className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+        <div className={`flex items-center justify-between rounded-lg p-2 border ${
+          hasUnsavedChanges ? 'bg-amber-50 border-amber-300' : 'bg-muted/50 border-transparent'
+        }`}>
           <div className="flex items-center gap-3">
-            <Checkbox 
-              checked={selectedForClone.size === templates.length && templates.length > 0}
-              onCheckedChange={toggleSelectAll}
-            />
-            <span className="text-sm text-muted-foreground">
-              {selectedForClone.size > 0 
-                ? `${selectedForClone.size} selecionado(s)` 
-                : 'Selecionar todos'}
-            </span>
+            {cloneMode ? (
+              <>
+                <Checkbox
+                  checked={selectedForClone.size === templates.length && templates.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {selectedForClone.size > 0
+                    ? `${selectedForClone.size} marcado(s) para clonar`
+                    : 'Selecionar todos para clonar'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Checkbox
+                  checked={
+                    templates.length > 0 &&
+                    templates.every(t => activeIds?.has(t.id))
+                  }
+                  onCheckedChange={toggleActiveAll}
+                />
+                <span className="text-sm">
+                  <strong>{activeIds?.size || 0}</strong> de {templates.length} ativo(s) neste fluxo
+                </span>
+                {hasUnsavedChanges && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-700">
+                    Alterações não salvas
+                  </Badge>
+                )}
+              </>
+            )}
           </div>
-          {selectedForClone.size > 0 && otherBoards.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCloneDialog(true)}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Clonar para outro fluxo
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {cloneMode ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCloneMode(false);
+                    setSelectedForClone(new Set());
+                  }}
+                >
+                  Cancelar
+                </Button>
+                {selectedForClone.size > 0 && otherBoards.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCloneDialog(true)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Clonar selecionados
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                {otherBoards.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCloneMode(true)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Clonar para outro fluxo
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleSaveActive}
+                  disabled={!hasUnsavedChanges || isSavingActive}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar configuração
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

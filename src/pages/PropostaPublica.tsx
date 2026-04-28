@@ -331,6 +331,14 @@ async function uploadProposalDocuments(
       }
     }
 
+    if (attempted !== preparedDocuments.length) {
+      failDocument('Não foi possível enviar todos os documentos.', {
+        reason: 'upload_count_mismatch',
+        attempted,
+        prepared: preparedDocuments.length,
+      });
+    }
+
     if (preparedDocuments.length > 0) {
       const { error: insErr } = await supabase
         .from('proposal_documents')
@@ -346,14 +354,6 @@ async function uploadProposalDocuments(
   } catch (err) {
     await cleanupUploadedPaths();
     throw err;
-  }
-
-  if (attempted !== preparedDocuments.length) {
-    failDocument('Não foi possível enviar todos os documentos.', {
-      reason: 'upload_count_mismatch',
-      attempted,
-      prepared: preparedDocuments.length,
-    });
   }
 
   return { attempted, succeeded: preparedDocuments.length };

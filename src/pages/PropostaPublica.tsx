@@ -63,7 +63,7 @@ async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
-): Promise<void> {
+): Promise<{ attempted: number; succeeded: number; failed: number; firstError: string | null }> {
   type Job = {
     ownerType: string;
     ownerKey: string;
@@ -124,6 +124,10 @@ async function uploadProposalDocuments(
   const seen = new Set<string>();
   // Controle de duplicidade do nome final padronizado por proposta
   const usedFinalNames = new Map<string, number>();
+  let attempted = 0;
+  let succeeded = 0;
+  let failed = 0;
+  let firstError: string | null = null;
   for (const job of jobs) {
     for (const file of job.files) {
       if (!file.dataUrl) continue;
@@ -132,6 +136,7 @@ async function uploadProposalDocuments(
       seen.add(dedupKey);
       const blob = dataUrlToBlob(file.dataUrl);
       if (!blob) continue;
+      attempted++;
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
       const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
@@ -147,7 +152,12 @@ async function uploadProposalDocuments(
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
-      if (upErr) { console.error('upload err', upErr); continue; }
+      if (upErr) {
+        failed++;
+        if (!firstError) firstError = `Upload falhou: ${upErr.message}`;
+        console.error('[uploadProposalDocuments] storage upload err', { path, upErr });
+        continue;
+      }
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
@@ -161,10 +171,15 @@ async function uploadProposalDocuments(
         storage_path: path,
       });
       if (insErr) {
-        console.error('proposal_documents insert err', insErr);
+        failed++;
+        if (!firstError) firstError = `Registro do documento falhou: ${insErr.message}`;
+        console.error('[uploadProposalDocuments] proposal_documents insert err', { path, insErr });
+        continue;
       }
+      succeeded++;
     }
   }
+  return { attempted, succeeded, failed, firstError };
 }
 
 // Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.

@@ -1187,6 +1187,17 @@ export default function PropostaPublica() {
       const sanitizedRepresentantes = Array.isArray(restoredData.representantes)
         ? restoredData.representantes
         : undefined;
+      // Sanitiza locatarios_adicionais para garantir slot de documentos
+      const sanitizedLocAdicionais = Array.isArray(restoredData.locatarios_adicionais)
+        ? restoredData.locatarios_adicionais.map((loc: any) => ({
+            ...emptyLocatarioAdicional,
+            ...loc,
+            conjuge: { ...emptyLocatarioAdicional.conjuge, ...(loc?.conjuge || {}) },
+            documentos: Array.isArray(loc?.documentos) && loc.documentos.length > 0
+              ? loc.documentos
+              : buildLocatarioAdicionalDocs(),
+          }))
+        : undefined;
       setData(prev => ({
         ...prev,
         ...restoredData,
@@ -1197,6 +1208,7 @@ export default function PropostaPublica() {
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
         ...(sanitizedRepresentantes ? { representantes: sanitizedRepresentantes } : {}),
+        ...(sanitizedLocAdicionais ? { locatarios_adicionais: sanitizedLocAdicionais } : {}),
       }));
       if (restoredStep !== null && restoredStep > 0) {
         setStep(restoredStep);

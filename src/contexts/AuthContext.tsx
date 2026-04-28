@@ -3,6 +3,51 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, AppRole } from '@/types/database';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+
+/**
+ * Limpa qualquer resíduo de sessão Supabase do storage local.
+ * Usado quando detectamos sessão inválida/corrompida ou erro de rede
+ * impedindo refresh de token.
+ */
+function clearSupabaseStorage() {
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('sb-') || key.includes('supabase.auth')) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch {
+    // ignore
+  }
+  try {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('sb-') || key.includes('supabase.auth')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Heurística: o erro veio de falha de rede/token e deve invalidar a sessão?
+ */
+function isAuthFatalError(err: unknown): boolean {
+  if (!err) return false;
+  const msg = (err as { message?: string })?.message?.toLowerCase?.() ?? '';
+  return (
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('refresh token') ||
+    msg.includes('invalid refresh') ||
+    msg.includes('jwt') ||
+    msg.includes('invalid session') ||
+    msg.includes('session_not_found') ||
+    msg.includes('not authenticated')
+  );
+}
 
 interface AuthContextType {
   user: User | null;

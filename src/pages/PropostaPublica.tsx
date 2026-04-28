@@ -501,6 +501,41 @@ async function persistProposalParties(
     const ins = sorted[i];
     if (ins?.id) map.set(rowKeys[i], ins.id);
   });
+
+  // ── Segunda passagem: vincula cônjuges ao titular/fiador via related_party_id ──
+  // Cônjuge do locatário principal → primary_tenant
+  // Cônjuge de locatário adicional N → additional_tenant N
+  // Cônjuge de fiador N → guarantor N
+  const updates: Array<{ id: string; related_party_id: string }> = [];
+  rows.forEach((r, i) => {
+    const childKey = rowKeys[i];
+    const childId = map.get(childKey);
+    if (!childId) return;
+    let parentKey: string | null = null;
+    if (childKey.startsWith('tenant_spouse#')) {
+      parentKey = partyKey('primary_tenant');
+    } else if (childKey.startsWith('tenant_spouse_of_additional#')) {
+      const idx = Number(childKey.split('#')[1] || '0');
+      parentKey = partyKey('additional_tenant', idx);
+    } else if (childKey.startsWith('guarantor_spouse#')) {
+      const idx = Number(childKey.split('#')[1] || '0');
+      parentKey = partyKey('guarantor', idx);
+    }
+    if (!parentKey) return;
+    const parentId = map.get(parentKey);
+    if (parentId) updates.push({ id: childId, related_party_id: parentId });
+  });
+  if (updates.length > 0) {
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from('proposal_parties' as any)
+          .update({ related_party_id: u.related_party_id })
+          .eq('id', u.id),
+      ),
+    );
+  }
+
   return map;
 }
 

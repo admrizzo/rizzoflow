@@ -886,7 +886,41 @@ function UserCard({
 
             {/* Ações */}
             {!isCurrentUser && isAdminViewer && (
-              <div className="py-3 flex items-center gap-2">
+              <div className="py-3 flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResendInvite();
+                  }}
+                  disabled={isResendingInvite}
+                >
+                  {isResendingInvite ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Reenviar convite
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateAccessLink();
+                  }}
+                  disabled={isGeneratingLink}
+                >
+                  {isGeneratingLink ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Link2 className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Gerar link de acesso
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

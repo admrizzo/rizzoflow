@@ -77,6 +77,11 @@ function hasUploadedFiles(categories?: Array<{ files?: UploadedFile[] }>): boole
   return Array.isArray(categories) && categories.some((cat) => (cat.files || []).length > 0);
 }
 
+function hasSpouseUploadedFiles(categories?: Array<{ key?: string; files?: UploadedFile[] }>): boolean {
+  return Array.isArray(categories)
+    && categories.some((cat) => !!cat.key && SPOUSE_DOC_KEYS.has(cat.key) && (cat.files || []).length > 0);
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
@@ -444,7 +449,7 @@ async function persistProposalParties(
     });
     // Cônjuge do principal (se existir)
     const cj = data.conjuge;
-    const hasSpouse = !!(cj && (cj.nome || cj.cpf || cj.email));
+    const hasSpouse = !!(cj && (cj.nome || cj.cpf || cj.email || hasUploadedFiles(cj.documentos)));
     if (hasSpouse) {
       pushRow(partyKey('tenant_spouse', 0), {
         proposal_link_id: proposalLinkId,
@@ -490,7 +495,7 @@ async function persistProposalParties(
         },
       });
       const lc = loc.conjuge;
-      const hasLocSpouse = !!(lc && (lc.nome || lc.cpf || lc.email));
+      const hasLocSpouse = !!(lc && (lc.nome || lc.cpf || lc.email || hasUploadedFiles(lc.documentos)));
       if (hasLocSpouse) {
         // Chave dedicada por índice do locatário adicional para casar com job.spousePartyKey
         pushRow(partyKey('tenant_spouse_of_additional', idx), {
@@ -543,7 +548,7 @@ async function persistProposalParties(
       },
     });
     const fc = f.conjuge;
-    const hasFiadorSpouse = !!(fc && (fc.nome || fc.cpf || fc.email));
+    const hasFiadorSpouse = !!(fc && (fc.nome || fc.cpf || fc.email || hasSpouseUploadedFiles(f.documentos)));
     if (hasFiadorSpouse) {
       pushRow(partyKey('guarantor_spouse', idx), {
         proposal_link_id: proposalLinkId,

@@ -533,6 +533,10 @@ export function UsersAndAccessManager() {
                   setDeleteDialogOpen(true);
                 }}
                 isSaving={setUserRole.isPending || removeUserRole.isPending}
+                onResendInvite={() => handleResendInvite(u)}
+                onGenerateAccessLink={() => handleGenerateAccessLink(u)}
+                isResendingInvite={resendingUserId === u.user_id}
+                isGeneratingLink={generatingLinkUserId === u.user_id}
               />
             ))
           )}

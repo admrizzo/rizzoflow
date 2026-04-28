@@ -752,6 +752,27 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </span>
             </div>
           )}
+          {/* Badge: proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
+          {!card.proposal_submitted_at && card.proposal_link_id && (
+            (() => {
+              const st = (card as any).proposal_link?.status as string | undefined;
+              const pending = st == null
+                ? true
+                : st !== 'enviada' && st !== 'recebida' && st !== 'finalizada';
+              if (!pending) return null;
+              return (
+                <div className="mt-2">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200"
+                    title="Cliente ainda preenchendo a proposta pública"
+                  >
+                    <FileEdit className="h-3 w-3" />
+                    Em preenchimento
+                  </span>
+                </div>
+              );
+            })()
+          )}
           {/* Card creation info - hidden on mobile for space */}
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground mt-2">
             <UserCircle className="h-3 w-3" />

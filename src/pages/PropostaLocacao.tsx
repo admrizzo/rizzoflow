@@ -33,6 +33,43 @@ export interface DadosPessoais {
   email: string;
 }
 
+// Locatário adicional (multi-locatários no contrato)
+// Inclui dados próprios + cônjuge opcional vinculado
+export interface LocatarioAdicionalConjuge {
+  nome: string;
+  cpf: string;
+  rg: string;
+  whatsapp: string;
+  email: string;
+}
+
+export interface LocatarioAdicional {
+  nome: string;
+  cpf: string;
+  rg: string;
+  estado_civil: string;
+  profissao: string;
+  renda_mensal: string;
+  email: string;
+  whatsapp: string;
+  endereco: string;
+  // Cônjuge (mesma lógica do principal)
+  regime_bens: string;
+  conjuge_participa: 'sim' | 'nao' | '';
+  conjuge: LocatarioAdicionalConjuge;
+}
+
+export const emptyLocatarioAdicionalConjuge: LocatarioAdicionalConjuge = {
+  nome: '', cpf: '', rg: '', whatsapp: '', email: '',
+};
+
+export const emptyLocatarioAdicional: LocatarioAdicional = {
+  nome: '', cpf: '', rg: '', estado_civil: '', profissao: '',
+  renda_mensal: '', email: '', whatsapp: '', endereco: '',
+  regime_bens: '', conjuge_participa: '',
+  conjuge: { ...emptyLocatarioAdicionalConjuge },
+};
+
 // perfil_financeiro
 export interface PerfilFinanceiro {
   estado_civil: string;
@@ -216,6 +253,10 @@ export interface ProposalFormData {
   // ── Pessoa Jurídica ──
   empresa: EmpresaData;
   representantes: RepresentanteLegal[];
+  // ── Multi-locatários (contratos com mais de um inquilino) ──
+  // Opcional para compatibilidade com propostas antigas.
+  tem_mais_locatarios?: 'sim' | 'nao' | '';
+  locatarios_adicionais?: LocatarioAdicional[];
 }
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };
@@ -352,6 +393,8 @@ const initialData: ProposalFormData = {
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
   empresa: { ...emptyEmpresa },
   representantes: [],
+  tem_mais_locatarios: '',
+  locatarios_adicionais: [],
 };
 
 // ── Helper: parse currency string to number ──

@@ -1736,6 +1736,7 @@ export type Database = {
           position: number
           profession: string | null
           proposal_link_id: string
+          related_party_id: string | null
           rg: string | null
           role: string
           updated_at: string
@@ -1757,6 +1758,7 @@ export type Database = {
           position?: number
           profession?: string | null
           proposal_link_id: string
+          related_party_id?: string | null
           rg?: string | null
           role: string
           updated_at?: string
@@ -1778,6 +1780,7 @@ export type Database = {
           position?: number
           profession?: string | null
           proposal_link_id?: string
+          related_party_id?: string | null
           rg?: string | null
           role?: string
           updated_at?: string
@@ -1795,6 +1798,13 @@ export type Database = {
             columns: ["proposal_link_id"]
             isOneToOne: false
             referencedRelation: "proposal_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_parties_related_party_id_fkey"
+            columns: ["related_party_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_parties"
             referencedColumns: ["id"]
           },
         ]

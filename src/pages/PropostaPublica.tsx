@@ -544,6 +544,11 @@ const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
   { key: 'estado_civil', label: 'Estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
 ];
 
+// Template de documentos por locatário adicional — mesmas categorias do principal PF
+function buildLocatarioAdicionalDocs(): DocumentCategory[] {
+  return INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] }));
+}
+
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;

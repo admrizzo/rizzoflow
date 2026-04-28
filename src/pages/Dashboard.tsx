@@ -18,6 +18,7 @@ import { NewProposalButton } from '@/components/kanban/NewProposalButton';
 import { perfMark, perfMeasure } from '@/lib/perfMark';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useMyAccessRealtime } from '@/hooks/useMyAccessRealtime';
+import { useOperationalRealtime } from '@/hooks/useOperationalRealtime';
 
 const SELECTED_BOARD_KEY = 'fluxos-sg-selected-board';
 
@@ -29,6 +30,10 @@ export default function Dashboard() {
 
   // Reflete em tempo real alterações de papel/acessos feitas pelo admin
   useMyAccessRealtime();
+
+  // Realtime operacional centralizado: cards, propostas, documentos,
+  // checklists, comentários, atividade, prazos, responsáveis e permissões.
+  useOperationalRealtime();
 
   // Medição em dev: tempo até Dashboard pronto.
   useEffect(() => {

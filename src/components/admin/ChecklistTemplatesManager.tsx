@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useChecklistTemplates, ChecklistItemTemplate } from '@/hooks/useChecklistTemplates';
 import { useBoards } from '@/hooks/useBoards';
+import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ import {
 } from '@/components/ui/tooltip';
 import { 
   ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
-  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText
+  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save
 } from 'lucide-react';
 import { Board } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -64,6 +65,7 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   } = useChecklistTemplates(board.id);
   
   const { boards } = useBoards();
+  const { config, updateConfig } = useBoardConfig(board.id);
   const { toast } = useToast();
 
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -86,13 +88,26 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   const [configStatusOptions, setConfigStatusOptions] = useState<string[]>([]);
   const [newStatusOption, setNewStatusOption] = useState('');
 
-  // Clone states
+  // Active templates (persisted on board_config.auto_apply_checklist_templates)
+  const [activeIds, setActiveIds] = useState<Set<string> | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSavingActive, setIsSavingActive] = useState(false);
+
+  // Clone states (separated from active selection)
+  const [cloneMode, setCloneMode] = useState(false);
   const [selectedForClone, setSelectedForClone] = useState<Set<string>>(new Set());
   const [showCloneDialog, setShowCloneDialog] = useState(false);
   const [cloneTargetBoardId, setCloneTargetBoardId] = useState<string>('');
   const [isCloning, setIsCloning] = useState(false);
 
   const otherBoards = boards.filter(b => b.id !== board.id);
+
+  // Hydrate activeIds from board_config
+  if (activeIds === null && config) {
+    const initial = new Set<string>(config.auto_apply_checklist_templates || []);
+    // setState in render is safe here because guarded by null check (one-shot init)
+    setActiveIds(initial);
+  }
 
   const toggleExpanded = (templateId: string) => {
     const newExpanded = new Set(expandedTemplates);
@@ -104,6 +119,37 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     setExpandedTemplates(newExpanded);
   };
 
+  // ---- Active selection (persisted) ----
+  const toggleActive = (templateId: string) => {
+    const next = new Set(activeIds || []);
+    if (next.has(templateId)) next.delete(templateId);
+    else next.add(templateId);
+    setActiveIds(next);
+    setHasUnsavedChanges(true);
+  };
+
+  const toggleActiveAll = () => {
+    const all = new Set(templates.map(t => t.id));
+    const current = activeIds || new Set();
+    // If all are active, clear; otherwise mark all
+    const allActive = templates.length > 0 && templates.every(t => current.has(t.id));
+    setActiveIds(allActive ? new Set() : all);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveActive = async () => {
+    setIsSavingActive(true);
+    try {
+      await updateConfig.mutateAsync({
+        auto_apply_checklist_templates: Array.from(activeIds || []),
+      });
+      setHasUnsavedChanges(false);
+    } finally {
+      setIsSavingActive(false);
+    }
+  };
+
+  // ---- Clone selection (separate) ----
   const toggleSelection = (templateId: string) => {
     const newSelected = new Set(selectedForClone);
     if (newSelected.has(templateId)) {

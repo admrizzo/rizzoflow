@@ -1120,6 +1120,18 @@ export default function PropostaPublica() {
     ];
 
     try {
+      // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
+      //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
+      //    e permite que a query do card os recupere via proposal_link_id.
+      if (proposalLink?.id) {
+        try {
+          await uploadProposalDocuments(null, proposalLink.id, data);
+        } catch (uploadErr: any) {
+          console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
+          toast.warning('Alguns arquivos podem não ter sido enviados', { description: uploadErr.message });
+        }
+      }
+
       // 1) Finaliza a proposta via RPC SECURITY DEFINER.
       //    O frontend público NÃO faz mais INSERT/UPDATE direto em `cards`.
       //    A função garante anti-duplicidade (1 card por proposal_link_id),
@@ -1150,13 +1162,17 @@ export default function PropostaPublica() {
       if (rpcErr) throw rpcErr;
       const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
-      // 3) Upload de documentos (proponente + cônjuge + empresa + fiadores)
-      if (targetCardId) {
+      // 3) Backfill: vincular ao card recém-criado todos os documentos
+      //    que foram enviados via proposal_link_id e ainda estão sem card_id.
+      if (targetCardId && proposalLink?.id) {
         try {
-          await uploadProposalDocuments(targetCardId, proposalLink?.id || null, data);
-        } catch (uploadErr: any) {
-          console.error('Erro ao enviar documentos:', uploadErr);
-          toast.warning('Proposta enviada, mas alguns arquivos falharam', { description: uploadErr.message });
+          await supabase
+            .from('proposal_documents')
+            .update({ card_id: targetCardId })
+            .eq('proposal_link_id', proposalLink.id)
+            .is('card_id', null);
+        } catch (linkErr) {
+          console.error('Erro ao vincular documentos ao card:', linkErr);
         }
       }
 

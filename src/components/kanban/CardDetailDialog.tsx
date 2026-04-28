@@ -74,6 +74,8 @@ import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
 import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
 import { ProposalDocumentsSection } from './ProposalDocumentsSection';
+import { ProposalPartiesView } from '@/components/proposta/ProposalPartiesView';
+import { useProposalParties } from '@/hooks/useProposalParties';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
@@ -278,6 +280,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Venda/DEV: opening data lives in parties (#1)
   const { parties: vendaParties, updatePartyName } = useCardParties((isVendaBoard || isDevBoard) ? card?.id : undefined);
+  // Locação: estrutura de partes da proposta pública (proposal_parties)
+  const { data: proposalParties = [] } = useProposalParties(card?.id);
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
     : undefined;
@@ -1594,6 +1598,16 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <div className="bg-muted/30 p-4 rounded-lg border border-muted">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Documentos da proposta</h3>
                 <ProposalDocumentsSection cardId={card.id} />
+              </div>
+            )}
+
+            {/* === BLOCO: PESSOAS / PARTES DA PROPOSTA === */}
+            {card.proposal_link_id && proposalParties.length > 0 && (
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Pessoas envolvidas na proposta
+                </h3>
+                <ProposalPartiesView parties={proposalParties} compact />
               </div>
             )}
 

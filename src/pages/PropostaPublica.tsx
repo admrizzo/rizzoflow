@@ -35,6 +35,7 @@ import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyIdentification } from '@/lib/propertyIdentification';
+import { ProposalPartiesView, buildPartiesFromFormData } from '@/components/proposta/ProposalPartiesView';
 
 // ── Upload de documentos da proposta para o Storage ──
 function dataUrlToBlob(dataUrl: string): Blob | null {
@@ -3438,6 +3439,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
+  const partiesPreview = buildPartiesFromFormData(data);
 
   return (
     <div className="space-y-8">
@@ -3474,6 +3476,21 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
 
       {/* Data blocks */}
       <div className="space-y-5">
+        {/* Pessoas/Partes da proposta (locatários, cônjuges, fiadores, empresa, representantes) */}
+        {partiesPreview.length > 0 && (
+          <div className="bg-white rounded-2xl border p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-5">
+              <h4 className="font-bold text-foreground flex items-center gap-2">
+                <span>👥</span> Pessoas envolvidas
+              </h4>
+              <button onClick={() => onGoToStep(1)} className="text-sm text-accent font-semibold hover:underline">
+                ✏️ Editar
+              </button>
+            </div>
+            <ProposalPartiesView parties={partiesPreview} />
+          </div>
+        )}
+
         {pj ? (
           <>
             {/* Empresa */}

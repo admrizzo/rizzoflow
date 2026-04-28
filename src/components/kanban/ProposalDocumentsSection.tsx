@@ -53,7 +53,7 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
       if (!proposalLinkId) return [] as Array<any>;
       const { data, error } = await supabase
         .from('proposal_parties' as any)
-        .select('id, role, name, position, metadata')
+        .select('id, role, name, position, metadata, related_party_id')
         .eq('proposal_link_id', proposalLinkId)
         .order('position', { ascending: true });
       if (error) {

@@ -79,6 +79,48 @@ function isSpouseDocCategory(category: string): boolean {
   return SPOUSE_DOC_KEYS.has(category);
 }
 
+// Roles válidas em proposal_parties — devem casar com o que o card/visualização espera.
+const VALID_PARTY_ROLES = new Set<string>([
+  'primary_tenant',
+  'additional_tenant',
+  'tenant_spouse',
+  'guarantor',
+  'guarantor_spouse',
+  'company',
+  'legal_representative',
+]);
+
+/** Erro estruturado para falhas na preparação de proposal_parties. */
+class ProposalPartiesError extends Error {
+  constructor(
+    message: string,
+    public readonly userMessage: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'ProposalPartiesError';
+  }
+}
+
+/** Mascara dados sensíveis para logging (mantém últimos 2 dígitos de CPF/CNPJ). */
+function maskRowForLog(row: Record<string, any>) {
+  const mask = (v: string | null | undefined) =>
+    v ? `***${String(v).replace(/\D/g, '').slice(-2)}` : v;
+  const maskEmail = (v: string | null | undefined) =>
+    v ? v.replace(/(.).+(@.+)/, '$1***$2') : v;
+  return {
+    role: row.role,
+    person_type: row.person_type,
+    name: row.name ? String(row.name).slice(0, 24) : null,
+    cpf: mask(row.cpf),
+    cnpj: mask(row.cnpj),
+    email: maskEmail(row.email),
+    has_phone: !!row.phone,
+    position: row.position,
+    has_metadata: !!row.metadata && Object.keys(row.metadata || {}).length > 0,
+  };
+}
+
 function hasUploadedFiles(categories?: Array<{ files?: UploadedFile[] }>): boolean {
   return Array.isArray(categories) && categories.some((cat) => (cat.files || []).length > 0);
 }

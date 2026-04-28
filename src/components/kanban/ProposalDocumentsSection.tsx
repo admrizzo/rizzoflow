@@ -9,6 +9,8 @@ import {
   OWNER_TYPE_LABELS,
   type ProposalDocument,
 } from '@/hooks/useProposalDocuments';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -35,6 +37,32 @@ function fileIcon(mime: string | null) {
 
 export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionProps) {
   const { data: docs = [], isLoading } = useProposalDocuments(cardId);
+  // Carrega as partes (proposal_parties) ligadas ao card para conseguir agrupar
+  // documentos por pessoa (party_id) com nome/papel corretos.
+  const { data: parties = [] } = useQuery({
+    queryKey: ['proposal-parties', cardId],
+    enabled: !!cardId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: cardRow } = await supabase
+        .from('cards')
+        .select('id, proposal_link_id')
+        .eq('id', cardId)
+        .maybeSingle();
+      const proposalLinkId = cardRow?.proposal_link_id || null;
+      if (!proposalLinkId) return [] as Array<any>;
+      const { data, error } = await supabase
+        .from('proposal_parties' as any)
+        .select('id, role, name, position, metadata')
+        .eq('proposal_link_id', proposalLinkId)
+        .order('position', { ascending: true });
+      if (error) {
+        console.error('Erro ao carregar partes da proposta:', error);
+        return [] as Array<any>;
+      }
+      return (data as any[]) || [];
+    },
+  });
   const [busyId, setBusyId] = useState<string | null>(null);
   const { isAdmin, isGestor, isAdministrativo } = usePermissions();
   const canAddComplementary = isAdmin || isGestor || isAdministrativo;
@@ -121,15 +149,61 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
     );
   }
 
-  // Agrupa: owner_type → owner_label → docs[]
+  // ── Agrupa por pessoa ──
+  // Estratégia:
+  //  1) Se o documento tem party_id válido → agrupa pela parte (proposal_parties).
+  //  2) Senão (compatibilidade) → agrupa por owner_type + owner_label como antes.
+  //
+  // Mapeia role → ownerType visual (mantém os agrupamentos do header existente).
+  const ROLE_TO_OWNER_TYPE: Record<string, string> = {
+    primary_tenant: 'proponente',
+    additional_tenant: 'proponente',
+    tenant_spouse: 'conjuge',
+    company: 'empresa',
+    legal_representative: 'representante',
+    guarantor: 'fiador',
+    guarantor_spouse: 'conjuge',
+  };
+  const ROLE_LABEL: Record<string, string> = {
+    primary_tenant: 'Locatário principal',
+    additional_tenant: 'Locatário adicional',
+    tenant_spouse: 'Cônjuge do locatário',
+    company: 'Empresa',
+    legal_representative: 'Representante legal',
+    guarantor: 'Fiador',
+    guarantor_spouse: 'Cônjuge do fiador',
+  };
+
+  const partyById = new Map<string, any>();
+  for (const p of parties) partyById.set(p.id, p);
+
+  // grouped: ownerType → ownerLabel → docs[]
   const grouped = new Map<string, Map<string, ProposalDocument[]>>();
-  for (const d of docs) {
-    const ownerType = d.owner_type || 'outros';
-    const ownerLabel = d.owner_label || OWNER_TYPE_LABELS[ownerType] || 'Outros';
+  const ensureGroup = (ownerType: string, ownerLabel: string) => {
     if (!grouped.has(ownerType)) grouped.set(ownerType, new Map());
     const inner = grouped.get(ownerType)!;
     if (!inner.has(ownerLabel)) inner.set(ownerLabel, []);
-    inner.get(ownerLabel)!.push(d);
+    return inner.get(ownerLabel)!;
+  };
+
+  for (const d of docs) {
+    const party = d.party_id ? partyById.get(d.party_id) : null;
+    if (party) {
+      const role = party.role as string;
+      const ownerType = ROLE_TO_OWNER_TYPE[role] || 'outros';
+      const roleLabel = ROLE_LABEL[role] || role;
+      // Para múltiplos da mesma role usamos índice por position no metadata
+      const personName = party.name || roleLabel;
+      const ownerLabel = role === 'primary_tenant' || role === 'company'
+        ? `${roleLabel} — ${personName}`
+        : `${roleLabel}${party.metadata?.tenant_index ? ` ${party.metadata.tenant_index}` : ''} — ${personName}`;
+      ensureGroup(ownerType, ownerLabel).push(d);
+    } else {
+      // Fallback legado
+      const ownerType = d.owner_type || 'outros';
+      const ownerLabel = d.owner_label || OWNER_TYPE_LABELS[ownerType] || 'Outros';
+      ensureGroup(ownerType, ownerLabel).push(d);
+    }
   }
 
   // Ordena pelas chaves conhecidas

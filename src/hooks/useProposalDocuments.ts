@@ -5,6 +5,7 @@ export interface ProposalDocument {
   id: string;
   card_id: string | null;
   proposal_link_id: string | null;
+  party_id: string | null;
   category: string;
   category_label: string;
   owner_type: string;

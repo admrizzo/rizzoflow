@@ -57,6 +57,8 @@ export interface LocatarioAdicional {
   regime_bens: string;
   conjuge_participa: 'sim' | 'nao' | '';
   conjuge: LocatarioAdicionalConjuge;
+  // Documentos por locatário adicional (mesmas categorias do principal)
+  documentos?: DocumentCategory[];
 }
 
 export const emptyLocatarioAdicionalConjuge: LocatarioAdicionalConjuge = {
@@ -68,6 +70,7 @@ export const emptyLocatarioAdicional: LocatarioAdicional = {
   renda_mensal: '', email: '', whatsapp: '', endereco: '',
   regime_bens: '', conjuge_participa: '',
   conjuge: { ...emptyLocatarioAdicionalConjuge },
+  documentos: [],
 };
 
 // perfil_financeiro

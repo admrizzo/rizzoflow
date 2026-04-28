@@ -60,10 +60,17 @@ const DOC_CATEGORY_LABELS: Record<string, string> = {
   renda_conjuge: 'Renda do cônjuge',
 };
 
+// Chave canônica usada tanto em proposal_parties (mapeamento) como em jobs de upload
+// para casar party_id ↔ documento. Idêntica à usada em persistProposalParties.
+function partyKey(role: string, indexZeroBased = 0): string {
+  return `${role}#${indexZeroBased}`;
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
+  partyMap: Map<string, string> = new Map(),
 ): Promise<{ attempted: number; succeeded: number; failed: number; firstError: string | null }> {
   type Job = {
     ownerType: string;
@@ -71,6 +78,8 @@ async function uploadProposalDocuments(
     ownerLabel: string;
     ownerPersonName: string;
     ownerPersonRole: string;
+    partyKey: string;
+    spousePartyKey?: string;
     spouseName?: string;
     category: string;
     files: UploadedFile[];
@@ -85,6 +94,8 @@ async function uploadProposalDocuments(
   const proponentOwnerType = isPj ? 'empresa' : 'proponente';
   const proponentOwnerKey = proponentOwnerType; // único por proposta
   const spouseName = (data.conjuge?.nome || '').trim();
+  const principalPartyKey = isPj ? partyKey('company') : partyKey('primary_tenant');
+  const principalSpousePartyKey = isPj ? undefined : partyKey('tenant_spouse', 0);
   for (const cat of data.documentos || []) {
     if (cat.files.length > 0) {
       jobs.push({
@@ -93,6 +104,8 @@ async function uploadProposalDocuments(
         ownerLabel: proponentLabel,
         ownerPersonName: proponentLabel,
         ownerPersonRole: isPj ? 'EMPRESA' : 'TITULAR',
+        partyKey: principalPartyKey,
+        spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
         files: cat.files,
@@ -100,11 +113,44 @@ async function uploadProposalDocuments(
     }
   }
 
+  // Locatários adicionais (PF)
+  if (!isPj) {
+    (data.locatarios_adicionais || []).forEach((loc, idx) => {
+      const label = loc.nome ? `Locatário adicional ${idx + 1} — ${loc.nome}` : `Locatário adicional ${idx + 1}`;
+      const personName = loc.nome || `Locatário ${idx + 2}`;
+      const ownerKey = `locatario-${idx + 1}`;
+      const locSpouseName = (loc.conjuge?.nome || '').trim();
+      const locPartyKey = partyKey('additional_tenant', idx);
+      // O cônjuge do adicional vem após o adicional na inserção em proposal_parties.
+      // Por isso, em vez de tentar prever o índice no mapa de tenant_spouse,
+      // resolvemos a partir do metadata.spouse_of (vide buildPartyMap abaixo).
+      const locSpousePartyKey = partyKey('tenant_spouse_of_additional', idx);
+      for (const cat of loc.documentos || []) {
+        if (cat.files.length > 0) {
+          jobs.push({
+            ownerType: 'proponente',
+            ownerKey,
+            ownerLabel: label,
+            ownerPersonName: personName,
+            ownerPersonRole: 'LOCATARIO ADICIONAL',
+            partyKey: locPartyKey,
+            spousePartyKey: locSpousePartyKey,
+            spouseName: locSpouseName,
+            category: cat.key,
+            files: cat.files,
+          });
+        }
+      }
+    });
+  }
+
   // Fiadores
   (data.garantia.fiadores || []).forEach((f, idx) => {
     const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
     const ownerKey = `fiador-${idx + 1}`;
     const fiadorSpouseName = (f.conjuge?.nome || '').trim();
+    const fiadorPartyKey = partyKey('guarantor', idx);
+    const fiadorSpousePartyKey = partyKey('guarantor_spouse', idx);
     for (const cat of f.documentos || []) {
       if (cat.files.length > 0) {
         jobs.push({
@@ -113,6 +159,8 @@ async function uploadProposalDocuments(
           ownerLabel: label,
           ownerPersonName: f.nome || `Fiador ${idx + 1}`,
           ownerPersonRole: 'FIADOR',
+          partyKey: fiadorPartyKey,
+          spousePartyKey: fiadorSpousePartyKey,
           spouseName: fiadorSpouseName,
           category: cat.key,
           files: cat.files,
@@ -145,11 +193,14 @@ async function uploadProposalDocuments(
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores.
-      // Usa o proposal_link_id como prefixo (estável mesmo antes do card existir);
-      // fallback para cardId quando link não estiver disponível.
+      // Resolve party_id pelo mapa (role+idx). Cônjuge tem party própria.
+      const resolvedPartyId = isSpouseDoc && job.spousePartyKey
+        ? (partyMap.get(job.spousePartyKey) || null)
+        : (partyMap.get(job.partyKey) || null);
+      // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
       const pathPrefix = proposalLinkId || cardId || 'orfaos';
-      const path = `${pathPrefix}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
+      const personSegment = resolvedPartyId || job.ownerKey;
+      const path = `${pathPrefix}/${personSegment}/${job.category}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
@@ -162,11 +213,13 @@ async function uploadProposalDocuments(
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
+        party_id: resolvedPartyId,
         category: job.category,
         category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
         owner_type: job.ownerType,
         owner_label: job.ownerLabel,
         file_name: standardized,
+        original_file_name: file.name,
         file_size: file.size,
         mime_type: file.type,
         storage_path: path,
@@ -189,7 +242,7 @@ async function persistProposalParties(
   proposalLinkId: string,
   cardId: string | null,
   data: ProposalFormData,
-): Promise<void> {
+): Promise<Map<string, string>> {
   const parseNum = (s: string | undefined | null): number | null => {
     if (!s) return null;
     const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
@@ -216,14 +269,21 @@ async function persistProposalParties(
     metadata: Record<string, any>;
   };
 
+  // Acumula linhas com sua "chave canônica" para conseguirmos remontar party_id por papel/índice
+  // após a inserção (Supabase retorna na mesma ordem com `.select()`).
   const rows: PartyRow[] = [];
+  const rowKeys: string[] = [];
+  const pushRow = (key: string, row: PartyRow) => {
+    rowKeys.push(key);
+    rows.push(row);
+  };
   let pos = 0;
   const isPj = data.imovel.tipo_pessoa === 'juridica';
 
   if (isPj) {
     // Empresa
     const e = data.empresa;
-    rows.push({
+    pushRow(partyKey('company'), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'company',
@@ -249,8 +309,8 @@ async function persistProposalParties(
       },
     });
     // Representantes legais
-    (data.representantes || []).forEach((r) => {
-      rows.push({
+    (data.representantes || []).forEach((r, idx) => {
+      pushRow(partyKey('legal_representative', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'legal_representative',
@@ -278,7 +338,7 @@ async function persistProposalParties(
     // Locatário principal (PF)
     const dp = data.dados_pessoais;
     const pf = data.perfil_financeiro;
-    rows.push({
+    pushRow(partyKey('primary_tenant'), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'primary_tenant',
@@ -304,7 +364,7 @@ async function persistProposalParties(
     const cj = data.conjuge;
     const hasSpouse = !!(cj && (cj.nome || cj.cpf || cj.email));
     if (hasSpouse) {
-      rows.push({
+      pushRow(partyKey('tenant_spouse', 0), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'tenant_spouse',
@@ -325,7 +385,7 @@ async function persistProposalParties(
     }
     // Locatários adicionais
     (data.locatarios_adicionais || []).forEach((loc, idx) => {
-      rows.push({
+      pushRow(partyKey('additional_tenant', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'additional_tenant',
@@ -350,7 +410,8 @@ async function persistProposalParties(
       const lc = loc.conjuge;
       const hasLocSpouse = !!(lc && (lc.nome || lc.cpf || lc.email));
       if (hasLocSpouse) {
-        rows.push({
+        // Chave dedicada por índice do locatário adicional para casar com job.spousePartyKey
+        pushRow(partyKey('tenant_spouse_of_additional', idx), {
           proposal_link_id: proposalLinkId,
           card_id: cardId,
           role: 'tenant_spouse',
@@ -374,7 +435,7 @@ async function persistProposalParties(
 
   // Fiadores + cônjuges (independente de PF/PJ)
   (data.garantia?.fiadores || []).forEach((f, idx) => {
-    rows.push({
+    pushRow(partyKey('guarantor', idx), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'guarantor',
@@ -402,7 +463,7 @@ async function persistProposalParties(
     const fc = f.conjuge;
     const hasFiadorSpouse = !!(fc && (fc.nome || fc.cpf || fc.email));
     if (hasFiadorSpouse) {
-      rows.push({
+      pushRow(partyKey('guarantor_spouse', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'guarantor_spouse',
@@ -423,12 +484,24 @@ async function persistProposalParties(
     }
   });
 
-  if (rows.length === 0) return;
+  if (rows.length === 0) return new Map();
 
   // Apaga partes anteriores deste link (idempotência) e reinsere.
   await supabase.from('proposal_parties' as any).delete().eq('proposal_link_id', proposalLinkId);
-  const { error } = await supabase.from('proposal_parties' as any).insert(rows as any);
+  const { data: inserted, error } = await supabase
+    .from('proposal_parties' as any)
+    .insert(rows as any)
+    .select('id, position');
   if (error) throw error;
+
+  // Constrói o mapa partyKey → party_id, casando por position (preservada na ordem dos rows).
+  const map = new Map<string, string>();
+  const sorted = [...((inserted as any[]) || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  rows.forEach((r, i) => {
+    const ins = sorted[i];
+    if (ins?.id) map.set(rowKeys[i], ins.id);
+  });
+  return map;
 }
 
 // Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.
@@ -543,6 +616,11 @@ const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
   { key: 'comprovante_renda', label: 'Comprovante de renda', help: 'Holerite, declaração de IR, extrato bancário ou pró-labore.', files: [] },
   { key: 'estado_civil', label: 'Estado civil', help: 'Certidão de nascimento, casamento ou averbação de divórcio.', files: [] },
 ];
+
+// Template de documentos por locatário adicional — mesmas categorias do principal PF
+function buildLocatarioAdicionalDocs(): DocumentCategory[] {
+  return INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] }));
+}
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -1182,6 +1260,17 @@ export default function PropostaPublica() {
       const sanitizedRepresentantes = Array.isArray(restoredData.representantes)
         ? restoredData.representantes
         : undefined;
+      // Sanitiza locatarios_adicionais para garantir slot de documentos
+      const sanitizedLocAdicionais = Array.isArray(restoredData.locatarios_adicionais)
+        ? restoredData.locatarios_adicionais.map((loc: any) => ({
+            ...emptyLocatarioAdicional,
+            ...loc,
+            conjuge: { ...emptyLocatarioAdicional.conjuge, ...(loc?.conjuge || {}) },
+            documentos: Array.isArray(loc?.documentos) && loc.documentos.length > 0
+              ? loc.documentos
+              : buildLocatarioAdicionalDocs(),
+          }))
+        : undefined;
       setData(prev => ({
         ...prev,
         ...restoredData,
@@ -1192,6 +1281,7 @@ export default function PropostaPublica() {
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
         ...(sanitizedRepresentantes ? { representantes: sanitizedRepresentantes } : {}),
+        ...(sanitizedLocAdicionais ? { locatarios_adicionais: sanitizedLocAdicionais } : {}),
       }));
       if (restoredStep !== null && restoredStep > 0) {
         setStep(restoredStep);
@@ -1384,13 +1474,26 @@ export default function PropostaPublica() {
     ];
 
     try {
-      // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
-      //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
-      //    e permite que a query do card os recupere via proposal_link_id.
+      // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento
+      //     já nasça vinculado ao party_id correto (locatário, cônjuge, fiador, etc).
+      //     Se falhar, seguimos com mapa vazio — fallback owner_type/owner_label cobre.
+      let partyMap = new Map<string, string>();
+      if (proposalLink?.id) {
+        try {
+          partyMap = await persistProposalParties(proposalLink.id, null, data);
+        } catch (partiesErr) {
+          console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
+          partyMap = new Map();
+        }
+      }
+
+      // 0b) Upload de documentos vinculando-os ao proposal_link_id e party_id.
+      //     Isso garante que os arquivos não se percam mesmo que o RPC falhe,
+      //     e permite que a query do card os recupere via proposal_link_id.
       let uploadStats = { attempted: 0, succeeded: 0, failed: 0, firstError: null as string | null };
       if (proposalLink?.id) {
         try {
-          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data);
+          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data, partyMap);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
           toast.error('Falha ao enviar documentos', { description: uploadErr.message });
@@ -1443,15 +1546,16 @@ export default function PropostaPublica() {
       if (rpcErr) throw rpcErr;
       const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
-      // 2.5) Persistir partes estruturadas em proposal_parties.
-      //      Idempotente: deletamos as anteriores deste proposal_link antes de inserir,
-      //      para que reenvio/edição não duplique.
-      if (proposalLink?.id) {
+      // 2.5) Backfill: vincular card_id às partes recém-criadas
+      if (targetCardId && proposalLink?.id) {
         try {
-          await persistProposalParties(proposalLink.id, targetCardId, data);
-        } catch (partiesErr) {
-          console.error('Erro ao salvar partes da proposta:', partiesErr);
-          // Não bloqueia a finalização — fallback para campos legados continua válido.
+          await supabase
+            .from('proposal_parties' as any)
+            .update({ card_id: targetCardId })
+            .eq('proposal_link_id', proposalLink.id)
+            .is('card_id', null);
+        } catch (linkErr) {
+          console.error('Erro ao vincular partes ao card:', linkErr);
         }
       }
 
@@ -2203,7 +2307,10 @@ export default function PropostaPublica() {
                   className="w-full rounded-xl"
                   onClick={() => update(p => ({
                     ...p,
-                    locatarios_adicionais: [...(p.locatarios_adicionais || []), { ...emptyLocatarioAdicional }],
+                    locatarios_adicionais: [
+                      ...(p.locatarios_adicionais || []),
+                      { ...emptyLocatarioAdicional, documentos: buildLocatarioAdicionalDocs() },
+                    ],
                   }))}
                 >
                   <Plus className="h-4 w-4 mr-1" /> Adicionar outro locatário
@@ -2272,6 +2379,86 @@ export default function PropostaPublica() {
   }
 
   function renderStep3() {
+    const isPj = isPJ(data);
+    const principalLabel = isPj
+      ? (data.empresa.razao_social || data.empresa.nome_fantasia || 'Empresa')
+      : (data.dados_pessoais.nome || 'Locatário principal');
+    const principalRoleLabel = isPj ? 'Empresa / Pessoa Jurídica' : 'Locatário principal';
+
+    // Helper para renderizar a lista de categorias de documentos de uma pessoa.
+    const renderDocList = (
+      categorias: DocumentCategory[],
+      onUpdate: (mutator: (cats: DocumentCategory[]) => DocumentCategory[]) => void,
+      keyPrefix: string,
+    ) => (
+      <div className="space-y-3">
+        {categorias.map((cat, catIdx) => {
+          const done = cat.files.length > 0;
+          return (
+            <div key={`${keyPrefix}-${cat.key}-${catIdx}`} className={cn('bg-white rounded-2xl border p-4 space-y-3', done && 'border-green-200')}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
+                    <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                      done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+                      {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+                    <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
+                  </p>
+                </div>
+              </div>
+              {cat.files.length > 0 && (
+                <div className="space-y-1.5">
+                  {cat.files.map(file => (
+                    <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
+                      {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
+                      <span className="truncate flex-1 text-foreground">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
+                      <button className="text-red-400 hover:text-red-600 p-1"
+                        onClick={() => onUpdate(cats => {
+                          const next = [...cats];
+                          next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
+                          return next;
+                        })}>
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
+                <Upload className="h-4 w-4" /> Adicionar arquivo
+                <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
+                  const fileList = e.target.files;
+                  if (!fileList) return;
+                  let rejected = 0;
+                  Array.from(fileList).forEach(file => {
+                    if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
+                    if (file.size > MAX_FILE_SIZE) { rejected++; return; }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
+                      onUpdate(cats => {
+                        const next = [...cats];
+                        next[catIdx] = { ...next[catIdx], files: [...next[catIdx].files, uploaded] };
+                        return next;
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  });
+                  if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
+                  e.target.value = '';
+                }} />
+              </label>
+            </div>
+          );
+        })}
+      </div>
+    );
+
     return (
       <div className="space-y-6">
         <div className="text-center py-4">
@@ -2279,67 +2466,64 @@ export default function PropostaPublica() {
             <FileCheck className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
-          <p className="text-muted-foreground mt-1 text-sm">Envie os documentos necessários para análise da proposta.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Envie os documentos de cada pessoa envolvida na proposta.</p>
         </div>
 
-        <div className="space-y-4">
-          {data.documentos.map((cat, catIdx) => {
-            const done = cat.files.length > 0;
-            return (
-              <div key={cat.key} className={cn('bg-white rounded-2xl border p-5 space-y-3', done && 'border-green-200')}>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
-                      <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
-                        done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                        {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
-                      <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
-                    </p>
-                  </div>
-                </div>
-                {cat.files.length > 0 && (
-                  <div className="space-y-1.5">
-                    {cat.files.map(file => (
-                      <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
-                        {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
-                        <span className="truncate flex-1 text-foreground">{file.name}</span>
-                        <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                        <button className="text-red-400 hover:text-red-600 p-1"
-                          onClick={() => update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: docs[catIdx].files.filter(f => f.id !== file.id) }; return { ...p, documentos: docs }; })}>
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
-                  <Upload className="h-4 w-4" /> Adicionar arquivo
-                  <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
-                    const fileList = e.target.files;
-                    if (!fileList) return;
-                    let rejected = 0;
-                    Array.from(fileList).forEach(file => {
-                      if (!ACCEPTED_MIMES.includes(file.type)) { rejected++; return; }
-                      if (file.size > MAX_FILE_SIZE) { rejected++; return; }
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        const uploaded: UploadedFile = { id: crypto.randomUUID(), name: file.name, size: file.size, type: file.type, dataUrl: reader.result as string };
-                        update(p => { const docs = [...p.documentos]; docs[catIdx] = { ...docs[catIdx], files: [...docs[catIdx].files, uploaded] }; return { ...p, documentos: docs }; });
-                      };
-                      reader.readAsDataURL(file);
-                    });
-                    if (rejected > 0) toast.error(`${rejected} arquivo(s) rejeitado(s)`);
-                    e.target.value = '';
-                  }} />
-                </label>
-              </div>
-            );
-          })}
+        {/* Bloco do locatário principal / empresa */}
+        <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+              {isPj ? <Building className="h-4 w-4 text-accent" /> : <User className="h-4 w-4 text-accent" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{principalRoleLabel}</p>
+              <p className="text-sm font-bold text-foreground">{principalLabel}</p>
+            </div>
+          </div>
+          {renderDocList(
+            data.documentos,
+            (mutator) => update(p => ({ ...p, documentos: mutator(p.documentos) })),
+            'principal',
+          )}
         </div>
+
+        {/* Blocos de documentos de cada locatário adicional (somente PF) */}
+        {!isPj && (data.locatarios_adicionais || []).map((loc, idx) => {
+          const docs = loc.documentos && loc.documentos.length > 0 ? loc.documentos : buildLocatarioAdicionalDocs();
+          return (
+            <div key={`loc-add-${idx}`} className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Locatário adicional {idx + 1}</p>
+                  <p className="text-sm font-bold text-foreground">{loc.nome || `Locatário ${idx + 2}`}</p>
+                </div>
+              </div>
+              {renderDocList(
+                docs,
+                (mutator) => update(p => {
+                  const arr = [...(p.locatarios_adicionais || [])];
+                  const current = arr[idx]?.documentos && arr[idx]!.documentos!.length > 0
+                    ? arr[idx]!.documentos!
+                    : buildLocatarioAdicionalDocs();
+                  arr[idx] = { ...arr[idx], documentos: mutator(current) };
+                  return { ...p, locatarios_adicionais: arr };
+                }),
+                `loc-${idx}`,
+              )}
+            </div>
+          );
+        })}
+
+        {/* Aviso sobre fiadores: documentos vivem na etapa de Garantia */}
+        {(data.garantia.fiadores || []).length > 0 && (
+          <div className="rounded-xl border border-dashed bg-muted/10 p-3 text-xs text-muted-foreground flex items-start gap-2">
+            <Info className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>Os documentos dos fiadores são anexados na etapa de <strong>Garantia</strong>, dentro do bloco de cada fiador.</span>
+          </div>
+        )}
 
         <FormSection icon={FileText} title="Observações">
           <Textarea value={data.documentos_observacao} onChange={e => update(p => ({ ...p, documentos_observacao: e.target.value }))} placeholder="Alguma observação sobre seus documentos?" rows={3} />

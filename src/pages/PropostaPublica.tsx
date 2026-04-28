@@ -60,7 +60,7 @@ const DOC_CATEGORY_LABELS: Record<string, string> = {
 };
 
 async function uploadProposalDocuments(
-  cardId: string,
+  cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
 ): Promise<void> {
@@ -139,13 +139,16 @@ async function uploadProposalDocuments(
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores
-      const path = `${cardId}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
+      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores.
+      // Usa o proposal_link_id como prefixo (estável mesmo antes do card existir);
+      // fallback para cardId quando link não estiver disponível.
+      const pathPrefix = proposalLinkId || cardId || 'orfaos';
+      const path = `${pathPrefix}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
       if (upErr) { console.error('upload err', upErr); continue; }
-      await supabase.from('proposal_documents').insert({
+      const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
         category: job.category,
@@ -157,6 +160,9 @@ async function uploadProposalDocuments(
         mime_type: file.type,
         storage_path: path,
       });
+      if (insErr) {
+        console.error('proposal_documents insert err', insErr);
+      }
     }
   }
 }
@@ -1114,6 +1120,18 @@ export default function PropostaPublica() {
     ];
 
     try {
+      // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
+      //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
+      //    e permite que a query do card os recupere via proposal_link_id.
+      if (proposalLink?.id) {
+        try {
+          await uploadProposalDocuments(null, proposalLink.id, data);
+        } catch (uploadErr: any) {
+          console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
+          toast.warning('Alguns arquivos podem não ter sido enviados', { description: uploadErr.message });
+        }
+      }
+
       // 1) Finaliza a proposta via RPC SECURITY DEFINER.
       //    O frontend público NÃO faz mais INSERT/UPDATE direto em `cards`.
       //    A função garante anti-duplicidade (1 card por proposal_link_id),
@@ -1144,13 +1162,17 @@ export default function PropostaPublica() {
       if (rpcErr) throw rpcErr;
       const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
-      // 3) Upload de documentos (proponente + cônjuge + empresa + fiadores)
-      if (targetCardId) {
+      // 3) Backfill: vincular ao card recém-criado todos os documentos
+      //    que foram enviados via proposal_link_id e ainda estão sem card_id.
+      if (targetCardId && proposalLink?.id) {
         try {
-          await uploadProposalDocuments(targetCardId, proposalLink?.id || null, data);
-        } catch (uploadErr: any) {
-          console.error('Erro ao enviar documentos:', uploadErr);
-          toast.warning('Proposta enviada, mas alguns arquivos falharam', { description: uploadErr.message });
+          await supabase
+            .from('proposal_documents')
+            .update({ card_id: targetCardId })
+            .eq('proposal_link_id', proposalLink.id)
+            .is('card_id', null);
+        } catch (linkErr) {
+          console.error('Erro ao vincular documentos ao card:', linkErr);
         }
       }
 

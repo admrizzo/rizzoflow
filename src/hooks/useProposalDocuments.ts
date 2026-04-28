@@ -28,14 +28,38 @@ export function useProposalDocuments(cardId: string | null | undefined) {
     queryKey: ['proposal-documents', cardId],
     queryFn: async (): Promise<ProposalDocument[]> => {
       if (!cardId) return [];
+      // Resolve o proposal_link_id do card para conseguir buscar também
+      // documentos que foram enviados ANTES da existência do card_id
+      // (uploads progressivos do link público).
+      const { data: cardRow } = await supabase
+        .from('cards')
+        .select('id, proposal_link_id')
+        .eq('id', cardId)
+        .maybeSingle();
+      const proposalLinkId = cardRow?.proposal_link_id || null;
+
+      const filter = proposalLinkId
+        ? `card_id.eq.${cardId},proposal_link_id.eq.${proposalLinkId}`
+        : `card_id.eq.${cardId}`;
+
       const { data, error } = await supabase
         .from('proposal_documents')
         .select('*')
-        .eq('card_id', cardId)
+        .or(filter)
         .order('owner_type', { ascending: true })
         .order('uploaded_at', { ascending: true });
       if (error) throw error;
-      return (data || []) as ProposalDocument[];
+
+      // Dedup por storage_path (caso um mesmo doc seja registrado 2x)
+      const seen = new Set<string>();
+      const result: ProposalDocument[] = [];
+      for (const d of (data || []) as ProposalDocument[]) {
+        const key = d.storage_path || d.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push(d);
+      }
+      return result;
     },
     enabled: !!cardId,
     staleTime: 30_000,

@@ -433,7 +433,7 @@ export default function MinhaFila() {
                               Doc. recebidos
                             </span>
                           )}
-                          {it.is_waiting_client && (
+                          {it.is_waiting_client && !it.proposal_submitted_at && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-medium px-2 py-0.5">
                               <Hourglass className="h-3 w-3" />
                               Aguardando cliente

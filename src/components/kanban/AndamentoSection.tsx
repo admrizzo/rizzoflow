@@ -14,10 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowRight, User, Calendar as CalendarIcon, AlertTriangle } from 'lucide-react';
+import { ArrowRight, User, Calendar as CalendarIcon, Clock, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isToday } from 'date-fns';
-import { formatDateOnly, isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
+import { isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 
 interface AndamentoSectionProps {
   card: CardWithRelations;
@@ -36,10 +36,25 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
 
   const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
   const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
+  const [localDueTime, setLocalDueTime] = useState<string>(() => {
+    const d = parseDatabaseDate(card.next_action_due_date);
+    if (!d) return '';
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return hh === '00' && mm === '00' ? '' : `${hh}:${mm}`;
+  });
 
   useEffect(() => {
     setLocalNextAction(card.next_action || '');
-    setLocalDueDate(parseDatabaseDate(card.next_action_due_date));
+    const d = parseDatabaseDate(card.next_action_due_date);
+    setLocalDueDate(d);
+    if (d) {
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      setLocalDueTime(hh === '00' && mm === '00' ? '' : `${hh}:${mm}`);
+    } else {
+      setLocalDueTime('');
+    }
   }, [card.id, card.next_action, card.next_action_due_date]);
 
   const responsibleProfile =
@@ -63,15 +78,49 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
     updateCard.mutate({ id: card.id, responsible_user_id: userId });
   };
 
-  const handleDueDateChange = (date: Date | undefined) => {
-    // Store as YYYY-MM-DD (DATE column)
-    const iso = date ? formatDateOnly(date) : null;
-    const previous = localDueDate;
-    setLocalDueDate(date ?? null);
+  const persistDueDateTime = (date: Date | null, time: string) => {
+    let iso: string | null = null;
+    if (date) {
+      const [hh, mm] = (time && /^\d{2}:\d{2}$/.test(time))
+        ? time.split(':').map(Number)
+        : [0, 0];
+      const composed = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        hh,
+        mm,
+        0,
+        0,
+      );
+      iso = composed.toISOString();
+    }
+    const previousDate = localDueDate;
+    const previousTime = localDueTime;
     updateCard.mutate(
       { id: card.id, next_action_due_date: iso },
-      { onError: () => setLocalDueDate(previous) },
+      {
+        onError: () => {
+          setLocalDueDate(previousDate);
+          setLocalDueTime(previousTime);
+        },
+      },
     );
+  };
+
+  const handleDueDateChange = (date: Date | undefined) => {
+    const next = date ?? null;
+    setLocalDueDate(next);
+    persistDueDateTime(next, localDueTime);
+  };
+
+  const handleDueTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalDueTime(e.target.value);
+  };
+
+  const handleDueTimeBlur = () => {
+    if (!localDueDate) return;
+    persistDueDateTime(localDueDate, localDueTime);
   };
 
   const initials = (name?: string | null) =>
@@ -173,12 +222,28 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
             <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
             Prazo
           </Label>
-          <DatePickerInput
-            value={dueDate || undefined}
-            onChange={handleDueDateChange}
-            disabled={!canEdit || updateCard.isPending}
-            placeholder="dd/mm/aaaa"
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <DatePickerInput
+                value={dueDate || undefined}
+                onChange={handleDueDateChange}
+                disabled={!canEdit || updateCard.isPending}
+                placeholder="dd/mm/aaaa"
+              />
+            </div>
+            <div className="relative w-[110px]">
+              <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                type="time"
+                value={localDueTime}
+                onChange={handleDueTimeChange}
+                onBlur={handleDueTimeBlur}
+                disabled={!canEdit || !localDueDate || updateCard.isPending}
+                className="h-9 pl-7 text-sm"
+                placeholder="--:--"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

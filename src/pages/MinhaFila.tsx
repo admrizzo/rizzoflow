@@ -474,11 +474,15 @@ export default function MinhaFila() {
                               )}
                             >
                               <CalendarClock className="h-3.5 w-3.5" />
-                              {format(new Date(it.next_action_due_date + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })}
+                              {(() => {
+                                const d = new Date(it.next_action_due_date);
+                                const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
+                                return format(d, hasTime ? "dd/MM/yyyy 'às' HH:mm" : "dd/MM/yyyy", { locale: ptBR });
+                              })()}
                               {(it.is_overdue || it.is_due_today) && (
                                 <span className="text-[10px] uppercase tracking-wide">
                                   {it.is_overdue
-                                    ? `(${formatDistanceToNowStrict(new Date(it.next_action_due_date + 'T00:00:00'), { locale: ptBR })} atrás)`
+                                    ? `(${formatDistanceToNowStrict(new Date(it.next_action_due_date), { locale: ptBR })} atrás)`
                                     : '(hoje)'}
                                 </span>
                               )}

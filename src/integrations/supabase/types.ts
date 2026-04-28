@@ -1534,6 +1534,7 @@ export type Database = {
           original_file_name: string | null
           owner_label: string | null
           owner_type: string
+          party_id: string | null
           proposal_link_id: string | null
           storage_path: string
           uploaded_at: string
@@ -1552,6 +1553,7 @@ export type Database = {
           original_file_name?: string | null
           owner_label?: string | null
           owner_type?: string
+          party_id?: string | null
           proposal_link_id?: string | null
           storage_path: string
           uploaded_at?: string
@@ -1570,6 +1572,7 @@ export type Database = {
           original_file_name?: string | null
           owner_label?: string | null
           owner_type?: string
+          party_id?: string | null
           proposal_link_id?: string | null
           storage_path?: string
           uploaded_at?: string
@@ -1581,6 +1584,13 @@ export type Database = {
             columns: ["card_id"]
             isOneToOne: false
             referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_documents_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_parties"
             referencedColumns: ["id"]
           },
           {
@@ -1707,6 +1717,87 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      proposal_parties: {
+        Row: {
+          address: string | null
+          card_id: string | null
+          cnpj: string | null
+          cpf: string | null
+          created_at: string
+          email: string | null
+          id: string
+          income: number | null
+          marital_status: string | null
+          metadata: Json
+          name: string | null
+          person_type: string
+          phone: string | null
+          position: number
+          profession: string | null
+          proposal_link_id: string
+          rg: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          card_id?: string | null
+          cnpj?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          income?: number | null
+          marital_status?: string | null
+          metadata?: Json
+          name?: string | null
+          person_type?: string
+          phone?: string | null
+          position?: number
+          profession?: string | null
+          proposal_link_id: string
+          rg?: string | null
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          card_id?: string | null
+          cnpj?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          income?: number | null
+          marital_status?: string | null
+          metadata?: Json
+          name?: string | null
+          person_type?: string
+          phone?: string | null
+          position?: number
+          profession?: string | null
+          proposal_link_id?: string
+          rg?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_parties_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_parties_proposal_link_id_fkey"
+            columns: ["proposal_link_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proposal_responsibles: {
         Row: {

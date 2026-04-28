@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
@@ -45,6 +45,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const hasChecklists = totalItems > 0;
     const isArchived = card.is_archived;
     const docsReceived = !!card.proposal_submitted_at;
+    // Proposta gerada mas ainda não enviada pelo cliente → "Em preenchimento"
+    const proposalInProgress = !!card.proposal_link_id && !card.proposal_submitted_at;
     
     // Check if document deadline is overdue
     const hasDeadline = card.document_deadline;
@@ -240,6 +242,19 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             >
               <Inbox className="h-3 w-3" />
               Doc. recebidos
+            </span>
+          </div>
+        )}
+
+        {/* Proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
+        {proposalInProgress && !isArchived && (
+          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"
+              title="Cliente ainda preenchendo a proposta pública"
+            >
+              <FileEdit className="h-3 w-3" />
+              Em preenchimento
             </span>
           </div>
         )}

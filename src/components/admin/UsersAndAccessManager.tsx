@@ -56,6 +56,10 @@ import {
   AlertTriangle,
   UserPlus,
   Loader2,
+  Send,
+  Link2,
+  Copy,
+  AlertTriangle as AlertTriangleIcon,
 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
@@ -187,6 +191,95 @@ export function UsersAndAccessManager() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<DisplayRole>('corretor');
   const [inviting, setInviting] = useState(false);
+
+  // Reenvio de convite / geração de link de primeiro acesso
+  const [resendingUserId, setResendingUserId] = useState<string | null>(null);
+  const [generatingLinkUserId, setGeneratingLinkUserId] = useState<string | null>(null);
+  const [accessLinkDialog, setAccessLinkDialog] = useState<{
+    open: boolean;
+    name: string;
+    email: string;
+    link: string;
+  }>({ open: false, name: '', email: '', link: '' });
+
+  const handleResendInvite = async (u: InternalUser) => {
+    if (!u.email) {
+      toast({ title: 'Usuário sem e-mail', variant: 'destructive' });
+      return;
+    }
+    setResendingUserId(u.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          fullName: u.full_name,
+          email: u.email,
+          role: (toDisplayRole(u.role) ?? 'corretor') as DisplayRole,
+          redirectTo: buildPublicUrl('/redefinir-senha?invite=1'),
+        },
+      });
+      if (error || data?.error) {
+        throw new Error(await getInviteErrorMessage(error, data));
+      }
+      toast({
+        title: 'Convite reenviado',
+        description: `${u.full_name} receberá um novo e-mail para definir a senha.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao reenviar convite',
+        description: err.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResendingUserId(null);
+    }
+  };
+
+  const handleGenerateAccessLink = async (u: InternalUser) => {
+    if (!u.email) {
+      toast({ title: 'Usuário sem e-mail', variant: 'destructive' });
+      return;
+    }
+    setGeneratingLinkUserId(u.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-access-link', {
+        body: {
+          email: u.email,
+          type: 'recovery',
+          redirectTo: buildPublicUrl('/redefinir-senha'),
+        },
+      });
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'Falha ao gerar link.');
+      }
+      if (!data?.action_link) {
+        throw new Error('Link não retornado pelo servidor.');
+      }
+      setAccessLinkDialog({
+        open: true,
+        name: u.full_name,
+        email: u.email,
+        link: data.action_link as string,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar link',
+        description: err.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingLinkUserId(null);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(accessLinkDialog.link);
+      toast({ title: 'Link copiado!', description: 'Cole no WhatsApp ou e-mail do usuário.' });
+    } catch {
+      toast({ title: 'Não foi possível copiar', variant: 'destructive' });
+    }
+  };
 
   const handleInviteUser = async () => {
     const name = inviteName.trim();

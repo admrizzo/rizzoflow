@@ -2208,7 +2208,10 @@ export default function PropostaPublica() {
                   className="w-full rounded-xl"
                   onClick={() => update(p => ({
                     ...p,
-                    locatarios_adicionais: [...(p.locatarios_adicionais || []), { ...emptyLocatarioAdicional }],
+                    locatarios_adicionais: [
+                      ...(p.locatarios_adicionais || []),
+                      { ...emptyLocatarioAdicional, documentos: buildLocatarioAdicionalDocs() },
+                    ],
                   }))}
                 >
                   <Plus className="h-4 w-4 mr-1" /> Adicionar outro locatário

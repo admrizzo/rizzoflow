@@ -199,7 +199,7 @@ function Section({
   );
 }
 
-export function ProposalPartiesView({ parties, compact = false, className }: Props) {
+export function ProposalPartiesView({ parties, compact = false, className, docsByPartyId }: Props) {
   if (!parties || parties.length === 0) return null;
 
   // Agrupa cônjuges por related_party_id (com fallback de metadata.spouse_of)
@@ -270,6 +270,8 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
               icon={tenantIcon(t.role)}
               spouses={spousesOf(t.id, tenantSpouses)}
               compact={compact}
+              docs={docsByPartyId?.[t.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </Section>
@@ -284,6 +286,8 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
               icon={<Shield className="h-4 w-4" />}
               spouses={spousesOf(g.id, guarantorSpouses)}
               compact={compact}
+              docs={docsByPartyId?.[g.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </Section>
@@ -292,7 +296,14 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
       {company.length > 0 && (
         <Section title="Empresa" icon={<Building2 className="h-4 w-4" />}>
           {company.map((c) => (
-            <PartyCard key={c.id} party={c} icon={<Building2 className="h-4 w-4" />} compact={compact} />
+            <PartyCard
+              key={c.id}
+              party={c}
+              icon={<Building2 className="h-4 w-4" />}
+              compact={compact}
+              docs={docsByPartyId?.[c.id]}
+              docsByPartyId={docsByPartyId}
+            />
           ))}
         </Section>
       )}
@@ -300,7 +311,14 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
       {reps.length > 0 && (
         <Section title="Representantes Legais" icon={<UserCheck className="h-4 w-4" />}>
           {reps.map((r) => (
-            <PartyCard key={r.id} party={r} icon={<UserCheck className="h-4 w-4" />} compact={compact} />
+            <PartyCard
+              key={r.id}
+              party={r}
+              icon={<UserCheck className="h-4 w-4" />}
+              compact={compact}
+              docs={docsByPartyId?.[r.id]}
+              docsByPartyId={docsByPartyId}
+            />
           ))}
         </Section>
       )}

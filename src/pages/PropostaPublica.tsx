@@ -1474,13 +1474,26 @@ export default function PropostaPublica() {
     ];
 
     try {
-      // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
-      //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
-      //    e permite que a query do card os recupere via proposal_link_id.
+      // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento
+      //     já nasça vinculado ao party_id correto (locatário, cônjuge, fiador, etc).
+      //     Se falhar, seguimos com mapa vazio — fallback owner_type/owner_label cobre.
+      let partyMap = new Map<string, string>();
+      if (proposalLink?.id) {
+        try {
+          partyMap = await persistProposalParties(proposalLink.id, null, data);
+        } catch (partiesErr) {
+          console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
+          partyMap = new Map();
+        }
+      }
+
+      // 0b) Upload de documentos vinculando-os ao proposal_link_id e party_id.
+      //     Isso garante que os arquivos não se percam mesmo que o RPC falhe,
+      //     e permite que a query do card os recupere via proposal_link_id.
       let uploadStats = { attempted: 0, succeeded: 0, failed: 0, firstError: null as string | null };
       if (proposalLink?.id) {
         try {
-          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data);
+          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data, partyMap);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
           toast.error('Falha ao enviar documentos', { description: uploadErr.message });
@@ -1533,15 +1546,16 @@ export default function PropostaPublica() {
       if (rpcErr) throw rpcErr;
       const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
-      // 2.5) Persistir partes estruturadas em proposal_parties.
-      //      Idempotente: deletamos as anteriores deste proposal_link antes de inserir,
-      //      para que reenvio/edição não duplique.
-      if (proposalLink?.id) {
+      // 2.5) Backfill: vincular card_id às partes recém-criadas
+      if (targetCardId && proposalLink?.id) {
         try {
-          await persistProposalParties(proposalLink.id, targetCardId, data);
-        } catch (partiesErr) {
-          console.error('Erro ao salvar partes da proposta:', partiesErr);
-          // Não bloqueia a finalização — fallback para campos legados continua válido.
+          await supabase
+            .from('proposal_parties' as any)
+            .update({ card_id: targetCardId })
+            .eq('proposal_link_id', proposalLink.id)
+            .is('card_id', null);
+        } catch (linkErr) {
+          console.error('Erro ao vincular partes ao card:', linkErr);
         }
       }
 

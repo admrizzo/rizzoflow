@@ -341,13 +341,13 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
 
   const parties: ProposalParty[] = [];
   let pos = 0;
-  const newId = () => `tmp-${pos}-${Math.random().toString(36).slice(2, 8)}`;
+  const newId = (role: string, idx = 0) => `tmp-${role}#${idx}`;
 
   const isPj = data?.imovel?.tipo_pessoa === 'juridica';
 
   if (isPj) {
     const e = data.empresa || {};
-    const companyId = newId();
+    const companyId = newId('company', 0);
     parties.push({
       id: companyId,
       proposal_link_id: null,
@@ -371,9 +371,9 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       position: pos++,
       metadata: {},
     });
-    (data.representantes || []).forEach((r: any) => {
+    (data.representantes || []).forEach((r: any, rIdx: number) => {
       parties.push({
-        id: newId(),
+        id: newId('legal_representative', rIdx),
         proposal_link_id: null,
         card_id: null,
         related_party_id: null,
@@ -403,7 +403,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
   } else {
     const dp = data?.dados_pessoais || {};
     const pf = data?.perfil_financeiro || {};
-    const primaryId = newId();
+    const primaryId = newId('primary_tenant', 0);
     parties.push({
       id: primaryId,
       proposal_link_id: null,
@@ -427,7 +427,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     const cj = data?.conjuge;
     if (cj && (cj.nome || cj.cpf || cj.email)) {
       parties.push({
-        id: newId(),
+        id: newId('tenant_spouse', 0),
         proposal_link_id: null,
         card_id: null,
         related_party_id: primaryId,
@@ -447,8 +447,8 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
         metadata: {},
       });
     }
-    (data?.locatarios_adicionais || []).forEach((loc: any) => {
-      const addId = newId();
+    (data?.locatarios_adicionais || []).forEach((loc: any, lIdx: number) => {
+      const addId = newId('additional_tenant', lIdx);
       parties.push({
         id: addId,
         proposal_link_id: null,
@@ -472,7 +472,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       const lc = loc.conjuge;
       if (lc && (lc.nome || lc.cpf || lc.email)) {
         parties.push({
-          id: newId(),
+          id: newId('tenant_spouse_of_additional', lIdx),
           proposal_link_id: null,
           card_id: null,
           related_party_id: addId,
@@ -495,8 +495,8 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     });
   }
 
-  (data?.garantia?.fiadores || []).forEach((f: any) => {
-    const gId = newId();
+  (data?.garantia?.fiadores || []).forEach((f: any, gIdx: number) => {
+    const gId = newId('guarantor', gIdx);
     parties.push({
       id: gId,
       proposal_link_id: null,
@@ -523,7 +523,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     const fc = f.conjuge;
     if (fc && (fc.nome || fc.cpf || fc.email)) {
       parties.push({
-        id: newId(),
+        id: newId('guarantor_spouse', gIdx),
         proposal_link_id: null,
         card_id: null,
         related_party_id: gId,

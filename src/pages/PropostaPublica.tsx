@@ -139,13 +139,16 @@ async function uploadProposalDocuments(
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores
-      const path = `${cardId}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
+      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores.
+      // Usa o proposal_link_id como prefixo (estável mesmo antes do card existir);
+      // fallback para cardId quando link não estiver disponível.
+      const pathPrefix = proposalLinkId || cardId || 'orfaos';
+      const path = `${pathPrefix}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
       if (upErr) { console.error('upload err', upErr); continue; }
-      await supabase.from('proposal_documents').insert({
+      const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
         category: job.category,
@@ -157,6 +160,9 @@ async function uploadProposalDocuments(
         mime_type: file.type,
         storage_path: path,
       });
+      if (insErr) {
+        console.error('proposal_documents insert err', insErr);
+      }
     }
   }
 }

@@ -329,6 +329,7 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       setShowCloneDialog(false);
       setSelectedForClone(new Set());
       setCloneTargetBoardId('');
+      setCloneMode(false);
     } catch (error: any) {
       toast({
         title: 'Erro ao clonar checklists',

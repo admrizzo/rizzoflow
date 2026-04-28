@@ -126,7 +126,7 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
 
   const existingFinalNames = docs.map((d) => d.file_name);
 
-  if (docs.length === 0) {
+  if (docs.length === 0 && parties.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
         Nenhum documento anexado.

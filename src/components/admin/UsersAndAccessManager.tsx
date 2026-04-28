@@ -552,6 +552,69 @@ export function UsersAndAccessManager() {
         confirmText="EXCLUIR"
       />
 
+      {/* Diálogo do link de primeiro acesso / recuperação */}
+      <Dialog
+        open={accessLinkDialog.open}
+        onOpenChange={(open) =>
+          setAccessLinkDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Link de primeiro acesso</DialogTitle>
+            <DialogDescription>
+              Para <strong>{accessLinkDialog.name}</strong> ({accessLinkDialog.email})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <AlertTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <p>
+                Este link é sensível e deve ser enviado apenas ao usuário correto.
+                Ele permite definir uma nova senha de acesso ao Rizzo Flow.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Link gerado</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={accessLinkDialog.link}
+                  className="font-mono text-xs"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1" />
+                  Copiar
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Envie por WhatsApp ou e-mail. O link expira automaticamente após o
+                tempo definido pelo sistema (geralmente 1 hora).
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setAccessLinkDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <input
         ref={fileInputRef}
         type="file"

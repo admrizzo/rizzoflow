@@ -56,6 +56,10 @@ import {
   AlertTriangle,
   UserPlus,
   Loader2,
+  Send,
+  Link2,
+  Copy,
+  AlertTriangle as AlertTriangleIcon,
 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
@@ -187,6 +191,95 @@ export function UsersAndAccessManager() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<DisplayRole>('corretor');
   const [inviting, setInviting] = useState(false);
+
+  // Reenvio de convite / geração de link de primeiro acesso
+  const [resendingUserId, setResendingUserId] = useState<string | null>(null);
+  const [generatingLinkUserId, setGeneratingLinkUserId] = useState<string | null>(null);
+  const [accessLinkDialog, setAccessLinkDialog] = useState<{
+    open: boolean;
+    name: string;
+    email: string;
+    link: string;
+  }>({ open: false, name: '', email: '', link: '' });
+
+  const handleResendInvite = async (u: InternalUser) => {
+    if (!u.email) {
+      toast({ title: 'Usuário sem e-mail', variant: 'destructive' });
+      return;
+    }
+    setResendingUserId(u.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: {
+          fullName: u.full_name,
+          email: u.email,
+          role: (toDisplayRole(u.role) ?? 'corretor') as DisplayRole,
+          redirectTo: buildPublicUrl('/redefinir-senha?invite=1'),
+        },
+      });
+      if (error || data?.error) {
+        throw new Error(await getInviteErrorMessage(error, data));
+      }
+      toast({
+        title: 'Convite reenviado',
+        description: `${u.full_name} receberá um novo e-mail para definir a senha.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao reenviar convite',
+        description: err.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResendingUserId(null);
+    }
+  };
+
+  const handleGenerateAccessLink = async (u: InternalUser) => {
+    if (!u.email) {
+      toast({ title: 'Usuário sem e-mail', variant: 'destructive' });
+      return;
+    }
+    setGeneratingLinkUserId(u.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-access-link', {
+        body: {
+          email: u.email,
+          type: 'recovery',
+          redirectTo: buildPublicUrl('/redefinir-senha'),
+        },
+      });
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'Falha ao gerar link.');
+      }
+      if (!data?.action_link) {
+        throw new Error('Link não retornado pelo servidor.');
+      }
+      setAccessLinkDialog({
+        open: true,
+        name: u.full_name,
+        email: u.email,
+        link: data.action_link as string,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar link',
+        description: err.message ?? 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setGeneratingLinkUserId(null);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(accessLinkDialog.link);
+      toast({ title: 'Link copiado!', description: 'Cole no WhatsApp ou e-mail do usuário.' });
+    } catch {
+      toast({ title: 'Não foi possível copiar', variant: 'destructive' });
+    }
+  };
 
   const handleInviteUser = async () => {
     const name = inviteName.trim();
@@ -440,6 +533,10 @@ export function UsersAndAccessManager() {
                   setDeleteDialogOpen(true);
                 }}
                 isSaving={setUserRole.isPending || removeUserRole.isPending}
+                onResendInvite={() => handleResendInvite(u)}
+                onGenerateAccessLink={() => handleGenerateAccessLink(u)}
+                isResendingInvite={resendingUserId === u.user_id}
+                isGeneratingLink={generatingLinkUserId === u.user_id}
               />
             ))
           )}
@@ -454,6 +551,69 @@ export function UsersAndAccessManager() {
         description={`Tem certeza que deseja excluir ${userToDelete?.name}? Esta ação é permanente e removerá o perfil do usuário do sistema.`}
         confirmText="EXCLUIR"
       />
+
+      {/* Diálogo do link de primeiro acesso / recuperação */}
+      <Dialog
+        open={accessLinkDialog.open}
+        onOpenChange={(open) =>
+          setAccessLinkDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Link de primeiro acesso</DialogTitle>
+            <DialogDescription>
+              Para <strong>{accessLinkDialog.name}</strong> ({accessLinkDialog.email})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <AlertTriangleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <p>
+                Este link é sensível e deve ser enviado apenas ao usuário correto.
+                Ele permite definir uma nova senha de acesso ao Rizzo Flow.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Link gerado</Label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={accessLinkDialog.link}
+                  className="font-mono text-xs"
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyLink}
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1" />
+                  Copiar
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Envie por WhatsApp ou e-mail. O link expira automaticamente após o
+                tempo definido pelo sistema (geralmente 1 hora).
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setAccessLinkDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <input
         ref={fileInputRef}
@@ -576,6 +736,10 @@ interface UserCardProps {
   onInactivate: () => void;
   onRequestDelete: () => void;
   isSaving: boolean;
+  onResendInvite: () => void;
+  onGenerateAccessLink: () => void;
+  isResendingInvite: boolean;
+  isGeneratingLink: boolean;
 }
 
 function UserCard({
@@ -596,6 +760,10 @@ function UserCard({
   onInactivate,
   onRequestDelete,
   isSaving,
+  onResendInvite,
+  onGenerateAccessLink,
+  isResendingInvite,
+  isGeneratingLink,
 }: UserCardProps) {
   const displayRole = toDisplayRole(user.role);
   const meta = displayRole ? ROLE_META[displayRole] : null;
@@ -781,7 +949,41 @@ function UserCard({
 
             {/* Ações */}
             {!isCurrentUser && isAdminViewer && (
-              <div className="py-3 flex items-center gap-2">
+              <div className="py-3 flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResendInvite();
+                  }}
+                  disabled={isResendingInvite}
+                >
+                  {isResendingInvite ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Reenviar convite
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerateAccessLink();
+                  }}
+                  disabled={isGeneratingLink}
+                >
+                  {isGeneratingLink ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  ) : (
+                    <Link2 className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Gerar link de acesso
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

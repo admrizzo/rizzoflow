@@ -113,6 +113,9 @@ export function useUserBoards(boardId?: string) {
       queryClient.invalidateQueries({ queryKey: ['user-boards', variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
       queryClient.invalidateQueries({ queryKey: ['admin-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       toast({ title: 'Acesso concedido!' });
     },
     onError: (error) => {
@@ -138,6 +141,9 @@ export function useUserBoards(boardId?: string) {
       queryClient.invalidateQueries({ queryKey: ['user-boards', variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
       queryClient.invalidateQueries({ queryKey: ['admin-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       toast({ title: 'Acesso removido!' });
     },
     onError: (error) => {
@@ -163,6 +169,8 @@ export function useUserBoards(boardId?: string) {
       queryClient.invalidateQueries({ queryKey: ['user-boards', variables.boardId] });
       queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
       queryClient.invalidateQueries({ queryKey: ['admin-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
       toast({ title: isBoardAdmin ? 'Promovido a administrador do fluxo!' : 'Removido de administrador do fluxo!' });
     },
     onError: (error) => {

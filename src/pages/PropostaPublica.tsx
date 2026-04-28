@@ -1618,43 +1618,42 @@ export default function PropostaPublica() {
     try {
       // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento
       //     já nasça vinculado ao party_id correto (locatário, cônjuge, fiador, etc).
-      //     Se falhar, seguimos com mapa vazio — fallback owner_type/owner_label cobre.
+      //     Se falhar, a proposta não pode ser finalizada: documentos de cônjuge
+      //     dependem do party_id do próprio cônjuge para aparecer no card correto.
       let partyMap = new Map<string, string>();
       if (proposalLink?.id) {
         try {
           partyMap = await persistProposalParties(proposalLink.id, null, data);
         } catch (partiesErr) {
           console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
-          partyMap = new Map();
+          toast.error('Não foi possível preparar os envolvidos da proposta', {
+            description: 'Revise os dados preenchidos e tente novamente.',
+          });
+          setIsSubmitting(false);
+          return;
         }
       }
 
       // 0b) Upload de documentos vinculando-os ao proposal_link_id e party_id.
       //     Isso garante que os arquivos não se percam mesmo que o RPC falhe,
       //     e permite que a query do card os recupere via proposal_link_id.
-      let uploadStats = { attempted: 0, succeeded: 0, failed: 0, firstError: null as string | null };
+      let uploadStats = { attempted: 0, succeeded: 0 };
       if (proposalLink?.id) {
         try {
           uploadStats = await uploadProposalDocuments(null, proposalLink.id, data, partyMap);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
-          toast.error('Falha ao enviar documentos', { description: uploadErr.message });
-          setIsSubmitting(false);
-          return;
-        }
-        // Se o usuário tentou anexar arquivos mas NENHUM foi salvo,
-        // não finalize a proposta — o card sairia com "Doc. recebidos" sem documentos.
-        if (uploadStats.attempted > 0 && uploadStats.succeeded === 0) {
-          toast.error('Não foi possível enviar os documentos', {
-            description: uploadStats.firstError || 'Verifique sua conexão e tente novamente.',
+          toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.', {
+            description: uploadErr?.message || 'Nenhum dado da proposta foi finalizado.',
           });
           setIsSubmitting(false);
           return;
         }
-        if (uploadStats.failed > 0) {
-          toast.warning(`${uploadStats.failed} de ${uploadStats.attempted} arquivos falharam`, {
-            description: uploadStats.firstError || undefined,
-          });
+        if (uploadStats.attempted !== uploadStats.succeeded) {
+          console.error('Contagem inconsistente no envio de documentos:', uploadStats);
+          toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.');
+          setIsSubmitting(false);
+          return;
         }
       }
 

@@ -242,7 +242,7 @@ async function persistProposalParties(
   proposalLinkId: string,
   cardId: string | null,
   data: ProposalFormData,
-): Promise<void> {
+): Promise<Map<string, string>> {
   const parseNum = (s: string | undefined | null): number | null => {
     if (!s) return null;
     const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
@@ -269,14 +269,21 @@ async function persistProposalParties(
     metadata: Record<string, any>;
   };
 
+  // Acumula linhas com sua "chave canônica" para conseguirmos remontar party_id por papel/índice
+  // após a inserção (Supabase retorna na mesma ordem com `.select()`).
   const rows: PartyRow[] = [];
+  const rowKeys: string[] = [];
+  const pushRow = (key: string, row: PartyRow) => {
+    rowKeys.push(key);
+    rows.push(row);
+  };
   let pos = 0;
   const isPj = data.imovel.tipo_pessoa === 'juridica';
 
   if (isPj) {
     // Empresa
     const e = data.empresa;
-    rows.push({
+    pushRow(partyKey('company'), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'company',
@@ -302,8 +309,8 @@ async function persistProposalParties(
       },
     });
     // Representantes legais
-    (data.representantes || []).forEach((r) => {
-      rows.push({
+    (data.representantes || []).forEach((r, idx) => {
+      pushRow(partyKey('legal_representative', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'legal_representative',
@@ -331,7 +338,7 @@ async function persistProposalParties(
     // Locatário principal (PF)
     const dp = data.dados_pessoais;
     const pf = data.perfil_financeiro;
-    rows.push({
+    pushRow(partyKey('primary_tenant'), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'primary_tenant',
@@ -357,7 +364,7 @@ async function persistProposalParties(
     const cj = data.conjuge;
     const hasSpouse = !!(cj && (cj.nome || cj.cpf || cj.email));
     if (hasSpouse) {
-      rows.push({
+      pushRow(partyKey('tenant_spouse', 0), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'tenant_spouse',
@@ -378,7 +385,7 @@ async function persistProposalParties(
     }
     // Locatários adicionais
     (data.locatarios_adicionais || []).forEach((loc, idx) => {
-      rows.push({
+      pushRow(partyKey('additional_tenant', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'additional_tenant',
@@ -403,7 +410,8 @@ async function persistProposalParties(
       const lc = loc.conjuge;
       const hasLocSpouse = !!(lc && (lc.nome || lc.cpf || lc.email));
       if (hasLocSpouse) {
-        rows.push({
+        // Chave dedicada por índice do locatário adicional para casar com job.spousePartyKey
+        pushRow(partyKey('tenant_spouse_of_additional', idx), {
           proposal_link_id: proposalLinkId,
           card_id: cardId,
           role: 'tenant_spouse',
@@ -427,7 +435,7 @@ async function persistProposalParties(
 
   // Fiadores + cônjuges (independente de PF/PJ)
   (data.garantia?.fiadores || []).forEach((f, idx) => {
-    rows.push({
+    pushRow(partyKey('guarantor', idx), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
       role: 'guarantor',
@@ -455,7 +463,7 @@ async function persistProposalParties(
     const fc = f.conjuge;
     const hasFiadorSpouse = !!(fc && (fc.nome || fc.cpf || fc.email));
     if (hasFiadorSpouse) {
-      rows.push({
+      pushRow(partyKey('guarantor_spouse', idx), {
         proposal_link_id: proposalLinkId,
         card_id: cardId,
         role: 'guarantor_spouse',
@@ -476,12 +484,24 @@ async function persistProposalParties(
     }
   });
 
-  if (rows.length === 0) return;
+  if (rows.length === 0) return new Map();
 
   // Apaga partes anteriores deste link (idempotência) e reinsere.
   await supabase.from('proposal_parties' as any).delete().eq('proposal_link_id', proposalLinkId);
-  const { error } = await supabase.from('proposal_parties' as any).insert(rows as any);
+  const { data: inserted, error } = await supabase
+    .from('proposal_parties' as any)
+    .insert(rows as any)
+    .select('id, position');
   if (error) throw error;
+
+  // Constrói o mapa partyKey → party_id, casando por position (preservada na ordem dos rows).
+  const map = new Map<string, string>();
+  const sorted = [...((inserted as any[]) || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  rows.forEach((r, i) => {
+    const inserted = sorted[i];
+    if (inserted?.id) map.set(rowKeys[i], inserted.id);
+  });
+  return map;
 }
 
 // Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.

@@ -74,6 +74,8 @@ import { CustomFieldsSection } from './CustomFieldsSection';
 import { CardPartiesSection } from './CardPartiesSection';
 import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
 import { ProposalDocumentsSection } from './ProposalDocumentsSection';
+import { ProposalPartiesView } from '@/components/proposta/ProposalPartiesView';
+import { useProposalParties } from '@/hooks/useProposalParties';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';

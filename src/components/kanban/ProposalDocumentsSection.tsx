@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   useProposalDocuments,
-  getProposalDocumentSignedUrl,
   OWNER_TYPE_ORDER,
   OWNER_TYPE_LABELS,
   type ProposalDocument,
@@ -15,6 +14,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { AddComplementaryDocDialog } from './AddComplementaryDocDialog';
+import { DocumentPreviewDialog } from './DocumentPreviewDialog';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface ProposalDocumentsSectionProps {
@@ -73,6 +73,7 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
     personName: string;
     personRole: string;
   }>(null);
+  const [previewDoc, setPreviewDoc] = useState<ProposalDocument | null>(null);
 
   async function handleOpen(
     doc: ProposalDocument,
@@ -83,49 +84,33 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
       e.preventDefault();
       e.stopPropagation();
     }
+    if (mode === 'view') {
+      // Abre modal interno — usa storage.download (autenticado) +
+      // blob: URL local. Evita ERR_BLOCKED_BY_CLIENT em adblockers
+      // que bloqueiam o domínio supabase.co.
+      setPreviewDoc(doc);
+      return;
+    }
+    // Download via storage.download → blob (não navega para supabase.co)
     setBusyId(doc.id);
     try {
-      if (mode === 'view') {
-        const url = await getProposalDocumentSignedUrl(doc.storage_path);
-        if (!url) {
-          toast.error('Não foi possível abrir o arquivo');
-          return;
-        }
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (win) win.opener = null;
-      } else {
-        // Gera URL assinada com Content-Disposition: attachment
-        const url = await getProposalDocumentSignedUrl(doc.storage_path, 600, {
-          download: doc.file_name,
-        });
-        if (!url) {
-          toast.error('Não foi possível baixar o arquivo');
-          return;
-        }
-        try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error('fetch failed');
-          const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = blobUrl;
-          link.download = doc.file_name;
-          link.rel = 'noopener noreferrer';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-        } catch {
-          // Fallback: usa link direto com download attribute (sem nova aba)
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = doc.file_name;
-          link.rel = 'noopener noreferrer';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
+      const { data, error } = await supabase.storage
+        .from('proposal-documents')
+        .download(doc.storage_path);
+      if (error || !data) {
+        console.error(error);
+        toast.error('Não foi possível baixar o arquivo');
+        return;
       }
+      const blobUrl = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = doc.file_name;
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     } finally {
       setBusyId(null);
     }
@@ -409,6 +394,13 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
           existingFinalNames={existingFinalNames}
         />
       )}
+      <DocumentPreviewDialog
+        open={!!previewDoc}
+        onOpenChange={(v) => { if (!v) setPreviewDoc(null); }}
+        storagePath={previewDoc?.storage_path ?? null}
+        fileName={previewDoc?.file_name ?? ''}
+        mimeType={previewDoc?.mime_type ?? null}
+      />
     </div>
   );
 }

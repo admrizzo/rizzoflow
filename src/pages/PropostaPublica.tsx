@@ -23,11 +23,12 @@ import {
 import type {
   ProposalFormData, DadosPessoais, MoradorData, FiadorData, UploadedFile,
   DocumentCategory, DocCategoryKey, FiadorTipo, FiadorDocumentCategory, FiadorConjugeData,
-  EmpresaData, RepresentanteLegal,
+  EmpresaData, RepresentanteLegal, LocatarioAdicional,
 } from '@/pages/PropostaLocacao';
 import {
   calcPercentualComprometimento,
   emptyEmpresa, emptyRepresentante, REGIME_TRIBUTARIO_OPTIONS, PJ_DOC_CATEGORIES,
+  emptyLocatarioAdicional,
 } from '@/pages/PropostaLocacao';
 import { useProposalDraft, calcFormProgress, PUBLIC_STEP_WEIGHTS } from '@/hooks/useProposalDraft';
 import { FiadorSection } from '@/components/proposta/FiadorSection';

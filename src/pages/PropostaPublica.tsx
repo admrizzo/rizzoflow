@@ -60,7 +60,7 @@ const DOC_CATEGORY_LABELS: Record<string, string> = {
 };
 
 async function uploadProposalDocuments(
-  cardId: string,
+  cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
 ): Promise<void> {

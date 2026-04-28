@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
     // Prioridade: redirectTo explícito do body > origin do request (preview/local) > SITE_URL (produção)
     const redirectTo =
       body.redirectTo ||
-      (requestOrigin ? `${requestOrigin}/auth?invite=1` : `${siteUrl}/auth?invite=1`)
+      (requestOrigin ? `${requestOrigin}/redefinir-senha?invite=1` : `${siteUrl}/redefinir-senha?invite=1`)
     const { data: invited, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
       {

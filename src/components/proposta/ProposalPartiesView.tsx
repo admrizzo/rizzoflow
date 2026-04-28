@@ -44,12 +44,16 @@ function PartyCard({
   spouses,
   icon,
   compact,
+  docs,
+  docsByPartyId,
 }: {
   party: ProposalParty;
   parentName?: string | null;
   spouses?: ProposalParty[];
   icon: React.ReactNode;
   compact?: boolean;
+  docs?: PartyDocSummary[];
+  docsByPartyId?: Record<string, PartyDocSummary[]>;
 }) {
   const isSpouse = party.role === 'tenant_spouse' || party.role === 'guarantor_spouse';
   const docIdent = party.cpf || party.cnpj;

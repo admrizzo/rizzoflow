@@ -102,7 +102,20 @@ async function uploadProposalDocuments(
   };
   type PreparedDocument = {
     path: string;
-    payload: Record<string, any>;
+    payload: {
+      card_id: string | null;
+      proposal_link_id: string | null;
+      party_id: string | null;
+      category: string;
+      category_label: string;
+      owner_type: string;
+      owner_label: string;
+      file_name: string;
+      original_file_name: string;
+      file_size: number;
+      mime_type: string;
+      storage_path: string;
+    };
   };
 
   const jobs: Job[] = [];

@@ -159,6 +159,9 @@ export interface Card {
   next_action: string | null;
   responsible_user_id: string | null;
   next_action_due_date: string | null;
+  // Proposta pública vinculada
+  proposal_link_id: string | null;
+  proposal_submitted_at: string | null;
 }
 
 export interface CardParty {

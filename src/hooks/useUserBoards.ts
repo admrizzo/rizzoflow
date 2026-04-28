@@ -171,7 +171,7 @@ export function useUserBoards(boardId?: string) {
       queryClient.invalidateQueries({ queryKey: ['admin-boards'] });
       queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
       queryClient.invalidateQueries({ queryKey: ['internal-users'] });
-      toast({ title: isBoardAdmin ? 'Promovido a administrador do fluxo!' : 'Removido de administrador do fluxo!' });
+      toast({ title: variables.isBoardAdmin ? 'Promovido a administrador do fluxo!' : 'Removido de administrador do fluxo!' });
     },
     onError: (error) => {
       toast({ 

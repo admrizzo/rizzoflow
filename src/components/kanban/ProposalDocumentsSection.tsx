@@ -35,7 +35,15 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
   const { data: docs = [], isLoading } = useProposalDocuments(cardId);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  async function handleOpen(doc: ProposalDocument, mode: 'view' | 'download') {
+  async function handleOpen(
+    doc: ProposalDocument,
+    mode: 'view' | 'download',
+    e?: React.MouseEvent,
+  ) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setBusyId(doc.id);
     try {
       const url = await getProposalDocumentSignedUrl(doc.storage_path);
@@ -44,11 +52,13 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
         return;
       }
       if (mode === 'view') {
-        window.open(url, '_blank', 'noopener,noreferrer');
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (win) win.opener = null;
       } else {
         const link = document.createElement('a');
         link.href = url;
         link.download = doc.file_name;
+        link.target = '_blank';
         link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
@@ -126,18 +136,20 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
                     <div className="flex items-center gap-1">
                       <Button
                         size="sm"
+                        type="button"
                         variant="ghost"
                         disabled={busyId === doc.id}
-                        onClick={() => handleOpen(doc, 'view')}
+                        onClick={(e) => handleOpen(doc, 'view', e)}
                         title="Visualizar"
                       >
                         {busyId === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
                       </Button>
                       <Button
                         size="sm"
+                        type="button"
                         variant="ghost"
                         disabled={busyId === doc.id}
-                        onClick={() => handleOpen(doc, 'download')}
+                        onClick={(e) => handleOpen(doc, 'download', e)}
                         title="Baixar"
                       >
                         <Download className="h-4 w-4" />

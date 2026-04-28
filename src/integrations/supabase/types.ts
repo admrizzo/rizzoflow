@@ -2022,6 +2022,10 @@ export type Database = {
         Args: { _card_id: string; _user_id: string }
         Returns: boolean
       }
+      finalize_public_proposal: {
+        Args: { _payload?: Json; _public_token: string }
+        Returns: Json
+      }
       get_admin_productivity_report: {
         Args: { _end_date?: string; _start_date?: string }
         Returns: {

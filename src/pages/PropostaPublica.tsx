@@ -66,6 +66,16 @@ function partyKey(role: string, indexZeroBased = 0): string {
   return `${role}#${indexZeroBased}`;
 }
 
+const SPOUSE_DOC_KEYS = new Set<string>(['documento_conjuge', 'renda_conjuge']);
+
+function isSpouseDocCategory(category: string): boolean {
+  return SPOUSE_DOC_KEYS.has(category);
+}
+
+function hasUploadedFiles(categories?: Array<{ files?: UploadedFile[] }>): boolean {
+  return Array.isArray(categories) && categories.some((cat) => (cat.files || []).length > 0);
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
@@ -113,6 +123,23 @@ async function uploadProposalDocuments(
     }
   }
 
+  for (const cat of data.conjuge?.documentos || []) {
+    if (cat.files.length > 0 && principalSpousePartyKey) {
+      jobs.push({
+        ownerType: 'tenant_spouse',
+        ownerKey: `${proponentOwnerKey}-conjuge`,
+        ownerLabel: spouseName || 'Cônjuge do locatário principal',
+        ownerPersonName: proponentLabel,
+        ownerPersonRole: 'TITULAR',
+        partyKey: principalPartyKey,
+        spousePartyKey: principalSpousePartyKey,
+        spouseName,
+        category: cat.key,
+        files: cat.files,
+      });
+    }
+  }
+
   // Locatários adicionais (PF)
   if (!isPj) {
     (data.locatarios_adicionais || []).forEach((loc, idx) => {
@@ -131,6 +158,22 @@ async function uploadProposalDocuments(
             ownerType: 'proponente',
             ownerKey,
             ownerLabel: label,
+            ownerPersonName: personName,
+            ownerPersonRole: 'LOCATARIO ADICIONAL',
+            partyKey: locPartyKey,
+            spousePartyKey: locSpousePartyKey,
+            spouseName: locSpouseName,
+            category: cat.key,
+            files: cat.files,
+          });
+        }
+      }
+      for (const cat of loc.conjuge?.documentos || []) {
+        if (cat.files.length > 0) {
+          jobs.push({
+            ownerType: 'tenant_spouse',
+            ownerKey: `${ownerKey}-conjuge`,
+            ownerLabel: locSpouseName || `Cônjuge do locatário adicional ${idx + 1}`,
             ownerPersonName: personName,
             ownerPersonRole: 'LOCATARIO ADICIONAL',
             partyKey: locPartyKey,
@@ -187,7 +230,7 @@ async function uploadProposalDocuments(
       if (!blob) continue;
       attempted++;
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
-      const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
+      const isSpouseDoc = isSpouseDocCategory(job.category);
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
       // Para cônjuges, indicamos a quem o cônjuge pertence:
       // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
@@ -205,6 +248,16 @@ async function uploadProposalDocuments(
       const resolvedPartyId = isSpouseDoc && job.spousePartyKey
         ? (partyMap.get(job.spousePartyKey) || null)
         : (partyMap.get(job.partyKey) || null);
+      const resolvedOwnerType = isSpouseDoc
+        ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
+        : job.ownerType;
+      const resolvedOwnerLabel = isSpouseDoc ? personName : job.ownerLabel;
+      if (isSpouseDoc && !resolvedPartyId) {
+        failed++;
+        if (!firstError) firstError = 'Não foi possível vincular o documento ao cônjuge correto.';
+        console.error('[uploadProposalDocuments] spouse party_id missing', { category: job.category, spousePartyKey: job.spousePartyKey });
+        continue;
+      }
       // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
       const pathPrefix = proposalLinkId || cardId || 'orfaos';
       const personSegment = resolvedPartyId || job.ownerKey;
@@ -224,8 +277,8 @@ async function uploadProposalDocuments(
         party_id: resolvedPartyId,
         category: job.category,
         category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
-        owner_type: job.ownerType,
-        owner_label: job.ownerLabel,
+        owner_type: resolvedOwnerType,
+        owner_label: resolvedOwnerLabel,
         file_name: standardized,
         original_file_name: file.name,
         file_size: file.size,
@@ -663,6 +716,23 @@ const INITIAL_DOC_CATEGORIES: DocumentCategory[] = [
 // Template de documentos por locatário adicional — mesmas categorias do principal PF
 function buildLocatarioAdicionalDocs(): DocumentCategory[] {
   return INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] }));
+}
+
+function buildConjugeDocs(): DocumentCategory[] {
+  return [
+    { key: 'documento_conjuge' as DocCategoryKey, label: 'Documento do cônjuge', help: 'CNH, ou RG + CPF do cônjuge (frente e verso). Documento dentro da validade.', files: [] },
+    { key: 'renda_conjuge' as DocCategoryKey, label: 'Comprovante de renda do cônjuge (opcional)', help: 'Holerite, declaração de IR, extrato bancário ou pró-labore do cônjuge.', files: [] },
+  ];
+}
+
+function ensureConjugeDocs(categories?: DocumentCategory[]): DocumentCategory[] {
+  if (!Array.isArray(categories) || categories.length === 0) return buildConjugeDocs();
+  const byKey = new Map(categories.map((cat) => [cat.key, cat]));
+  return buildConjugeDocs().map((cat) => ({ ...cat, files: byKey.get(cat.key)?.files || [] }));
+}
+
+function locatarioNeedsConjuge(loc: LocatarioAdicional): boolean {
+  return loc.estado_civil === 'Casado(a)' || loc.estado_civil === 'União Estável';
 }
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
@@ -1245,7 +1315,7 @@ export default function PropostaPublica() {
     imovel: { codigo: '', endereco: '', valor_aluguel: '', tipo_pessoa: 'fisica' },
     dados_pessoais: { ...emptyPerson },
     perfil_financeiro: { estado_civil: '', fonte_renda: '', renda_mensal: '', regime_bens: '', conjuge_participa: '' },
-    conjuge: { ...emptyPerson },
+    conjuge: { ...emptyPerson, documentos: buildConjugeDocs() },
     socios: [],
     documentos: INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] })),
     documentos_observacao: '',
@@ -1300,6 +1370,9 @@ export default function PropostaPublica() {
       const sanitizedEmpresa = restoredData.empresa
         ? { ...emptyEmpresa, ...restoredData.empresa }
         : undefined;
+      const sanitizedConjuge = restoredData.conjuge
+        ? { ...emptyPerson, ...restoredData.conjuge, documentos: ensureConjugeDocs((restoredData.conjuge as any)?.documentos) }
+        : undefined;
       const sanitizedRepresentantes = Array.isArray(restoredData.representantes)
         ? restoredData.representantes
         : undefined;
@@ -1308,7 +1381,11 @@ export default function PropostaPublica() {
         ? restoredData.locatarios_adicionais.map((loc: any) => ({
             ...emptyLocatarioAdicional,
             ...loc,
-            conjuge: { ...emptyLocatarioAdicional.conjuge, ...(loc?.conjuge || {}) },
+            conjuge: {
+              ...emptyLocatarioAdicional.conjuge,
+              ...(loc?.conjuge || {}),
+              documentos: ensureConjugeDocs(loc?.conjuge?.documentos),
+            },
             documentos: Array.isArray(loc?.documentos) && loc.documentos.length > 0
               ? loc.documentos
               : buildLocatarioAdicionalDocs(),
@@ -1321,6 +1398,7 @@ export default function PropostaPublica() {
         imovel: prev.imovel,
         // Keep original doc structure but restore non-file data
         documentos: prev.documentos,
+        ...(sanitizedConjuge ? { conjuge: sanitizedConjuge } : {}),
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
         ...(sanitizedRepresentantes ? { representantes: sanitizedRepresentantes } : {}),
@@ -2530,9 +2608,29 @@ export default function PropostaPublica() {
           )}
         </div>
 
+        {!isPj && needsConjuge(data) && (
+          <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cônjuge do locatário principal</p>
+                <p className="text-sm font-bold text-foreground">{data.conjuge.nome || 'Cônjuge'}</p>
+              </div>
+            </div>
+            {renderDocList(
+              ensureConjugeDocs(data.conjuge.documentos),
+              (mutator) => update(p => ({ ...p, conjuge: { ...p.conjuge, documentos: mutator(ensureConjugeDocs(p.conjuge.documentos)) } })),
+              'principal-conjuge',
+            )}
+          </div>
+        )}
+
         {/* Blocos de documentos de cada locatário adicional (somente PF) */}
         {!isPj && (data.locatarios_adicionais || []).map((loc, idx) => {
           const docs = loc.documentos && loc.documentos.length > 0 ? loc.documentos : buildLocatarioAdicionalDocs();
+          const spouseDocs = ensureConjugeDocs(loc.conjuge?.documentos);
           return (
             <div key={`loc-add-${idx}`} className="rounded-2xl border bg-muted/20 p-4 space-y-3">
               <div className="flex items-center gap-2">
@@ -2555,6 +2653,24 @@ export default function PropostaPublica() {
                   return { ...p, locatarios_adicionais: arr };
                 }),
                 `loc-${idx}`,
+              )}
+              {locatarioNeedsConjuge(loc) && (
+                <div className="mt-4 rounded-xl border bg-background p-3 space-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Cônjuge do locatário adicional {idx + 1}</p>
+                    <p className="text-sm font-bold text-foreground">{loc.conjuge.nome || 'Cônjuge'}</p>
+                  </div>
+                  {renderDocList(
+                    spouseDocs,
+                    (mutator) => update(p => {
+                      const arr = [...(p.locatarios_adicionais || [])];
+                      const currentSpouseDocs = ensureConjugeDocs(arr[idx]?.conjuge?.documentos);
+                      arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, documentos: mutator(currentSpouseDocs) } };
+                      return { ...p, locatarios_adicionais: arr };
+                    }),
+                    `loc-${idx}-conjuge`,
+                  )}
+                </div>
               )}
             </div>
           );

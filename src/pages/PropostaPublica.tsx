@@ -123,6 +123,23 @@ async function uploadProposalDocuments(
     }
   }
 
+  for (const cat of data.conjuge?.documentos || []) {
+    if (cat.files.length > 0 && principalSpousePartyKey) {
+      jobs.push({
+        ownerType: 'tenant_spouse',
+        ownerKey: `${proponentOwnerKey}-conjuge`,
+        ownerLabel: spouseName || 'Cônjuge do locatário principal',
+        ownerPersonName: proponentLabel,
+        ownerPersonRole: 'TITULAR',
+        partyKey: principalPartyKey,
+        spousePartyKey: principalSpousePartyKey,
+        spouseName,
+        category: cat.key,
+        files: cat.files,
+      });
+    }
+  }
+
   // Locatários adicionais (PF)
   if (!isPj) {
     (data.locatarios_adicionais || []).forEach((loc, idx) => {
@@ -141,6 +158,22 @@ async function uploadProposalDocuments(
             ownerType: 'proponente',
             ownerKey,
             ownerLabel: label,
+            ownerPersonName: personName,
+            ownerPersonRole: 'LOCATARIO ADICIONAL',
+            partyKey: locPartyKey,
+            spousePartyKey: locSpousePartyKey,
+            spouseName: locSpouseName,
+            category: cat.key,
+            files: cat.files,
+          });
+        }
+      }
+      for (const cat of loc.conjuge?.documentos || []) {
+        if (cat.files.length > 0) {
+          jobs.push({
+            ownerType: 'tenant_spouse',
+            ownerKey: `${ownerKey}-conjuge`,
+            ownerLabel: locSpouseName || `Cônjuge do locatário adicional ${idx + 1}`,
             ownerPersonName: personName,
             ownerPersonRole: 'LOCATARIO ADICIONAL',
             partyKey: locPartyKey,

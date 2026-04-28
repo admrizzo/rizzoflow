@@ -498,8 +498,8 @@ async function persistProposalParties(
   const map = new Map<string, string>();
   const sorted = [...((inserted as any[]) || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   rows.forEach((r, i) => {
-    const inserted = sorted[i];
-    if (inserted?.id) map.set(rowKeys[i], inserted.id);
+    const ins = sorted[i];
+    if (ins?.id) map.set(rowKeys[i], ins.id);
   });
   return map;
 }

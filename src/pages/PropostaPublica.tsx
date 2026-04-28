@@ -3514,7 +3514,9 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const pendingSteps = getPendingSteps(data);
   const hasCritical = pendingSteps.some(p => p.critical);
   const hasPending = pendingSteps.length > 0;
-  const totalDocs = data.documentos.reduce((acc, c) => acc + c.files.length, 0);
+  const totalDocs = countAllUploadedFiles(data);
+  const docsByPartyId = buildDocsByPartyFromFormData(data);
+  const pending = countPendingRequired(data);
   const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
@@ -3566,7 +3568,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
                 ✏️ Editar
               </button>
             </div>
-            <ProposalPartiesView parties={partiesPreview} />
+            <ProposalPartiesView parties={partiesPreview} docsByPartyId={docsByPartyId} />
           </div>
         )}
 
@@ -3635,8 +3637,25 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         )}
 
         {/* Documentos */}
-        <ReviewBlockNew title="Documentos" icon="📄" onFix={() => onGoToStep(3)} hasPending={totalDocs === 0}>
-          <p className="text-sm text-muted-foreground">{totalDocs} documento(s) enviado(s)</p>
+        <ReviewBlockNew
+          title="Documentos"
+          icon="📄"
+          onFix={() => onGoToStep(3)}
+          hasPending={totalDocs === 0 || (pending.required > 0 && pending.ok < pending.required)}
+        >
+          <p className="text-sm text-foreground font-medium">
+            {pending.required > 0
+              ? `${pending.ok} de ${pending.required} documentos obrigatórios enviados`
+              : `${totalDocs} documento(s) enviado(s)`}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Total de arquivos anexados: {totalDocs}
+          </p>
+          {pending.required > 0 && pending.ok < pending.required && (
+            <p className="text-xs text-amber-600 mt-2">
+              ⚠️ Há documentos obrigatórios pendentes — confira os blocos de cada pessoa acima.
+            </p>
+          )}
         </ReviewBlockNew>
 
         {/* Moradores e Contrato */}

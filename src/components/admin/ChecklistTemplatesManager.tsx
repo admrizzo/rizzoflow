@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChecklistTemplates, ChecklistItemTemplate } from '@/hooks/useChecklistTemplates';
 import { useBoards } from '@/hooks/useBoards';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
@@ -102,12 +102,12 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
 
   const otherBoards = boards.filter(b => b.id !== board.id);
 
-  // Hydrate activeIds from board_config
-  if (activeIds === null && config) {
-    const initial = new Set<string>(config.auto_apply_checklist_templates || []);
-    // setState in render is safe here because guarded by null check (one-shot init)
-    setActiveIds(initial);
-  }
+  // Hydrate activeIds from board_config (one-shot)
+  useEffect(() => {
+    if (activeIds === null && config) {
+      setActiveIds(new Set<string>(config.auto_apply_checklist_templates || []));
+    }
+  }, [config, activeIds]);
 
   const toggleExpanded = (templateId: string) => {
     const newExpanded = new Set(expandedTemplates);

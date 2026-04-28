@@ -46,15 +46,23 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
     }
     setBusyId(doc.id);
     try {
-      const url = await getProposalDocumentSignedUrl(doc.storage_path);
-      if (!url) {
-        toast.error('Não foi possível abrir o arquivo');
-        return;
-      }
       if (mode === 'view') {
+        const url = await getProposalDocumentSignedUrl(doc.storage_path);
+        if (!url) {
+          toast.error('Não foi possível abrir o arquivo');
+          return;
+        }
         const win = window.open(url, '_blank', 'noopener,noreferrer');
         if (win) win.opener = null;
       } else {
+        // Gera URL assinada com Content-Disposition: attachment
+        const url = await getProposalDocumentSignedUrl(doc.storage_path, 600, {
+          download: doc.file_name,
+        });
+        if (!url) {
+          toast.error('Não foi possível baixar o arquivo');
+          return;
+        }
         try {
           const response = await fetch(url);
           if (!response.ok) throw new Error('fetch failed');
@@ -63,12 +71,20 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
           const link = document.createElement('a');
           link.href = blobUrl;
           link.download = doc.file_name;
+          link.rel = 'noopener noreferrer';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
         } catch {
-          toast.error('Não foi possível baixar o arquivo');
+          // Fallback: usa link direto com download attribute (sem nova aba)
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = doc.file_name;
+          link.rel = 'noopener noreferrer';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
       }
     } finally {

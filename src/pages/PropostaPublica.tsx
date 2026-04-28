@@ -66,6 +66,16 @@ function partyKey(role: string, indexZeroBased = 0): string {
   return `${role}#${indexZeroBased}`;
 }
 
+const SPOUSE_DOC_KEYS = new Set<string>(['documento_conjuge', 'renda_conjuge']);
+
+function isSpouseDocCategory(category: string): boolean {
+  return SPOUSE_DOC_KEYS.has(category);
+}
+
+function hasUploadedFiles(categories?: Array<{ files?: UploadedFile[] }>): boolean {
+  return Array.isArray(categories) && categories.some((cat) => (cat.files || []).length > 0);
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
@@ -187,7 +197,7 @@ async function uploadProposalDocuments(
       if (!blob) continue;
       attempted++;
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
-      const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
+      const isSpouseDoc = isSpouseDocCategory(job.category);
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
       // Para cônjuges, indicamos a quem o cônjuge pertence:
       // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
@@ -205,6 +215,10 @@ async function uploadProposalDocuments(
       const resolvedPartyId = isSpouseDoc && job.spousePartyKey
         ? (partyMap.get(job.spousePartyKey) || null)
         : (partyMap.get(job.partyKey) || null);
+      const resolvedOwnerType = isSpouseDoc
+        ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
+        : job.ownerType;
+      const resolvedOwnerLabel = isSpouseDoc ? personName : job.ownerLabel;
       // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
       const pathPrefix = proposalLinkId || cardId || 'orfaos';
       const personSegment = resolvedPartyId || job.ownerKey;
@@ -224,8 +238,8 @@ async function uploadProposalDocuments(
         party_id: resolvedPartyId,
         category: job.category,
         category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
-        owner_type: job.ownerType,
-        owner_label: job.ownerLabel,
+        owner_type: resolvedOwnerType,
+        owner_label: resolvedOwnerLabel,
         file_name: standardized,
         original_file_name: file.name,
         file_size: file.size,

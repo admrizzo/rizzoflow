@@ -679,6 +679,23 @@ function buildLocatarioAdicionalDocs(): DocumentCategory[] {
   return INITIAL_DOC_CATEGORIES.map(c => ({ ...c, files: [] }));
 }
 
+function buildConjugeDocs(): DocumentCategory[] {
+  return [
+    { key: 'documento_conjuge' as DocCategoryKey, label: 'Documento do cônjuge', help: 'CNH, ou RG + CPF do cônjuge (frente e verso). Documento dentro da validade.', files: [] },
+    { key: 'renda_conjuge' as DocCategoryKey, label: 'Comprovante de renda do cônjuge (opcional)', help: 'Holerite, declaração de IR, extrato bancário ou pró-labore do cônjuge.', files: [] },
+  ];
+}
+
+function ensureConjugeDocs(categories?: DocumentCategory[]): DocumentCategory[] {
+  if (!Array.isArray(categories) || categories.length === 0) return buildConjugeDocs();
+  const byKey = new Map(categories.map((cat) => [cat.key, cat]));
+  return buildConjugeDocs().map((cat) => ({ ...cat, files: byKey.get(cat.key)?.files || [] }));
+}
+
+function locatarioNeedsConjuge(loc: LocatarioAdicional): boolean {
+  return loc.estado_civil === 'Casado(a)' || loc.estado_civil === 'União Estável';
+}
+
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;

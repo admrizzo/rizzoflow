@@ -524,9 +524,17 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
                             <CardHeader className="p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 flex-1">
-                                  <Checkbox 
-                                    checked={selectedForClone.has(template.id)}
-                                    onCheckedChange={() => toggleSelection(template.id)}
+                                  <Checkbox
+                                    checked={
+                                      cloneMode
+                                        ? selectedForClone.has(template.id)
+                                        : !!activeIds?.has(template.id)
+                                    }
+                                    onCheckedChange={() =>
+                                      cloneMode
+                                        ? toggleSelection(template.id)
+                                        : toggleActive(template.id)
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                   <div

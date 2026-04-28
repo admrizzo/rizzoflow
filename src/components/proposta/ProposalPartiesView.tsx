@@ -1,12 +1,22 @@
 import { ProposalParty, ROLE_LABELS } from '@/hooks/useProposalParties';
-import { User, Shield, Building2, UserCheck, Users, Heart } from 'lucide-react';
+import { User, Shield, Building2, UserCheck, Users, Heart, FileCheck2, FileWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export interface PartyDocSummary {
+  key: string;
+  label: string;
+  optional?: boolean;
+  fileCount: number;
+  fileNames?: string[];
+}
 
 interface Props {
   parties: ProposalParty[];
   /** Layout compacto para uso no CardDetailDialog */
   compact?: boolean;
   className?: string;
+  /** Documentos agrupados por id da parte (mostra subseção em cada bloco). */
+  docsByPartyId?: Record<string, PartyDocSummary[]>;
 }
 
 function formatCurrency(value: number | null | undefined): string | null {
@@ -34,12 +44,16 @@ function PartyCard({
   spouses,
   icon,
   compact,
+  docs,
+  docsByPartyId,
 }: {
   party: ProposalParty;
   parentName?: string | null;
   spouses?: ProposalParty[];
   icon: React.ReactNode;
   compact?: boolean;
+  docs?: PartyDocSummary[];
+  docsByPartyId?: Record<string, PartyDocSummary[]>;
 }) {
   const isSpouse = party.role === 'tenant_spouse' || party.role === 'guarantor_spouse';
   const docIdent = party.cpf || party.cnpj;
@@ -108,10 +122,59 @@ function PartyCard({
               parentName={party.name}
               icon={<Heart className="h-4 w-4" />}
               compact={compact}
+              docs={docsByPartyId?.[s.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </div>
       )}
+      {docs && docs.length > 0 && <PartyDocsList docs={docs} />}
+    </div>
+  );
+}
+
+function PartyDocsList({ docs }: { docs: PartyDocSummary[] }) {
+  const required = docs.filter((d) => !d.optional);
+  const requiredOk = required.filter((d) => d.fileCount > 0).length;
+  const totalFiles = docs.reduce((acc, d) => acc + d.fileCount, 0);
+  const allOk = required.length === 0 || requiredOk === required.length;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+          {allOk ? (
+            <FileCheck2 className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <FileWarning className="h-3.5 w-3.5 text-amber-600" />
+          )}
+          Documentos enviados
+        </span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {required.length > 0 ? `${requiredOk}/${required.length}` : `${totalFiles} arquivo(s)`}
+        </span>
+      </div>
+      <ul className="space-y-0.5">
+        {docs.map((d) => {
+          const ok = d.fileCount > 0;
+          return (
+            <li key={d.key} className="flex items-center justify-between gap-2 text-xs">
+              <span className={cn('truncate', ok ? 'text-foreground' : 'text-muted-foreground')}>
+                {ok ? '✅' : d.optional ? '◻️' : '⚠️'} {d.label}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {ok
+                  ? d.fileCount > 1
+                    ? `${d.fileCount} arquivos`
+                    : 'enviado'
+                  : d.optional
+                  ? 'opcional'
+                  : 'pendente'}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -136,7 +199,7 @@ function Section({
   );
 }
 
-export function ProposalPartiesView({ parties, compact = false, className }: Props) {
+export function ProposalPartiesView({ parties, compact = false, className, docsByPartyId }: Props) {
   if (!parties || parties.length === 0) return null;
 
   // Agrupa cônjuges por related_party_id (com fallback de metadata.spouse_of)
@@ -207,6 +270,8 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
               icon={tenantIcon(t.role)}
               spouses={spousesOf(t.id, tenantSpouses)}
               compact={compact}
+              docs={docsByPartyId?.[t.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </Section>
@@ -221,6 +286,8 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
               icon={<Shield className="h-4 w-4" />}
               spouses={spousesOf(g.id, guarantorSpouses)}
               compact={compact}
+              docs={docsByPartyId?.[g.id]}
+              docsByPartyId={docsByPartyId}
             />
           ))}
         </Section>
@@ -229,7 +296,14 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
       {company.length > 0 && (
         <Section title="Empresa" icon={<Building2 className="h-4 w-4" />}>
           {company.map((c) => (
-            <PartyCard key={c.id} party={c} icon={<Building2 className="h-4 w-4" />} compact={compact} />
+            <PartyCard
+              key={c.id}
+              party={c}
+              icon={<Building2 className="h-4 w-4" />}
+              compact={compact}
+              docs={docsByPartyId?.[c.id]}
+              docsByPartyId={docsByPartyId}
+            />
           ))}
         </Section>
       )}
@@ -237,7 +311,14 @@ export function ProposalPartiesView({ parties, compact = false, className }: Pro
       {reps.length > 0 && (
         <Section title="Representantes Legais" icon={<UserCheck className="h-4 w-4" />}>
           {reps.map((r) => (
-            <PartyCard key={r.id} party={r} icon={<UserCheck className="h-4 w-4" />} compact={compact} />
+            <PartyCard
+              key={r.id}
+              party={r}
+              icon={<UserCheck className="h-4 w-4" />}
+              compact={compact}
+              docs={docsByPartyId?.[r.id]}
+              docsByPartyId={docsByPartyId}
+            />
           ))}
         </Section>
       )}
@@ -260,13 +341,13 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
 
   const parties: ProposalParty[] = [];
   let pos = 0;
-  const newId = () => `tmp-${pos}-${Math.random().toString(36).slice(2, 8)}`;
+  const newId = (role: string, idx = 0) => `tmp-${role}#${idx}`;
 
   const isPj = data?.imovel?.tipo_pessoa === 'juridica';
 
   if (isPj) {
     const e = data.empresa || {};
-    const companyId = newId();
+    const companyId = newId('company', 0);
     parties.push({
       id: companyId,
       proposal_link_id: null,
@@ -290,9 +371,9 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       position: pos++,
       metadata: {},
     });
-    (data.representantes || []).forEach((r: any) => {
+    (data.representantes || []).forEach((r: any, rIdx: number) => {
       parties.push({
-        id: newId(),
+        id: newId('legal_representative', rIdx),
         proposal_link_id: null,
         card_id: null,
         related_party_id: null,
@@ -322,7 +403,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
   } else {
     const dp = data?.dados_pessoais || {};
     const pf = data?.perfil_financeiro || {};
-    const primaryId = newId();
+    const primaryId = newId('primary_tenant', 0);
     parties.push({
       id: primaryId,
       proposal_link_id: null,
@@ -346,7 +427,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     const cj = data?.conjuge;
     if (cj && (cj.nome || cj.cpf || cj.email)) {
       parties.push({
-        id: newId(),
+        id: newId('tenant_spouse', 0),
         proposal_link_id: null,
         card_id: null,
         related_party_id: primaryId,
@@ -366,8 +447,8 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
         metadata: {},
       });
     }
-    (data?.locatarios_adicionais || []).forEach((loc: any) => {
-      const addId = newId();
+    (data?.locatarios_adicionais || []).forEach((loc: any, lIdx: number) => {
+      const addId = newId('additional_tenant', lIdx);
       parties.push({
         id: addId,
         proposal_link_id: null,
@@ -391,7 +472,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       const lc = loc.conjuge;
       if (lc && (lc.nome || lc.cpf || lc.email)) {
         parties.push({
-          id: newId(),
+          id: newId('tenant_spouse_of_additional', lIdx),
           proposal_link_id: null,
           card_id: null,
           related_party_id: addId,
@@ -414,8 +495,8 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     });
   }
 
-  (data?.garantia?.fiadores || []).forEach((f: any) => {
-    const gId = newId();
+  (data?.garantia?.fiadores || []).forEach((f: any, gIdx: number) => {
+    const gId = newId('guarantor', gIdx);
     parties.push({
       id: gId,
       proposal_link_id: null,
@@ -442,7 +523,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
     const fc = f.conjuge;
     if (fc && (fc.nome || fc.cpf || fc.email)) {
       parties.push({
-        id: newId(),
+        id: newId('guarantor_spouse', gIdx),
         proposal_link_id: null,
         card_id: null,
         related_party_id: gId,
@@ -465,4 +546,106 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
   });
 
   return parties;
+}
+
+/**
+ * Mesmo formato de id usado por buildPartiesFromFormData:
+ * `tmp-{role}#{idx}` — permite associar documentos do form às parties virtuais.
+ */
+function partyTmpId(role: string, idx = 0) {
+  return `tmp-${role}#${idx}`;
+}
+
+const SPOUSE_DOC_KEYS = new Set(['documento_conjuge', 'renda_conjuge']);
+
+/**
+ * Constrói o mapa { partyId → documentos[] } a partir do estado do formulário,
+ * para uso em ProposalPartiesView na tela de Revisão.
+ */
+export function buildDocsByPartyFromFormData(data: any): Record<string, PartyDocSummary[]> {
+  const map: Record<string, PartyDocSummary[]> = {};
+
+  const isOptional = (cat: any): boolean => {
+    if (cat?.optional === true) return true;
+    const label = String(cat?.label || '').toLowerCase();
+    if (label.includes('(opcional)') || label.includes('opcional')) return true;
+    if (cat?.key === 'renda_conjuge') return true;
+    return false;
+  };
+
+  const toSummary = (cat: any): PartyDocSummary => ({
+    key: String(cat?.key || cat?.label || Math.random()),
+    label: String(cat?.label || cat?.key || 'Documento'),
+    optional: isOptional(cat),
+    fileCount: Array.isArray(cat?.files) ? cat.files.length : 0,
+    fileNames: Array.isArray(cat?.files) ? cat.files.map((f: any) => f?.name).filter(Boolean) : [],
+  });
+
+  const isPj = data?.imovel?.tipo_pessoa === 'juridica';
+
+  if (isPj) {
+    const docs = (data?.documentos || []).map(toSummary);
+    if (docs.length > 0) map[partyTmpId('company', 0)] = docs;
+  } else {
+    // Locatário principal
+    const docs = (data?.documentos || []).map(toSummary);
+    if (docs.length > 0) map[partyTmpId('primary_tenant', 0)] = docs;
+    // Cônjuge do principal
+    const cjDocs = (data?.conjuge?.documentos || []).map(toSummary);
+    if (cjDocs.length > 0) map[partyTmpId('tenant_spouse', 0)] = cjDocs;
+    // Locatários adicionais + cônjuges
+    (data?.locatarios_adicionais || []).forEach((loc: any, idx: number) => {
+      const ld = (loc?.documentos || []).map(toSummary);
+      if (ld.length > 0) map[partyTmpId('additional_tenant', idx)] = ld;
+      const lcd = (loc?.conjuge?.documentos || []).map(toSummary);
+      if (lcd.length > 0) map[partyTmpId('tenant_spouse_of_additional', idx)] = lcd;
+    });
+  }
+
+  // Fiadores: separa documentos do próprio fiador e do cônjuge (categorias mistas)
+  (data?.garantia?.fiadores || []).forEach((f: any, idx: number) => {
+    const own: PartyDocSummary[] = [];
+    const spouse: PartyDocSummary[] = [];
+    (f?.documentos || []).forEach((cat: any) => {
+      if (cat?.key && SPOUSE_DOC_KEYS.has(cat.key)) spouse.push(toSummary(cat));
+      else own.push(toSummary(cat));
+    });
+    if (own.length > 0) map[partyTmpId('guarantor', idx)] = own;
+    if (spouse.length > 0) map[partyTmpId('guarantor_spouse', idx)] = spouse;
+  });
+
+  return map;
+}
+
+/** Soma o total de arquivos enviados em todo o formulário. */
+export function countAllUploadedFiles(data: any): number {
+  let total = 0;
+  const sumCats = (cats: any[] | undefined) =>
+    (cats || []).reduce((acc, c) => acc + (Array.isArray(c?.files) ? c.files.length : 0), 0);
+  total += sumCats(data?.documentos);
+  total += sumCats(data?.conjuge?.documentos);
+  (data?.locatarios_adicionais || []).forEach((loc: any) => {
+    total += sumCats(loc?.documentos);
+    total += sumCats(loc?.conjuge?.documentos);
+  });
+  (data?.garantia?.fiadores || []).forEach((f: any) => {
+    total += sumCats(f?.documentos);
+  });
+  return total;
+}
+
+/** Conta documentos obrigatórios pendentes (sem arquivo) em todas as partes. */
+export function countPendingRequired(data: any): { required: number; ok: number } {
+  const map = buildDocsByPartyFromFormData(data);
+  let required = 0;
+  let ok = 0;
+  Object.values(map).forEach((docs) => {
+    docs.forEach((d) => {
+      if (!d.optional) {
+        required += 1;
+        if (d.fileCount > 0) ok += 1;
+      }
+    });
+  });
+  return { required, ok };
 }

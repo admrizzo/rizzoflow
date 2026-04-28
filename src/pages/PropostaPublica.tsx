@@ -1715,6 +1715,243 @@ export default function PropostaPublica() {
             </div>
           </div>
         </FormSection>
+
+        {/* Multi-locatários: pergunta + lista de locatários adicionais */}
+        <FormSection icon={Users} title="Mais de um locatário?">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium mb-3 block">
+                Haverá mais de um locatário no contrato?
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={data.tem_mais_locatarios === 'sim' ? 'default' : 'outline'}
+                  className="h-10"
+                  onClick={() =>
+                    update(p => ({
+                      ...p,
+                      tem_mais_locatarios: 'sim',
+                      locatarios_adicionais:
+                        (p.locatarios_adicionais && p.locatarios_adicionais.length > 0)
+                          ? p.locatarios_adicionais
+                          : [{ ...emptyLocatarioAdicional }],
+                    }))
+                  }
+                >
+                  Sim
+                </Button>
+                <Button
+                  type="button"
+                  variant={data.tem_mais_locatarios === 'nao' ? 'default' : 'outline'}
+                  className="h-10"
+                  onClick={() =>
+                    update(p => ({
+                      ...p,
+                      tem_mais_locatarios: 'nao',
+                      locatarios_adicionais: [],
+                    }))
+                  }
+                >
+                  Não, somente eu
+                </Button>
+              </div>
+            </div>
+
+            {data.tem_mais_locatarios === 'sim' && (
+              <div className="space-y-4">
+                {(data.locatarios_adicionais || []).map((loc, idx) => (
+                  <div key={idx} className="p-4 border rounded-xl relative space-y-3 bg-muted/30">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 h-8 w-8"
+                      onClick={() =>
+                        update(p => ({
+                          ...p,
+                          locatarios_adicionais: (p.locatarios_adicionais || []).filter((_, i) => i !== idx),
+                        }))
+                      }
+                      aria-label="Remover locatário"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <p className="text-xs font-semibold text-muted-foreground">
+                      Locatário adicional {idx + 1}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Nome completo</Label>
+                        <Input value={loc.nome} className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], nome: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">CPF</Label>
+                        <Input value={loc.cpf} placeholder="000.000.000-00" className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], cpf: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">RG / CNH</Label>
+                        <Input value={loc.rg} className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], rg: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Profissão</Label>
+                        <Input value={loc.profissao} className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], profissao: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">E-mail</Label>
+                        <Input type="email" value={loc.email} className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], email: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">WhatsApp</Label>
+                        <Input value={loc.whatsapp} placeholder="(00) 00000-0000" className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], whatsapp: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Renda mensal</Label>
+                        <CurrencyInput value={loc.renda_mensal} placeholder="0,00" className="mt-1"
+                          onValueChange={v => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], renda_mensal: v };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Estado civil</Label>
+                        <Select
+                          value={loc.estado_civil || undefined}
+                          onValueChange={(val) => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            const isCasado = val === 'Casado(a)' || val === 'União Estável';
+                            arr[idx] = {
+                              ...arr[idx],
+                              estado_civil: val,
+                              regime_bens: isCasado ? arr[idx].regime_bens : '',
+                              conjuge_participa: isCasado ? arr[idx].conjuge_participa : '',
+                              conjuge: isCasado ? arr[idx].conjuge : { nome: '', cpf: '', rg: '', whatsapp: '', email: '' },
+                            };
+                            return { ...p, locatarios_adicionais: arr };
+                          })}
+                        >
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            {['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável', 'Separado(a)'].map(s => (
+                              <SelectItem key={s} value={s}>{s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs">Endereço (opcional)</Label>
+                        <Input value={loc.endereco} className="mt-1"
+                          onChange={e => update(p => {
+                            const arr = [...(p.locatarios_adicionais || [])];
+                            arr[idx] = { ...arr[idx], endereco: e.target.value };
+                            return { ...p, locatarios_adicionais: arr };
+                          })} />
+                      </div>
+                    </div>
+
+                    {/* Cônjuge do locatário adicional */}
+                    {(loc.estado_civil === 'Casado(a)' || loc.estado_civil === 'União Estável') && (
+                      <div className="mt-3 p-3 rounded-lg border bg-background space-y-3">
+                        <p className="text-xs font-semibold text-muted-foreground">Cônjuge / companheiro(a)</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Nome</Label>
+                            <Input value={loc.conjuge.nome} className="mt-1"
+                              onChange={e => update(p => {
+                                const arr = [...(p.locatarios_adicionais || [])];
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, nome: e.target.value } };
+                                return { ...p, locatarios_adicionais: arr };
+                              })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">CPF</Label>
+                            <Input value={loc.conjuge.cpf} className="mt-1"
+                              onChange={e => update(p => {
+                                const arr = [...(p.locatarios_adicionais || [])];
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, cpf: e.target.value } };
+                                return { ...p, locatarios_adicionais: arr };
+                              })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">RG / CNH</Label>
+                            <Input value={loc.conjuge.rg} className="mt-1"
+                              onChange={e => update(p => {
+                                const arr = [...(p.locatarios_adicionais || [])];
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, rg: e.target.value } };
+                                return { ...p, locatarios_adicionais: arr };
+                              })} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">WhatsApp</Label>
+                            <Input value={loc.conjuge.whatsapp} className="mt-1"
+                              onChange={e => update(p => {
+                                const arr = [...(p.locatarios_adicionais || [])];
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, whatsapp: e.target.value } };
+                                return { ...p, locatarios_adicionais: arr };
+                              })} />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <Label className="text-xs">E-mail</Label>
+                            <Input type="email" value={loc.conjuge.email} className="mt-1"
+                              onChange={e => update(p => {
+                                const arr = [...(p.locatarios_adicionais || [])];
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, email: e.target.value } };
+                                return { ...p, locatarios_adicionais: arr };
+                              })} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  onClick={() => update(p => ({
+                    ...p,
+                    locatarios_adicionais: [...(p.locatarios_adicionais || []), { ...emptyLocatarioAdicional }],
+                  }))}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar outro locatário
+                </Button>
+              </div>
+            )}
+          </div>
+        </FormSection>
       </div>
     );
   }

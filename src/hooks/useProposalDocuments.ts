@@ -43,10 +43,14 @@ export function useProposalDocuments(cardId: string | null | undefined) {
  * Gera uma URL assinada de curta duração para visualizar/baixar
  * o arquivo do bucket privado.
  */
-export async function getProposalDocumentSignedUrl(storagePath: string, expiresInSec = 600): Promise<string | null> {
+export async function getProposalDocumentSignedUrl(
+  storagePath: string,
+  expiresInSec = 600,
+  options?: { download?: boolean | string },
+): Promise<string | null> {
   const { data, error } = await supabase.storage
     .from('proposal-documents')
-    .createSignedUrl(storagePath, expiresInSec);
+    .createSignedUrl(storagePath, expiresInSec, options as any);
   if (error || !data?.signedUrl) {
     console.error('Erro ao gerar URL assinada:', error);
     return null;

@@ -189,7 +189,15 @@ async function uploadProposalDocuments(
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
       const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
-      const personRole = isSpouseDoc ? 'CONJUGE' : job.ownerPersonRole;
+      // Para cônjuges, indicamos a quem o cônjuge pertence:
+      // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
+      let personRole = job.ownerPersonRole;
+      if (isSpouseDoc) {
+        if (job.ownerPersonRole === 'TITULAR') personRole = 'CONJUGE DO LOCATARIO PRINCIPAL';
+        else if (job.ownerPersonRole === 'LOCATARIO ADICIONAL') personRole = 'CONJUGE DO LOCATARIO ADICIONAL';
+        else if (job.ownerPersonRole === 'FIADOR') personRole = 'CONJUGE DO FIADOR';
+        else personRole = 'CONJUGE';
+      }
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
@@ -501,6 +509,41 @@ async function persistProposalParties(
     const ins = sorted[i];
     if (ins?.id) map.set(rowKeys[i], ins.id);
   });
+
+  // ── Segunda passagem: vincula cônjuges ao titular/fiador via related_party_id ──
+  // Cônjuge do locatário principal → primary_tenant
+  // Cônjuge de locatário adicional N → additional_tenant N
+  // Cônjuge de fiador N → guarantor N
+  const updates: Array<{ id: string; related_party_id: string }> = [];
+  rows.forEach((r, i) => {
+    const childKey = rowKeys[i];
+    const childId = map.get(childKey);
+    if (!childId) return;
+    let parentKey: string | null = null;
+    if (childKey.startsWith('tenant_spouse#')) {
+      parentKey = partyKey('primary_tenant');
+    } else if (childKey.startsWith('tenant_spouse_of_additional#')) {
+      const idx = Number(childKey.split('#')[1] || '0');
+      parentKey = partyKey('additional_tenant', idx);
+    } else if (childKey.startsWith('guarantor_spouse#')) {
+      const idx = Number(childKey.split('#')[1] || '0');
+      parentKey = partyKey('guarantor', idx);
+    }
+    if (!parentKey) return;
+    const parentId = map.get(parentKey);
+    if (parentId) updates.push({ id: childId, related_party_id: parentId });
+  });
+  if (updates.length > 0) {
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from('proposal_parties' as any)
+          .update({ related_party_id: u.related_party_id })
+          .eq('id', u.id),
+      ),
+    );
+  }
+
   return map;
 }
 

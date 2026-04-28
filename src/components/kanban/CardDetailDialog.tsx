@@ -280,6 +280,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Venda/DEV: opening data lives in parties (#1)
   const { parties: vendaParties, updatePartyName } = useCardParties((isVendaBoard || isDevBoard) ? card?.id : undefined);
+  // Locação: estrutura de partes da proposta pública (proposal_parties)
+  const { data: proposalParties = [] } = useProposalParties(card?.id);
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
     : undefined;

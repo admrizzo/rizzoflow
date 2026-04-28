@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
-import { isDateOverdue } from '@/lib/dateUtils';
+import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
 import { isReviewOverdue } from '@/hooks/useColumnReview';
@@ -269,10 +269,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                   <div className="flex items-center gap-0.5 mt-0.5 font-medium">
                     <Calendar className="h-2.5 w-2.5" />
                     <span>
-                      {(() => {
-                        const hasTime = nextActionDue.getHours() !== 0 || nextActionDue.getMinutes() !== 0;
-                        return format(nextActionDue, hasTime ? "d/MM HH:mm" : "d/MM", { locale: ptBR });
-                      })()}
+                      {formatDateTimeBR(nextActionDue, { compact: true })}
                       {isNextActionOverdue && " · vencido"}
                       {!isNextActionOverdue && isNextActionToday && " · hoje"}
                     </span>

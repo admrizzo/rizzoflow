@@ -1,4 +1,5 @@
-import { endOfDay, isAfter, isValid } from 'date-fns';
+import { endOfDay, format, isAfter, isValid } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 /**
  * Checks if a deadline date is overdue.
@@ -68,4 +69,33 @@ export function formatDateOnly(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Returns true if the parsed date carries a meaningful time component
+ * (anything other than 00:00:00).
+ */
+export function hasTimeComponent(date: Date): boolean {
+  return date.getHours() !== 0 || date.getMinutes() !== 0 || date.getSeconds() !== 0;
+}
+
+/**
+ * Standard Brazilian date/time formatter for any deadline coming from the DB.
+ * - With time:  "29/04/2026 às 12:00"
+ * - Without:    "29/04/2026"
+ * Pass `compact: true` for tight spaces (Kanban card):
+ * - With time:  "29/04 12:00"
+ * - Without:    "29/04"
+ */
+export function formatDateTimeBR(
+  value: string | Date | null | undefined,
+  options: { compact?: boolean } = {},
+): string {
+  const d = typeof value === 'string' ? parseDatabaseDate(value) : value ?? null;
+  if (!d || !isValid(d)) return '';
+  const withTime = hasTimeComponent(d);
+  if (options.compact) {
+    return format(d, withTime ? "dd/MM HH:mm" : 'dd/MM', { locale: ptBR });
+  }
+  return format(d, withTime ? "dd/MM/yyyy 'às' HH:mm" : 'dd/MM/yyyy', { locale: ptBR });
 }

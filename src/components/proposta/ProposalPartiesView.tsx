@@ -1,12 +1,22 @@
 import { ProposalParty, ROLE_LABELS } from '@/hooks/useProposalParties';
-import { User, Shield, Building2, UserCheck, Users, Heart } from 'lucide-react';
+import { User, Shield, Building2, UserCheck, Users, Heart, FileCheck2, FileWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export interface PartyDocSummary {
+  key: string;
+  label: string;
+  optional?: boolean;
+  fileCount: number;
+  fileNames?: string[];
+}
 
 interface Props {
   parties: ProposalParty[];
   /** Layout compacto para uso no CardDetailDialog */
   compact?: boolean;
   className?: string;
+  /** Documentos agrupados por id da parte (mostra subseção em cada bloco). */
+  docsByPartyId?: Record<string, PartyDocSummary[]>;
 }
 
 function formatCurrency(value: number | null | undefined): string | null {

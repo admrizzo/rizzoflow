@@ -1138,12 +1138,29 @@ export default function PropostaPublica() {
       // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
       //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
       //    e permite que a query do card os recupere via proposal_link_id.
+      let uploadStats = { attempted: 0, succeeded: 0, failed: 0, firstError: null as string | null };
       if (proposalLink?.id) {
         try {
-          await uploadProposalDocuments(null, proposalLink.id, data);
+          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
-          toast.warning('Alguns arquivos podem não ter sido enviados', { description: uploadErr.message });
+          toast.error('Falha ao enviar documentos', { description: uploadErr.message });
+          setIsSubmitting(false);
+          return;
+        }
+        // Se o usuário tentou anexar arquivos mas NENHUM foi salvo,
+        // não finalize a proposta — o card sairia com "Doc. recebidos" sem documentos.
+        if (uploadStats.attempted > 0 && uploadStats.succeeded === 0) {
+          toast.error('Não foi possível enviar os documentos', {
+            description: uploadStats.firstError || 'Verifique sua conexão e tente novamente.',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        if (uploadStats.failed > 0) {
+          toast.warning(`${uploadStats.failed} de ${uploadStats.attempted} arquivos falharam`, {
+            description: uploadStats.firstError || undefined,
+          });
         }
       }
 

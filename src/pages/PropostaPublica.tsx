@@ -35,6 +35,7 @@ import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyIdentification } from '@/lib/propertyIdentification';
+import { ProposalPartiesView, buildPartiesFromFormData } from '@/components/proposta/ProposalPartiesView';
 
 // ── Upload de documentos da proposta para o Storage ──
 function dataUrlToBlob(dataUrl: string): Blob | null {

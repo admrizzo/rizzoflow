@@ -673,6 +673,10 @@ interface UserCardProps {
   onInactivate: () => void;
   onRequestDelete: () => void;
   isSaving: boolean;
+  onResendInvite: () => void;
+  onGenerateAccessLink: () => void;
+  isResendingInvite: boolean;
+  isGeneratingLink: boolean;
 }
 
 function UserCard({
@@ -693,6 +697,10 @@ function UserCard({
   onInactivate,
   onRequestDelete,
   isSaving,
+  onResendInvite,
+  onGenerateAccessLink,
+  isResendingInvite,
+  isGeneratingLink,
 }: UserCardProps) {
   const displayRole = toDisplayRole(user.role);
   const meta = displayRole ? ROLE_META[displayRole] : null;

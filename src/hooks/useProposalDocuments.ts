@@ -14,6 +14,9 @@ export interface ProposalDocument {
   mime_type: string | null;
   storage_path: string;
   uploaded_at: string;
+  is_complementary?: boolean | null;
+  original_file_name?: string | null;
+  uploaded_by?: string | null;
 }
 
 export interface CategorizedDocument extends ProposalDocument {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Download, Eye, Loader2, FileImage, FileType } from 'lucide-react';
+import { FileText, Download, Eye, Loader2, FileImage, FileType, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,6 +12,8 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { AddComplementaryDocDialog } from './AddComplementaryDocDialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface ProposalDocumentsSectionProps {
   cardId: string;
@@ -34,6 +36,15 @@ function fileIcon(mime: string | null) {
 export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionProps) {
   const { data: docs = [], isLoading } = useProposalDocuments(cardId);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const { isAdmin, isGestor, isAdministrativo } = usePermissions();
+  const canAddComplementary = isAdmin || isGestor || isAdministrativo;
+  const [addCtx, setAddCtx] = useState<null | {
+    ownerType: string;
+    ownerLabel: string;
+    ownerKey: string;
+    personName: string;
+    personRole: string;
+  }>(null);
 
   async function handleOpen(
     doc: ProposalDocument,
@@ -100,6 +111,8 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
     );
   }
 
+  const existingFinalNames = docs.map((d) => d.file_name);
+
   if (docs.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
@@ -135,11 +148,42 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
             <h4 className="text-sm font-semibold text-foreground">
               {OWNER_TYPE_LABELS[ownerType] || ownerType}
             </h4>
-            {Array.from(ownerGroups.entries()).map(([ownerLabel, items]) => (
+            {Array.from(ownerGroups.entries()).map(([ownerLabel, items]) => {
+              // Deriva ownerKey/personName/role a partir do primeiro item do grupo
+              const first = items[0];
+              const ownerKey = ownerType === 'fiador'
+                ? (first.storage_path.split('/')[1] || `fiador-1`)
+                : ownerType;
+              const isPj = ownerType === 'empresa';
+              const personName = ownerLabel.replace(/^Fiador\s+\d+\s+—\s+/, '') || ownerLabel;
+              const personRole = ownerType === 'fiador' ? 'FIADOR'
+                : ownerType === 'conjuge' ? 'CONJUGE'
+                : isPj ? 'EMPRESA' : 'TITULAR';
+              return (
               <div key={ownerLabel} className="rounded-md border bg-muted/30 p-3 space-y-2">
-                {ownerLabel !== (OWNER_TYPE_LABELS[ownerType] || '') && (
-                  <div className="text-xs font-medium text-muted-foreground">{ownerLabel}</div>
-                )}
+                <div className="flex items-center justify-between gap-2">
+                  {ownerLabel !== (OWNER_TYPE_LABELS[ownerType] || '') ? (
+                    <div className="text-xs font-medium text-muted-foreground">{ownerLabel}</div>
+                  ) : <div />}
+                  {canAddComplementary && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setAddCtx({
+                        ownerType,
+                        ownerLabel,
+                        ownerKey,
+                        personName,
+                        personRole,
+                      })}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Complementar
+                    </Button>
+                  )}
+                </div>
                 {items.map((doc) => (
                   <div key={doc.id} className="flex items-center gap-3 rounded-md bg-background border p-2">
                     <div className="text-muted-foreground">{fileIcon(doc.mime_type)}</div>
@@ -149,6 +193,11 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
                         <Badge variant="outline" className="text-[10px] py-0 h-4">
                           {doc.category_label}
                         </Badge>
+                        {doc.is_complementary && (
+                          <Badge className="text-[10px] py-0 h-4 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">
+                            Complementar
+                          </Badge>
+                        )}
                         <span>{formatFileSize(doc.file_size)}</span>
                         <span>•</span>
                         <span>
@@ -181,10 +230,24 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
                   </div>
                 ))}
               </div>
-            ))}
+              );
+            })}
           </div>
         );
       })}
+      {addCtx && (
+        <AddComplementaryDocDialog
+          open={!!addCtx}
+          onOpenChange={(v) => { if (!v) setAddCtx(null); }}
+          cardId={cardId}
+          ownerType={addCtx.ownerType}
+          ownerLabel={addCtx.ownerLabel}
+          ownerKey={addCtx.ownerKey}
+          personName={addCtx.personName}
+          personRole={addCtx.personRole}
+          existingFinalNames={existingFinalNames}
+        />
+      )}
     </div>
   );
 }

@@ -206,7 +206,7 @@ export function UsersAndAccessManager() {
           fullName: name,
           email,
           role: inviteRole,
-          redirectTo: buildPublicUrl('/auth?invite=1'),
+          redirectTo: buildPublicUrl('/redefinir-senha?invite=1'),
         },
       });
       if (error || data?.error) {

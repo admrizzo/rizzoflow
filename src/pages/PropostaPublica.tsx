@@ -100,11 +100,25 @@ async function uploadProposalDocuments(
     category: string;
     files: UploadedFile[];
   };
+  type PreparedDocument = {
+    path: string;
+    payload: Record<string, any>;
+  };
+
   const jobs: Job[] = [];
+  const uploadedPaths: string[] = [];
 
   const failDocument = (message: string, details: Record<string, any>): never => {
     console.error('[uploadProposalDocuments] Falha crítica no envio de documento', details);
     throw new Error(message);
+  };
+
+  const cleanupUploadedPaths = async () => {
+    if (uploadedPaths.length === 0) return;
+    const { error } = await supabase.storage.from('proposal-documents').remove(uploadedPaths);
+    if (error) {
+      console.error('[uploadProposalDocuments] Falha ao limpar arquivos após erro', { paths: uploadedPaths, error });
+    }
   };
 
   // Proponente / Empresa
@@ -228,99 +242,121 @@ async function uploadProposalDocuments(
   const seen = new Set<string>();
   // Controle de duplicidade do nome final padronizado por proposta
   const usedFinalNames = new Map<string, number>();
+  const preparedDocuments: PreparedDocument[] = [];
   let attempted = 0;
-  let succeeded = 0;
-  for (const job of jobs) {
-    for (const file of job.files) {
-      const dedupKey = `${job.ownerKey}|${job.category}|${file.name}|${file.size ?? 0}`;
-      if (seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
 
-      const isSpouseDoc = isSpouseDocCategory(job.category);
-      const targetLabel = isSpouseDoc
-        ? (job.spouseName || job.ownerLabel || 'Cônjuge')
-        : job.ownerLabel;
-      const targetGroup = isSpouseDoc
-        ? `documento do cônjuge de ${job.ownerPersonName}`
-        : `documento de ${targetLabel}`;
+  try {
+    for (const job of jobs) {
+      for (const file of job.files) {
+        const dedupKey = `${job.ownerKey}|${job.category}|${file.name}|${file.size ?? 0}`;
+        if (seen.has(dedupKey)) continue;
+        seen.add(dedupKey);
 
-      if (!file.dataUrl) {
-        failDocument(`Falha ao enviar ${targetGroup}.`, { reason: 'missing_data_url', job, file });
-      }
-      const blob = dataUrlToBlob(file.dataUrl);
-      if (!blob) {
-        failDocument(`Falha ao preparar ${targetGroup}.`, { reason: 'invalid_data_url', job, file });
-      }
-      attempted++;
+        const isSpouseDoc = isSpouseDocCategory(job.category);
+        const targetLabel = isSpouseDoc
+          ? (job.spouseName || job.ownerLabel || 'Cônjuge')
+          : job.ownerLabel;
+        const targetGroup = isSpouseDoc
+          ? `documento do cônjuge de ${job.ownerPersonName}`
+          : `documento de ${targetLabel}`;
 
-      // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
-      const personName = isSpouseDoc ? targetLabel : job.ownerPersonName;
-      // Para cônjuges, indicamos a quem o cônjuge pertence:
-      // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
-      let personRole = job.ownerPersonRole;
-      if (isSpouseDoc) {
-        if (job.ownerPersonRole === 'TITULAR') personRole = 'CONJUGE DO LOCATARIO PRINCIPAL';
-        else if (job.ownerPersonRole === 'LOCATARIO ADICIONAL') personRole = 'CONJUGE DO LOCATARIO ADICIONAL';
-        else if (job.ownerPersonRole === 'FIADOR') personRole = 'CONJUGE DO FIADOR';
-        else personRole = 'CONJUGE';
-      }
-      const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
-      const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
-      const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      // Resolve party_id pelo mapa (role+idx). Cônjuge tem party própria.
-      const resolvedPartyId = isSpouseDoc && job.spousePartyKey
-        ? (partyMap.get(job.spousePartyKey) || null)
-        : (partyMap.get(job.partyKey) || null);
-      const resolvedOwnerType = isSpouseDoc
-        ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
-        : job.ownerType;
-      const resolvedOwnerLabel = isSpouseDoc ? targetLabel : job.ownerLabel;
-      if (isSpouseDoc && !resolvedPartyId) {
-        failDocument(`Falha ao enviar documento do cônjuge de ${job.ownerPersonName}.`, {
-          reason: 'spouse_party_id_missing',
-          category: job.category,
-          spousePartyKey: job.spousePartyKey,
-          partyMapKeys: Array.from(partyMap.keys()),
-          job,
+        if (!file.dataUrl) {
+          failDocument(`Falha ao enviar ${targetGroup}.`, { reason: 'missing_data_url', job, file });
+        }
+        const blob = dataUrlToBlob(file.dataUrl);
+        if (!blob) {
+          failDocument(`Falha ao preparar ${targetGroup}.`, { reason: 'invalid_data_url', job, file });
+        }
+        attempted++;
+
+        // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
+        const personName = isSpouseDoc ? targetLabel : job.ownerPersonName;
+        // Para cônjuges, indicamos a quem o cônjuge pertence:
+        // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
+        let personRole = job.ownerPersonRole;
+        if (isSpouseDoc) {
+          if (job.ownerPersonRole === 'TITULAR') personRole = 'CONJUGE DO LOCATARIO PRINCIPAL';
+          else if (job.ownerPersonRole === 'LOCATARIO ADICIONAL') personRole = 'CONJUGE DO LOCATARIO ADICIONAL';
+          else if (job.ownerPersonRole === 'FIADOR') personRole = 'CONJUGE DO FIADOR';
+          else personRole = 'CONJUGE';
+        }
+        const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
+        const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
+        const safeName = file.name.replace(/[^\w.\-]/g, '_');
+        // Resolve party_id pelo mapa (role+idx). Cônjuge tem party própria.
+        const resolvedPartyId = isSpouseDoc && job.spousePartyKey
+          ? (partyMap.get(job.spousePartyKey) || null)
+          : (partyMap.get(job.partyKey) || null);
+        const resolvedOwnerType = isSpouseDoc
+          ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
+          : job.ownerType;
+        const resolvedOwnerLabel = isSpouseDoc ? targetLabel : job.ownerLabel;
+        if (isSpouseDoc && !resolvedPartyId) {
+          failDocument(`Falha ao enviar documento do cônjuge de ${job.ownerPersonName}.`, {
+            reason: 'spouse_party_id_missing',
+            category: job.category,
+            spousePartyKey: job.spousePartyKey,
+            partyMapKeys: Array.from(partyMap.keys()),
+            job,
+          });
+        }
+        // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
+        const pathPrefix = proposalLinkId || cardId || 'orfaos';
+        const personSegment = resolvedPartyId || job.ownerKey;
+        const path = `${pathPrefix}/${personSegment}/${job.category}/${Date.now()}_${safeName}`;
+        const { error: upErr } = await supabase.storage
+          .from('proposal-documents')
+          .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
+        if (upErr) {
+          failDocument(`Falha ao enviar ${targetGroup}.`, { reason: 'storage_upload_error', path, upErr, job, file });
+        }
+        uploadedPaths.push(path);
+        preparedDocuments.push({
+          path,
+          payload: {
+            card_id: cardId,
+            proposal_link_id: proposalLinkId,
+            party_id: resolvedPartyId,
+            category: job.category,
+            category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
+            owner_type: resolvedOwnerType,
+            owner_label: resolvedOwnerLabel,
+            file_name: standardized,
+            original_file_name: file.name,
+            file_size: file.size,
+            mime_type: file.type,
+            storage_path: path,
+          },
         });
       }
-      // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
-      const pathPrefix = proposalLinkId || cardId || 'orfaos';
-      const personSegment = resolvedPartyId || job.ownerKey;
-      const path = `${pathPrefix}/${personSegment}/${job.category}/${Date.now()}_${safeName}`;
-      const { error: upErr } = await supabase.storage
-        .from('proposal-documents')
-        .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
-      if (upErr) {
-        failDocument(`Falha ao enviar ${targetGroup}.`, { reason: 'storage_upload_error', path, upErr, job, file });
-      }
-      const { error: insErr } = await supabase.from('proposal_documents').insert({
-        card_id: cardId,
-        proposal_link_id: proposalLinkId,
-        party_id: resolvedPartyId,
-        category: job.category,
-        category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
-        owner_type: resolvedOwnerType,
-        owner_label: resolvedOwnerLabel,
-        file_name: standardized,
-        original_file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        storage_path: path,
-      });
-      if (insErr) {
-        await supabase.storage.from('proposal-documents').remove([path]);
-        failDocument(`Falha ao registrar ${targetGroup}.`, { reason: 'proposal_documents_insert_error', path, insErr, job, file });
-      }
-      succeeded++;
     }
+
+    if (preparedDocuments.length > 0) {
+      const { error: insErr } = await supabase
+        .from('proposal_documents')
+        .insert(preparedDocuments.map((doc) => doc.payload));
+      if (insErr) {
+        failDocument('Não foi possível registrar todos os documentos enviados.', {
+          reason: 'proposal_documents_bulk_insert_error',
+          paths: preparedDocuments.map((doc) => doc.path),
+          insErr,
+        });
+      }
+    }
+  } catch (err) {
+    await cleanupUploadedPaths();
+    throw err;
   }
 
-  if (attempted !== succeeded) {
-    failDocument('Não foi possível enviar todos os documentos.', { reason: 'upload_count_mismatch', attempted, succeeded });
+  if (attempted !== preparedDocuments.length) {
+    failDocument('Não foi possível enviar todos os documentos.', {
+      reason: 'upload_count_mismatch',
+      attempted,
+      prepared: preparedDocuments.length,
+    });
   }
 
-  return { attempted, succeeded };
+  return { attempted, succeeded: preparedDocuments.length };
 }
 
 // ── Persiste partes estruturadas (locatários, cônjuges, fiadores, empresa, representantes) ──

@@ -1331,6 +1331,9 @@ export default function PropostaPublica() {
       const sanitizedEmpresa = restoredData.empresa
         ? { ...emptyEmpresa, ...restoredData.empresa }
         : undefined;
+      const sanitizedConjuge = restoredData.conjuge
+        ? { ...emptyPerson, ...restoredData.conjuge, documentos: ensureConjugeDocs((restoredData.conjuge as any)?.documentos) }
+        : undefined;
       const sanitizedRepresentantes = Array.isArray(restoredData.representantes)
         ? restoredData.representantes
         : undefined;
@@ -1356,6 +1359,7 @@ export default function PropostaPublica() {
         imovel: prev.imovel,
         // Keep original doc structure but restore non-file data
         documentos: prev.documentos,
+        ...(sanitizedConjuge ? { conjuge: sanitizedConjuge } : {}),
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
         ...(sanitizedRepresentantes ? { representantes: sanitizedRepresentantes } : {}),

@@ -252,6 +252,12 @@ async function uploadProposalDocuments(
         ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
         : job.ownerType;
       const resolvedOwnerLabel = isSpouseDoc ? personName : job.ownerLabel;
+      if (isSpouseDoc && !resolvedPartyId) {
+        failed++;
+        if (!firstError) firstError = 'Não foi possível vincular o documento ao cônjuge correto.';
+        console.error('[uploadProposalDocuments] spouse party_id missing', { category: job.category, spousePartyKey: job.spousePartyKey });
+        continue;
+      }
       // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
       const pathPrefix = proposalLinkId || cardId || 'orfaos';
       const personSegment = resolvedPartyId || job.ownerKey;

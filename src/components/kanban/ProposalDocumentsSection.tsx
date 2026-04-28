@@ -9,6 +9,8 @@ import {
   OWNER_TYPE_LABELS,
   type ProposalDocument,
 } from '@/hooks/useProposalDocuments';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -35,6 +37,32 @@ function fileIcon(mime: string | null) {
 
 export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionProps) {
   const { data: docs = [], isLoading } = useProposalDocuments(cardId);
+  // Carrega as partes (proposal_parties) ligadas ao card para conseguir agrupar
+  // documentos por pessoa (party_id) com nome/papel corretos.
+  const { data: parties = [] } = useQuery({
+    queryKey: ['proposal-parties', cardId],
+    enabled: !!cardId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: cardRow } = await supabase
+        .from('cards')
+        .select('id, proposal_link_id')
+        .eq('id', cardId)
+        .maybeSingle();
+      const proposalLinkId = cardRow?.proposal_link_id || null;
+      if (!proposalLinkId) return [] as Array<any>;
+      const { data, error } = await supabase
+        .from('proposal_parties' as any)
+        .select('id, role, name, position, metadata')
+        .eq('proposal_link_id', proposalLinkId)
+        .order('position', { ascending: true });
+      if (error) {
+        console.error('Erro ao carregar partes da proposta:', error);
+        return [] as Array<any>;
+      }
+      return (data as any[]) || [];
+    },
+  });
   const [busyId, setBusyId] = useState<string | null>(null);
   const { isAdmin, isGestor, isAdministrativo } = usePermissions();
   const canAddComplementary = isAdmin || isGestor || isAdministrativo;

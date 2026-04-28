@@ -60,10 +60,17 @@ const DOC_CATEGORY_LABELS: Record<string, string> = {
   renda_conjuge: 'Renda do cônjuge',
 };
 
+// Chave canônica usada tanto em proposal_parties (mapeamento) como em jobs de upload
+// para casar party_id ↔ documento. Idêntica à usada em persistProposalParties.
+function partyKey(role: string, indexZeroBased = 0): string {
+  return `${role}#${indexZeroBased}`;
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
+  partyMap: Map<string, string> = new Map(),
 ): Promise<{ attempted: number; succeeded: number; failed: number; firstError: string | null }> {
   type Job = {
     ownerType: string;
@@ -71,6 +78,8 @@ async function uploadProposalDocuments(
     ownerLabel: string;
     ownerPersonName: string;
     ownerPersonRole: string;
+    partyKey: string;
+    spousePartyKey?: string;
     spouseName?: string;
     category: string;
     files: UploadedFile[];
@@ -85,6 +94,8 @@ async function uploadProposalDocuments(
   const proponentOwnerType = isPj ? 'empresa' : 'proponente';
   const proponentOwnerKey = proponentOwnerType; // único por proposta
   const spouseName = (data.conjuge?.nome || '').trim();
+  const principalPartyKey = isPj ? partyKey('company') : partyKey('primary_tenant');
+  const principalSpousePartyKey = isPj ? undefined : partyKey('tenant_spouse', 0);
   for (const cat of data.documentos || []) {
     if (cat.files.length > 0) {
       jobs.push({
@@ -93,6 +104,8 @@ async function uploadProposalDocuments(
         ownerLabel: proponentLabel,
         ownerPersonName: proponentLabel,
         ownerPersonRole: isPj ? 'EMPRESA' : 'TITULAR',
+        partyKey: principalPartyKey,
+        spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
         files: cat.files,
@@ -100,11 +113,44 @@ async function uploadProposalDocuments(
     }
   }
 
+  // Locatários adicionais (PF)
+  if (!isPj) {
+    (data.locatarios_adicionais || []).forEach((loc, idx) => {
+      const label = loc.nome ? `Locatário adicional ${idx + 1} — ${loc.nome}` : `Locatário adicional ${idx + 1}`;
+      const personName = loc.nome || `Locatário ${idx + 2}`;
+      const ownerKey = `locatario-${idx + 1}`;
+      const locSpouseName = (loc.conjuge?.nome || '').trim();
+      const locPartyKey = partyKey('additional_tenant', idx);
+      // O cônjuge do adicional vem após o adicional na inserção em proposal_parties.
+      // Por isso, em vez de tentar prever o índice no mapa de tenant_spouse,
+      // resolvemos a partir do metadata.spouse_of (vide buildPartyMap abaixo).
+      const locSpousePartyKey = partyKey('tenant_spouse_of_additional', idx);
+      for (const cat of loc.documentos || []) {
+        if (cat.files.length > 0) {
+          jobs.push({
+            ownerType: 'proponente',
+            ownerKey,
+            ownerLabel: label,
+            ownerPersonName: personName,
+            ownerPersonRole: 'LOCATARIO ADICIONAL',
+            partyKey: locPartyKey,
+            spousePartyKey: locSpousePartyKey,
+            spouseName: locSpouseName,
+            category: cat.key,
+            files: cat.files,
+          });
+        }
+      }
+    });
+  }
+
   // Fiadores
   (data.garantia.fiadores || []).forEach((f, idx) => {
     const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
     const ownerKey = `fiador-${idx + 1}`;
     const fiadorSpouseName = (f.conjuge?.nome || '').trim();
+    const fiadorPartyKey = partyKey('guarantor', idx);
+    const fiadorSpousePartyKey = partyKey('guarantor_spouse', idx);
     for (const cat of f.documentos || []) {
       if (cat.files.length > 0) {
         jobs.push({
@@ -113,6 +159,8 @@ async function uploadProposalDocuments(
           ownerLabel: label,
           ownerPersonName: f.nome || `Fiador ${idx + 1}`,
           ownerPersonRole: 'FIADOR',
+          partyKey: fiadorPartyKey,
+          spousePartyKey: fiadorSpousePartyKey,
           spouseName: fiadorSpouseName,
           category: cat.key,
           files: cat.files,
@@ -145,11 +193,14 @@ async function uploadProposalDocuments(
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');
-      // Caminho separado por pessoa (ownerKey) e categoria, evitando colisões entre fiadores.
-      // Usa o proposal_link_id como prefixo (estável mesmo antes do card existir);
-      // fallback para cardId quando link não estiver disponível.
+      // Resolve party_id pelo mapa (role+idx). Cônjuge tem party própria.
+      const resolvedPartyId = isSpouseDoc && job.spousePartyKey
+        ? (partyMap.get(job.spousePartyKey) || null)
+        : (partyMap.get(job.partyKey) || null);
+      // Caminho: {link}/{party_id || ownerKey}/{categoria}/{timestamp}_{nome_sanitizado}
       const pathPrefix = proposalLinkId || cardId || 'orfaos';
-      const path = `${pathPrefix}/${job.ownerKey}/${job.category}/${Date.now()}_${safeName}`;
+      const personSegment = resolvedPartyId || job.ownerKey;
+      const path = `${pathPrefix}/${personSegment}/${job.category}/${Date.now()}_${safeName}`;
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
@@ -162,11 +213,13 @@ async function uploadProposalDocuments(
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
+        party_id: resolvedPartyId,
         category: job.category,
         category_label: DOC_CATEGORY_LABELS[job.category] || job.category,
         owner_type: job.ownerType,
         owner_label: job.ownerLabel,
         file_name: standardized,
+        original_file_name: file.name,
         file_size: file.size,
         mime_type: file.type,
         storage_path: path,

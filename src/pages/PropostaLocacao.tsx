@@ -393,6 +393,8 @@ const initialData: ProposalFormData = {
   negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
   empresa: { ...emptyEmpresa },
   representantes: [],
+  tem_mais_locatarios: '',
+  locatarios_adicionais: [],
 };
 
 // ── Helper: parse currency string to number ──

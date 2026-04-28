@@ -1247,6 +1247,27 @@ export default function PropostaPublica() {
         } catch (logErr) {
           console.warn('Falha ao registrar atividade de proposta enviada:', logErr);
         }
+
+        // 4.2) Atividade automática informando a movimentação de coluna.
+        if (shouldMoveColumn) {
+          try {
+            await supabase.from('card_activity_logs').insert({
+              card_id: targetCardId,
+              actor_user_id: null,
+              event_type: 'auto_column_move',
+              title: '➡️ Movido para Aguardando Documentação',
+              description:
+                'Card movido automaticamente para Aguardando Documentação após recebimento da proposta.',
+              metadata: {
+                from_column_id: targetCardColumnId,
+                to_column_id: aguardandoDocColumnId,
+                reason: 'proposal_submitted',
+              },
+            });
+          } catch (mvLogErr) {
+            console.warn('Falha ao registrar atividade de movimentação automática:', mvLogErr);
+          }
+        }
       }
 
       // 5) Notifica o time administrativo (admins) que a proposta foi enviada

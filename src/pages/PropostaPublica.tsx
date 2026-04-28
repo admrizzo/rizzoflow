@@ -1116,15 +1116,49 @@ export default function PropostaPublica() {
     try {
       // 1) Tenta localizar o card pré-criado vinculado a este proposal_link
       let targetCardId: string | null = null;
+      let targetCardBoardId: string | null = null;
+      let targetCardColumnId: string | null = null;
       if (proposalLink?.id) {
         const { data: linkedCard } = await supabase
           .from('cards')
-          .select('id')
+          .select('id, board_id, column_id')
           .eq('proposal_link_id', proposalLink.id)
           .eq('is_archived', false)
           .maybeSingle();
         targetCardId = linkedCard?.id || null;
+        targetCardBoardId = (linkedCard as any)?.board_id || null;
+        targetCardColumnId = (linkedCard as any)?.column_id || null;
       }
+
+      // 1.1) Tenta localizar a coluna "Aguardando Documentação" do mesmo board
+      // para mover automaticamente o card após o recebimento.
+      // Comparação tolerante a acentos/caixa.
+      const normalize = (s: string) =>
+        s
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .trim();
+      let aguardandoDocColumnId: string | null = null;
+      if (targetCardBoardId) {
+        const { data: cols } = await supabase
+          .from('columns')
+          .select('id, name, position')
+          .eq('board_id', targetCardBoardId)
+          .order('position', { ascending: true });
+        const match = (cols || []).find((c: any) => {
+          const n = normalize(c.name || '');
+          return n === 'aguardando documentacao' || n.includes('aguardando documentacao');
+        });
+        aguardandoDocColumnId = match?.id || null;
+        if (!match) {
+          console.warn('[PropostaPublica] Coluna "Aguardando Documentação" não encontrada no board', targetCardBoardId);
+        }
+      }
+
+      // Se já está na coluna correta, não move novamente.
+      const shouldMoveColumn =
+        !!aguardandoDocColumnId && aguardandoDocColumnId !== targetCardColumnId;
 
       const cardPayload = {
         title: cardTitle,
@@ -1137,6 +1171,14 @@ export default function PropostaPublica() {
         proposal_responsible: brokerName,
         negotiation_details: negotiationDetailsLines || null,
         proposal_submitted_at: new Date().toISOString(),
+        ...(shouldMoveColumn
+          ? {
+              column_id: aguardandoDocColumnId,
+              column_entered_at: new Date().toISOString(),
+              last_moved_at: new Date().toISOString(),
+              last_moved_by: null,
+            }
+          : {}),
       };
 
       if (targetCardId) {
@@ -1204,6 +1246,27 @@ export default function PropostaPublica() {
           });
         } catch (logErr) {
           console.warn('Falha ao registrar atividade de proposta enviada:', logErr);
+        }
+
+        // 4.2) Atividade automática informando a movimentação de coluna.
+        if (shouldMoveColumn) {
+          try {
+            await supabase.from('card_activity_logs').insert({
+              card_id: targetCardId,
+              actor_user_id: null,
+              event_type: 'auto_column_move',
+              title: '➡️ Movido para Aguardando Documentação',
+              description:
+                'Card movido automaticamente para Aguardando Documentação após recebimento da proposta.',
+              metadata: {
+                from_column_id: targetCardColumnId,
+                to_column_id: aguardandoDocColumnId,
+                reason: 'proposal_submitted',
+              },
+            });
+          } catch (mvLogErr) {
+            console.warn('Falha ao registrar atividade de movimentação automática:', mvLogErr);
+          }
         }
       }
 

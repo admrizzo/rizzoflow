@@ -1195,6 +1195,18 @@ export default function PropostaPublica() {
       if (rpcErr) throw rpcErr;
       const targetCardId: string | null = (rpcRes as any)?.card_id || null;
 
+      // 2.5) Persistir partes estruturadas em proposal_parties.
+      //      Idempotente: deletamos as anteriores deste proposal_link antes de inserir,
+      //      para que reenvio/edição não duplique.
+      if (proposalLink?.id) {
+        try {
+          await persistProposalParties(proposalLink.id, targetCardId, data);
+        } catch (partiesErr) {
+          console.error('Erro ao salvar partes da proposta:', partiesErr);
+          // Não bloqueia a finalização — fallback para campos legados continua válido.
+        }
+      }
+
       // 3) Backfill: vincular ao card recém-criado todos os documentos
       //    que foram enviados via proposal_link_id e ainda estão sem card_id.
       if (targetCardId && proposalLink?.id) {

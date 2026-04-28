@@ -253,6 +253,10 @@ export interface ProposalFormData {
   // ── Pessoa Jurídica ──
   empresa: EmpresaData;
   representantes: RepresentanteLegal[];
+  // ── Multi-locatários (contratos com mais de um inquilino) ──
+  // Opcional para compatibilidade com propostas antigas.
+  tem_mais_locatarios?: 'sim' | 'nao' | '';
+  locatarios_adicionais?: LocatarioAdicional[];
 }
 
 const emptyPerson: DadosPessoais = { nome: '', cpf: '', profissao: '', whatsapp: '', email: '' };

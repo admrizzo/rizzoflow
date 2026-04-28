@@ -183,6 +183,254 @@ async function uploadProposalDocuments(
   return { attempted, succeeded, failed, firstError };
 }
 
+// ── Persiste partes estruturadas (locatários, cônjuges, fiadores, empresa, representantes) ──
+// Idempotente por proposal_link_id: limpa e reescreve.
+async function persistProposalParties(
+  proposalLinkId: string,
+  cardId: string | null,
+  data: ProposalFormData,
+): Promise<void> {
+  const parseNum = (s: string | undefined | null): number | null => {
+    if (!s) return null;
+    const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(cleaned);
+    return isFinite(n) ? n : null;
+  };
+
+  type PartyRow = {
+    proposal_link_id: string;
+    card_id: string | null;
+    role: string;
+    person_type: 'pf' | 'pj';
+    name: string | null;
+    cpf: string | null;
+    cnpj: string | null;
+    rg: string | null;
+    email: string | null;
+    phone: string | null;
+    marital_status: string | null;
+    profession: string | null;
+    income: number | null;
+    address: string | null;
+    position: number;
+    metadata: Record<string, any>;
+  };
+
+  const rows: PartyRow[] = [];
+  let pos = 0;
+  const isPj = data.imovel.tipo_pessoa === 'juridica';
+
+  if (isPj) {
+    // Empresa
+    const e = data.empresa;
+    rows.push({
+      proposal_link_id: proposalLinkId,
+      card_id: cardId,
+      role: 'company',
+      person_type: 'pj',
+      name: e.razao_social || e.nome_fantasia || null,
+      cpf: null,
+      cnpj: e.cnpj || null,
+      rg: null,
+      email: e.email || null,
+      phone: e.telefone || null,
+      marital_status: null,
+      profession: null,
+      income: parseNum(e.faturamento_mensal),
+      address: [e.logradouro, e.numero, e.complemento, e.bairro, e.cidade, e.uf, e.cep]
+        .filter(Boolean).join(', ') || null,
+      position: pos++,
+      metadata: {
+        nome_fantasia: e.nome_fantasia || null,
+        ramo_atividade: e.ramo_atividade || null,
+        regime_tributario: e.regime_tributario || null,
+        data_abertura: e.data_abertura || null,
+        tempo_atividade: e.tempo_atividade || null,
+      },
+    });
+    // Representantes legais
+    (data.representantes || []).forEach((r) => {
+      rows.push({
+        proposal_link_id: proposalLinkId,
+        card_id: cardId,
+        role: 'legal_representative',
+        person_type: 'pf',
+        name: r.nome || null,
+        cpf: r.cpf || null,
+        cnpj: null,
+        rg: null,
+        email: r.email || null,
+        phone: r.whatsapp || null,
+        marital_status: null,
+        profession: r.profissao || null,
+        income: null,
+        address: [r.logradouro, r.numero, r.complemento, r.bairro, r.cidade, r.uf, r.cep]
+          .filter(Boolean).join(', ') || null,
+        position: pos++,
+        metadata: {
+          is_socio: !!r.is_socio,
+          is_administrador: !!r.is_administrador,
+          is_signatario: !!r.is_signatario,
+        },
+      });
+    });
+  } else {
+    // Locatário principal (PF)
+    const dp = data.dados_pessoais;
+    const pf = data.perfil_financeiro;
+    rows.push({
+      proposal_link_id: proposalLinkId,
+      card_id: cardId,
+      role: 'primary_tenant',
+      person_type: 'pf',
+      name: dp.nome || null,
+      cpf: dp.cpf || null,
+      cnpj: null,
+      rg: null,
+      email: dp.email || null,
+      phone: dp.whatsapp || null,
+      marital_status: pf.estado_civil || null,
+      profession: dp.profissao || null,
+      income: parseNum(pf.renda_mensal),
+      address: null,
+      position: pos++,
+      metadata: {
+        regime_bens: pf.regime_bens || null,
+        conjuge_participa: pf.conjuge_participa || null,
+        fonte_renda: pf.fonte_renda || null,
+      },
+    });
+    // Cônjuge do principal (se existir)
+    const cj = data.conjuge;
+    const hasSpouse = !!(cj && (cj.nome || cj.cpf || cj.email));
+    if (hasSpouse) {
+      rows.push({
+        proposal_link_id: proposalLinkId,
+        card_id: cardId,
+        role: 'tenant_spouse',
+        person_type: 'pf',
+        name: cj.nome || null,
+        cpf: cj.cpf || null,
+        cnpj: null,
+        rg: null,
+        email: cj.email || null,
+        phone: cj.whatsapp || null,
+        marital_status: null,
+        profession: cj.profissao || null,
+        income: null,
+        address: null,
+        position: pos++,
+        metadata: { spouse_of: 'primary_tenant' },
+      });
+    }
+    // Locatários adicionais
+    (data.locatarios_adicionais || []).forEach((loc, idx) => {
+      rows.push({
+        proposal_link_id: proposalLinkId,
+        card_id: cardId,
+        role: 'additional_tenant',
+        person_type: 'pf',
+        name: loc.nome || null,
+        cpf: loc.cpf || null,
+        cnpj: null,
+        rg: loc.rg || null,
+        email: loc.email || null,
+        phone: loc.whatsapp || null,
+        marital_status: loc.estado_civil || null,
+        profession: loc.profissao || null,
+        income: parseNum(loc.renda_mensal),
+        address: loc.endereco || null,
+        position: pos++,
+        metadata: {
+          tenant_index: idx + 1,
+          regime_bens: loc.regime_bens || null,
+          conjuge_participa: loc.conjuge_participa || null,
+        },
+      });
+      const lc = loc.conjuge;
+      const hasLocSpouse = !!(lc && (lc.nome || lc.cpf || lc.email));
+      if (hasLocSpouse) {
+        rows.push({
+          proposal_link_id: proposalLinkId,
+          card_id: cardId,
+          role: 'tenant_spouse',
+          person_type: 'pf',
+          name: lc.nome || null,
+          cpf: lc.cpf || null,
+          cnpj: null,
+          rg: lc.rg || null,
+          email: lc.email || null,
+          phone: lc.whatsapp || null,
+          marital_status: null,
+          profession: null,
+          income: null,
+          address: null,
+          position: pos++,
+          metadata: { spouse_of: `additional_tenant_${idx + 1}` },
+        });
+      }
+    });
+  }
+
+  // Fiadores + cônjuges (independente de PF/PJ)
+  (data.garantia?.fiadores || []).forEach((f, idx) => {
+    rows.push({
+      proposal_link_id: proposalLinkId,
+      card_id: cardId,
+      role: 'guarantor',
+      person_type: 'pf',
+      name: f.nome || null,
+      cpf: f.cpf || null,
+      cnpj: null,
+      rg: null,
+      email: f.email || null,
+      phone: f.whatsapp || null,
+      marital_status: f.estado_civil || null,
+      profession: f.profissao || null,
+      income: parseNum(f.renda_mensal),
+      address: [f.logradouro, f.numero, f.complemento, f.bairro, f.cidade, f.uf, f.cep]
+        .filter(Boolean).join(', ') || null,
+      position: pos++,
+      metadata: {
+        guarantor_index: idx + 1,
+        tipo_fiador: f.tipo_fiador || null,
+        registro_imoveis: f.registro_imoveis || null,
+        regime_bens: f.regime_bens || null,
+        conjuge_participa: f.conjuge_participa || null,
+      },
+    });
+    const fc = f.conjuge;
+    const hasFiadorSpouse = !!(fc && (fc.nome || fc.cpf || fc.email));
+    if (hasFiadorSpouse) {
+      rows.push({
+        proposal_link_id: proposalLinkId,
+        card_id: cardId,
+        role: 'guarantor_spouse',
+        person_type: 'pf',
+        name: fc.nome || null,
+        cpf: fc.cpf || null,
+        cnpj: null,
+        rg: fc.documento_identidade || null,
+        email: fc.email || null,
+        phone: fc.whatsapp || null,
+        marital_status: null,
+        profession: null,
+        income: null,
+        address: null,
+        position: pos++,
+        metadata: { spouse_of: `guarantor_${idx + 1}` },
+      });
+    }
+  });
+
+  if (rows.length === 0) return;
+
+  // Apaga partes anteriores deste link (idempotência) e reinsere.
+  await supabase.from('proposal_parties' as any).delete().eq('proposal_link_id', proposalLinkId);
+  const { error } = await supabase.from('proposal_parties' as any).insert(rows as any);
+  if (error) throw error;
+}
+
 // Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.
 function sanitizeForFilename(value: string): string {
   if (!value) return '';

@@ -1601,6 +1601,16 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
+            {/* === BLOCO: PESSOAS / PARTES DA PROPOSTA === */}
+            {card.proposal_link_id && proposalParties.length > 0 && (
+              <div className="bg-muted/30 p-4 rounded-lg border border-muted">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Pessoas envolvidas na proposta
+                </h3>
+                <ProposalPartiesView parties={proposalParties} compact />
+              </div>
+            )}
+
             {/* Motivo da transferência - Only for Administrativo board with "Imóvel que veio alugado" label */}
             {isAdministrativoBoard && hasImovelAlugadoLabel && (
               <div>

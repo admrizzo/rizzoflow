@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useChecklistTemplates, ChecklistItemTemplate } from '@/hooks/useChecklistTemplates';
 import { useBoards } from '@/hooks/useBoards';
+import { useBoardConfig } from '@/hooks/useBoardConfig';
 import { supabase } from '@/integrations/supabase/client';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ import {
 } from '@/components/ui/tooltip';
 import { 
   ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
-  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText
+  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save
 } from 'lucide-react';
 import { Board } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -64,6 +65,7 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   } = useChecklistTemplates(board.id);
   
   const { boards } = useBoards();
+  const { config, updateConfig } = useBoardConfig(board.id);
   const { toast } = useToast();
 
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -86,13 +88,26 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   const [configStatusOptions, setConfigStatusOptions] = useState<string[]>([]);
   const [newStatusOption, setNewStatusOption] = useState('');
 
-  // Clone states
+  // Active templates (persisted on board_config.auto_apply_checklist_templates)
+  const [activeIds, setActiveIds] = useState<Set<string> | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSavingActive, setIsSavingActive] = useState(false);
+
+  // Clone states (separated from active selection)
+  const [cloneMode, setCloneMode] = useState(false);
   const [selectedForClone, setSelectedForClone] = useState<Set<string>>(new Set());
   const [showCloneDialog, setShowCloneDialog] = useState(false);
   const [cloneTargetBoardId, setCloneTargetBoardId] = useState<string>('');
   const [isCloning, setIsCloning] = useState(false);
 
   const otherBoards = boards.filter(b => b.id !== board.id);
+
+  // Hydrate activeIds from board_config (one-shot)
+  useEffect(() => {
+    if (activeIds === null && config) {
+      setActiveIds(new Set<string>(config.auto_apply_checklist_templates || []));
+    }
+  }, [config, activeIds]);
 
   const toggleExpanded = (templateId: string) => {
     const newExpanded = new Set(expandedTemplates);
@@ -104,6 +119,37 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     setExpandedTemplates(newExpanded);
   };
 
+  // ---- Active selection (persisted) ----
+  const toggleActive = (templateId: string) => {
+    const next = new Set(activeIds || []);
+    if (next.has(templateId)) next.delete(templateId);
+    else next.add(templateId);
+    setActiveIds(next);
+    setHasUnsavedChanges(true);
+  };
+
+  const toggleActiveAll = () => {
+    const all = new Set(templates.map(t => t.id));
+    const current = activeIds || new Set();
+    // If all are active, clear; otherwise mark all
+    const allActive = templates.length > 0 && templates.every(t => current.has(t.id));
+    setActiveIds(allActive ? new Set() : all);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveActive = async () => {
+    setIsSavingActive(true);
+    try {
+      await updateConfig.mutateAsync({
+        auto_apply_checklist_templates: Array.from(activeIds || []),
+      });
+      setHasUnsavedChanges(false);
+    } finally {
+      setIsSavingActive(false);
+    }
+  };
+
+  // ---- Clone selection (separate) ----
   const toggleSelection = (templateId: string) => {
     const newSelected = new Set(selectedForClone);
     if (newSelected.has(templateId)) {
@@ -283,6 +329,7 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       setShowCloneDialog(false);
       setSelectedForClone(new Set());
       setCloneTargetBoardId('');
+      setCloneMode(false);
     } catch (error: any) {
       toast({
         title: 'Erro ao clonar checklists',
@@ -338,33 +385,94 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Esses checklists serão criados automaticamente em cada novo card deste fluxo.
+        Marque os checklists que devem ser criados automaticamente em cada novo card deste fluxo.
       </p>
 
-      {/* Selection actions bar */}
+      {/* Active templates bar (persisted) */}
       {templates.length > 0 && (
-        <div className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+        <div className={`flex items-center justify-between rounded-lg p-2 border ${
+          hasUnsavedChanges ? 'bg-amber-50 border-amber-300' : 'bg-muted/50 border-transparent'
+        }`}>
           <div className="flex items-center gap-3">
-            <Checkbox 
-              checked={selectedForClone.size === templates.length && templates.length > 0}
-              onCheckedChange={toggleSelectAll}
-            />
-            <span className="text-sm text-muted-foreground">
-              {selectedForClone.size > 0 
-                ? `${selectedForClone.size} selecionado(s)` 
-                : 'Selecionar todos'}
-            </span>
+            {cloneMode ? (
+              <>
+                <Checkbox
+                  checked={selectedForClone.size === templates.length && templates.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {selectedForClone.size > 0
+                    ? `${selectedForClone.size} marcado(s) para clonar`
+                    : 'Selecionar todos para clonar'}
+                </span>
+              </>
+            ) : (
+              <>
+                <Checkbox
+                  checked={
+                    templates.length > 0 &&
+                    templates.every(t => activeIds?.has(t.id))
+                  }
+                  onCheckedChange={toggleActiveAll}
+                />
+                <span className="text-sm">
+                  <strong>{activeIds?.size || 0}</strong> de {templates.length} ativo(s) neste fluxo
+                </span>
+                {hasUnsavedChanges && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-700">
+                    Alterações não salvas
+                  </Badge>
+                )}
+              </>
+            )}
           </div>
-          {selectedForClone.size > 0 && otherBoards.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCloneDialog(true)}
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Clonar para outro fluxo
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {cloneMode ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCloneMode(false);
+                    setSelectedForClone(new Set());
+                  }}
+                >
+                  Cancelar
+                </Button>
+                {selectedForClone.size > 0 && otherBoards.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCloneDialog(true)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Clonar selecionados
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                {otherBoards.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCloneMode(true)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Clonar para outro fluxo
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={handleSaveActive}
+                  disabled={!hasUnsavedChanges || isSavingActive}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar configuração
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -417,9 +525,17 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
                             <CardHeader className="p-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 flex-1">
-                                  <Checkbox 
-                                    checked={selectedForClone.has(template.id)}
-                                    onCheckedChange={() => toggleSelection(template.id)}
+                                  <Checkbox
+                                    checked={
+                                      cloneMode
+                                        ? selectedForClone.has(template.id)
+                                        : !!activeIds?.has(template.id)
+                                    }
+                                    onCheckedChange={() =>
+                                      cloneMode
+                                        ? toggleSelection(template.id)
+                                        : toggleActive(template.id)
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                   <div

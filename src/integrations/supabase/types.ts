@@ -2013,6 +2013,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_active_checklist_templates: {
+        Args: { _card_id: string }
+        Returns: undefined
+      }
       can_manage_boards: { Args: { _user_id: string }; Returns: boolean }
       can_manage_card: {
         Args: { _card_id: string; _user_id: string }

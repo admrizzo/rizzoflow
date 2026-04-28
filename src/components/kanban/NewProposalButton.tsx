@@ -113,8 +113,19 @@ export function NewProposalButton() {
       const targetCol = columns?.find(c => c.name.toLowerCase().includes(CADASTRO_INICIADO_COLUMN_NAME)) || columns?.[0];
 
       if (targetCol) {
-        // 3. Create card in the Locação board, vinculado ao proposal_link
-        await supabase.from('cards').insert({
+        // 3. Create card in the Locação board, vinculado ao proposal_link.
+        //    Calcula próxima posição para evitar empilhar todos em position=0.
+        const { data: lastCard } = await supabase
+          .from('cards')
+          .select('position')
+          .eq('column_id', targetCol.id)
+          .eq('is_archived', false)
+          .order('position', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const nextPosition = (lastCard?.position ?? -1) + 1;
+
+        const { error: cardErr } = await supabase.from('cards').insert({
           title: `${selectedProperty.codigo_robust} - ${identification}`,
           board_id: LOCACAO_BOARD_ID,
           column_id: targetCol.id,
@@ -125,9 +136,16 @@ export function NewProposalButton() {
           proposal_link_id: linkData.id,
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
-          position: 0,
+          position: nextPosition,
           column_entered_at: new Date().toISOString(),
         });
+        if (cardErr) {
+          // Não aborta a geração do link, mas avisa para que admin corrija depois.
+          console.error('[NewProposalButton] Falha ao criar card vinculado:', cardErr);
+          toast.warning('Link gerado, mas o card no Kanban não pôde ser criado.', {
+            description: cardErr.message,
+          });
+        }
       }
 
       return linkData as { id: string; codigo_robust: number; public_token: string };

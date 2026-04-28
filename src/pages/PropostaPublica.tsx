@@ -63,7 +63,7 @@ async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
   data: ProposalFormData,
-): Promise<void> {
+): Promise<{ attempted: number; succeeded: number; failed: number; firstError: string | null }> {
   type Job = {
     ownerType: string;
     ownerKey: string;
@@ -124,6 +124,10 @@ async function uploadProposalDocuments(
   const seen = new Set<string>();
   // Controle de duplicidade do nome final padronizado por proposta
   const usedFinalNames = new Map<string, number>();
+  let attempted = 0;
+  let succeeded = 0;
+  let failed = 0;
+  let firstError: string | null = null;
   for (const job of jobs) {
     for (const file of job.files) {
       if (!file.dataUrl) continue;
@@ -132,6 +136,7 @@ async function uploadProposalDocuments(
       seen.add(dedupKey);
       const blob = dataUrlToBlob(file.dataUrl);
       if (!blob) continue;
+      attempted++;
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
       const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
@@ -147,7 +152,12 @@ async function uploadProposalDocuments(
       const { error: upErr } = await supabase.storage
         .from('proposal-documents')
         .upload(path, blob, { contentType: file.type || blob.type, upsert: false });
-      if (upErr) { console.error('upload err', upErr); continue; }
+      if (upErr) {
+        failed++;
+        if (!firstError) firstError = `Upload falhou: ${upErr.message}`;
+        console.error('[uploadProposalDocuments] storage upload err', { path, upErr });
+        continue;
+      }
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
         proposal_link_id: proposalLinkId,
@@ -161,10 +171,15 @@ async function uploadProposalDocuments(
         storage_path: path,
       });
       if (insErr) {
-        console.error('proposal_documents insert err', insErr);
+        failed++;
+        if (!firstError) firstError = `Registro do documento falhou: ${insErr.message}`;
+        console.error('[uploadProposalDocuments] proposal_documents insert err', { path, insErr });
+        continue;
       }
+      succeeded++;
     }
   }
+  return { attempted, succeeded, failed, firstError };
 }
 
 // Remove acentos, caracteres inválidos e normaliza para o padrão de nome de arquivo.
@@ -1123,12 +1138,29 @@ export default function PropostaPublica() {
       // 0) Upload de documentos PRIMEIRO, vinculando-os ao proposal_link_id.
       //    Isso garante que os arquivos não se percam mesmo que o RPC falhe,
       //    e permite que a query do card os recupere via proposal_link_id.
+      let uploadStats = { attempted: 0, succeeded: 0, failed: 0, firstError: null as string | null };
       if (proposalLink?.id) {
         try {
-          await uploadProposalDocuments(null, proposalLink.id, data);
+          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data);
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
-          toast.warning('Alguns arquivos podem não ter sido enviados', { description: uploadErr.message });
+          toast.error('Falha ao enviar documentos', { description: uploadErr.message });
+          setIsSubmitting(false);
+          return;
+        }
+        // Se o usuário tentou anexar arquivos mas NENHUM foi salvo,
+        // não finalize a proposta — o card sairia com "Doc. recebidos" sem documentos.
+        if (uploadStats.attempted > 0 && uploadStats.succeeded === 0) {
+          toast.error('Não foi possível enviar os documentos', {
+            description: uploadStats.firstError || 'Verifique sua conexão e tente novamente.',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        if (uploadStats.failed > 0) {
+          toast.warning(`${uploadStats.failed} de ${uploadStats.attempted} arquivos falharam`, {
+            description: uploadStats.firstError || undefined,
+          });
         }
       }
 

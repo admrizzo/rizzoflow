@@ -10,7 +10,7 @@ import { toast } from 'sonner';
  * quando o admin alterar acessos ou papéis.
  */
 export function useMyAccessRealtime() {
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshRoles } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -48,8 +48,8 @@ export function useMyAccessRealtime() {
           queryClient.invalidateQueries({ queryKey: ['boards'] });
           queryClient.invalidateQueries({ queryKey: ['user-roles'] });
           queryClient.invalidateQueries({ queryKey: ['internal-users'] });
-          // Recarrega o perfil/roles do AuthContext
-          void refreshProfile();
+          // Recarrega os roles do AuthContext (permissões em memória)
+          void refreshRoles();
           toast.info('Suas permissões foram atualizadas', {
             description: 'Recarregue a página se algo não atualizar.',
           });
@@ -60,5 +60,5 @@ export function useMyAccessRealtime() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient, refreshProfile]);
+  }, [user?.id, queryClient, refreshRoles]);
 }

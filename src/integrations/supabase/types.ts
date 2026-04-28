@@ -1529,12 +1529,15 @@ export type Database = {
           file_name: string
           file_size: number | null
           id: string
+          is_complementary: boolean
           mime_type: string | null
+          original_file_name: string | null
           owner_label: string | null
           owner_type: string
           proposal_link_id: string | null
           storage_path: string
           uploaded_at: string
+          uploaded_by: string | null
         }
         Insert: {
           card_id?: string | null
@@ -1544,12 +1547,15 @@ export type Database = {
           file_name: string
           file_size?: number | null
           id?: string
+          is_complementary?: boolean
           mime_type?: string | null
+          original_file_name?: string | null
           owner_label?: string | null
           owner_type?: string
           proposal_link_id?: string | null
           storage_path: string
           uploaded_at?: string
+          uploaded_by?: string | null
         }
         Update: {
           card_id?: string | null
@@ -1559,12 +1565,15 @@ export type Database = {
           file_name?: string
           file_size?: number | null
           id?: string
+          is_complementary?: boolean
           mime_type?: string | null
+          original_file_name?: string | null
           owner_label?: string | null
           owner_type?: string
           proposal_link_id?: string | null
           storage_path?: string
           uploaded_at?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {

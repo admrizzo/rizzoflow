@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict, differenceInHours, differenceInDays } from 'date-fns';
+import { formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 
 type FilterKey =
@@ -474,11 +475,7 @@ export default function MinhaFila() {
                               )}
                             >
                               <CalendarClock className="h-3.5 w-3.5" />
-                              {(() => {
-                                const d = new Date(it.next_action_due_date);
-                                const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0;
-                                return format(d, hasTime ? "dd/MM/yyyy 'às' HH:mm" : "dd/MM/yyyy", { locale: ptBR });
-                              })()}
+                              {formatDateTimeBR(it.next_action_due_date)}
                               {(it.is_overdue || it.is_due_today) && (
                                 <span className="text-[10px] uppercase tracking-wide">
                                   {it.is_overdue

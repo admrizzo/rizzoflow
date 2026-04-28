@@ -189,7 +189,15 @@ async function uploadProposalDocuments(
       // Nome padronizado: TIPO_DOC - NOME_PESSOA - TIPO_PESSOA.EXT
       const isSpouseDoc = job.category === 'documento_conjuge' || job.category === 'renda_conjuge';
       const personName = isSpouseDoc && job.spouseName ? job.spouseName : job.ownerPersonName;
-      const personRole = isSpouseDoc ? 'CONJUGE' : job.ownerPersonRole;
+      // Para cônjuges, indicamos a quem o cônjuge pertence:
+      // CONJUGE DO LOCATARIO PRINCIPAL / DO LOCATARIO ADICIONAL / DO FIADOR / DA EMPRESA
+      let personRole = job.ownerPersonRole;
+      if (isSpouseDoc) {
+        if (job.ownerPersonRole === 'TITULAR') personRole = 'CONJUGE DO LOCATARIO PRINCIPAL';
+        else if (job.ownerPersonRole === 'LOCATARIO ADICIONAL') personRole = 'CONJUGE DO LOCATARIO ADICIONAL';
+        else if (job.ownerPersonRole === 'FIADOR') personRole = 'CONJUGE DO FIADOR';
+        else personRole = 'CONJUGE';
+      }
       const docTypeLabel = DOC_CATEGORY_LABELS[job.category] || job.category;
       const standardized = buildStandardDocName(file.name, docTypeLabel, personName, personRole, usedFinalNames);
       const safeName = file.name.replace(/[^\w.\-]/g, '_');

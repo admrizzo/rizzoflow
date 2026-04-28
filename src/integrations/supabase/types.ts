@@ -2063,6 +2063,7 @@ export type Database = {
           is_waiting_client: boolean
           next_action: string
           next_action_due_date: string
+          proposal_submitted_at: string
           responsible_name: string
           responsible_user_id: string
           title: string

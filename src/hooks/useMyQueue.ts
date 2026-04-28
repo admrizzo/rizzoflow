@@ -32,6 +32,8 @@ export interface QueueItem {
   has_no_due_date: boolean;
   has_no_responsible: boolean;
   is_waiting_client: boolean;
+  /** Quando o cliente enviou a proposta pública. Quando preenchido, a UI exibe "Doc. recebidos". */
+  proposal_submitted_at: string | null;
 }
 
 /**
@@ -79,6 +81,7 @@ export function useMyQueue() {
         has_no_due_date: !!row.has_no_due_date,
         has_no_responsible: !!row.has_no_responsible,
         is_waiting_client: !!row.is_waiting_client,
+        proposal_submitted_at: row.proposal_submitted_at ?? null,
       }));
 
       return items;

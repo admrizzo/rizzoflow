@@ -79,6 +79,48 @@ function isSpouseDocCategory(category: string): boolean {
   return SPOUSE_DOC_KEYS.has(category);
 }
 
+// Roles válidas em proposal_parties — devem casar com o que o card/visualização espera.
+const VALID_PARTY_ROLES = new Set<string>([
+  'primary_tenant',
+  'additional_tenant',
+  'tenant_spouse',
+  'guarantor',
+  'guarantor_spouse',
+  'company',
+  'legal_representative',
+]);
+
+/** Erro estruturado para falhas na preparação de proposal_parties. */
+class ProposalPartiesError extends Error {
+  constructor(
+    message: string,
+    public readonly userMessage: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'ProposalPartiesError';
+  }
+}
+
+/** Mascara dados sensíveis para logging (mantém últimos 2 dígitos de CPF/CNPJ). */
+function maskRowForLog(row: Record<string, any>) {
+  const mask = (v: string | null | undefined) =>
+    v ? `***${String(v).replace(/\D/g, '').slice(-2)}` : v;
+  const maskEmail = (v: string | null | undefined) =>
+    v ? v.replace(/(.).+(@.+)/, '$1***$2') : v;
+  return {
+    role: row.role,
+    person_type: row.person_type,
+    name: row.name ? String(row.name).slice(0, 24) : null,
+    cpf: mask(row.cpf),
+    cnpj: mask(row.cnpj),
+    email: maskEmail(row.email),
+    has_phone: !!row.phone,
+    position: row.position,
+    has_metadata: !!row.metadata && Object.keys(row.metadata || {}).length > 0,
+  };
+}
+
 function hasUploadedFiles(categories?: Array<{ files?: UploadedFile[] }>): boolean {
   return Array.isArray(categories) && categories.some((cat) => (cat.files || []).length > 0);
 }
@@ -628,54 +670,185 @@ async function persistProposalParties(
 
   if (rows.length === 0) return new Map();
 
-  // Apaga partes anteriores deste link (idempotência) e reinsere.
-  await supabase.from('proposal_parties' as any).delete().eq('proposal_link_id', proposalLinkId);
-  const { data: inserted, error } = await supabase
-    .from('proposal_parties' as any)
-    .insert(rows as any)
-    .select('id, position');
-  if (error) throw error;
+  // ── Validação prévia: roles permitidas e consistência mínima ──
+  const isSpouseKey = (k: string) =>
+    k.startsWith('tenant_spouse#')
+    || k.startsWith('tenant_spouse_of_additional#')
+    || k.startsWith('guarantor_spouse#');
 
-  // Constrói o mapa partyKey → party_id, casando por position (preservada na ordem dos rows).
-  const map = new Map<string, string>();
-  const sorted = [...((inserted as any[]) || [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  rows.forEach((r, i) => {
-    const ins = sorted[i];
-    if (ins?.id) map.set(rowKeys[i], ins.id);
-  });
-
-  // ── Segunda passagem: vincula cônjuges ao titular/fiador via related_party_id ──
-  // Cônjuge do locatário principal → primary_tenant
-  // Cônjuge de locatário adicional N → additional_tenant N
-  // Cônjuge de fiador N → guarantor N
-  const updates: Array<{ id: string; related_party_id: string }> = [];
-  rows.forEach((r, i) => {
-    const childKey = rowKeys[i];
-    const childId = map.get(childKey);
-    if (!childId) return;
-    let parentKey: string | null = null;
-    if (childKey.startsWith('tenant_spouse#')) {
-      parentKey = partyKey('primary_tenant');
-    } else if (childKey.startsWith('tenant_spouse_of_additional#')) {
+  const parentKeyFor = (childKey: string): string | null => {
+    if (childKey.startsWith('tenant_spouse#')) return partyKey('primary_tenant');
+    if (childKey.startsWith('tenant_spouse_of_additional#')) {
       const idx = Number(childKey.split('#')[1] || '0');
-      parentKey = partyKey('additional_tenant', idx);
-    } else if (childKey.startsWith('guarantor_spouse#')) {
-      const idx = Number(childKey.split('#')[1] || '0');
-      parentKey = partyKey('guarantor', idx);
+      return partyKey('additional_tenant', idx);
     }
-    if (!parentKey) return;
-    const parentId = map.get(parentKey);
-    if (parentId) updates.push({ id: childId, related_party_id: parentId });
-  });
-  if (updates.length > 0) {
-    await Promise.all(
-      updates.map((u) =>
-        supabase
-          .from('proposal_parties' as any)
-          .update({ related_party_id: u.related_party_id })
-          .eq('id', u.id),
-      ),
+    if (childKey.startsWith('guarantor_spouse#')) {
+      const idx = Number(childKey.split('#')[1] || '0');
+      return partyKey('guarantor', idx);
+    }
+    return null;
+  };
+
+  const personLabel = (key: string, row: PartyRow): string => {
+    if (row.name && row.name.trim()) return row.name.trim();
+    if (key.startsWith('primary_tenant')) return 'Locatário principal';
+    if (key.startsWith('additional_tenant#')) {
+      const i = Number(key.split('#')[1] || '0');
+      return `Locatário adicional ${i + 1}`;
+    }
+    if (key.startsWith('tenant_spouse_of_additional#')) {
+      const i = Number(key.split('#')[1] || '0');
+      return `Cônjuge do locatário adicional ${i + 1}`;
+    }
+    if (key.startsWith('tenant_spouse')) return 'Cônjuge do locatário principal';
+    if (key.startsWith('guarantor_spouse#')) {
+      const i = Number(key.split('#')[1] || '0');
+      return `Cônjuge do fiador ${i + 1}`;
+    }
+    if (key.startsWith('guarantor#')) {
+      const i = Number(key.split('#')[1] || '0');
+      return `Fiador ${i + 1}`;
+    }
+    if (key.startsWith('company')) return 'Empresa';
+    if (key.startsWith('legal_representative#')) {
+      const i = Number(key.split('#')[1] || '0');
+      return `Representante legal ${i + 1}`;
+    }
+    return key;
+  };
+
+  // Verifica roles permitidas e que cada cônjuge tenha um pai correspondente.
+  const keysSet = new Set(rowKeys);
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const k = rowKeys[i];
+    if (!VALID_PARTY_ROLES.has(r.role)) {
+      throw new ProposalPartiesError(
+        `Role inválida em proposal_parties: ${r.role}`,
+        `Tipo de envolvido inválido em "${personLabel(k, r)}". Atualize a página e tente novamente.`,
+      );
+    }
+    if (isSpouseKey(k)) {
+      const pk = parentKeyFor(k);
+      if (!pk || !keysSet.has(pk)) {
+        throw new ProposalPartiesError(
+          `Cônjuge sem titular: ${k} → ${pk}`,
+          `Não foi possível vincular o cônjuge de "${personLabel(k, r)}". Confira o cadastro do titular relacionado.`,
+        );
+      }
+      // Cônjuge sem nenhuma identificação mínima
+      if (!r.name && !r.cpf && !r.email) {
+        throw new ProposalPartiesError(
+          `Cônjuge sem dados mínimos: ${k}`,
+          `Preencha pelo menos o nome do cônjuge de "${personLabel(parentKeyFor(k)!, rows[rowKeys.indexOf(parentKeyFor(k)!)] || r)}".`,
+        );
+      }
+    }
+  }
+
+  // ── Idempotência: apaga partes anteriores deste link ──
+  {
+    const { error: delErr } = await supabase
+      .from('proposal_parties' as any)
+      .delete()
+      .eq('proposal_link_id', proposalLinkId);
+    if (delErr) {
+      console.error('[persistProposalParties] Falha ao limpar partes anteriores', delErr);
+      throw new ProposalPartiesError(
+        `Erro ao limpar proposal_parties anteriores: ${delErr.message}`,
+        'Não foi possível limpar envolvidos anteriores desta proposta. Tente novamente em instantes.',
+        delErr,
+      );
+    }
+  }
+
+  // ── Etapa 1: insere apenas as partes principais (sem cônjuges) ──
+  const principalIdx: number[] = [];
+  const spouseIdx: number[] = [];
+  rows.forEach((_, i) => (isSpouseKey(rowKeys[i]) ? spouseIdx.push(i) : principalIdx.push(i)));
+
+  const map = new Map<string, string>();
+
+  if (principalIdx.length > 0) {
+    const principalRows = principalIdx.map((i) => rows[i]);
+    const { data: insertedP, error: insPErr } = await supabase
+      .from('proposal_parties' as any)
+      .insert(principalRows as any)
+      .select('id, position');
+    if (insPErr) {
+      console.error('[persistProposalParties] Insert principais falhou', {
+        error: insPErr,
+        rows: principalRows.map(maskRowForLog),
+      });
+      const detail = insPErr.message || insPErr.details || insPErr.hint || 'erro desconhecido';
+      throw new ProposalPartiesError(
+        `Falha ao inserir partes principais: ${detail}`,
+        `Não foi possível salvar locatários/fiadores: ${detail}`,
+        insPErr,
+      );
+    }
+    const sortedP = [...((insertedP as any[]) || [])].sort(
+      (a, b) => (a.position ?? 0) - (b.position ?? 0),
     );
+    if (sortedP.length !== principalIdx.length) {
+      throw new ProposalPartiesError(
+        `Quantidade inserida ≠ enviada (principais: ${sortedP.length} / ${principalIdx.length})`,
+        'Falha ao salvar todos os envolvidos da proposta. Tente novamente.',
+      );
+    }
+    principalIdx.forEach((origIdx, j) => {
+      map.set(rowKeys[origIdx], sortedP[j].id);
+    });
+  }
+
+  // ── Etapa 2: insere cônjuges já com related_party_id resolvido ──
+  if (spouseIdx.length > 0) {
+    const spouseRowsWithParent = spouseIdx.map((i) => {
+      const childKey = rowKeys[i];
+      const pk = parentKeyFor(childKey)!;
+      const parentId = map.get(pk);
+      if (!parentId) {
+        // já validado acima, mas defensivo
+        throw new ProposalPartiesError(
+          `Pai não encontrado para cônjuge ${childKey}`,
+          `Não foi possível vincular o cônjuge de "${personLabel(pk, rows[rowKeys.indexOf(pk)])}".`,
+        );
+      }
+      return { ...rows[i], related_party_id: parentId };
+    });
+
+    const { data: insertedS, error: insSErr } = await supabase
+      .from('proposal_parties' as any)
+      .insert(spouseRowsWithParent as any)
+      .select('id, position');
+    if (insSErr) {
+      console.error('[persistProposalParties] Insert cônjuges falhou', {
+        error: insSErr,
+        rows: spouseRowsWithParent.map(maskRowForLog),
+      });
+      const detail = insSErr.message || insSErr.details || insSErr.hint || 'erro desconhecido';
+      // Tenta achar a primeira pessoa-cônjuge do lote para dar contexto
+      const firstSpouseKey = rowKeys[spouseIdx[0]];
+      const firstSpouseRow = rows[spouseIdx[0]];
+      const personName = personLabel(firstSpouseKey, firstSpouseRow);
+      throw new ProposalPartiesError(
+        `Falha ao inserir cônjuges: ${detail}`,
+        `Não foi possível salvar dados de cônjuge (${personName}): ${detail}`,
+        insSErr,
+      );
+    }
+    const sortedS = [...((insertedS as any[]) || [])].sort(
+      (a, b) => (a.position ?? 0) - (b.position ?? 0),
+    );
+    if (sortedS.length !== spouseIdx.length) {
+      throw new ProposalPartiesError(
+        `Quantidade inserida ≠ enviada (cônjuges: ${sortedS.length} / ${spouseIdx.length})`,
+        'Falha ao salvar todos os cônjuges. Tente novamente.',
+      );
+    }
+    spouseIdx.forEach((origIdx, j) => {
+      map.set(rowKeys[origIdx], sortedS[j].id);
+    });
   }
 
   return map;
@@ -1684,11 +1857,16 @@ export default function PropostaPublica() {
       if (proposalLink?.id) {
         try {
           partyMap = await persistProposalParties(proposalLink.id, null, data);
-        } catch (partiesErr) {
+        } catch (partiesErr: any) {
           console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
-          toast.error('Não foi possível preparar os envolvidos da proposta', {
-            description: 'Revise os dados preenchidos e tente novamente.',
-          });
+          const isStruct = partiesErr instanceof ProposalPartiesError;
+          const userMsg = isStruct
+            ? partiesErr.userMessage
+            : 'Não foi possível preparar os envolvidos da proposta.';
+          const detail = isStruct
+            ? undefined
+            : (partiesErr?.message || partiesErr?.details || partiesErr?.hint || 'Revise os dados preenchidos e tente novamente.');
+          toast.error(userMsg, detail ? { description: detail } : undefined);
           setIsSubmitting(false);
           return;
         }

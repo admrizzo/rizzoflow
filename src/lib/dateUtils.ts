@@ -2,13 +2,14 @@ import { endOfDay, isAfter, isValid } from 'date-fns';
 
 /**
  * Checks if a deadline date is overdue.
- * A deadline is only overdue AFTER the day has passed (end of day).
- * Today's date is still considered "in time".
+ * - If the date has a specific time (not midnight), compares against now() exactly.
+ * - If it is a date-only value (midnight), only considers overdue AFTER end of day.
  */
 export function isDateOverdue(date: Date | string): boolean {
   const d = typeof date === 'string' ? parseDatabaseDate(date) : date;
   if (!d || !isValid(d)) return false;
-  return isAfter(new Date(), endOfDay(d));
+  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0 || d.getSeconds() !== 0;
+  return hasTime ? isAfter(new Date(), d) : isAfter(new Date(), endOfDay(d));
 }
 
 /**
@@ -29,6 +30,12 @@ export function parseDateOnly(dateStr: string): Date {
 
 export function parseDatabaseDate(value: string | null | undefined): Date | null {
   if (!value) return null;
+  // Full ISO timestamp (e.g. "2026-04-28T15:30:00+00:00") — let JS parse with timezone
+  if (/T\d{2}:\d{2}/.test(value)) {
+    const parsed = new Date(value);
+    return isValid(parsed) ? parsed : null;
+  }
+  // Date-only string (e.g. "2026-04-28") — preserve local day, noon to avoid TZ shift
   const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoDate) {
     const parsed = parseDateOnly(`${isoDate[1]}-${isoDate[2]}-${isoDate[3]}`);

@@ -269,7 +269,10 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                   <div className="flex items-center gap-0.5 mt-0.5 font-medium">
                     <Calendar className="h-2.5 w-2.5" />
                     <span>
-                      {format(nextActionDue, "d/MM", { locale: ptBR })}
+                      {(() => {
+                        const hasTime = nextActionDue.getHours() !== 0 || nextActionDue.getMinutes() !== 0;
+                        return format(nextActionDue, hasTime ? "d/MM HH:mm" : "d/MM", { locale: ptBR });
+                      })()}
                       {isNextActionOverdue && " · vencido"}
                       {!isNextActionOverdue && isNextActionToday && " · hoje"}
                     </span>

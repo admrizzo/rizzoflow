@@ -1187,6 +1187,26 @@ export default function PropostaPublica() {
           .eq('id', proposalLink.id);
       }
 
+      // 4.1) Registra atividade automática no card (visível em "Comentários e atividade")
+      if (targetCardId) {
+        try {
+          await supabase.from('card_activity_logs').insert({
+            card_id: targetCardId,
+            actor_user_id: null,
+            event_type: 'proposal_submitted',
+            title: '📬 Documentos/proposta recebidos pelo cliente',
+            description: `${clientName} enviou a proposta para o imóvel ${imovelCodigo}.`,
+            metadata: {
+              proposal_link_id: proposalLink?.id || null,
+              broker_name: brokerName,
+              client_name: clientName,
+            },
+          });
+        } catch (logErr) {
+          console.warn('Falha ao registrar atividade de proposta enviada:', logErr);
+        }
+      }
+
       // 5) Notifica o time administrativo (admins) que a proposta foi enviada
       if (targetCardId) {
         try {

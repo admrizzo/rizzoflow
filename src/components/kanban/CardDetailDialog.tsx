@@ -63,6 +63,7 @@ import {
   Home,
   Search,
   ArrowRight,
+  Inbox,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';
@@ -738,6 +739,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </DialogTitle>
             )}
           </div>
+          {/* Badge: documentos/proposta recebidos pelo cliente */}
+          {card.proposal_submitted_at && (
+            <div className="mt-2">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
+                title={`Proposta enviada em ${format(new Date(card.proposal_submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
+              >
+                <Inbox className="h-3 w-3" />
+                Doc. recebidos
+              </span>
+            </div>
+          )}
           {/* Card creation info - hidden on mobile for space */}
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground mt-2">
             <UserCircle className="h-3 w-3" />

@@ -21,6 +21,7 @@ const AdminFlow = lazy(() => import("./pages/AdminFlow"));
 const PropostaPublica = lazy(() => import("./pages/PropostaPublica"));
 const ProviderPortal = lazy(() => import("./pages/ProviderPortal"));
 const Demo = lazy(() => import("./pages/Demo"));
+const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
 
 function RouteFallback() {
   return (
@@ -41,6 +42,14 @@ const queryClient = new QueryClient({
   },
 });
 
+function needsPasswordReset(): boolean {
+  try {
+    return sessionStorage.getItem('rizzo:needs-password-reset') === '1';
+  } catch {
+    return false;
+  }
+}
+
 // Index component that handles redirects
 function IndexRedirect() {
   const { user, isLoading } = useAuth();
@@ -51,6 +60,11 @@ function IndexRedirect() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  // Sessão de recovery/invite: NUNCA entra direto no sistema.
+  if (user && needsPasswordReset()) {
+    return <Navigate to="/redefinir-senha" replace />;
   }
 
   // Redirect based on auth state
@@ -77,6 +91,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Bloqueia acesso ao app até a senha ser definida.
+  if (needsPasswordReset()) {
+    return <Navigate to="/redefinir-senha" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -99,7 +118,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user && !isAuthPasswordFlow()) {
+  // Em fluxo de recovery/invite, manda para a página dedicada de senha.
+  if (user && (needsPasswordReset() || isAuthPasswordFlow())) {
+    return <Navigate to="/redefinir-senha" replace />;
+  }
+
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -181,6 +205,10 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
+              <Route
+                path="/redefinir-senha"
+                element={<RedefinirSenha />}
+              />
               {/*
                 Token público único da proposta (UUID) — caminho oficial.
                 A mesma página aceita também codigo_robust como fallback p/ links antigos

@@ -46,7 +46,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const isArchived = card.is_archived;
     const docsReceived = !!card.proposal_submitted_at;
     // Proposta gerada mas ainda não enviada pelo cliente → "Em preenchimento"
-    const proposalInProgress = !!card.proposal_link_id && !card.proposal_submitted_at;
+    // Mutuamente exclusivo com "Doc. recebidos" (proposal_submitted_at).
+    // Usa proposal_link.status quando disponível; cai para presença do link como fallback.
+    const linkStatus = card.proposal_link?.status ?? null;
+    const linkPending =
+      linkStatus === null
+        ? !!card.proposal_link_id
+        : linkStatus !== 'enviada' && linkStatus !== 'recebida' && linkStatus !== 'finalizada';
+    const proposalInProgress = !docsReceived && linkPending;
     
     // Check if document deadline is overdue
     const hasDeadline = card.document_deadline;

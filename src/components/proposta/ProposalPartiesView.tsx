@@ -202,6 +202,31 @@ function Section({
 export function ProposalPartiesView({ parties, compact = false, className, docsByPartyId }: Props) {
   if (!parties || parties.length === 0) return null;
 
+  // Filtra fiadores placeholder (sem qualquer dado real). Isso evita exibir
+  // blocos "Fiador" criados em propostas legadas onde a modalidade não usava
+  // fiador (ex.: Seguro Fiança, Caução). Cônjuges desses placeholders também
+  // são descartados.
+  const isRealParty = (p: ProposalParty): boolean => {
+    const fields = [p.name, p.cpf, p.cnpj, p.rg, p.email, p.phone, p.address, p.profession];
+    const anyText = fields.some((v) => !!(v && String(v).trim()));
+    const anyIncome = p.income !== null && p.income !== undefined;
+    return anyText || anyIncome;
+  };
+  const validGuarantorIds = new Set(
+    parties.filter((p) => p.role === 'guarantor' && isRealParty(p)).map((p) => p.id),
+  );
+  parties = parties.filter((p) => {
+    if (p.role === 'guarantor') return validGuarantorIds.has(p.id);
+    if (p.role === 'guarantor_spouse') {
+      // mantém apenas se o fiador-pai for válido
+      if (p.related_party_id && validGuarantorIds.has(p.related_party_id)) return true;
+      // fallback metadata.spouse_of: aceita se houver pelo menos um fiador real
+      return validGuarantorIds.size > 0 && isRealParty(p);
+    }
+    return true;
+  });
+  if (parties.length === 0) return null;
+
   // Agrupa cônjuges por related_party_id (com fallback de metadata.spouse_of)
   const byId = new Map<string, ProposalParty>();
   parties.forEach((p) => byId.set(p.id, p));

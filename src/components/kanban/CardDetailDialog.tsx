@@ -1830,6 +1830,17 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   </div>
                   )}
                 </div>
+                {/* Observação livre da etapa de Garantia (preenchida pelo cliente) */}
+                {negotiationSummary?.observacaoGarantia && (
+                  <div className="mt-4 rounded-md border bg-background p-3">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Observação da garantia
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap break-words">
+                      {negotiationSummary.observacaoGarantia}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

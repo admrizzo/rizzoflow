@@ -2701,12 +2701,17 @@ export default function PropostaPublica() {
                           </div>
                           <div>
                             <Label className="text-xs">CPF</Label>
-                            <Input value={loc.conjuge.cpf} className="mt-1"
-                              onChange={e => update(p => {
+                            <MaskedInput
+                              kind="cpf"
+                              value={loc.conjuge.cpf}
+                              placeholder="000.000.000-00"
+                              className="mt-1 h-9"
+                              onValueChange={v => update(p => {
                                 const arr = [...(p.locatarios_adicionais || [])];
-                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, cpf: e.target.value } };
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, cpf: v } };
                                 return { ...p, locatarios_adicionais: arr };
-                              })} />
+                              })}
+                            />
                           </div>
                           <div>
                             <Label className="text-xs">RG / CNH</Label>
@@ -2719,12 +2724,17 @@ export default function PropostaPublica() {
                           </div>
                           <div>
                             <Label className="text-xs">WhatsApp</Label>
-                            <Input value={loc.conjuge.whatsapp} className="mt-1"
-                              onChange={e => update(p => {
+                            <MaskedInput
+                              kind="phone"
+                              value={loc.conjuge.whatsapp}
+                              placeholder="(00) 00000-0000"
+                              className="mt-1 h-9"
+                              onValueChange={v => update(p => {
                                 const arr = [...(p.locatarios_adicionais || [])];
-                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, whatsapp: e.target.value } };
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, whatsapp: v } };
                                 return { ...p, locatarios_adicionais: arr };
-                              })} />
+                              })}
+                            />
                           </div>
                           <div className="sm:col-span-2">
                             <Label className="text-xs">E-mail</Label>

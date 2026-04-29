@@ -76,6 +76,8 @@ import { MaintenanceProvidersSection } from './MaintenanceProvidersSection';
 import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { ProposalPartiesView } from '@/components/proposta/ProposalPartiesView';
 import { useProposalParties } from '@/hooks/useProposalParties';
+import { ProposalNegotiationSummary } from './ProposalNegotiationSummary';
+import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
@@ -282,6 +284,14 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const { parties: vendaParties, updatePartyName } = useCardParties((isVendaBoard || isDevBoard) ? card?.id : undefined);
   // Locação: estrutura de partes da proposta pública (proposal_parties)
   const { data: proposalParties = [] } = useProposalParties(card?.id);
+  // Locação: resumo estruturado da negociação (vem do proposal_drafts/proposal_links)
+  const { data: negotiationSummary } = useProposalNegotiationSummary(card?.proposal_link_id);
+  const hasStructuredNegotiation = !!(
+    negotiationSummary?.hasData &&
+    (negotiationSummary.aluguel !== null ||
+      negotiationSummary.aceitouValor !== null ||
+      negotiationSummary.tipoAssinatura !== null)
+  );
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
     : undefined;
@@ -875,6 +885,15 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                         {card.last_moved_by_profile && (
                           <span className="text-muted-foreground"> por {card.last_moved_by_profile.full_name}</span>
                         )}
+                      </p>
+                    </div>
+                  )}
+                  {/* Última atualização (qualquer alteração relevante: docs, status, comentário, etapa) */}
+                  {card.updated_at && (
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Última atualização</p>
+                      <p className="text-xs text-foreground">
+                        {format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
                       </p>
                     </div>
                   )}
@@ -1557,7 +1576,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 )}
 
                 {/* Negotiation Details */}
-                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && (
+                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !hasStructuredNegotiation && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1591,6 +1610,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   </div>
                 )}
               </div>
+            )}
+
+            {/* === BLOCO: RESUMO DA NEGOCIAÇÃO (estruturado) === */}
+            {hasStructuredNegotiation && (
+              <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
             )}
 
             {/* === BLOCO: DOCUMENTOS DA PROPOSTA === */}
@@ -1668,7 +1692,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* Description - Only for Locação boards (not Rescisão, Venda, DEV, Administrativo, Captação, or Manutenção) */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard && (
+            {/* Quando há resumo estruturado da negociação, só mostramos a descrição
+                adicional se já houver conteúdo (para não duplicar dados financeiros). */}
+            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard &&
+              (!hasStructuredNegotiation || !!localDescription) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1682,6 +1709,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   rows={2}
                   disabled={!isEditor}
                 />
+                {hasStructuredNegotiation && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Use apenas para observações livres. Os valores e a negociação já aparecem no resumo acima.
+                  </p>
+                )}
               </div>
             )}
 

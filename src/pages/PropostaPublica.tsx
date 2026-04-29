@@ -3291,8 +3291,26 @@ export default function PropostaPublica() {
                     <Label className="text-xs">E-mail</Label>
                     <Input type="email" value={data.composicao.retirada_email || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_email: e.target.value } }))} placeholder="email@exemplo.com" className="h-11" />
                   </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs">Observação <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                    <Input
+                      value={data.composicao.retirada_observacao || ''}
+                      onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_observacao: e.target.value } }))}
+                      placeholder="Ex.: virá no horário comercial, levará procuração simples..."
+                      className="h-11"
+                    />
+                  </div>
                 </div>
               )}
+              <div className="mt-4">
+                <CollapsibleTip title="Quem pode retirar as chaves?" variant="info">
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                    Qualquer pessoa maior de 18 anos com documento válido. Ela
+                    precisará apresentar <strong className="text-foreground">RG/CPF</strong> na
+                    hora da retirada. Não se preocupe — se ainda não souber, poderá informar depois.
+                  </p>
+                </CollapsibleTip>
+              </div>
             </div>
           </div>
         </div>

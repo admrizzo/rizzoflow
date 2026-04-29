@@ -3628,11 +3628,33 @@ export default function PropostaPublica() {
           </div>
         )}
 
-        {/* Justificativa */}
-        <div className="bg-card rounded-2xl border p-6 space-y-3">
-          <Label className="text-sm font-semibold block">Justificativa <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Explique sua proposta ou condições..." rows={4} />
-        </div>
+        {/* Condições / Justificativa: muda de acordo com a escolha */}
+        {data.negociacao.aceitou_valor === 'sim' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-3">
+            <Label className="text-sm font-semibold block">
+              Condições da proposta <span className="text-muted-foreground font-normal">(opcional)</span>
+            </Label>
+            <Textarea
+              value={data.negociacao.observacao}
+              onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))}
+              placeholder="Ex.: Pretendo iniciar a locação em 10/05, contrato digital, sem observações adicionais."
+              rows={4}
+            />
+          </div>
+        )}
+        {data.negociacao.aceitou_valor === 'nao' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-3">
+            <Label className="text-sm font-semibold block">
+              Justificativa e condições da proposta <span className="text-muted-foreground font-normal">(opcional)</span>
+            </Label>
+            <Textarea
+              value={data.negociacao.observacao}
+              onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))}
+              placeholder="Ex.: Proponho R$ 1.800,00 por contrato de 30 meses, pagamento pontual e início imediato."
+              rows={4}
+            />
+          </div>
+        )}
 
         {/* Important info cards */}
         <div>

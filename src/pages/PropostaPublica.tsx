@@ -2929,15 +2929,22 @@ export default function PropostaPublica() {
                     <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
                       {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <span className="truncate flex-1 text-foreground">{file.name}</span>
+                      {file.persisted && (
+                        <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 shrink-0">
+                          já enviado
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                      <button className="text-red-400 hover:text-red-600 p-1"
-                        onClick={() => onUpdate(cats => {
-                          const next = [...cats];
-                          next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
-                          return next;
-                        })}>
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                      {!file.persisted && (
+                        <button className="text-red-400 hover:text-red-600 p-1"
+                          onClick={() => onUpdate(cats => {
+                            const next = [...cats];
+                            next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
+                            return next;
+                          })}>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

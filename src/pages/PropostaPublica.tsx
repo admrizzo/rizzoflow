@@ -3222,9 +3222,10 @@ export default function PropostaPublica() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">WhatsApp *</Label>
-                    <Input
+                    <MaskedInput
+                      kind="phone"
                       value={m.whatsapp || ''}
-                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      onValueChange={v => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: v }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
                       placeholder="(00) 00000-0000"
                       className="h-11"
                     />

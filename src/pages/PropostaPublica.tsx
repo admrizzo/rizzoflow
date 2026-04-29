@@ -1843,12 +1843,16 @@ export default function PropostaPublica() {
         : '',
     ].filter(Boolean).join('\n');
 
-    // Descrição adicional fica vazia: todos os dados aparecem em blocos
-    // estruturados próprios (envolvidos, imóvel, negociação, garantia,
-    // corretor, score, documentos). Apenas observações livres do cliente
-    // entram aqui — neste fluxo público não há campo de observação livre,
-    // então a descrição nasce vazia e o bloco fica oculto no card.
-    const descriptionLines: string[] = [];
+    // Descrição adicional recebe apenas observações livres, sem repetir dados
+    // que já possuem bloco estruturado no card.
+    const descriptionLines = [
+      data.garantia.observacao?.trim()
+        ? `Observação sobre garantia: ${data.garantia.observacao.trim()}`
+        : '',
+      data.documentos_observacao?.trim()
+        ? `Observação sobre documentos: ${data.documentos_observacao.trim()}`
+        : '',
+    ];
 
     try {
       // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento

@@ -4089,10 +4089,20 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <p className="text-xs text-muted-foreground mt-1">
             Total de arquivos anexados: {totalDocs}
           </p>
-          {pending.required > 0 && pending.ok < pending.required && (
-            <p className="text-xs text-amber-600 mt-2">
-              ⚠️ Há documentos obrigatórios pendentes — confira os blocos de cada pessoa acima.
-            </p>
+          {pending.required > 0 && pending.ok < pending.required && pending.missing.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-amber-700 font-semibold">⚠️ Documentos obrigatórios pendentes:</p>
+              <ul className="text-xs text-amber-700 space-y-0.5 list-disc pl-5">
+                {pending.missing.slice(0, 8).map((m, i) => (
+                  <li key={`${m.partyId}-${m.docKey}-${i}`}>
+                    Falta: <strong>{m.docLabel}</strong> — {m.partyName}
+                  </li>
+                ))}
+                {pending.missing.length > 8 && (
+                  <li>... e mais {pending.missing.length - 8} documento(s)</li>
+                )}
+              </ul>
+            </div>
           )}
         </ReviewBlockNew>
 

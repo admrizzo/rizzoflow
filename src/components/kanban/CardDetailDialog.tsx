@@ -1734,6 +1734,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
             )}
 
+            {/* === BLOCO: CONTRATO (data início, vencimento, retirada de chaves) === */}
+            {card.proposal_link_id && (
+              <ProposalContractSummary proposalLinkId={card.proposal_link_id} />
+            )}
+
             {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
             {card.proposal_link_id && (
               <div className="rounded-lg border bg-card p-4">

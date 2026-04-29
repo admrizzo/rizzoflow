@@ -1668,6 +1668,7 @@ export default function PropostaPublica() {
     composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
     garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
     negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+    contrato: { data_inicio: '', dia_vencimento: '' },
     empresa: { ...emptyEmpresa },
     representantes: [],
   });

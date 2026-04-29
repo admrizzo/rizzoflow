@@ -780,58 +780,10 @@ export default function PropostaLocacao() {
     const iptu = selectedProperty?.iptu;
     const seguroIncendio = selectedProperty?.seguro_incendio;
 
-    // Build description with structured data
-    const descriptionLines = pj ? [
-      `**Tipo:** Pessoa Jurídica`,
-      `**Razão Social:** ${data.empresa.razao_social || 'Não informado'}`,
-      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
-      `**CNPJ:** ${data.empresa.cnpj || 'Não informado'}`,
-      `**Ramo:** ${data.empresa.ramo_atividade || 'Não informado'}`,
-      `**Telefone:** ${data.empresa.telefone || 'Não informado'}`,
-      `**E-mail:** ${data.empresa.email || 'Não informado'}`,
-      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'Não informado'}`,
-      `**Regime tributário:** ${data.empresa.regime_tributario || 'Não informado'}`,
-      '',
-      `**Representantes:** ${data.representantes.length}`,
-      signatario
-        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
-        : `**Signatário:** ⚠️ não indicado`,
-      '',
-      `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
-      `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
-      `**Bairro:** ${bairro}`,
-      `**Cidade:** ${cidade}`,
-      `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      condominio ? `**Condomínio:** R$ ${condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**Condomínio:** Não informado`,
-      iptu ? `**IPTU:** R$ ${iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**IPTU:** Não informado`,
-      seguroIncendio ? `**Seguro Incêndio:** R$ ${seguroIncendio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
-      `**Valor Proposto:** ${valorProposto}`,
-      '',
-      `**Garantia:** ${garantiaLabel}`,
-      `**Status:** Nova proposta`,
-    ] : [
-      `**Cliente:** ${clientName}`,
-      `**CPF:** ${data.dados_pessoais.cpf || 'Não informado'}`,
-      `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'Não informado'}`,
-      `**E-mail:** ${data.dados_pessoais.email || 'Não informado'}`,
-      '',
-      `**Imóvel:** ${imovelCodigo || 'Não informado'}`,
-      `**Endereço:** ${data.imovel.endereco || 'Não informado'}`,
-      `**Bairro:** ${bairro}`,
-      `**Cidade:** ${cidade}`,
-      `**Valor Aluguel:** R$ ${aluguel.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      condominio ? `**Condomínio:** R$ ${condominio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**Condomínio:** Não informado`,
-      iptu ? `**IPTU:** R$ ${iptu.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : `**IPTU:** Não informado`,
-      seguroIncendio ? `**Seguro Incêndio:** R$ ${seguroIncendio.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '',
-      `**Valor Proposto:** ${valorProposto}`,
-      '',
-      `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      `**Comprometimento:** ${percentualCalc !== null ? percentualCalc.toFixed(1) + '%' : 'N/A'}`,
-      `**Garantia:** ${garantiaLabel}`,
-      '',
-      `**Score:** ${scoreLabel} (${points}/100)`,
-      `**Status:** Nova proposta`,
-    ];
+    // Descrição adicional fica vazia: dados estruturados aparecem em blocos
+    // próprios do card (envolvidos, imóvel, negociação, garantia, score).
+    // Apenas observações livres devem ser inseridas manualmente depois.
+    const descriptionLines: string[] = [];
 
     try {
       // Get max position in the target column

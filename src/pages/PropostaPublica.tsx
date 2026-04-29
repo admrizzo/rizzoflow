@@ -1241,6 +1241,12 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           if (!f.nome.trim() || !f.cpf.trim() || !f.whatsapp.trim() || !f.email.trim() || !f.profissao.trim() || !f.estado_civil) {
             errors.push(`${label}: dados pessoais incompletos`);
           }
+          if (f.cpf && !isValidCPF(f.cpf)) errors.push(`${label}: CPF inválido`);
+          if (f.whatsapp && !isValidPhone(f.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
+          if (needsConj) {
+            if (f.conjuge.cpf && !isValidCPF(f.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
+            if (f.conjuge.whatsapp && !isValidPhone(f.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
+          }
           if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
             errors.push(`${label}: informe a renda mensal`);
           }

@@ -120,7 +120,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder ?? '0,00'}
-          className={cn('pl-9 text-right tabular-nums', className)}
+          className={cn('pl-9 tabular-nums', className)}
           {...props}
         />
       </div>

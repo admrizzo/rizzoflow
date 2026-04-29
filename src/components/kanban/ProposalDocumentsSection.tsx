@@ -255,7 +255,7 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
   }
 
   // Aninha cônjuges sob o titular/fiador via related_party_id (com fallback metadata.spouse_of)
-  for (const p of parties) {
+  for (const p of visibleParties) {
     if (!isSpouseRole(p.role)) continue;
     let parentId: string | null = p.related_party_id || null;
     // Fallback: tenta resolver pelo metadata.spouse_of

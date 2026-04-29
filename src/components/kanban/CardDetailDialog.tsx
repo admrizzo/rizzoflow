@@ -1732,17 +1732,16 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* Description - Only for Locação boards (not Rescisão, Venda, DEV, Administrativo, Captação, or Manutenção) */}
-            {/* Quando há resumo estruturado da negociação, só mostramos a descrição
-                adicional se já houver conteúdo (para não duplicar dados financeiros). */}
+            {/* Mostra apenas observações livres; linhas de resumo automático legado são filtradas. */}
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard &&
-              (!hasStructuredNegotiation || !!visibleAdditionalDescription) && (
+              !!visibleAdditionalDescription && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <Label className="text-sm font-medium">Descrição adicional</Label>
                 </div>
                 <Textarea
-                  value={hasStructuredNegotiation ? visibleAdditionalDescription : localDescription}
+                  value={visibleAdditionalDescription}
                   onChange={(e) => setLocalDescription(e.target.value)}
                   onBlur={() => handleFieldBlur('description', localDescription, card.description)}
                   placeholder="Outras informações relevantes..."

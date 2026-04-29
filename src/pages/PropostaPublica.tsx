@@ -4074,37 +4074,8 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         </ReviewBlockNew>
         )}
 
-        {/* Documentos */}
-        <ReviewBlockNew
-          title="Documentos"
-          icon="📄"
-          onFix={() => onGoToStep(3)}
-          hasPending={totalDocs === 0 || (pending.required > 0 && pending.ok < pending.required)}
-        >
-          <p className="text-sm text-foreground font-medium">
-            {pending.required > 0
-              ? `${pending.ok} de ${pending.required} documentos obrigatórios enviados`
-              : `${totalDocs} documento(s) enviado(s)`}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Total de arquivos anexados: {totalDocs}
-          </p>
-          {pending.required > 0 && pending.ok < pending.required && pending.missing.length > 0 && (
-            <div className="mt-2 space-y-1">
-              <p className="text-xs text-amber-700 font-semibold">⚠️ Documentos obrigatórios pendentes:</p>
-              <ul className="text-xs text-amber-700 space-y-0.5 list-disc pl-5">
-                {pending.missing.slice(0, 8).map((m, i) => (
-                  <li key={`${m.partyId}-${m.docKey}-${i}`}>
-                    Falta: <strong>{m.docLabel}</strong> — {m.partyName}
-                  </li>
-                ))}
-                {pending.missing.length > 8 && (
-                  <li>... e mais {pending.missing.length - 8} documento(s)</li>
-                )}
-              </ul>
-            </div>
-          )}
-        </ReviewBlockNew>
+        {/* Bloco "Documentos" removido daqui — o status por pessoa já aparece
+            no card "Pessoas envolvidas" acima. */}
 
         {/* Moradores e Contrato */}
         <ReviewBlockNew title="Moradores e Contrato" icon="🏠" onFix={() => onGoToStep(4)} hasPending={data.composicao.moradores.length === 0 || !data.composicao.moradores[0]?.tipo}>

@@ -81,6 +81,7 @@ import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSum
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
+import { InternalBrokersSection } from './InternalBrokersSection';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';

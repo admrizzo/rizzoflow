@@ -140,7 +140,11 @@ function hydrateDraftWithExistingDocuments(
     String(doc.owner_label || '').toLowerCase().includes(needle.toLowerCase());
 
   const hydrated = { ...formData };
-  const principalDocs = docsByParty.get((company || primary)?.id || '') || ownFallback(['empresa', 'proponente'], nonSpouseDoc);
+  const principalDocs = docsByParty.get((company || primary)?.id || '') || ownFallback(
+    ['empresa', 'proponente'],
+    nonSpouseDoc,
+    (doc) => !/locatário adicional|locatario adicional/i.test(String(doc.owner_label || '')),
+  );
   hydrated.documentos = mergeFilesByCategory(formData.documentos, principalDocs);
 
   const primarySpouse = spouseFor(primary?.id, 'primary_tenant');

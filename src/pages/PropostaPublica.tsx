@@ -437,6 +437,7 @@ async function persistProposalParties(
   proposalLinkId: string,
   cardId: string | null,
   data: ProposalFormData,
+  publicToken?: string | null,
 ): Promise<Map<string, string>> {
   // Aceita formatos BR ("1.800,00") e JS-numéricos ("1800.00") sem perder
   // o ponto decimal do segundo formato. Reaproveita parseCurrency.

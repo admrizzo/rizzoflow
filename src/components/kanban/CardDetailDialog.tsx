@@ -148,6 +148,27 @@ const contractLabels: Record<ContractType, string> = {
   fisico: 'Físico',
 };
 
+const REDUNDANT_DESCRIPTION_LABELS = new Set([
+  'tipo', 'cliente', 'cpf', 'whatsapp', 'e-mail', 'email', 'imóvel', 'imovel',
+  'endereço', 'endereco', 'valor aluguel', 'condomínio', 'condominio', 'iptu',
+  'seguro incêndio', 'seguro incendio', 'valor proposto', 'valor proposto pelo cliente',
+  'renda mensal', 'comprometimento', 'garantia', 'score', 'corretor',
+  'total mensal aproximado', 'aceitou o valor anunciado',
+]);
+
+function getVisibleAdditionalDescription(description: string | null | undefined): string {
+  if (!description) return '';
+  return description
+    .split('\n')
+    .filter((line) => {
+      const normalized = line.trim().replace(/^[-*]\s*/, '').replace(/^\*\*/, '');
+      const label = normalized.split(':')[0]?.replace(/\*\*$/g, '').trim().toLowerCase();
+      return label ? !REDUNDANT_DESCRIPTION_LABELS.has(label) : !!normalized;
+    })
+    .join('\n')
+    .trim();
+}
+
 export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
   // Hook leve: traz APENAS as mutations necessárias, sem carregar a lista
   // do board inteiro. Reduz o tempo de abertura do card em ~1-2s quando o

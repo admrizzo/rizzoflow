@@ -1104,9 +1104,31 @@ const STEP_CONFIG = [
   { label: 'Revisão', shortLabel: 'Revisão', icon: ClipboardCheck },
 ];
 
-function parseCurrency(val: string): number {
-  const cleaned = val.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.');
-  return parseFloat(cleaned) || 0;
+/**
+ * Converte uma string monetária para número.
+ * Aceita tanto o formato brasileiro vindo de inputs ("R$ 1.800,00", "1.800,00")
+ * quanto o formato JS-numérico salvo pelo CurrencyInput ("1800.00", "1800.5").
+ *
+ * Regra: se a string contém vírgula, é BR (ponto = milhar, vírgula = decimal).
+ * Caso contrário, o ponto (se houver) é o separador decimal nativo de JS.
+ */
+function parseCurrency(val: string | number | null | undefined): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isFinite(val) ? val : 0;
+  const s = String(val).trim();
+  if (!s) return 0;
+  const cleaned = s.replace(/[^\d,.-]/g, '');
+  if (!cleaned) return 0;
+  let normalized: string;
+  if (cleaned.includes(',')) {
+    // Formato BR: remove pontos de milhar, troca vírgula decimal por ponto.
+    normalized = cleaned.replace(/\./g, '').replace(',', '.');
+  } else {
+    // Sem vírgula: já está em formato JS numérico (ponto = decimal).
+    normalized = cleaned;
+  }
+  const n = parseFloat(normalized);
+  return isFinite(n) ? n : 0;
 }
 
 function vv(val: string | undefined | null): string {

@@ -3734,17 +3734,14 @@ function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
-          <Input value={data.cpf} onChange={e => set('cpf', e.target.value)} placeholder="000.000.000-00" className="mt-1.5" />
+          <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />
         </div>
-        <div>
-          <Label className="text-sm font-medium">Profissão</Label>
-          <Input value={data.profissao} onChange={e => set('profissao', e.target.value)} placeholder="Profissão" className="mt-1.5" />
-        </div>
+        <ProfessionInput value={data.profissao} onChange={v => set('profissao', v)} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-          <Input value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" className="mt-1.5" />
+          <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />
         </div>
         <div>
           <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>

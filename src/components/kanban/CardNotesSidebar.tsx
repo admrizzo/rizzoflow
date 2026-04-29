@@ -67,6 +67,24 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Ao abrir o card, marca como lidas as notificações deste card que pertencem ao usuário
+  React.useEffect(() => {
+    if (!user?.id || !cardId) return;
+    (async () => {
+      try {
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', user.id)
+          .eq('card_id', cardId)
+          .eq('is_read', false);
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } catch (err) {
+        console.warn('[CardNotesSidebar] mark notifications read falhou:', err);
+      }
+    })();
+  }, [cardId, user?.id, queryClient]);
+
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
     queryKey: ['comments', cardId],
     queryFn: async () => {

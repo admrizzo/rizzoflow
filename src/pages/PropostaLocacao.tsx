@@ -102,6 +102,13 @@ export interface Composicao {
   retirada_whatsapp?: string;
   retirada_cpf?: string;
   retirada_email?: string;
+  retirada_observacao?: string;
+}
+
+// contrato (data início + dia vencimento aluguel)
+export interface ContratoInfo {
+  data_inicio?: string; // YYYY-MM-DD
+  dia_vencimento?: string; // '1'..'30'
 }
 
 // garantia
@@ -259,6 +266,8 @@ export interface ProposalFormData {
   composicao: Composicao;
   garantia: GarantiaInfo;
   negociacao: Negociacao;
+  // ── Contrato (informações para o contrato e cobrança) ──
+  contrato?: ContratoInfo;
   // ── Pessoa Jurídica ──
   empresa: EmpresaData;
   representantes: RepresentanteLegal[];

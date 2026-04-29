@@ -115,6 +115,30 @@ export function useCardMutations(boardId?: string) {
               oldValue: { id: before, name: null },
               newValue: { id: after, name: newName },
             });
+
+            // Notifica o novo responsável (não notifica si mesmo)
+            if (after && after !== user?.id) {
+              try {
+                const { data: cardInfo } = await supabase
+                  .from('cards')
+                  .select('card_number, next_action')
+                  .eq('id', id)
+                  .maybeSingle();
+                const cardNumber = cardInfo?.card_number;
+                const action = cardInfo?.next_action?.trim();
+                const message = action
+                  ? `Você foi definido como responsável pela próxima ação${cardNumber ? ` no card #${cardNumber}` : ''}: ${action}`
+                  : `Você foi definido como responsável por uma próxima ação${cardNumber ? ` no card #${cardNumber}` : ''}`;
+                await supabase.from('notifications').insert({
+                  user_id: after,
+                  card_id: id,
+                  title: 'Você foi atribuído como responsável',
+                  message,
+                });
+              } catch (notifErr) {
+                console.warn('[useCardMutations] notificação responsável falhou:', notifErr);
+              }
+            }
           }
         }
       } catch (err) {

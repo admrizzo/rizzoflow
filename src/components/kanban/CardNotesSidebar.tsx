@@ -509,6 +509,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                               )
                             )}
                           </p>
+                          <CommentAttachmentList
+                            attachments={byComment[comment.id] || []}
+                            canDelete={isOwner}
+                            onDelete={(att) => deleteAttachment.mutate(att)}
+                          />
                           {(() => {
                             const mention = cardMentions.find(
                               m => m.comment_id === comment.id && m.mentioned_user_id === user?.id

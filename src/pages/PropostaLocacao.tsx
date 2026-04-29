@@ -245,6 +245,10 @@ export interface UploadedFile {
   size: number;
   type: string; // mime
   dataUrl: string; // base64 for preview
+  /** Documento já enviado anteriormente e recuperado para uma correção. */
+  persisted?: boolean;
+  existingDocumentId?: string;
+  storagePath?: string;
 }
 
 export interface DocumentCategory {

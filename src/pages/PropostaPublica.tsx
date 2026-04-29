@@ -139,6 +139,10 @@ function hasSpouseUploadedFiles(categories?: Array<{ key?: string; files?: Uploa
     && categories.some((cat) => !!cat.key && SPOUSE_DOC_KEYS.has(cat.key) && (cat.files || []).length > 0);
 }
 
+function getNewUploadFiles(files: UploadedFile[] = []): UploadedFile[] {
+  return files.filter((file) => !file.persisted && !!file.dataUrl);
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
@@ -202,7 +206,8 @@ async function uploadProposalDocuments(
   const principalPartyKey = isPj ? partyKey('company') : partyKey('primary_tenant');
   const principalSpousePartyKey = isPj ? undefined : partyKey('tenant_spouse', 0);
   for (const cat of data.documentos || []) {
-    if (cat.files.length > 0) {
+    const files = getNewUploadFiles(cat.files);
+    if (files.length > 0) {
       jobs.push({
         ownerType: proponentOwnerType,
         ownerKey: proponentOwnerKey,
@@ -213,13 +218,14 @@ async function uploadProposalDocuments(
         spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
-        files: cat.files,
+        files,
       });
     }
   }
 
   for (const cat of data.conjuge?.documentos || []) {
-    if (cat.files.length > 0 && principalSpousePartyKey) {
+    const files = getNewUploadFiles(cat.files);
+    if (files.length > 0 && principalSpousePartyKey) {
       jobs.push({
         ownerType: 'tenant_spouse',
         ownerKey: `${proponentOwnerKey}-conjuge`,
@@ -230,7 +236,7 @@ async function uploadProposalDocuments(
         spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
-        files: cat.files,
+        files,
       });
     }
   }
@@ -248,7 +254,8 @@ async function uploadProposalDocuments(
       // resolvemos a partir do metadata.spouse_of (vide buildPartyMap abaixo).
       const locSpousePartyKey = partyKey('tenant_spouse_of_additional', idx);
       for (const cat of loc.documentos || []) {
-        if (cat.files.length > 0) {
+        const files = getNewUploadFiles(cat.files);
+        if (files.length > 0) {
           jobs.push({
             ownerType: 'proponente',
             ownerKey,
@@ -259,12 +266,13 @@ async function uploadProposalDocuments(
             spousePartyKey: locSpousePartyKey,
             spouseName: locSpouseName,
             category: cat.key,
-            files: cat.files,
+            files,
           });
         }
       }
       for (const cat of loc.conjuge?.documentos || []) {
-        if (cat.files.length > 0) {
+        const files = getNewUploadFiles(cat.files);
+        if (files.length > 0) {
           jobs.push({
             ownerType: 'tenant_spouse',
             ownerKey: `${ownerKey}-conjuge`,
@@ -275,7 +283,7 @@ async function uploadProposalDocuments(
             spousePartyKey: locSpousePartyKey,
             spouseName: locSpouseName,
             category: cat.key,
-            files: cat.files,
+            files,
           });
         }
       }
@@ -294,7 +302,8 @@ async function uploadProposalDocuments(
     const fiadorPartyKey = partyKey('guarantor', idx);
     const fiadorSpousePartyKey = partyKey('guarantor_spouse', idx);
     for (const cat of f.documentos || []) {
-      if (cat.files.length > 0) {
+      const files = getNewUploadFiles(cat.files);
+      if (files.length > 0) {
         jobs.push({
           ownerType: 'fiador',
           ownerKey,
@@ -305,7 +314,7 @@ async function uploadProposalDocuments(
           spousePartyKey: fiadorSpousePartyKey,
           spouseName: fiadorSpouseName,
           category: cat.key,
-          files: cat.files,
+          files,
         });
       }
     }
@@ -1753,8 +1762,10 @@ export default function PropostaPublica() {
         ...restoredData,
         // Keep imovel from property data (auto-filled)
         imovel: prev.imovel,
-        // Keep original doc structure but restore non-file data
-        documentos: prev.documentos,
+        // Restore document markers too, so correction links keep already-sent files visible
+        documentos: Array.isArray(restoredData.documentos) && restoredData.documentos.length > 0
+          ? restoredData.documentos
+          : prev.documentos,
         ...(sanitizedConjuge ? { conjuge: sanitizedConjuge } : {}),
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),
@@ -2920,15 +2931,22 @@ export default function PropostaPublica() {
                     <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
                       {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <span className="truncate flex-1 text-foreground">{file.name}</span>
+                      {file.persisted && (
+                        <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 shrink-0">
+                          já enviado
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
-                      <button className="text-red-400 hover:text-red-600 p-1"
-                        onClick={() => onUpdate(cats => {
-                          const next = [...cats];
-                          next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
-                          return next;
-                        })}>
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                      {!file.persisted && (
+                        <button className="text-red-400 hover:text-red-600 p-1"
+                          onClick={() => onUpdate(cats => {
+                            const next = [...cats];
+                            next[catIdx] = { ...next[catIdx], files: next[catIdx].files.filter(f => f.id !== file.id) };
+                            return next;
+                          })}>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

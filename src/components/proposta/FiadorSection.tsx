@@ -498,9 +498,15 @@ export function FiadorSection({
                                         ? <ImageIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                         : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                       <span className="truncate flex-1 text-foreground">{file.name}</span>
-                                      <button onClick={() => onRemoveFile(idx, catIdx, file.id)} className="text-destructive/70 hover:text-destructive p-0.5">
-                                        <X className="h-3 w-3" />
-                                      </button>
+                                      {file.persisted ? (
+                                        <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-1.5 py-0.5 shrink-0">
+                                          já enviado
+                                        </span>
+                                      ) : (
+                                        <button onClick={() => onRemoveFile(idx, catIdx, file.id)} className="text-destructive/70 hover:text-destructive p-0.5">
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      )}
                                     </div>
                                   ))}
                                 </div>

@@ -1824,37 +1824,16 @@ export default function PropostaPublica() {
     const contractType: 'digital' | 'fisico' | null =
       contractTypeRaw === 'digital' || contractTypeRaw === 'fisico' ? contractTypeRaw : null;
 
-    // Detalhes da negociação preenchidos com valores do imóvel
-    const aluguelTotal =
-      (property?.valor_aluguel || 0) +
-      (property?.condominio || 0) +
-      (property?.iptu || 0) +
-      (property?.seguro_incendio || 0);
-    const negotiationDetailsLines = [
-      `**Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
-      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
-      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
-      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      `**Total mensal aproximado:** ${formatCurrency(aluguelTotal || null)}`,
-      data.negociacao.aceitou_valor === 'sim'
-        ? `**Aceitou o valor anunciado:** Sim`
-        : data.negociacao.aceitou_valor === 'nao'
-        ? `**Aceitou o valor anunciado:** Não`
-        : '',
-      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
-        ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}`
-        : '',
-      data.negociacao.observacao
-        ? `**${data.negociacao.aceitou_valor === 'sim' ? 'Condições da proposta' : 'Justificativa e condições'}:** ${data.negociacao.observacao}`
-        : '',
-    ].filter(Boolean).join('\n');
+    // Negociação: NÃO gerar mais markdown redundante. Os valores já aparecem
+    // no bloco "Resumo da negociação" do CardDetailDialog (lê de proposal_drafts).
+    // Mantemos negotiation_details vazio para novas propostas.
+    const negotiationDetailsLines = '';
 
     // Descrição adicional recebe apenas observações livres, sem repetir dados
     // que já possuem bloco estruturado no card.
     const descriptionLines = [
-      data.garantia.observacao?.trim()
-        ? `Observação sobre garantia: ${data.garantia.observacao.trim()}`
-        : '',
+      // Observação da garantia agora aparece no bloco "Garantia" do card
+      // (lida via useProposalNegotiationSummary). Não duplicar aqui.
       data.documentos_observacao?.trim()
         ? `Observação sobre documentos: ${data.documentos_observacao.trim()}`
         : '',

@@ -2494,6 +2494,7 @@ export default function PropostaPublica() {
                 placeholder="0,00"
                 className="mt-1.5"
               />
+              <RendaInfoBlock />
               {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
                 <div className={cn(
                   'mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2',

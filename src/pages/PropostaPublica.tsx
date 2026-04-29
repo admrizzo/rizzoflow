@@ -2636,6 +2636,15 @@ export default function PropostaPublica() {
                           })} />
                         <RendaInfoBlock />
                       </div>
+                      <IncomeTypeInput
+                        inputSize="sm"
+                        value={loc.tipo_renda || ''}
+                        onChange={v => update(p => {
+                          const arr = [...(p.locatarios_adicionais || [])];
+                          arr[idx] = { ...arr[idx], tipo_renda: v };
+                          return { ...p, locatarios_adicionais: arr };
+                        })}
+                      />
                       <div>
                         <Label className="text-xs">Estado civil</Label>
                         <Select

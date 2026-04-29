@@ -815,7 +815,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
           </div>
           {/* Badge: documentos/proposta recebidos pelo cliente */}
-          {card.proposal_submitted_at && (
+          {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
             <div className="mt-2">
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -823,6 +823,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               >
                 <Inbox className="h-3 w-3" />
                 Doc. recebidos
+              </span>
+            </div>
+          )}
+          {/* Badge: correção solicitada (pendente) */}
+          {pendingCorrection && (
+            <div className="mt-2">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200"
+                title="Aguardando o cliente reenviar com as correções solicitadas"
+              >
+                <Wrench className="h-3 w-3" />
+                Correção solicitada
+              </span>
+            </div>
+          )}
+          {/* Badge: correção/complementação recebida */}
+          {correctionReceived && (
+            <div className="mt-2">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200"
+                title="Cliente reenviou após uma solicitação de correção"
+              >
+                <CheckCheck className="h-3 w-3" />
+                {correctionReceivedLabel}
               </span>
             </div>
           )}

@@ -4165,6 +4165,22 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
             />
           )}
         </ReviewBlockNew>
+
+        {/* Contrato */}
+        <ReviewBlockNew title="Contrato" icon="📅" onFix={() => onGoToStep(6)}>
+          <ReviewRow
+            label="Data pretendida de início"
+            value={
+              data.contrato?.data_inicio
+                ? new Date(data.contrato.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
+                : 'Não informado'
+            }
+          />
+          <ReviewRow
+            label="Dia de vencimento do aluguel"
+            value={data.contrato?.dia_vencimento ? `Dia ${data.contrato.dia_vencimento}` : 'Não informado'}
+          />
+        </ReviewBlockNew>
       </div>
 
       {/* Terms */}

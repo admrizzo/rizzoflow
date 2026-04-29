@@ -422,8 +422,8 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
               ]);
               formData = hydrateDraftWithExistingDocuments(
                 formData,
-                ((existingDocuments || []) as ExistingProposalDocument[]),
-                ((existingParties || []) as ExistingProposalParty[]),
+                ((existingDocuments || []) as unknown as ExistingProposalDocument[]),
+                ((existingParties || []) as unknown as ExistingProposalParty[]),
               );
             }
             setRestoredData(formData as ProposalFormData);

@@ -1830,9 +1830,17 @@ export default function PropostaPublica() {
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
       `**Total mensal aproximado:** ${formatCurrency(aluguelTotal || null)}`,
-      data.negociacao.valor_proposto ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}` : '',
-      data.negociacao.aceitou_valor ? `**Aceitou o valor anunciado:** ${data.negociacao.aceitou_valor}` : '',
-      data.negociacao.observacao ? `**Observações:** ${data.negociacao.observacao}` : '',
+      data.negociacao.aceitou_valor === 'sim'
+        ? `**Aceitou o valor anunciado:** Sim`
+        : data.negociacao.aceitou_valor === 'nao'
+        ? `**Aceitou o valor anunciado:** Não`
+        : '',
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}`
+        : '',
+      data.negociacao.observacao
+        ? `**${data.negociacao.aceitou_valor === 'sim' ? 'Condições da proposta' : 'Justificativa e condições'}:** ${data.negociacao.observacao}`
+        : '',
     ].filter(Boolean).join('\n');
 
     const descriptionLines = pj ? [

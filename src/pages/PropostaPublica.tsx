@@ -437,12 +437,16 @@ async function persistProposalParties(
   proposalLinkId: string,
   cardId: string | null,
   data: ProposalFormData,
+  publicToken?: string | null,
 ): Promise<Map<string, string>> {
+  // Aceita formatos BR ("1.800,00") e JS-numéricos ("1800.00") sem perder
+  // o ponto decimal do segundo formato. Reaproveita parseCurrency.
   const parseNum = (s: string | undefined | null): number | null => {
-    if (!s) return null;
-    const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-    const n = parseFloat(cleaned);
-    return isFinite(n) ? n : null;
+    if (s === null || s === undefined) return null;
+    const str = String(s).trim();
+    if (!str) return null;
+    const n = parseCurrency(str);
+    return n > 0 ? n : (str === '0' || str === '0,00' || str === '0.00' ? 0 : null);
   };
 
   type PartyRow = {
@@ -764,10 +768,33 @@ async function persistProposalParties(
 
   // ── Idempotência: apaga partes anteriores deste link ──
   {
-    const { error: delErr } = await supabase
-      .from('proposal_parties' as any)
-      .delete()
-      .eq('proposal_link_id', proposalLinkId);
+    // Preferimos a RPC SECURITY DEFINER (`clear_public_proposal_parties`) para
+    // não depender de permissões diretas de DELETE em proposal_parties pelo
+    // formulário público. Caímos no DELETE direto apenas se a RPC não existir
+    // (compatibilidade com ambientes antigos).
+    let delErr: any = null;
+    // publicToken vem do escopo do call site (parâmetro da função).
+    if (publicToken) {
+      const { error: rpcErr } = await supabase.rpc(
+        'clear_public_proposal_parties' as any,
+        { _public_token: publicToken, _proposal_link_id: proposalLinkId } as any,
+      );
+      delErr = rpcErr || null;
+      // Se a função não existir no banco ainda, usa fallback.
+      if (delErr && /function .* does not exist|PGRST202|404/i.test(delErr.message || '')) {
+        const { error: fbErr } = await supabase
+          .from('proposal_parties' as any)
+          .delete()
+          .eq('proposal_link_id', proposalLinkId);
+        delErr = fbErr || null;
+      }
+    } else {
+      const { error: fbErr } = await supabase
+        .from('proposal_parties' as any)
+        .delete()
+        .eq('proposal_link_id', proposalLinkId);
+      delErr = fbErr || null;
+    }
     if (delErr) {
       console.error('[persistProposalParties] Falha ao limpar partes anteriores', delErr);
       throw new ProposalPartiesError(
@@ -1104,9 +1131,31 @@ const STEP_CONFIG = [
   { label: 'Revisão', shortLabel: 'Revisão', icon: ClipboardCheck },
 ];
 
-function parseCurrency(val: string): number {
-  const cleaned = val.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.');
-  return parseFloat(cleaned) || 0;
+/**
+ * Converte uma string monetária para número.
+ * Aceita tanto o formato brasileiro vindo de inputs ("R$ 1.800,00", "1.800,00")
+ * quanto o formato JS-numérico salvo pelo CurrencyInput ("1800.00", "1800.5").
+ *
+ * Regra: se a string contém vírgula, é BR (ponto = milhar, vírgula = decimal).
+ * Caso contrário, o ponto (se houver) é o separador decimal nativo de JS.
+ */
+function parseCurrency(val: string | number | null | undefined): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isFinite(val) ? val : 0;
+  const s = String(val).trim();
+  if (!s) return 0;
+  const cleaned = s.replace(/[^\d,.-]/g, '');
+  if (!cleaned) return 0;
+  let normalized: string;
+  if (cleaned.includes(',')) {
+    // Formato BR: remove pontos de milhar, troca vírgula decimal por ponto.
+    normalized = cleaned.replace(/\./g, '').replace(',', '.');
+  } else {
+    // Sem vírgula: já está em formato JS numérico (ponto = decimal).
+    normalized = cleaned;
+  }
+  const n = parseFloat(normalized);
+  return isFinite(n) ? n : 0;
 }
 
 function vv(val: string | undefined | null): string {
@@ -1851,7 +1900,7 @@ export default function PropostaPublica() {
       let partyMap = new Map<string, string>();
       if (proposalLink?.id) {
         try {
-          partyMap = await persistProposalParties(proposalLink.id, null, data);
+          partyMap = await persistProposalParties(proposalLink.id, null, data, proposalLink.public_token);
         } catch (partiesErr: any) {
           console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
           const isStruct = partiesErr instanceof ProposalPartiesError;

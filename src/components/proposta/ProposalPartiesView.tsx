@@ -357,10 +357,17 @@ export function ProposalPartiesView({ parties, compact = false, className, docsB
  * exibida pelo `ProposalPartiesView`.
  */
 export function buildPartiesFromFormData(data: any): ProposalParty[] {
+  // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
   const parseNum = (s: any): number | null => {
     if (s == null) return null;
-    const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-    const n = parseFloat(cleaned);
+    const str = String(s).trim();
+    if (!str) return null;
+    const cleaned = str.replace(/[^\d,.-]/g, '');
+    if (!cleaned) return null;
+    const normalized = cleaned.includes(',')
+      ? cleaned.replace(/\./g, '').replace(',', '.')
+      : cleaned;
+    const n = parseFloat(normalized);
     return isFinite(n) ? n : null;
   };
 

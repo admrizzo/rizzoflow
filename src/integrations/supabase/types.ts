@@ -732,6 +732,7 @@ export type Database = {
           archived_by: string | null
           board_id: string | null
           building_name: string | null
+          capturing_broker_id: string | null
           card_number: number
           card_type: string | null
           column_entered_at: string | null
@@ -766,6 +767,7 @@ export type Database = {
           proposal_submitted_at: string | null
           responsible_user_id: string | null
           robust_code: string | null
+          service_broker_id: string | null
           superlogica_id: string | null
           title: string
           updated_at: string
@@ -780,6 +782,7 @@ export type Database = {
           archived_by?: string | null
           board_id?: string | null
           building_name?: string | null
+          capturing_broker_id?: string | null
           card_number?: number
           card_type?: string | null
           column_entered_at?: string | null
@@ -814,6 +817,7 @@ export type Database = {
           proposal_submitted_at?: string | null
           responsible_user_id?: string | null
           robust_code?: string | null
+          service_broker_id?: string | null
           superlogica_id?: string | null
           title: string
           updated_at?: string
@@ -828,6 +832,7 @@ export type Database = {
           archived_by?: string | null
           board_id?: string | null
           building_name?: string | null
+          capturing_broker_id?: string | null
           card_number?: number
           card_type?: string | null
           column_entered_at?: string | null
@@ -862,6 +867,7 @@ export type Database = {
           proposal_submitted_at?: string | null
           responsible_user_id?: string | null
           robust_code?: string | null
+          service_broker_id?: string | null
           superlogica_id?: string | null
           title?: string
           updated_at?: string

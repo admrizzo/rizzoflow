@@ -242,11 +242,11 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
 
   // Distribui docs em blocos por party_id
   const blocksByPartyId = new Map<string, PersonBlock>();
-  for (const p of parties) blocksByPartyId.set(p.id, buildPersonBlock(p));
+  for (const p of visibleParties) blocksByPartyId.set(p.id, buildPersonBlock(p));
 
   // ownerType → blocks (apenas pessoas "raiz" — não-cônjuges; cônjuges ficam aninhados)
   const groupedByOwnerType = new Map<string, PersonBlock[]>();
-  for (const p of parties) {
+  for (const p of visibleParties) {
     if (isSpouseRole(p.role)) continue; // será aninhado
     const ownerType = ROLE_TO_OWNER_TYPE[p.role] || 'outros';
     const block = blocksByPartyId.get(p.id)!;
@@ -262,15 +262,15 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
     if (!parentId && p.metadata?.spouse_of) {
       const so = String(p.metadata.spouse_of);
       if (so === 'primary_tenant') {
-        const parent = parties.find((x: any) => x.role === 'primary_tenant');
+        const parent = visibleParties.find((x: any) => x.role === 'primary_tenant');
         parentId = parent?.id || null;
       } else if (so.startsWith('additional_tenant_')) {
         const idx = Number(so.replace('additional_tenant_', '')) - 1;
-        const parent = parties.find((x: any) => x.role === 'additional_tenant' && (x.metadata?.tenant_index ?? 0) === idx + 1);
+        const parent = visibleParties.find((x: any) => x.role === 'additional_tenant' && (x.metadata?.tenant_index ?? 0) === idx + 1);
         parentId = parent?.id || null;
       } else if (so.startsWith('guarantor_')) {
         const idx = Number(so.replace('guarantor_', '')) - 1;
-        const parent = parties.find((x: any) => x.role === 'guarantor' && (x.metadata?.guarantor_index ?? 0) === idx + 1);
+        const parent = visibleParties.find((x: any) => x.role === 'guarantor' && (x.metadata?.guarantor_index ?? 0) === idx + 1);
         parentId = parent?.id || null;
       }
     }
@@ -293,7 +293,7 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
     if (!inner.has(ownerLabel)) inner.set(ownerLabel, []);
     return inner.get(ownerLabel)!;
   };
-  for (const d of docs) {
+  for (const d of visibleDocs) {
     if (d.party_id && blocksByPartyId.has(d.party_id)) {
       blocksByPartyId.get(d.party_id)!.docs.push(d);
     } else {

@@ -3632,10 +3632,10 @@ export default function PropostaPublica() {
           </div>
         )}
 
-        {/* Observations */}
+        {/* Justificativa */}
         <div className="bg-card rounded-2xl border p-6 space-y-3">
-          <Label className="text-sm font-semibold block">Condições ou observações <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Descreva suas condições ou observações..." rows={4} />
+          <Label className="text-sm font-semibold block">Justificativa <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Explique sua proposta ou condições..." rows={4} />
         </div>
 
         {/* Important info cards */}

@@ -176,18 +176,11 @@ export function DocumentPreviewDialog({
           {!loading && !error && blobUrl && (
             <>
               {isPdf && (
-                <object
-                  data={blobUrl}
-                  type="application/pdf"
-                  className="w-full h-full"
-                  aria-label={fileName}
-                >
-                  <iframe
-                    src={blobUrl}
-                    title={fileName}
-                    className="w-full h-full border-0"
-                  />
-                </object>
+                <iframe
+                  src={blobUrl}
+                  title={fileName}
+                  className="w-full h-full border-0 bg-white"
+                />
               )}
               {isImage && (
                 <div className="flex items-center justify-center h-full p-4">

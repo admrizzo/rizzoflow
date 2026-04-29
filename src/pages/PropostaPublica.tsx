@@ -1274,13 +1274,20 @@ function validateStep(step: number, data: ProposalFormData): string[] {
             if (!m.relacao?.trim()) errors.push('Informe a relação do morador');
             if (!m.nome?.trim()) errors.push('Informe o nome do morador');
             if (!m.whatsapp?.trim()) errors.push('Informe o WhatsApp do morador');
+            else if (!isValidPhone(m.whatsapp)) errors.push('WhatsApp do morador inválido');
             if (!m.email?.trim()) errors.push('Informe o e-mail do morador');
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email.trim())) errors.push('E-mail do morador inválido');
           }
         }
         if (data.composicao.responsavel_retirada) {
           if (!data.composicao.retirada_nome?.trim()) errors.push('Informe o nome de quem vai retirar as chaves');
           if (!data.composicao.retirada_whatsapp?.trim()) errors.push('Informe o WhatsApp de quem vai retirar as chaves');
+          else if (!isValidPhone(data.composicao.retirada_whatsapp)) errors.push('WhatsApp de quem vai retirar as chaves inválido');
           if (!data.composicao.retirada_cpf?.trim()) errors.push('Informe o CPF de quem vai retirar as chaves');
+          else if (!isValidCPF(data.composicao.retirada_cpf)) errors.push('CPF de quem vai retirar as chaves inválido');
+          if (data.composicao.retirada_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.composicao.retirada_email.trim())) {
+            errors.push('E-mail de quem vai retirar as chaves inválido');
+          }
         }
       }
       break;

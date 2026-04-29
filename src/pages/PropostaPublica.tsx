@@ -49,6 +49,7 @@ import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
 import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
+import { CollapsibleTip } from '@/components/proposta/CollapsibleTip';
 import { isValidCPF, isValidPhone } from '@/lib/proposalMasks';
 
 // ── Upload de documentos da proposta para o Storage ──

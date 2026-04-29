@@ -12,6 +12,9 @@ import {
 import type {
   FiadorData, FiadorTipo, FiadorConjugeData, UploadedFile,
 } from '@/pages/PropostaLocacao';
+import { ProfessionInput } from '@/components/proposta/ProfessionInput';
+import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];

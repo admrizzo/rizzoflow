@@ -148,6 +148,27 @@ const contractLabels: Record<ContractType, string> = {
   fisico: 'Físico',
 };
 
+const REDUNDANT_DESCRIPTION_LABELS = new Set([
+  'tipo', 'cliente', 'cpf', 'whatsapp', 'e-mail', 'email', 'imóvel', 'imovel',
+  'endereço', 'endereco', 'valor aluguel', 'condomínio', 'condominio', 'iptu',
+  'seguro incêndio', 'seguro incendio', 'valor proposto', 'valor proposto pelo cliente',
+  'renda mensal', 'comprometimento', 'garantia', 'score', 'corretor',
+  'total mensal aproximado', 'aceitou o valor anunciado',
+]);
+
+function getVisibleAdditionalDescription(description: string | null | undefined): string {
+  if (!description) return '';
+  return description
+    .split('\n')
+    .filter((line) => {
+      const normalized = line.trim().replace(/^[-*]\s*/, '').replace(/^\*\*/, '');
+      const label = normalized.split(':')[0]?.replace(/\*\*$/g, '').trim().toLowerCase();
+      return label ? !REDUNDANT_DESCRIPTION_LABELS.has(label) : !!normalized;
+    })
+    .join('\n')
+    .trim();
+}
+
 export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
   // Hook leve: traz APENAS as mutations necessárias, sem carregar a lista
   // do board inteiro. Reduz o tempo de abertura do card em ~1-2s quando o
@@ -294,6 +315,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     (negotiationSummary.aluguel !== null ||
       negotiationSummary.aceitouValor !== null ||
       negotiationSummary.tipoAssinatura !== null)
+  );
+  const visibleAdditionalDescription = useMemo(
+    () => getVisibleAdditionalDescription(localDescription),
+    [localDescription],
   );
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
@@ -1636,7 +1661,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {card.robust_code && (
               <div className="bg-muted/30 p-4 rounded-lg border border-muted">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Documentos da proposta</h3>
-                <ProposalDocumentsSection cardId={card.id} />
+                <ProposalDocumentsSection cardId={card.id} guaranteeType={card.guarantee_type} />
               </div>
             )}
 
@@ -1707,17 +1732,16 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* Description - Only for Locação boards (not Rescisão, Venda, DEV, Administrativo, Captação, or Manutenção) */}
-            {/* Quando há resumo estruturado da negociação, só mostramos a descrição
-                adicional se já houver conteúdo (para não duplicar dados financeiros). */}
+            {/* Mostra apenas observações livres; linhas de resumo automático legado são filtradas. */}
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard &&
-              (!hasStructuredNegotiation || !!localDescription) && (
+              !!visibleAdditionalDescription && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <Label className="text-sm font-medium">Descrição adicional</Label>
                 </div>
                 <Textarea
-                  value={localDescription}
+                  value={visibleAdditionalDescription}
                   onChange={(e) => setLocalDescription(e.target.value)}
                   onBlur={() => handleFieldBlur('description', localDescription, card.description)}
                   placeholder="Outras informações relevantes..."

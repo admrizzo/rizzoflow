@@ -280,9 +280,12 @@ async function uploadProposalDocuments(
     });
   }
 
-  // Fiadores. Os documentos de cônjuge do fiador ficam nas categorias
+  // Fiadores reais. Os documentos de cônjuge do fiador ficam nas categorias
   // documento_conjuge/renda_conjuge do próprio bloco do fiador.
-  (data.garantia.fiadores || []).forEach((f, idx) => {
+  const fiadoresReais = data.garantia.tipo_garantia === 'Fiador'
+    ? (data.garantia.fiadores || []).filter((f) => !!(f.nome || f.cpf || f.email || f.whatsapp || hasUploadedFiles(f.documentos)))
+    : [];
+  fiadoresReais.forEach((f, idx) => {
     const label = f.nome ? `Fiador ${idx + 1} — ${f.nome}` : `Fiador ${idx + 1}`;
     const ownerKey = `fiador-${idx + 1}`;
     const fiadorSpouseName = (f.conjuge?.nome || '').trim();
@@ -625,8 +628,11 @@ async function persistProposalParties(
     });
   }
 
-  // Fiadores + cônjuges (independente de PF/PJ)
-  (data.garantia?.fiadores || []).forEach((f, idx) => {
+  // Fiadores + cônjuges (somente quando há fiador real na modalidade Fiador)
+  const fiadoresReais = data.garantia?.tipo_garantia === 'Fiador'
+    ? (data.garantia?.fiadores || []).filter((f) => !!(f.nome || f.cpf || f.email || f.whatsapp || hasUploadedFiles(f.documentos)))
+    : [];
+  fiadoresReais.forEach((f, idx) => {
     pushRow(partyKey('guarantor', idx), {
       proposal_link_id: proposalLinkId,
       card_id: cardId,
@@ -1843,12 +1849,16 @@ export default function PropostaPublica() {
         : '',
     ].filter(Boolean).join('\n');
 
-    // Descrição adicional fica vazia: todos os dados aparecem em blocos
-    // estruturados próprios (envolvidos, imóvel, negociação, garantia,
-    // corretor, score, documentos). Apenas observações livres do cliente
-    // entram aqui — neste fluxo público não há campo de observação livre,
-    // então a descrição nasce vazia e o bloco fica oculto no card.
-    const descriptionLines: string[] = [];
+    // Descrição adicional recebe apenas observações livres, sem repetir dados
+    // que já possuem bloco estruturado no card.
+    const descriptionLines = [
+      data.garantia.observacao?.trim()
+        ? `Observação sobre garantia: ${data.garantia.observacao.trim()}`
+        : '',
+      data.documentos_observacao?.trim()
+        ? `Observação sobre documentos: ${data.documentos_observacao.trim()}`
+        : '',
+    ];
 
     try {
       // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento
@@ -3327,7 +3337,9 @@ export default function PropostaPublica() {
                   garantia: {
                     ...p.garantia,
                     tipo_garantia: g.value,
-                    fiadores: g.value === 'Fiador' && p.garantia.fiadores.length === 0 ? [{ ...emptyFiador }] : p.garantia.fiadores,
+                    fiadores: g.value === 'Fiador'
+                      ? (p.garantia.fiadores.length === 0 ? [{ ...emptyFiador }] : p.garantia.fiadores)
+                      : [],
                   }
                 }))}
                 className={cn(

@@ -2187,6 +2187,10 @@ export type Database = {
         Args: { _card_id: string; _user_id: string }
         Returns: boolean
       }
+      clear_public_proposal_parties: {
+        Args: { _proposal_link_id: string; _public_token: string }
+        Returns: Json
+      }
       finalize_public_proposal: {
         Args: { _payload?: Json; _public_token: string }
         Returns: Json

@@ -41,6 +41,16 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const completedItems = activeItems.filter(i => i.is_completed).length;
     const hasPendingItems = totalItems > 0 && completedItems < totalItems;
 
+    // Resolve nomes dos responsáveis internos (compacto, só aparece se houver)
+    const { profiles } = useProfiles();
+    const capturingBrokerName = card.capturing_broker_id
+      ? profiles.find((p) => p.user_id === card.capturing_broker_id)?.full_name
+      : null;
+    const serviceBrokerName = card.service_broker_id
+      ? profiles.find((p) => p.user_id === card.service_broker_id)?.full_name
+      : null;
+    const hasInternalBrokers = !!(capturingBrokerName || serviceBrokerName);
+
     const hasLabels = card.labels && card.labels.length > 0;
     const hasDueDate = card.due_date;
     const hasChecklists = totalItems > 0;

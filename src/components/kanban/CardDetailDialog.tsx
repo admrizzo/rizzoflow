@@ -200,6 +200,22 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const canRequestCorrection = isAdminRole || isGestor || isAdministrativo;
   const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
   const { data: correctionRequests = [] } = useCardCorrectionRequests(card?.id);
+  // Public token do proposal_link — usado para Copiar/Abrir link da proposta.
+  const { data: proposalPublicToken } = useProposalLinkPublicToken(card?.proposal_link_id || null);
+  const proposalPublicUrl = proposalPublicToken
+    ? buildPublicUrl(`/proposta/${proposalPublicToken}`)
+    : null;
+  const handleCopyProposalLink = useCallback(() => {
+    if (!proposalPublicUrl) return;
+    navigator.clipboard.writeText(proposalPublicUrl).then(
+      () => sonnerToast.success('Link copiado'),
+      () => sonnerToast.error('Não foi possível copiar o link'),
+    );
+  }, [proposalPublicUrl]);
+  const handleOpenProposalLink = useCallback(() => {
+    if (!proposalPublicUrl) return;
+    window.open(proposalPublicUrl, '_blank', 'noopener,noreferrer');
+  }, [proposalPublicUrl]);
   const pendingCorrection: CorrectionRequest | undefined = correctionRequests.find(
     (c) => c.status === 'pending'
   );

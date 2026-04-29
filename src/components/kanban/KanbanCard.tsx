@@ -375,6 +375,26 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             </div>
           )}
 
+          {/* Responsáveis internos (compacto — só aparece se houver) */}
+          {hasInternalBrokers && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {capturingBrokerName && (
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-medium">Capt:</span>
+                  <span className="truncate">{capturingBrokerName}</span>
+                </div>
+              )}
+              {serviceBrokerName && (
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-medium">Atend:</span>
+                  <span className="truncate">{serviceBrokerName}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Footer with icons */}
           {(hasChecklists || hasDueDate || hasDeadline || hasVacancyDeadline || parsedBudgetDeadline || column?.review_deadline_days) && (
             <div className="flex items-center flex-wrap gap-2 mt-1.5 text-muted-foreground">

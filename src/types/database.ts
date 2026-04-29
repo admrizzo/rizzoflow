@@ -159,6 +159,11 @@ export interface Card {
   next_action: string | null;
   responsible_user_id: string | null;
   next_action_due_date: string | null;
+  next_action_completed_at: string | null;
+  next_action_completed_by: string | null;
+  last_completed_action: string | null;
+  last_completed_action_at: string | null;
+  last_completed_action_by: string | null;
   // Proposta pública vinculada
   proposal_link_id: string | null;
   proposal_submitted_at: string | null;

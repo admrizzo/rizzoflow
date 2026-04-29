@@ -44,6 +44,7 @@ import {
 } from '@/components/proposta/ProposalPartiesView';
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { usePublicCorrectionRequest, SECTION_LABELS } from '@/hooks/useCorrectionRequests';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
@@ -1641,6 +1642,9 @@ export default function PropostaPublica() {
     enabled: !!codigo && !submitted,
   });
 
+  // ── Correção solicitada pelo time interno ──
+  const { data: pendingCorrection } = usePublicCorrectionRequest(proposalLink?.id);
+
   // ── Restore draft data ──
   useEffect(() => {
     if (restoredData) {
@@ -1965,6 +1969,44 @@ export default function PropostaPublica() {
           }
         } catch (notifyErr) {
           console.error('Erro ao notificar admins:', notifyErr);
+        }
+      }
+
+      // Se havia uma solicitação de correção pendente, marca como respondida.
+      // Mantém o histórico (não apaga). O badge no card passa a ser
+      // "Correção/Complementação recebida" conforme as seções solicitadas.
+      if (pendingCorrection?.id) {
+        try {
+          await supabase
+            .from('proposal_correction_requests' as any)
+            .update({
+              status: 'responded',
+              responded_at: new Date().toISOString(),
+            })
+            .eq('id', pendingCorrection.id);
+
+          if (targetCardId) {
+            const onlyDocs =
+              (pendingCorrection.requested_sections || []).length > 0 &&
+              (pendingCorrection.requested_sections || []).every((s: string) => s === 'documentos');
+            const title = onlyDocs
+              ? '📎 Complementação de documentos recebida'
+              : '✅ Cliente respondeu à solicitação de correção';
+            await supabase.from('card_activity_logs').insert({
+              card_id: targetCardId,
+              actor_user_id: null,
+              event_type: 'proposal_correction_responded',
+              title,
+              description: `Resposta à solicitação: ${pendingCorrection.message}`,
+              metadata: {
+                kind: 'correction_responded',
+                only_documents: onlyDocs,
+                correction_request_id: pendingCorrection.id,
+              },
+            });
+          }
+        } catch (corrErr) {
+          console.error('Erro ao marcar correção como respondida:', corrErr);
         }
       }
 
@@ -3660,6 +3702,43 @@ export default function PropostaPublica() {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-8 pb-32">
+        {pendingCorrection && (
+          <div className="mb-6 rounded-xl border-2 border-orange-300 bg-orange-50 p-4 sm:p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-orange-900 text-base sm:text-lg">
+                  Correção solicitada
+                </h3>
+                <p className="text-sm text-orange-900 mt-1 whitespace-pre-wrap">
+                  {pendingCorrection.message}
+                </p>
+                {pendingCorrection.requested_sections?.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold text-orange-800 mb-1.5">
+                      Blocos a revisar:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pendingCorrection.requested_sections.map((s) => (
+                        <span
+                          key={s}
+                          className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
+                        >
+                          {SECTION_LABELS[s] || s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-xs text-orange-700 mt-3">
+                  Após corrigir, clique em <strong>Enviar Registro</strong> ao final para reenviar a proposta.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {stepRenderers[step]?.()}
       </div>
 

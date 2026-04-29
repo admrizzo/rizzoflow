@@ -65,6 +65,8 @@ import {
   ArrowRight,
   Inbox,
   FileEdit,
+  Wrench,
+  CheckCheck,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';
@@ -83,6 +85,12 @@ import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
 import { InternalBrokersSection } from './InternalBrokersSection';
 import { useCardParties } from '@/hooks/useCardParties';
+import { RequestCorrectionDialog } from './RequestCorrectionDialog';
+import {
+  useCardCorrectionRequests,
+  SECTION_LABELS,
+  type CorrectionRequest,
+} from '@/hooks/useCorrectionRequests';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
@@ -184,6 +192,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const isEditor = canMoveCards;
   // Edição dos responsáveis internos: somente admin/gestor/administrativo.
   const canEditInternalBrokers = isAdminRole || isGestor || isAdministrativo;
+  // Solicitação de correção: mesmo grupo (admin/gestor/administrativo).
+  const canRequestCorrection = isAdminRole || isGestor || isAdministrativo;
+  const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
+  const { data: correctionRequests = [] } = useCardCorrectionRequests(card?.id);
+  const pendingCorrection: CorrectionRequest | undefined = correctionRequests.find(
+    (c) => c.status === 'pending'
+  );
+  const lastResponded: CorrectionRequest | undefined = correctionRequests.find(
+    (c) => c.status === 'responded'
+  );
+  // "Correção/Complementação recebida": existe uma solicitação respondida e nenhuma pendente,
+  // e a resposta veio depois do último submitted_at conhecido.
+  const correctionReceived =
+    !pendingCorrection &&
+    !!lastResponded &&
+    !!card?.proposal_submitted_at &&
+    new Date(lastResponded.responded_at || 0).getTime() >=
+      new Date(card.proposal_submitted_at).getTime() - 5000;
+  const correctionReceivedLabel = (() => {
+    if (!lastResponded) return '';
+    const sections = lastResponded.requested_sections || [];
+    const onlyDocs = sections.length > 0 && sections.every((s) => s === 'documentos');
+    return onlyDocs ? 'Complementação recebida' : 'Correção recebida';
+  })();
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);
@@ -783,7 +815,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
           </div>
           {/* Badge: documentos/proposta recebidos pelo cliente */}
-          {card.proposal_submitted_at && (
+          {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
             <div className="mt-2">
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -791,6 +823,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               >
                 <Inbox className="h-3 w-3" />
                 Doc. recebidos
+              </span>
+            </div>
+          )}
+          {/* Badge: correção solicitada (pendente) */}
+          {pendingCorrection && (
+            <div className="mt-2">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200"
+                title="Aguardando o cliente reenviar com as correções solicitadas"
+              >
+                <Wrench className="h-3 w-3" />
+                Correção solicitada
+              </span>
+            </div>
+          )}
+          {/* Badge: correção/complementação recebida */}
+          {correctionReceived && (
+            <div className="mt-2">
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200"
+                title="Cliente reenviou após uma solicitação de correção"
+              >
+                <CheckCheck className="h-3 w-3" />
+                {correctionReceivedLabel}
               </span>
             </div>
           )}
@@ -1655,6 +1711,80 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {/* === BLOCO: RESUMO DA NEGOCIAÇÃO (estruturado) === */}
             {hasStructuredNegotiation && (
               <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
+            )}
+
+            {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
+            {card.proposal_link_id && (canRequestCorrection || pendingCorrection || correctionRequests.length > 0) && (
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Correção da proposta
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Use o mesmo link público para pedir ao cliente que corrija blocos específicos.
+                    </p>
+                  </div>
+                  {canRequestCorrection && !pendingCorrection && (
+                    <Button size="sm" variant="outline" onClick={() => setCorrectionDialogOpen(true)}>
+                      <Wrench className="h-3.5 w-3.5 mr-2" />
+                      Solicitar correção
+                    </Button>
+                  )}
+                </div>
+
+                {pendingCorrection && (
+                  <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-orange-800 text-sm font-semibold">
+                      <Wrench className="h-4 w-4" /> Correção pendente
+                    </div>
+                    {pendingCorrection.requested_sections?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {pendingCorrection.requested_sections.map((s) => (
+                          <span
+                            key={s}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
+                          >
+                            {SECTION_LABELS[s] || s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-sm text-orange-900 whitespace-pre-wrap">
+                      {pendingCorrection.message}
+                    </p>
+                    <p className="text-[11px] text-orange-700">
+                      Solicitado em {format(new Date(pendingCorrection.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                )}
+
+                {!pendingCorrection && lastResponded && (
+                  <div className="rounded-md border border-sky-200 bg-sky-50 p-3 space-y-1">
+                    <div className="flex items-center gap-2 text-sky-800 text-sm font-semibold">
+                      <CheckCheck className="h-4 w-4" /> {correctionReceivedLabel || 'Correção recebida'}
+                    </div>
+                    <p className="text-xs text-sky-900">
+                      Cliente respondeu em{' '}
+                      {lastResponded.responded_at
+                        ? format(new Date(lastResponded.responded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                        : '—'}
+                    </p>
+                    <p className="text-sm text-sky-900 whitespace-pre-wrap">
+                      {lastResponded.message}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {card.proposal_link_id && (
+              <RequestCorrectionDialog
+                open={correctionDialogOpen}
+                onOpenChange={setCorrectionDialogOpen}
+                proposalLinkId={card.proposal_link_id}
+                cardId={card.id}
+              />
             )}
 
             {/* === BLOCO: DOCUMENTOS DA PROPOSTA === */}

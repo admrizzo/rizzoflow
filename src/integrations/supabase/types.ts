@@ -1526,6 +1526,60 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_correction_requests: {
+        Row: {
+          canceled_at: string | null
+          card_id: string | null
+          created_at: string
+          id: string
+          message: string
+          proposal_link_id: string
+          requested_by: string | null
+          requested_sections: Json
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          proposal_link_id: string
+          requested_by?: string | null
+          requested_sections?: Json
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          proposal_link_id?: string
+          requested_by?: string | null
+          requested_sections?: Json
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_correction_requests_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_correction_requests_proposal_link_id_fkey"
+            columns: ["proposal_link_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_documents: {
         Row: {
           card_id: string | null

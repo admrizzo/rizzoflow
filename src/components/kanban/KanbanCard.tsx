@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
@@ -64,7 +64,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
       linkStatus === null
         ? !!card.proposal_link_id
         : linkStatus !== 'enviada' && linkStatus !== 'recebida' && linkStatus !== 'finalizada';
-    const proposalInProgress = !docsReceived && linkPending;
+    const correctionPending = linkStatus === 'correction_requested';
+    const proposalInProgress = !docsReceived && linkPending && !correctionPending;
     
     // Check if document deadline is overdue
     const hasDeadline = card.document_deadline;
@@ -252,7 +253,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         )}
 
         {/* Docs recebidos (proposta pública enviada pelo cliente) */}
-        {docsReceived && !isArchived && (
+        {docsReceived && !isArchived && !correctionPending && (
           <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
             <span
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -260,6 +261,19 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             >
               <Inbox className="h-3 w-3" />
               Doc. recebidos
+            </span>
+          </div>
+        )}
+
+        {/* Correção solicitada ao cliente */}
+        {correctionPending && !isArchived && (
+          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-800 border border-orange-200"
+              title="Correção solicitada — aguardando o cliente reenviar"
+            >
+              <Wrench className="h-3 w-3" />
+              Correção solicitada
             </span>
           </div>
         )}

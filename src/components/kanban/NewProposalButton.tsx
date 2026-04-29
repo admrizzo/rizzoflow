@@ -340,22 +340,24 @@ export function NewProposalButton() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5 text-sm font-medium">
                     <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                    Corretor responsável
+                    {canAssignAnyone ? 'Responsável pela proposta' : 'Corretor responsável'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Select
                     value={brokerUserId}
                     onValueChange={setBrokerUserId}
-                    disabled={loadingBrokers}
+                    disabled={loadingUsers || lockedToSelf}
                   >
                     <SelectTrigger
                       className={`h-11 ${!brokerUserId ? 'border-amber-400/70' : ''}`}
                     >
                       <SelectValue
                         placeholder={
-                          loadingBrokers
-                            ? 'Carregando corretores...'
-                            : 'Selecione um corretor'
+                          loadingUsers
+                            ? 'Carregando usuários...'
+                            : canAssignAnyone
+                              ? 'Selecione o responsável'
+                              : 'Selecione um corretor'
                         }
                       >
                         {selectedBroker && (
@@ -380,17 +382,17 @@ export function NewProposalButton() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-72">
-                      {brokers.length === 0 && !loadingBrokers && (
+                      {selectableUsers.length === 0 && !loadingUsers && (
                         <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                           <AlertCircle className="h-4 w-4 mx-auto mb-2 text-amber-500" />
-                          Nenhum corretor cadastrado.
+                          Nenhum usuário disponível.
                           <br />
                           <span className="text-xs">
-                            Cadastre usuários com papel <strong>Corretor</strong> em Administração → Usuários.
+                            Cadastre usuários em Administração → Usuários.
                           </span>
                         </div>
                       )}
-                      {brokers.map((b) => (
+                      {selectableUsers.map((b) => (
                         <SelectItem key={b.user_id} value={b.user_id} className="py-2">
                           <div className="flex items-center gap-2.5">
                             <Avatar className="h-7 w-7">
@@ -418,8 +420,15 @@ export function NewProposalButton() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {!brokerUserId && brokers.length > 0 && (
-                    <p className="text-xs text-amber-600">Selecione o corretor para gerar o link.</p>
+                  {lockedToSelf && (
+                    <p className="text-xs text-muted-foreground">
+                      Como corretor, a proposta é gerada em seu nome.
+                    </p>
+                  )}
+                  {!lockedToSelf && !brokerUserId && selectableUsers.length > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Selecione o responsável para gerar o link.
+                    </p>
                   )}
                 </div>
                 <Button className="w-full" size="lg" disabled={!selectedBroker || createLink.isPending} onClick={() => createLink.mutate()}>

@@ -754,12 +754,17 @@ export type Database = {
           guarantee_type: Database["public"]["Enums"]["guarantee_type"] | null
           id: string
           is_archived: boolean
+          last_completed_action: string | null
+          last_completed_action_at: string | null
+          last_completed_action_by: string | null
           last_moved_at: string | null
           last_moved_by: string | null
           last_reviewed_at: string | null
           last_reviewed_by: string | null
           negotiation_details: string | null
           next_action: string | null
+          next_action_completed_at: string | null
+          next_action_completed_by: string | null
           next_action_due_date: string | null
           position: number
           proposal_link_id: string | null
@@ -804,12 +809,17 @@ export type Database = {
           guarantee_type?: Database["public"]["Enums"]["guarantee_type"] | null
           id?: string
           is_archived?: boolean
+          last_completed_action?: string | null
+          last_completed_action_at?: string | null
+          last_completed_action_by?: string | null
           last_moved_at?: string | null
           last_moved_by?: string | null
           last_reviewed_at?: string | null
           last_reviewed_by?: string | null
           negotiation_details?: string | null
           next_action?: string | null
+          next_action_completed_at?: string | null
+          next_action_completed_by?: string | null
           next_action_due_date?: string | null
           position?: number
           proposal_link_id?: string | null
@@ -854,12 +864,17 @@ export type Database = {
           guarantee_type?: Database["public"]["Enums"]["guarantee_type"] | null
           id?: string
           is_archived?: boolean
+          last_completed_action?: string | null
+          last_completed_action_at?: string | null
+          last_completed_action_by?: string | null
           last_moved_at?: string | null
           last_moved_by?: string | null
           last_reviewed_at?: string | null
           last_reviewed_by?: string | null
           negotiation_details?: string | null
           next_action?: string | null
+          next_action_completed_at?: string | null
+          next_action_completed_by?: string | null
           next_action_due_date?: string | null
           position?: number
           proposal_link_id?: string | null

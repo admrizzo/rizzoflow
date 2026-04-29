@@ -2919,6 +2919,8 @@ export default function PropostaPublica() {
           <p className="text-muted-foreground mt-1 text-sm">Envie os documentos de cada pessoa envolvida na proposta.</p>
         </div>
 
+        <DocumentTipsBlock />
+
         {/* Bloco do locatário principal / empresa */}
         <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
           <div className="flex items-center gap-2">

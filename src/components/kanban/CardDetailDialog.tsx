@@ -1734,7 +1734,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
-            {card.proposal_link_id && (canRequestCorrection || pendingCorrection || correctionRequests.length > 0) && (
+            {card.proposal_link_id && (
               <div className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
@@ -1752,6 +1752,19 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </Button>
                   )}
                 </div>
+
+                {proposalPublicUrl && (
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <Button size="sm" variant="outline" onClick={handleCopyProposalLink}>
+                      <Copy className="h-3.5 w-3.5 mr-2" />
+                      Copiar link da proposta
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleOpenProposalLink}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                      Abrir proposta
+                    </Button>
+                  </div>
+                )}
 
                 {pendingCorrection && (
                   <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-2">

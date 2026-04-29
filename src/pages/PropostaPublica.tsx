@@ -4114,6 +4114,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
                 <ReviewRow label="WhatsApp" value={vv(data.composicao.retirada_whatsapp)} />
                 <ReviewRow label="CPF" value={vv(data.composicao.retirada_cpf)} />
                 {data.composicao.retirada_email && <ReviewRow label="E-mail" value={data.composicao.retirada_email} />}
+                {data.composicao.retirada_observacao && <ReviewRow label="Observação" value={data.composicao.retirada_observacao} />}
               </>
             )}
           </div>

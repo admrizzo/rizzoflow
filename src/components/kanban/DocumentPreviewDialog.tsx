@@ -19,6 +19,17 @@ interface DocumentPreviewDialogProps {
   mimeType: string | null;
 }
 
+function inferMimeFromName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.svg')) return 'image/svg+xml';
+  return '';
+}
+
 /**
  * Modal de visualização interna de documentos.
  *
@@ -57,22 +68,27 @@ export function DocumentPreviewDialog({
         if (dlErr || !data) {
           throw dlErr || new Error('Falha ao baixar arquivo');
         }
+        // Resolve o MIME efetivo. Prioriza extensão do nome (mais confiável
+        // que o que veio do storage, que às vezes é octet-stream) e cai
+        // para o mime do banco em último caso.
+        const fromName = inferMimeFromName(fileName);
         const effectiveMime =
+          fromName ||
           mimeType ||
           data.type ||
-          (fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : '');
-        setResolvedMime(effectiveMime || null);
+          'application/octet-stream';
+        setResolvedMime(effectiveMime);
+        // Reconstrói sempre o blob com o type correto para garantir que o
+        // navegador renderize PDFs e imagens inline a partir da blob: URL.
         const typedBlob =
-          effectiveMime && data.type !== effectiveMime
-            ? new Blob([data], { type: effectiveMime })
-            : data;
+          data.type === effectiveMime ? data : new Blob([data], { type: effectiveMime });
         currentBlobUrl = URL.createObjectURL(typedBlob);
         if (!revoked) setBlobUrl(currentBlobUrl);
       } catch (e: any) {
         console.error('Preview error:', e);
         if (!revoked) {
           setError(
-            'Não foi possível abrir a pré-visualização. Use o botão Baixar.',
+            'Não foi possível pré-visualizar este documento. Você ainda pode baixar o arquivo.',
           );
         }
       } finally {
@@ -160,11 +176,18 @@ export function DocumentPreviewDialog({
           {!loading && !error && blobUrl && (
             <>
               {isPdf && (
-                <iframe
-                  src={blobUrl}
-                  title={fileName}
-                  className="w-full h-full border-0"
-                />
+                <object
+                  data={blobUrl}
+                  type="application/pdf"
+                  className="w-full h-full"
+                  aria-label={fileName}
+                >
+                  <iframe
+                    src={blobUrl}
+                    title={fileName}
+                    className="w-full h-full border-0"
+                  />
+                </object>
               )}
               {isImage && (
                 <div className="flex items-center justify-center h-full p-4">

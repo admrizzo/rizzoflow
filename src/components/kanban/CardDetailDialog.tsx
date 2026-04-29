@@ -68,6 +68,7 @@ import {
   Wrench,
   CheckCheck,
 } from 'lucide-react';
+import { Copy, ExternalLink } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';
 import { CardActivityHistory } from './CardActivityHistory';
@@ -91,6 +92,9 @@ import {
   SECTION_LABELS,
   type CorrectionRequest,
 } from '@/hooks/useCorrectionRequests';
+import { useProposalLinkPublicToken } from '@/hooks/useProposalLinkPublicToken';
+import { buildPublicUrl } from '@/lib/appUrl';
+import { toast as sonnerToast } from 'sonner';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
@@ -196,6 +200,22 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const canRequestCorrection = isAdminRole || isGestor || isAdministrativo;
   const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
   const { data: correctionRequests = [] } = useCardCorrectionRequests(card?.id);
+  // Public token do proposal_link — usado para Copiar/Abrir link da proposta.
+  const { data: proposalPublicToken } = useProposalLinkPublicToken(card?.proposal_link_id || null);
+  const proposalPublicUrl = proposalPublicToken
+    ? buildPublicUrl(`/proposta/${proposalPublicToken}`)
+    : null;
+  const handleCopyProposalLink = useCallback(() => {
+    if (!proposalPublicUrl) return;
+    navigator.clipboard.writeText(proposalPublicUrl).then(
+      () => sonnerToast.success('Link copiado'),
+      () => sonnerToast.error('Não foi possível copiar o link'),
+    );
+  }, [proposalPublicUrl]);
+  const handleOpenProposalLink = useCallback(() => {
+    if (!proposalPublicUrl) return;
+    window.open(proposalPublicUrl, '_blank', 'noopener,noreferrer');
+  }, [proposalPublicUrl]);
   const pendingCorrection: CorrectionRequest | undefined = correctionRequests.find(
     (c) => c.status === 'pending'
   );
@@ -1714,7 +1734,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
-            {card.proposal_link_id && (canRequestCorrection || pendingCorrection || correctionRequests.length > 0) && (
+            {card.proposal_link_id && (
               <div className="rounded-lg border bg-card p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
@@ -1732,6 +1752,19 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </Button>
                   )}
                 </div>
+
+                {proposalPublicUrl && (
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <Button size="sm" variant="outline" onClick={handleCopyProposalLink}>
+                      <Copy className="h-3.5 w-3.5 mr-2" />
+                      Copiar link da proposta
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleOpenProposalLink}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                      Abrir proposta
+                    </Button>
+                  </div>
+                )}
 
                 {pendingCorrection && (
                   <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-2">

@@ -2586,12 +2586,17 @@ export default function PropostaPublica() {
                       </div>
                       <div>
                         <Label className="text-xs">CPF</Label>
-                        <Input value={loc.cpf} placeholder="000.000.000-00" className="mt-1"
-                          onChange={e => update(p => {
+                        <MaskedInput
+                          kind="cpf"
+                          value={loc.cpf}
+                          placeholder="000.000.000-00"
+                          className="mt-1 h-9"
+                          onValueChange={v => update(p => {
                             const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], cpf: e.target.value };
+                            arr[idx] = { ...arr[idx], cpf: v };
                             return { ...p, locatarios_adicionais: arr };
-                          })} />
+                          })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs">RG / CNH</Label>
@@ -2602,15 +2607,15 @@ export default function PropostaPublica() {
                             return { ...p, locatarios_adicionais: arr };
                           })} />
                       </div>
-                      <div>
-                        <Label className="text-xs">Profissão</Label>
-                        <Input value={loc.profissao} className="mt-1"
-                          onChange={e => update(p => {
-                            const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], profissao: e.target.value };
-                            return { ...p, locatarios_adicionais: arr };
-                          })} />
-                      </div>
+                      <ProfessionInput
+                        value={loc.profissao}
+                        inputSize="sm"
+                        onChange={v => update(p => {
+                          const arr = [...(p.locatarios_adicionais || [])];
+                          arr[idx] = { ...arr[idx], profissao: v };
+                          return { ...p, locatarios_adicionais: arr };
+                        })}
+                      />
                       <div>
                         <Label className="text-xs">E-mail</Label>
                         <Input type="email" value={loc.email} className="mt-1"
@@ -2622,12 +2627,17 @@ export default function PropostaPublica() {
                       </div>
                       <div>
                         <Label className="text-xs">WhatsApp</Label>
-                        <Input value={loc.whatsapp} placeholder="(00) 00000-0000" className="mt-1"
-                          onChange={e => update(p => {
+                        <MaskedInput
+                          kind="phone"
+                          value={loc.whatsapp}
+                          placeholder="(00) 00000-0000"
+                          className="mt-1 h-9"
+                          onValueChange={v => update(p => {
                             const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], whatsapp: e.target.value };
+                            arr[idx] = { ...arr[idx], whatsapp: v };
                             return { ...p, locatarios_adicionais: arr };
-                          })} />
+                          })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs">Renda mensal</Label>
@@ -2637,6 +2647,7 @@ export default function PropostaPublica() {
                             arr[idx] = { ...arr[idx], renda_mensal: v };
                             return { ...p, locatarios_adicionais: arr };
                           })} />
+                        <RendaInfoBlock />
                       </div>
                       <div>
                         <Label className="text-xs">Estado civil</Label>

@@ -1155,13 +1155,27 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       }
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
+      else if (!data.dados_pessoais.cpf.includes('/') && !isValidCPF(data.dados_pessoais.cpf)) {
+        errors.push('CPF inválido');
+      }
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
       if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
       if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
+      else if (!isValidPhone(data.dados_pessoais.whatsapp)) errors.push('WhatsApp inválido (use DDD + número)');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
+      // Locatários adicionais
+      for (const [idx, loc] of (data.locatarios_adicionais || []).entries()) {
+        const label = `Locatário adicional ${idx + 1}`;
+        if (loc.cpf && !isValidCPF(loc.cpf)) errors.push(`${label}: CPF inválido`);
+        if (loc.whatsapp && !isValidPhone(loc.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
+        if ((loc.estado_civil === 'Casado(a)' || loc.estado_civil === 'União Estável')) {
+          if (loc.conjuge?.cpf && !isValidCPF(loc.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
+          if (loc.conjuge?.whatsapp && !isValidPhone(loc.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
+        }
+      }
       break;
     case 2:
       if (pj) {
@@ -1171,7 +1185,9 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           const label = `Representante ${i + 1}`;
           if (!r.nome.trim()) errors.push(`${label}: nome é obrigatório`);
           if (!r.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          else if (!isValidCPF(r.cpf)) errors.push(`${label}: CPF inválido`);
           if (!r.whatsapp.trim()) errors.push(`${label}: WhatsApp é obrigatório`);
+          else if (!isValidPhone(r.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
           if (!r.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
         });
         const hasSignatario = data.representantes.some(r => r.is_signatario);
@@ -1181,6 +1197,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
         break;
       }
       if (needsConjuge(data) && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
+      if (needsConjuge(data)) {
+        if (data.conjuge.cpf && !isValidCPF(data.conjuge.cpf)) errors.push('CPF do cônjuge inválido');
+        if (data.conjuge.whatsapp && !isValidPhone(data.conjuge.whatsapp)) errors.push('WhatsApp do cônjuge inválido');
+      }
       break;
     case 4:
       if (data.composicao.moradores.length === 0) errors.push('Informe pelo menos um morador');

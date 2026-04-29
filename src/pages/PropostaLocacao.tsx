@@ -917,9 +917,9 @@ export default function PropostaLocacao() {
                   garantia: {
                     ...p.garantia,
                     tipo_garantia: g,
-                    fiadores: g === 'Fiador' && p.garantia.fiadores.length === 0
-                      ? [makeEmptyFiador()]
-                      : p.garantia.fiadores,
+                    fiadores: g === 'Fiador'
+                      ? (p.garantia.fiadores.length === 0 ? [makeEmptyFiador()] : p.garantia.fiadores)
+                      : [],
                   },
                 }))}
               >

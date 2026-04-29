@@ -3337,7 +3337,9 @@ export default function PropostaPublica() {
                   garantia: {
                     ...p.garantia,
                     tipo_garantia: g.value,
-                    fiadores: g.value === 'Fiador' && p.garantia.fiadores.length === 0 ? [{ ...emptyFiador }] : p.garantia.fiadores,
+                    fiadores: g.value === 'Fiador'
+                      ? (p.garantia.fiadores.length === 0 ? [{ ...emptyFiador }] : p.garantia.fiadores)
+                      : [],
                   }
                 }))}
                 className={cn(

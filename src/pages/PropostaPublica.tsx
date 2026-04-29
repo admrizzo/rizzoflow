@@ -1972,6 +1972,44 @@ export default function PropostaPublica() {
         }
       }
 
+      // Se havia uma solicitação de correção pendente, marca como respondida.
+      // Mantém o histórico (não apaga). O badge no card passa a ser
+      // "Correção/Complementação recebida" conforme as seções solicitadas.
+      if (pendingCorrection?.id) {
+        try {
+          await supabase
+            .from('proposal_correction_requests' as any)
+            .update({
+              status: 'responded',
+              responded_at: new Date().toISOString(),
+            })
+            .eq('id', pendingCorrection.id);
+
+          if (targetCardId) {
+            const onlyDocs =
+              (pendingCorrection.requested_sections || []).length > 0 &&
+              (pendingCorrection.requested_sections || []).every((s: string) => s === 'documentos');
+            const title = onlyDocs
+              ? '📎 Complementação de documentos recebida'
+              : '✅ Cliente respondeu à solicitação de correção';
+            await supabase.from('card_activity_logs').insert({
+              card_id: targetCardId,
+              actor_user_id: null,
+              event_type: 'proposal_correction_responded',
+              title,
+              description: `Resposta à solicitação: ${pendingCorrection.message}`,
+              metadata: {
+                kind: 'correction_responded',
+                only_documents: onlyDocs,
+                correction_request_id: pendingCorrection.id,
+              },
+            });
+          }
+        } catch (corrErr) {
+          console.error('Erro ao marcar correção como respondida:', corrErr);
+        }
+      }
+
       setSubmitted(true);
       toast.success('Proposta enviada com sucesso!');
       await markAsSubmitted();

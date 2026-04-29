@@ -253,7 +253,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         )}
 
         {/* Docs recebidos (proposta pública enviada pelo cliente) */}
-        {docsReceived && !isArchived && (
+        {docsReceived && !isArchived && !correctionPending && (
           <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
             <span
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -261,6 +261,19 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             >
               <Inbox className="h-3 w-3" />
               Doc. recebidos
+            </span>
+          </div>
+        )}
+
+        {/* Correção solicitada ao cliente */}
+        {correctionPending && !isArchived && (
+          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-800 border border-orange-200"
+              title="Correção solicitada — aguardando o cliente reenviar"
+            >
+              <Wrench className="h-3 w-3" />
+              Correção solicitada
             </span>
           </div>
         )}

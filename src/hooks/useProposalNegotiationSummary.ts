@@ -26,9 +26,14 @@ function num(v: any): number | null {
   if (typeof v === 'number' && !isNaN(v)) return v;
   const s = String(v).trim();
   if (!s) return null;
-  // remove R$ e espaços; normaliza vírgula decimal
-  const cleaned = s.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(cleaned);
+  // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
+  // Se contém vírgula → formato BR (ponto = milhar). Caso contrário, o ponto é decimal.
+  const cleaned = s.replace(/[^\d,.-]/g, '');
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned;
+  const n = parseFloat(normalized);
   return isNaN(n) ? null : n;
 }
 

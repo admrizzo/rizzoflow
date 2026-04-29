@@ -1762,8 +1762,10 @@ export default function PropostaPublica() {
         ...restoredData,
         // Keep imovel from property data (auto-filled)
         imovel: prev.imovel,
-        // Keep original doc structure but restore non-file data
-        documentos: prev.documentos,
+        // Restore document markers too, so correction links keep already-sent files visible
+        documentos: Array.isArray(restoredData.documentos) && restoredData.documentos.length > 0
+          ? restoredData.documentos
+          : prev.documentos,
         ...(sanitizedConjuge ? { conjuge: sanitizedConjuge } : {}),
         ...(sanitizedGarantia ? { garantia: sanitizedGarantia } : {}),
         ...(sanitizedEmpresa ? { empresa: sanitizedEmpresa } : {}),

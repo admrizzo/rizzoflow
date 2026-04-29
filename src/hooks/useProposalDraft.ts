@@ -194,21 +194,11 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
         const codigoNum = parseInt(codigoRobust!, 10);
         if (isNaN(codigoNum)) { setIsRestoring(false); return; }
 
-        // 1) Tenta restaurar rascunho do MESMO navegador que ainda não foi enviado.
-        let { data: draft } = await supabase
-          .from('proposal_drafts')
-          .select('*')
-          .eq('codigo_robust', codigoNum)
-          .eq('browser_id', browserId.current)
-          .neq('status', 'enviada')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        // 2) Fallback (modo correção / outro navegador):
-        //    se houver proposal_link_id, busca o último rascunho da MESMA proposta,
-        //    inclusive já enviado (para hidratar o formulário em modo correção).
-        if (!draft && proposalLinkId) {
+        // 1) Em modo correção (proposalLinkId presente), SEMPRE buscamos o último
+        //    rascunho da proposta — inclusive 'enviada' — para que o cliente
+        //    NÃO precise preencher tudo de novo, apenas sanar a pendência.
+        let draft: any = null;
+        if (proposalLinkId) {
           const { data: anyDraft } = await supabase
             .from('proposal_drafts')
             .select('*')
@@ -217,6 +207,21 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
             .limit(1)
             .maybeSingle();
           draft = anyDraft || null;
+        }
+
+        // 2) Caso normal (sem link de correção): rascunho deste navegador
+        //    que ainda não foi enviado.
+        if (!draft) {
+          const { data: ownDraft } = await supabase
+            .from('proposal_drafts')
+            .select('*')
+            .eq('codigo_robust', codigoNum)
+            .eq('browser_id', browserId.current)
+            .neq('status', 'enviada')
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          draft = ownDraft || null;
         }
 
         if (draft) {

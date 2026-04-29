@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
 import { isReviewOverdue } from '@/hooks/useColumnReview';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
+import { useProfiles } from '@/hooks/useProfiles';
 import {
   Tooltip,
   TooltipContent,

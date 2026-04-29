@@ -19,6 +19,29 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 interface ProposalDocumentsSectionProps {
   cardId: string;
+  guaranteeType?: string | null;
+}
+
+const GUARANTOR_ROLES = new Set(['guarantor', 'guarantor_spouse']);
+
+function isGuarantorGuarantee(value: string | null | undefined): boolean {
+  return (value || '').toLowerCase().includes('fiador');
+}
+
+function hasMeaningfulGuarantorData(party: any, docPartyIds: Set<string>): boolean {
+  if (docPartyIds.has(party.id)) return true;
+  const name = String(party.name || '').trim();
+  const isDefaultName = /^fiador(?:\s*\d+)?$/i.test(name);
+  return !!(
+    (name && !isDefaultName) ||
+    party.cpf ||
+    party.cnpj ||
+    party.email ||
+    party.phone ||
+    party.rg ||
+    party.address ||
+    party.income
+  );
 }
 
 function formatFileSize(bytes: number | null): string {
@@ -35,7 +58,7 @@ function fileIcon(mime: string | null) {
   return <FileText className="h-4 w-4" />;
 }
 
-export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionProps) {
+export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocumentsSectionProps) {
   const { data: docs = [], isLoading } = useProposalDocuments(cardId);
   // Carrega as partes (proposal_parties) ligadas ao card para conseguir agrupar
   // documentos por pessoa (party_id) com nome/papel corretos.
@@ -53,7 +76,7 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
       if (!proposalLinkId) return [] as Array<any>;
       const { data, error } = await supabase
         .from('proposal_parties' as any)
-        .select('id, role, name, position, metadata, related_party_id')
+        .select('id, role, name, cpf, cnpj, rg, email, phone, income, address, position, metadata, related_party_id')
         .eq('proposal_link_id', proposalLinkId)
         .order('position', { ascending: true });
       if (error) {
@@ -126,7 +149,27 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
 
   const existingFinalNames = docs.map((d) => d.file_name);
 
-  if (docs.length === 0 && parties.length === 0) {
+  const rawPartyById = new Map<string, any>();
+  for (const p of parties) rawPartyById.set(p.id, p);
+
+  const docPartyIds = new Set(docs.map((d) => d.party_id).filter(Boolean) as string[]);
+  const hasRealGuarantorEvidence = parties.some(
+    (p: any) => p.role === 'guarantor' && hasMeaningfulGuarantorData(p, docPartyIds),
+  ) || docs.some((d) => d.owner_type === 'fiador');
+  const shouldShowGuarantors = isGuarantorGuarantee(guaranteeType) || (!guaranteeType && hasRealGuarantorEvidence);
+
+  const isGuarantorDocument = (doc: ProposalDocument) => {
+    const partyRole = doc.party_id ? rawPartyById.get(doc.party_id)?.role : null;
+    return doc.owner_type === 'fiador' || doc.owner_type === 'guarantor_spouse' || GUARANTOR_ROLES.has(partyRole);
+  };
+  const visibleDocs = docs.filter((d) => !isGuarantorDocument(d) || shouldShowGuarantors);
+  const visibleParties = parties.filter((p: any) => {
+    if (p.role === 'guarantor') return shouldShowGuarantors && hasMeaningfulGuarantorData(p, docPartyIds);
+    if (p.role === 'guarantor_spouse') return shouldShowGuarantors;
+    return true;
+  });
+
+  if (visibleDocs.length === 0 && visibleParties.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
         Nenhum documento anexado.
@@ -158,9 +201,6 @@ export function ProposalDocumentsSection({ cardId }: ProposalDocumentsSectionPro
     guarantor: 'Fiador',
     guarantor_spouse: 'Cônjuge do fiador',
   };
-
-  const partyById = new Map<string, any>();
-  for (const p of parties) partyById.set(p.id, p);
 
   // ── Nova estrutura aninhada ──
   // ownerType → personGroups[] (cada person tem docs próprios + spouseChild opcional)

@@ -52,6 +52,8 @@ export interface LocatarioAdicional {
   estado_civil: string;
   profissao: string;
   renda_mensal: string;
+  /** Tipo/origem da renda. Opcional para compatibilidade com propostas antigas. */
+  tipo_renda?: string;
   email: string;
   whatsapp: string;
   endereco: string;
@@ -144,6 +146,8 @@ export interface FiadorData {
   nome: string;
   cpf: string;
   profissao: string;
+  /** Tipo/origem da renda. Opcional para compatibilidade com propostas antigas. */
+  tipo_renda?: string;
   whatsapp: string;
   email: string;
   estado_civil: string;

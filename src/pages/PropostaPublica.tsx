@@ -3532,6 +3532,7 @@ export default function PropostaPublica() {
               );
             })}
           </div>
+          <SignatureGuidelines type={data.garantia.tipo_contrato_assinatura || ''} />
         </div>
 
         {/* Observations */}

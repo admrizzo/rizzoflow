@@ -1243,10 +1243,6 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           }
           if (f.cpf && !isValidCPF(f.cpf)) errors.push(`${label}: CPF inválido`);
           if (f.whatsapp && !isValidPhone(f.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
-          if (needsConj) {
-            if (f.conjuge.cpf && !isValidCPF(f.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
-            if (f.conjuge.whatsapp && !isValidPhone(f.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
-          }
           if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
             errors.push(`${label}: informe a renda mensal`);
           }
@@ -1257,6 +1253,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           );
           if (needsConj && (!f.conjuge.nome.trim() || !f.conjuge.cpf.trim())) {
             errors.push(`${label}: dados do cônjuge obrigatórios`);
+          }
+          if (needsConj) {
+            if (f.conjuge.cpf && !isValidCPF(f.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
+            if (f.conjuge.whatsapp && !isValidPhone(f.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
           }
           for (const cat of f.documentos) {
             if (cat.key === 'renda_conjuge') continue; // opcional

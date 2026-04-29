@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Users, Plus, Trash2, UserCheck } from 'lucide-react';
 import type { RepresentanteLegal } from '@/pages/PropostaLocacao';
 import { emptyRepresentante } from '@/pages/PropostaLocacao';
+import { ProfessionInput } from '@/components/proposta/ProfessionInput';
+import { MaskedInput } from '@/components/proposta/MaskedInput';
 
 interface RepresentantesFormProps {
   representantes: RepresentanteLegal[];

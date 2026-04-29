@@ -1642,6 +1642,9 @@ export default function PropostaPublica() {
     enabled: !!codigo && !submitted,
   });
 
+  // ── Correção solicitada pelo time interno ──
+  const { data: pendingCorrection } = usePublicCorrectionRequest(proposalLink?.id);
+
   // ── Restore draft data ──
   useEffect(() => {
     if (restoredData) {

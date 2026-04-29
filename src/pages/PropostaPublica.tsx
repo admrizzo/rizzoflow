@@ -139,6 +139,10 @@ function hasSpouseUploadedFiles(categories?: Array<{ key?: string; files?: Uploa
     && categories.some((cat) => !!cat.key && SPOUSE_DOC_KEYS.has(cat.key) && (cat.files || []).length > 0);
 }
 
+function getNewUploadFiles(files: UploadedFile[] = []): UploadedFile[] {
+  return files.filter((file) => !file.persisted && !!file.dataUrl);
+}
+
 async function uploadProposalDocuments(
   cardId: string | null,
   proposalLinkId: string | null,
@@ -202,7 +206,8 @@ async function uploadProposalDocuments(
   const principalPartyKey = isPj ? partyKey('company') : partyKey('primary_tenant');
   const principalSpousePartyKey = isPj ? undefined : partyKey('tenant_spouse', 0);
   for (const cat of data.documentos || []) {
-    if (cat.files.length > 0) {
+    const files = getNewUploadFiles(cat.files);
+    if (files.length > 0) {
       jobs.push({
         ownerType: proponentOwnerType,
         ownerKey: proponentOwnerKey,
@@ -213,13 +218,14 @@ async function uploadProposalDocuments(
         spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
-        files: cat.files,
+        files,
       });
     }
   }
 
   for (const cat of data.conjuge?.documentos || []) {
-    if (cat.files.length > 0 && principalSpousePartyKey) {
+    const files = getNewUploadFiles(cat.files);
+    if (files.length > 0 && principalSpousePartyKey) {
       jobs.push({
         ownerType: 'tenant_spouse',
         ownerKey: `${proponentOwnerKey}-conjuge`,
@@ -230,7 +236,7 @@ async function uploadProposalDocuments(
         spousePartyKey: principalSpousePartyKey,
         spouseName,
         category: cat.key,
-        files: cat.files,
+        files,
       });
     }
   }

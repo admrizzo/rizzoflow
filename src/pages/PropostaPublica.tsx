@@ -773,7 +773,7 @@ async function persistProposalParties(
     // formulário público. Caímos no DELETE direto apenas se a RPC não existir
     // (compatibilidade com ambientes antigos).
     let delErr: any = null;
-    const publicToken = (data as any)?.__public_token || null;
+    // publicToken vem do escopo do call site (parâmetro da função).
     if (publicToken) {
       const { error: rpcErr } = await supabase.rpc(
         'clear_public_proposal_parties' as any,

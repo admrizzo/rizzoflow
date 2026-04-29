@@ -258,17 +258,30 @@ export function FiadorSection({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">CPF <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.cpf} onChange={e => onUpdateFiador(idx, { cpf: e.target.value })} placeholder="000.000.000-00" className="mt-1.5 h-11" />
+                        <MaskedInput
+                          kind="cpf"
+                          value={fiador.cpf}
+                          onValueChange={v => onUpdateFiador(idx, { cpf: v })}
+                          placeholder="000.000.000-00"
+                          className="mt-1.5 h-11"
+                        />
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium">Profissão <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.profissao} onChange={e => onUpdateFiador(idx, { profissao: e.target.value })} placeholder="Profissão" className="mt-1.5 h-11" />
-                      </div>
+                      <ProfessionInput
+                        value={fiador.profissao}
+                        onChange={v => onUpdateFiador(idx, { profissao: v })}
+                        required
+                      />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Telefone / WhatsApp <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.whatsapp} onChange={e => onUpdateFiador(idx, { whatsapp: e.target.value })} placeholder="(00) 00000-0000" className="mt-1.5 h-11" />
+                        <MaskedInput
+                          kind="phone"
+                          value={fiador.whatsapp}
+                          onValueChange={v => onUpdateFiador(idx, { whatsapp: v })}
+                          placeholder="(00) 00000-0000"
+                          className="mt-1.5 h-11"
+                        />
                       </div>
                       <div>
                         <Label className="text-sm font-medium">E-mail <span className="text-destructive">*</span></Label>
@@ -291,6 +304,7 @@ export function FiadorSection({
                           placeholder="0,00"
                           className="mt-1.5 h-11"
                         />
+                        <RendaInfoBlock />
                       </div>
                     )}
                     <div>

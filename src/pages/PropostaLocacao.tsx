@@ -780,10 +780,16 @@ export default function PropostaLocacao() {
     const iptu = selectedProperty?.iptu;
     const seguroIncendio = selectedProperty?.seguro_incendio;
 
-    // Descrição adicional fica vazia: dados estruturados aparecem em blocos
-    // próprios do card (envolvidos, imóvel, negociação, garantia, score).
-    // Apenas observações livres devem ser inseridas manualmente depois.
-    const descriptionLines: string[] = [];
+    // Descrição adicional recebe apenas observações livres, sem repetir dados
+    // que já possuem bloco estruturado no card.
+    const descriptionLines = [
+      data.garantia.observacao?.trim()
+        ? `Observação sobre garantia: ${data.garantia.observacao.trim()}`
+        : '',
+      data.documentos_observacao?.trim()
+        ? `Observação sobre documentos: ${data.documentos_observacao.trim()}`
+        : '',
+    ];
 
     try {
       // Get max position in the target column

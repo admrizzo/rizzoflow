@@ -3979,7 +3979,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
           <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
           {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={vvCurrency(data.negociacao.valor_proposto)} />}
-          {data.negociacao.observacao && <ReviewRow label="Observação" value={data.negociacao.observacao} />}
+          {data.negociacao.observacao && <ReviewRow label="Justificativa" value={data.negociacao.observacao} />}
         </ReviewBlockNew>
       </div>
 

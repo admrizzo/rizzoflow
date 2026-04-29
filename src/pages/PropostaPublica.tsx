@@ -3954,6 +3954,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         {/* Garantia */}
         <ReviewBlockNew title="Garantia" icon="🔒" onFix={() => onGoToStep(5)} hasPending={!data.garantia.tipo_garantia}>
           <ReviewRow label="Modalidade" value={vv(data.garantia.tipo_garantia)} />
+          <ReviewRow
+            label="Tipo de assinatura"
+            value={
+              data.garantia.tipo_contrato_assinatura === 'digital'
+                ? 'Digital'
+                : data.garantia.tipo_contrato_assinatura === 'fisico'
+                ? 'Físico / Presencial'
+                : 'Não informado'
+            }
+          />
           {data.garantia.observacao && <ReviewRow label="Observação" value={data.garantia.observacao} />}
           {data.garantia.tipo_garantia === 'Fiador' && (
             <>

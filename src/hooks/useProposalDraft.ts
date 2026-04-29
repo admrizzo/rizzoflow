@@ -125,12 +125,19 @@ function hydrateDraftWithExistingDocuments(
     return !!metadataPrefix && spouseOf === metadataPrefix;
   });
 
-  const ownFallback = (ownerTypes: string[], categoryFilter?: (doc: ExistingProposalDocument) => boolean) => fallbackDocs.filter((doc) => {
+  const ownFallback = (
+    ownerTypes: string[],
+    categoryFilter?: (doc: ExistingProposalDocument) => boolean,
+    labelFilter?: (doc: ExistingProposalDocument) => boolean,
+  ) => fallbackDocs.filter((doc) => {
     if (!ownerTypes.includes(doc.owner_type)) return false;
+    if (labelFilter && !labelFilter(doc)) return false;
     return categoryFilter ? categoryFilter(doc) : true;
   });
   const nonSpouseDoc = (doc: ExistingProposalDocument) => !SPOUSE_DOC_KEYS.has(doc.category);
   const spouseDoc = (doc: ExistingProposalDocument) => SPOUSE_DOC_KEYS.has(doc.category);
+  const ownerLabelIncludes = (needle: string) => (doc: ExistingProposalDocument) =>
+    String(doc.owner_label || '').toLowerCase().includes(needle.toLowerCase());
 
   const hydrated = { ...formData };
   const principalDocs = docsByParty.get((company || primary)?.id || '') || ownFallback(['empresa', 'proponente'], nonSpouseDoc);
@@ -149,11 +156,13 @@ function hydrateDraftWithExistingDocuments(
     hydrated.locatarios_adicionais = formData.locatarios_adicionais.map((loc: any, idx: number) => {
       const party = additionalTenants[idx];
       const spouse = spouseFor(party?.id, `additional_tenant_${idx + 1}`);
+      const locFallback = ownFallback(['proponente'], nonSpouseDoc, ownerLabelIncludes(`Locatário adicional ${idx + 1}`));
+      const locSpouseFallback = ownFallback(['tenant_spouse', 'conjuge'], spouseDoc, ownerLabelIncludes('Cônjuge'));
       return {
         ...loc,
-        documentos: mergeFilesByCategory(loc.documentos, docsByParty.get(party?.id || '') || []),
+        documentos: mergeFilesByCategory(loc.documentos, docsByParty.get(party?.id || '') || locFallback),
         conjuge: loc.conjuge
-          ? { ...loc.conjuge, documentos: mergeFilesByCategory(loc.conjuge.documentos, docsByParty.get(spouse?.id || '') || []) }
+          ? { ...loc.conjuge, documentos: mergeFilesByCategory(loc.conjuge.documentos, docsByParty.get(spouse?.id || '') || locSpouseFallback) }
           : loc.conjuge,
       };
     });
@@ -165,7 +174,7 @@ function hydrateDraftWithExistingDocuments(
       fiadores: formData.garantia.fiadores.map((fiador: any, idx: number) => {
         const party = guarantors[idx];
         const spouse = spouseFor(party?.id, `guarantor_${idx + 1}`);
-        const ownDocs = docsByParty.get(party?.id || '') || ownFallback(['fiador'], nonSpouseDoc);
+        const ownDocs = docsByParty.get(party?.id || '') || ownFallback(['fiador'], nonSpouseDoc, ownerLabelIncludes(`Fiador ${idx + 1}`));
         const spouseDocsForFiador = docsByParty.get(spouse?.id || '') || ownFallback(['guarantor_spouse'], spouseDoc);
         return {
           ...fiador,

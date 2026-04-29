@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.proposal_correction_requests;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.proposal_parties;

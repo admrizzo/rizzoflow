@@ -94,6 +94,7 @@ import {
   type CorrectionRequest,
 } from '@/hooks/useCorrectionRequests';
 import { useProposalLinkPublicToken } from '@/hooks/useProposalLinkPublicToken';
+import { useOpenCardRealtime } from '@/hooks/useOpenCardRealtime';
 import { buildPublicUrl } from '@/lib/appUrl';
 import { toast as sonnerToast } from 'sonner';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
@@ -201,6 +202,15 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const canRequestCorrection = isAdminRole || isGestor || isAdministrativo;
   const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
   const { data: correctionRequests = [] } = useCardCorrectionRequests(card?.id);
+  // Realtime focado no card aberto: reflete automaticamente envio de proposta,
+  // resposta de correção, novos documentos e novos eventos de histórico vindos
+  // do link público — sem fechar o modal nem sobrescrever inputs em edição.
+  useOpenCardRealtime({
+    cardId: card?.id ?? null,
+    proposalLinkId: card?.proposal_link_id ?? null,
+    enabled: !!open && !!card?.id,
+    currentUserId: user?.id ?? null,
+  });
   // Public token do proposal_link — usado para Copiar/Abrir link da proposta.
   const { data: proposalPublicToken } = useProposalLinkPublicToken(card?.proposal_link_id || null);
   const proposalPublicUrl = proposalPublicToken

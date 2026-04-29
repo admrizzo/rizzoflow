@@ -1567,7 +1567,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 )}
 
                 {/* Negotiation Details */}
-                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && (
+                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !hasStructuredNegotiation && (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1601,6 +1601,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   </div>
                 )}
               </div>
+            )}
+
+            {/* === BLOCO: RESUMO DA NEGOCIAÇÃO (estruturado) === */}
+            {hasStructuredNegotiation && (
+              <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
             )}
 
             {/* === BLOCO: DOCUMENTOS DA PROPOSTA === */}

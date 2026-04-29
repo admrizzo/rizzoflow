@@ -68,6 +68,7 @@ import {
   Wrench,
   CheckCheck,
 } from 'lucide-react';
+import { Copy, ExternalLink } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';
 import { CardActivityHistory } from './CardActivityHistory';

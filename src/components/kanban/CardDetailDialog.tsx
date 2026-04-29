@@ -159,8 +159,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const { isAdmin, user } = useAuth();
   // Permissões operacionais centralizadas: admin, gestor e administrativo
   // podem editar; corretor permanece restrito.
-  const { canMoveCards } = usePermissions();
+  const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo } = usePermissions();
   const isEditor = canMoveCards;
+  // Edição dos responsáveis internos: somente admin/gestor/administrativo.
+  const canEditInternalBrokers = isAdminRole || isGestor || isAdministrativo;
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);

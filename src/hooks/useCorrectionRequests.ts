@@ -42,7 +42,7 @@ export function useCardCorrectionRequests(cardId?: string) {
         .eq('card_id', cardId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []) as CorrectionRequest[];
+      return ((data || []) as unknown) as CorrectionRequest[];
     },
     enabled: !!cardId,
     staleTime: 15000,
@@ -63,7 +63,7 @@ export function usePublicCorrectionRequest(proposalLinkId?: string) {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return (data as CorrectionRequest) || null;
+      return ((data as unknown) as CorrectionRequest) || null;
     },
     enabled: !!proposalLinkId,
   });
@@ -116,7 +116,7 @@ export function useCreateCorrectionRequest() {
         });
       }
 
-      return data as CorrectionRequest;
+      return (data as unknown) as CorrectionRequest;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ['correction-requests', 'card', vars.cardId] });

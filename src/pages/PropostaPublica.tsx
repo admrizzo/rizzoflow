@@ -767,10 +767,33 @@ async function persistProposalParties(
 
   // ── Idempotência: apaga partes anteriores deste link ──
   {
-    const { error: delErr } = await supabase
-      .from('proposal_parties' as any)
-      .delete()
-      .eq('proposal_link_id', proposalLinkId);
+    // Preferimos a RPC SECURITY DEFINER (`clear_public_proposal_parties`) para
+    // não depender de permissões diretas de DELETE em proposal_parties pelo
+    // formulário público. Caímos no DELETE direto apenas se a RPC não existir
+    // (compatibilidade com ambientes antigos).
+    let delErr: any = null;
+    const publicToken = (data as any)?.__public_token || null;
+    if (publicToken) {
+      const { error: rpcErr } = await supabase.rpc(
+        'clear_public_proposal_parties' as any,
+        { _public_token: publicToken, _proposal_link_id: proposalLinkId } as any,
+      );
+      delErr = rpcErr || null;
+      // Se a função não existir no banco ainda, usa fallback.
+      if (delErr && /function .* does not exist|PGRST202|404/i.test(delErr.message || '')) {
+        const { error: fbErr } = await supabase
+          .from('proposal_parties' as any)
+          .delete()
+          .eq('proposal_link_id', proposalLinkId);
+        delErr = fbErr || null;
+      }
+    } else {
+      const { error: fbErr } = await supabase
+        .from('proposal_parties' as any)
+        .delete()
+        .eq('proposal_link_id', proposalLinkId);
+      delErr = fbErr || null;
+    }
     if (delErr) {
       console.error('[persistProposalParties] Falha ao limpar partes anteriores', delErr);
       throw new ProposalPartiesError(

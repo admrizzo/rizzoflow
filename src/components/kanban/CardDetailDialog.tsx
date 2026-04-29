@@ -888,6 +888,15 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       </p>
                     </div>
                   )}
+                  {/* Última atualização (qualquer alteração relevante: docs, status, comentário, etapa) */}
+                  {card.updated_at && (
+                    <div>
+                      <p className="text-[10px] text-muted-foreground mb-0.5">Última atualização</p>
+                      <p className="text-xs text-foreground">
+                        {format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

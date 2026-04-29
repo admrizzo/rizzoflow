@@ -590,9 +590,42 @@ function partyTmpId(role: string, idx = 0) {
 
 const SPOUSE_DOC_KEYS = new Set(['documento_conjuge', 'renda_conjuge']);
 
+/** Helpers de visibilidade: replicam a mesma lógica do PropostaPublica para
+ * decidir quais blocos de documentos estão *visíveis* para o usuário.
+ * Mantém a contagem de "obrigatórios" alinhada com o que ele realmente vê. */
+function isCasadoOuUniaoLocal(estadoCivil?: string | null): boolean {
+  return estadoCivil === 'Casado(a)' || estadoCivil === 'União Estável';
+}
+function primaryNeedsConjuge(data: any): boolean {
+  if (data?.imovel?.tipo_pessoa === 'juridica') return false;
+  const ec = data?.perfil_financeiro?.estado_civil;
+  if (!isCasadoOuUniaoLocal(ec)) return false;
+  const regime = data?.perfil_financeiro?.regime_bens;
+  if (!regime) return false;
+  if (regime === 'Separação total / absoluta de bens') {
+    return data?.perfil_financeiro?.conjuge_participa === 'sim';
+  }
+  return true;
+}
+function locatarioNeedsConjugeLocal(loc: any): boolean {
+  return isCasadoOuUniaoLocal(loc?.estado_civil);
+}
+function isFiadorRendaTipo(f: any): boolean {
+  return (f?.tipo_fiador || '').toString().toLowerCase() === 'renda' || f?.tipo_fiador === 'imovel';
+}
+function fiadorNeedsConjugeLocal(f: any): boolean {
+  if (!isCasadoOuUniaoLocal(f?.estado_civil)) return false;
+  if (!f?.regime_bens) return false;
+  if (f.regime_bens === 'Separação total / absoluta de bens') return f?.conjuge_participa === 'sim';
+  return true;
+}
+
 /**
  * Constrói o mapa { partyId → documentos[] } a partir do estado do formulário,
  * para uso em ProposalPartiesView na tela de Revisão.
+ * Filtra blocos *não visíveis no fluxo atual* (cônjuge sem necessidade,
+ * fiador sem garantia=Fiador, etc.) para que a contagem de obrigatórios
+ * fique alinhada com o que o usuário realmente vê.
  */
 export function buildDocsByPartyFromFormData(data: any): Record<string, PartyDocSummary[]> {
   const map: Record<string, PartyDocSummary[]> = {};
@@ -622,25 +655,36 @@ export function buildDocsByPartyFromFormData(data: any): Record<string, PartyDoc
     // Locatário principal
     const docs = (data?.documentos || []).map(toSummary);
     if (docs.length > 0) map[partyTmpId('primary_tenant', 0)] = docs;
-    // Cônjuge do principal
-    const cjDocs = (data?.conjuge?.documentos || []).map(toSummary);
-    if (cjDocs.length > 0) map[partyTmpId('tenant_spouse', 0)] = cjDocs;
+    // Cônjuge do principal — só inclui se o cônjuge é visível no fluxo
+    if (primaryNeedsConjuge(data)) {
+      const cjDocs = (data?.conjuge?.documentos || []).map(toSummary);
+      if (cjDocs.length > 0) map[partyTmpId('tenant_spouse', 0)] = cjDocs;
+    }
     // Locatários adicionais + cônjuges
     (data?.locatarios_adicionais || []).forEach((loc: any, idx: number) => {
       const ld = (loc?.documentos || []).map(toSummary);
       if (ld.length > 0) map[partyTmpId('additional_tenant', idx)] = ld;
-      const lcd = (loc?.conjuge?.documentos || []).map(toSummary);
-      if (lcd.length > 0) map[partyTmpId('tenant_spouse_of_additional', idx)] = lcd;
+      if (locatarioNeedsConjugeLocal(loc)) {
+        const lcd = (loc?.conjuge?.documentos || []).map(toSummary);
+        if (lcd.length > 0) map[partyTmpId('tenant_spouse_of_additional', idx)] = lcd;
+      }
     });
   }
 
-  // Fiadores: separa documentos do próprio fiador e do cônjuge (categorias mistas)
-  (data?.garantia?.fiadores || []).forEach((f: any, idx: number) => {
+  // Fiadores: somente quando garantia for "Fiador" (caso contrário, blocos
+  // de fiador estão ocultos no fluxo). Cônjuge do fiador só conta quando
+  // realmente exigido pelo regime de bens.
+  const garantiaIsFiador = (data?.garantia?.tipo_garantia || '') === 'Fiador';
+  (garantiaIsFiador ? (data?.garantia?.fiadores || []) : []).forEach((f: any, idx: number) => {
+    const includeSpouse = fiadorNeedsConjugeLocal(f);
     const own: PartyDocSummary[] = [];
     const spouse: PartyDocSummary[] = [];
     (f?.documentos || []).forEach((cat: any) => {
-      if (cat?.key && SPOUSE_DOC_KEYS.has(cat.key)) spouse.push(toSummary(cat));
-      else own.push(toSummary(cat));
+      if (cat?.key && SPOUSE_DOC_KEYS.has(cat.key)) {
+        if (includeSpouse) spouse.push(toSummary(cat));
+      } else {
+        own.push(toSummary(cat));
+      }
     });
     if (own.length > 0) map[partyTmpId('guarantor', idx)] = own;
     if (spouse.length > 0) map[partyTmpId('guarantor_spouse', idx)] = spouse;
@@ -666,18 +710,79 @@ export function countAllUploadedFiles(data: any): number {
   return total;
 }
 
-/** Conta documentos obrigatórios pendentes (sem arquivo) em todas as partes. */
-export function countPendingRequired(data: any): { required: number; ok: number } {
+/** Resolve o nome legível de uma "parte" a partir do tmp-id e do form data. */
+function resolvePartyName(partyId: string, data: any): string {
+  // Formato: tmp-{role}#{idx}
+  const match = /^tmp-([a-z_]+)#(\d+)$/.exec(partyId);
+  if (!match) return 'Envolvido';
+  const role = match[1];
+  const idx = parseInt(match[2], 10) || 0;
+  switch (role) {
+    case 'primary_tenant':
+      return data?.dados_pessoais?.nome?.trim() || 'Locatário principal';
+    case 'tenant_spouse':
+      return data?.conjuge?.nome?.trim() || 'Cônjuge do locatário principal';
+    case 'additional_tenant':
+      return data?.locatarios_adicionais?.[idx]?.nome?.trim() || `Locatário adicional ${idx + 1}`;
+    case 'tenant_spouse_of_additional':
+      return (
+        data?.locatarios_adicionais?.[idx]?.conjuge?.nome?.trim() ||
+        `Cônjuge do locatário adicional ${idx + 1}`
+      );
+    case 'guarantor':
+      return data?.garantia?.fiadores?.[idx]?.nome?.trim() || `Fiador ${idx + 1}`;
+    case 'guarantor_spouse':
+      return (
+        data?.garantia?.fiadores?.[idx]?.conjuge?.nome?.trim() || `Cônjuge do fiador ${idx + 1}`
+      );
+    case 'company':
+      return (
+        data?.empresa?.razao_social?.trim() ||
+        data?.empresa?.nome_fantasia?.trim() ||
+        'Empresa'
+      );
+    default:
+      return 'Envolvido';
+  }
+}
+
+export interface PendingDocItem {
+  partyId: string;
+  partyName: string;
+  docKey: string;
+  docLabel: string;
+}
+
+/** Conta documentos obrigatórios pendentes (sem arquivo) em todas as partes
+ *  visíveis. Retorna também a lista de itens faltantes (com pessoa). */
+export function countPendingRequired(data: any): {
+  required: number;
+  ok: number;
+  missing: PendingDocItem[];
+  found: PendingDocItem[];
+} {
   const map = buildDocsByPartyFromFormData(data);
   let required = 0;
   let ok = 0;
-  Object.values(map).forEach((docs) => {
+  const missing: PendingDocItem[] = [];
+  const found: PendingDocItem[] = [];
+  Object.entries(map).forEach(([partyId, docs]) => {
+    const partyName = resolvePartyName(partyId, data);
     docs.forEach((d) => {
-      if (!d.optional) {
-        required += 1;
-        if (d.fileCount > 0) ok += 1;
+      if (d.optional) return;
+      required += 1;
+      const item: PendingDocItem = { partyId, partyName, docKey: d.key, docLabel: d.label };
+      if (d.fileCount > 0) {
+        ok += 1;
+        found.push(item);
+      } else {
+        missing.push(item);
       }
     });
   });
-  return { required, ok };
+  if (typeof window !== 'undefined' && (window as any).__DEBUG_PROPOSAL_DOCS__) {
+    // eslint-disable-next-line no-console
+    console.log('[Proposta] documentos obrigatórios', { required, ok, missing, found });
+  }
+  return { required, ok, missing, found };
 }

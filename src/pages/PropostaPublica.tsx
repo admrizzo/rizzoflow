@@ -1274,13 +1274,20 @@ function validateStep(step: number, data: ProposalFormData): string[] {
             if (!m.relacao?.trim()) errors.push('Informe a relação do morador');
             if (!m.nome?.trim()) errors.push('Informe o nome do morador');
             if (!m.whatsapp?.trim()) errors.push('Informe o WhatsApp do morador');
+            else if (!isValidPhone(m.whatsapp)) errors.push('WhatsApp do morador inválido');
             if (!m.email?.trim()) errors.push('Informe o e-mail do morador');
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email.trim())) errors.push('E-mail do morador inválido');
           }
         }
         if (data.composicao.responsavel_retirada) {
           if (!data.composicao.retirada_nome?.trim()) errors.push('Informe o nome de quem vai retirar as chaves');
           if (!data.composicao.retirada_whatsapp?.trim()) errors.push('Informe o WhatsApp de quem vai retirar as chaves');
+          else if (!isValidPhone(data.composicao.retirada_whatsapp)) errors.push('WhatsApp de quem vai retirar as chaves inválido');
           if (!data.composicao.retirada_cpf?.trim()) errors.push('Informe o CPF de quem vai retirar as chaves');
+          else if (!isValidCPF(data.composicao.retirada_cpf)) errors.push('CPF de quem vai retirar as chaves inválido');
+          if (data.composicao.retirada_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.composicao.retirada_email.trim())) {
+            errors.push('E-mail de quem vai retirar as chaves inválido');
+          }
         }
       }
       break;
@@ -3159,9 +3166,10 @@ export default function PropostaPublica() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">WhatsApp *</Label>
-                  <Input
+                  <MaskedInput
+                    kind="phone"
                     value={data.composicao.moradores[0]?.whatsapp || ''}
-                    onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                    onValueChange={v => update(p => { const copy = [...p.composicao.moradores]; copy[0] = { ...copy[0], whatsapp: v }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
                     placeholder="(00) 00000-0000"
                     className="h-11"
                   />
@@ -3222,9 +3230,10 @@ export default function PropostaPublica() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">WhatsApp *</Label>
-                    <Input
+                    <MaskedInput
+                      kind="phone"
                       value={m.whatsapp || ''}
-                      onChange={e => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: e.target.value }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
+                      onValueChange={v => update(p => { const copy = [...p.composicao.moradores]; copy[idx] = { ...copy[idx], whatsapp: v }; return { ...p, composicao: { ...p.composicao, moradores: copy } }; })}
                       placeholder="(00) 00000-0000"
                       className="h-11"
                     />
@@ -3281,11 +3290,23 @@ export default function PropostaPublica() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">WhatsApp *</Label>
-                    <Input value={data.composicao.retirada_whatsapp || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" className="h-11" />
+                    <MaskedInput
+                      kind="phone"
+                      value={data.composicao.retirada_whatsapp || ''}
+                      onValueChange={v => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: v } }))}
+                      placeholder="(00) 00000-0000"
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">CPF *</Label>
-                    <Input value={data.composicao.retirada_cpf || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: e.target.value } }))} placeholder="000.000.000-00" className="h-11" />
+                    <MaskedInput
+                      kind="cpf"
+                      value={data.composicao.retirada_cpf || ''}
+                      onValueChange={v => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: v } }))}
+                      placeholder="000.000.000-00"
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">E-mail</Label>
@@ -4068,10 +4089,20 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <p className="text-xs text-muted-foreground mt-1">
             Total de arquivos anexados: {totalDocs}
           </p>
-          {pending.required > 0 && pending.ok < pending.required && (
-            <p className="text-xs text-amber-600 mt-2">
-              ⚠️ Há documentos obrigatórios pendentes — confira os blocos de cada pessoa acima.
-            </p>
+          {pending.required > 0 && pending.ok < pending.required && pending.missing.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-amber-700 font-semibold">⚠️ Documentos obrigatórios pendentes:</p>
+              <ul className="text-xs text-amber-700 space-y-0.5 list-disc pl-5">
+                {pending.missing.slice(0, 8).map((m, i) => (
+                  <li key={`${m.partyId}-${m.docKey}-${i}`}>
+                    Falta: <strong>{m.docLabel}</strong> — {m.partyName}
+                  </li>
+                ))}
+                {pending.missing.length > 8 && (
+                  <li>... e mais {pending.missing.length - 8} documento(s)</li>
+                )}
+              </ul>
+            </div>
           )}
         </ReviewBlockNew>
 

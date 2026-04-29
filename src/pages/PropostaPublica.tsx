@@ -596,6 +596,7 @@ async function persistProposalParties(
           tenant_index: idx + 1,
           regime_bens: loc.regime_bens || null,
           conjuge_participa: loc.conjuge_participa || null,
+          fonte_renda: loc.tipo_renda || null,
         },
       });
       const lc = loc.conjuge;
@@ -649,6 +650,7 @@ async function persistProposalParties(
         registro_imoveis: f.registro_imoveis || null,
         regime_bens: f.regime_bens || null,
         conjuge_participa: f.conjuge_participa || null,
+        fonte_renda: f.tipo_renda || null,
       },
     });
     const fc = f.conjuge;

@@ -438,11 +438,14 @@ async function persistProposalParties(
   cardId: string | null,
   data: ProposalFormData,
 ): Promise<Map<string, string>> {
+  // Aceita formatos BR ("1.800,00") e JS-numéricos ("1800.00") sem perder
+  // o ponto decimal do segundo formato. Reaproveita parseCurrency.
   const parseNum = (s: string | undefined | null): number | null => {
-    if (!s) return null;
-    const cleaned = String(s).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-    const n = parseFloat(cleaned);
-    return isFinite(n) ? n : null;
+    if (s === null || s === undefined) return null;
+    const str = String(s).trim();
+    if (!str) return null;
+    const n = parseCurrency(str);
+    return n > 0 ? n : (str === '0' || str === '0,00' || str === '0.00' ? 0 : null);
   };
 
   type PartyRow = {

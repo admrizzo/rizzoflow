@@ -1165,7 +1165,7 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       else if (!isValidPhone(data.dados_pessoais.whatsapp)) errors.push('WhatsApp inválido (use DDD + número)');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
-      if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
+      if (!data.perfil_financeiro.fonte_renda) errors.push('Tipo de renda é obrigatório');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       // Locatários adicionais
       for (const [idx, loc] of (data.locatarios_adicionais || []).entries()) {

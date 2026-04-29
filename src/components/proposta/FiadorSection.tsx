@@ -15,6 +15,7 @@ import type {
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
+import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -305,6 +306,12 @@ export function FiadorSection({
                           className="mt-1.5 h-11"
                         />
                         <RendaInfoBlock />
+                        <div className="mt-3">
+                          <IncomeTypeInput
+                            value={fiador.tipo_renda || ''}
+                            onChange={v => onUpdateFiador(idx, { tipo_renda: v })}
+                          />
+                        </div>
                       </div>
                     )}
                     <div>

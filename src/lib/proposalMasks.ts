@@ -69,3 +69,41 @@ export function detectProfessionOption(value: string | null | undefined): Profes
   const found = PROFESSION_OPTIONS.find(p => p.toLowerCase() === v.toLowerCase());
   return found ?? 'Outro';
 }
+
+// ───────── Tipo de renda (origem da renda) ─────────
+export const INCOME_TYPE_OPTIONS = [
+  'Empregado CLT',
+  'Funcionário Público',
+  'Autônomo',
+  'Empresário',
+  'Aposentado/Pensionista',
+  'Estudante',
+  'Renda de aluguel/investimentos',
+  'Outro',
+] as const;
+
+export type IncomeTypeOption = typeof INCOME_TYPE_OPTIONS[number];
+
+/**
+ * Mapeia valores legados (ex.: "Empregado", "Empregado(a)", "Empresário(a)")
+ * para o novo conjunto de opções. Mantém compatibilidade com propostas antigas.
+ * Retorna 'Outro' quando o valor existe mas não bate com nenhuma opção.
+ * Retorna '' quando o valor é vazio.
+ */
+export function detectIncomeTypeOption(value: string | null | undefined): IncomeTypeOption | '' {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  const v = raw.toLowerCase();
+  // Match direto com novas opções
+  const direct = INCOME_TYPE_OPTIONS.find(o => o.toLowerCase() === v);
+  if (direct) return direct;
+  // Mapeamentos legados
+  if (v.startsWith('empregado')) return 'Empregado CLT';
+  if (v.includes('público') || v.includes('publico') || v.includes('servidor')) return 'Funcionário Público';
+  if (v.startsWith('autônomo') || v.startsWith('autonomo')) return 'Autônomo';
+  if (v.startsWith('empresário') || v.startsWith('empresario')) return 'Empresário';
+  if (v.includes('aposentad') || v.includes('pension')) return 'Aposentado/Pensionista';
+  if (v.includes('estudante')) return 'Estudante';
+  if (v.includes('aluguel') || v.includes('investiment')) return 'Renda de aluguel/investimentos';
+  return 'Outro';
+}

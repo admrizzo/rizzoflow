@@ -44,6 +44,7 @@ import {
 } from '@/components/proposta/ProposalPartiesView';
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
 import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
@@ -595,6 +596,7 @@ async function persistProposalParties(
           tenant_index: idx + 1,
           regime_bens: loc.regime_bens || null,
           conjuge_participa: loc.conjuge_participa || null,
+          fonte_renda: loc.tipo_renda || null,
         },
       });
       const lc = loc.conjuge;
@@ -648,6 +650,7 @@ async function persistProposalParties(
         registro_imoveis: f.registro_imoveis || null,
         regime_bens: f.regime_bens || null,
         conjuge_participa: f.conjuge_participa || null,
+        fonte_renda: f.tipo_renda || null,
       },
     });
     const fc = f.conjuge;
@@ -1164,7 +1167,7 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
       else if (!isValidPhone(data.dados_pessoais.whatsapp)) errors.push('WhatsApp inválido (use DDD + número)');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
-      if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
+      if (!data.perfil_financeiro.fonte_renda) errors.push('Tipo de renda é obrigatório');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
       // Locatários adicionais
       for (const [idx, loc] of (data.locatarios_adicionais || []).entries()) {
@@ -1827,9 +1830,17 @@ export default function PropostaPublica() {
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
       `**Total mensal aproximado:** ${formatCurrency(aluguelTotal || null)}`,
-      data.negociacao.valor_proposto ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}` : '',
-      data.negociacao.aceitou_valor ? `**Aceitou o valor anunciado:** ${data.negociacao.aceitou_valor}` : '',
-      data.negociacao.observacao ? `**Observações:** ${data.negociacao.observacao}` : '',
+      data.negociacao.aceitou_valor === 'sim'
+        ? `**Aceitou o valor anunciado:** Sim`
+        : data.negociacao.aceitou_valor === 'nao'
+        ? `**Aceitou o valor anunciado:** Não`
+        : '',
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor proposto pelo cliente:** ${data.negociacao.valor_proposto}`
+        : '',
+      data.negociacao.observacao
+        ? `**${data.negociacao.aceitou_valor === 'sim' ? 'Condições da proposta' : 'Justificativa e condições'}:** ${data.negociacao.observacao}`
+        : '',
     ].filter(Boolean).join('\n');
 
     const descriptionLines = pj ? [
@@ -1854,7 +1865,9 @@ export default function PropostaPublica() {
       property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
+        : `**Valor Proposto:** Aceitou valor anunciado`,
       '',
       `**Garantia:** ${garantiaLabel}`,
       `**Corretor:** ${brokerName}`,
@@ -1871,7 +1884,9 @@ export default function PropostaPublica() {
       property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
+        : `**Valor Proposto:** Aceitou valor anunciado`,
       '',
       `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       `**Comprometimento:** ${percentualCalc ? percentualCalc.toFixed(1) + '%' : 'N/A'}`,
@@ -2466,25 +2481,11 @@ export default function PropostaPublica() {
                 </div>
             )}
 
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Fonte de Renda <span className="text-red-500">*</span></Label>
-              <div className="grid grid-cols-2 gap-2">
-                {RENDA_SOURCES.map(r => (
-                  <button key={r.value} type="button"
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: r.value } }))}
-                    className={cn(
-                      'flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
-                      data.perfil_financeiro.fonte_renda === r.value
-                        ? 'border-accent bg-accent/5'
-                        : 'border-border hover:border-muted-foreground/40'
-                    )}
-                  >
-                    <span className="text-lg">{r.icon}</span>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <IncomeTypeInput
+              required
+              value={data.perfil_financeiro.fonte_renda}
+              onChange={v => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: v } }))}
+            />
 
             <div>
               <Label className="text-sm font-medium">Renda Mensal <span className="text-red-500">*</span></Label>
@@ -2649,6 +2650,15 @@ export default function PropostaPublica() {
                           })} />
                         <RendaInfoBlock />
                       </div>
+                      <IncomeTypeInput
+                        inputSize="sm"
+                        value={loc.tipo_renda || ''}
+                        onChange={v => update(p => {
+                          const arr = [...(p.locatarios_adicionais || [])];
+                          arr[idx] = { ...arr[idx], tipo_renda: v };
+                          return { ...p, locatarios_adicionais: arr };
+                        })}
+                      />
                       <div>
                         <Label className="text-xs">Estado civil</Label>
                         <Select
@@ -3632,11 +3642,33 @@ export default function PropostaPublica() {
           </div>
         )}
 
-        {/* Justificativa */}
-        <div className="bg-card rounded-2xl border p-6 space-y-3">
-          <Label className="text-sm font-semibold block">Justificativa <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Explique sua proposta ou condições..." rows={4} />
-        </div>
+        {/* Condições / Justificativa: muda de acordo com a escolha */}
+        {data.negociacao.aceitou_valor === 'sim' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-3">
+            <Label className="text-sm font-semibold block">
+              Condições da proposta <span className="text-muted-foreground font-normal">(opcional)</span>
+            </Label>
+            <Textarea
+              value={data.negociacao.observacao}
+              onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))}
+              placeholder="Ex.: Pretendo iniciar a locação em 10/05, contrato digital, sem observações adicionais."
+              rows={4}
+            />
+          </div>
+        )}
+        {data.negociacao.aceitou_valor === 'nao' && (
+          <div className="bg-card rounded-2xl border p-6 space-y-3">
+            <Label className="text-sm font-semibold block">
+              Justificativa e condições da proposta <span className="text-muted-foreground font-normal">(opcional)</span>
+            </Label>
+            <Textarea
+              value={data.negociacao.observacao}
+              onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))}
+              placeholder="Ex.: Proponho R$ 1.800,00 por contrato de 30 meses, pagamento pontual e início imediato."
+              rows={4}
+            />
+          </div>
+        )}
 
         {/* Important info cards */}
         <div>
@@ -3872,13 +3904,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Dados Pessoais" icon="👤" onFix={() => onGoToStep(1)} hasPending={!data.dados_pessoais.nome.trim()}>
           <ReviewRow label="Nome" value={vv(data.dados_pessoais.nome)} />
           <ReviewRow label="CPF" value={vv(data.dados_pessoais.cpf)} />
-          <ReviewRow label="Profissão" value={vv(data.dados_pessoais.profissao)} />
+          <ReviewRow label="Ocupação / Profissão" value={vv(data.dados_pessoais.profissao)} />
           <ReviewRow label="WhatsApp" value={vv(data.dados_pessoais.whatsapp)} />
           <ReviewRow label="E-mail" value={vv(data.dados_pessoais.email)} />
           <ReviewRow label="Estado Civil" value={vv(data.perfil_financeiro.estado_civil)} />
           {isCasadoOuUniao(data) && <ReviewRow label="Regime de Bens" value={vv(data.perfil_financeiro.regime_bens)} />}
           {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
             <ReviewRow label="Cônjuge participa" value={data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'} />
+          )}
+          {data.perfil_financeiro.fonte_renda && (
+            <ReviewRow label="Tipo de renda" value={data.perfil_financeiro.fonte_renda} />
           )}
           <ReviewRow label="Renda" value={vvCurrency(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
@@ -3989,7 +4024,12 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
           <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
           {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={vvCurrency(data.negociacao.valor_proposto)} />}
-          {data.negociacao.observacao && <ReviewRow label="Justificativa" value={data.negociacao.observacao} />}
+          {data.negociacao.observacao && (
+            <ReviewRow
+              label={data.negociacao.aceitou_valor === 'sim' ? 'Condições da proposta' : 'Justificativa e condições'}
+              value={data.negociacao.observacao}
+            />
+          )}
         </ReviewBlockNew>
       </div>
 

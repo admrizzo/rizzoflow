@@ -19,6 +19,16 @@ export interface ProposalNegotiationSummary {
   // Códigos
   codigoRobust: number | null;
   endereco: string | null;
+  // ── Contrato (informado pelo cliente na proposta pública) ──
+  contratoDataInicio: string | null; // YYYY-MM-DD
+  diaVencimento: string | null;      // '1'..'30'
+  // ── Retirada de chaves ──
+  retiradaPorTerceiro: boolean;
+  retiradaNome: string | null;
+  retiradaWhatsapp: string | null;
+  retiradaCpf: string | null;
+  retiradaEmail: string | null;
+  retiradaObservacao: string | null;
 }
 
 function num(v: any): number | null {
@@ -58,6 +68,14 @@ export function useProposalNegotiationSummary(
         observacaoGarantia: null,
         codigoRobust: null,
         endereco: null,
+        contratoDataInicio: null,
+        diaVencimento: null,
+        retiradaPorTerceiro: false,
+        retiradaNome: null,
+        retiradaWhatsapp: null,
+        retiradaCpf: null,
+        retiradaEmail: null,
+        retiradaObservacao: null,
       };
       if (!proposalLinkId) return empty;
 
@@ -138,6 +156,27 @@ export function useProposalNegotiationSummary(
 
       const hasData = !!(fd || link);
 
+      // Contrato e retirada de chaves (vindos do form_data)
+      const contratoDataInicio: string | null =
+        (typeof fd?.contrato?.data_inicio === 'string' && fd.contrato.data_inicio.trim()) || null;
+      const diaVencimentoRaw = fd?.contrato?.dia_vencimento;
+      const diaVencimento: string | null =
+        diaVencimentoRaw !== undefined && diaVencimentoRaw !== null && String(diaVencimentoRaw).trim() !== ''
+          ? String(diaVencimentoRaw).trim()
+          : null;
+
+      const retiradaPorTerceiro = !!fd?.composicao?.responsavel_retirada;
+      const retiradaNome: string | null =
+        (typeof fd?.composicao?.retirada_nome === 'string' && fd.composicao.retirada_nome.trim()) || null;
+      const retiradaWhatsapp: string | null =
+        (typeof fd?.composicao?.retirada_whatsapp === 'string' && fd.composicao.retirada_whatsapp.trim()) || null;
+      const retiradaCpf: string | null =
+        (typeof fd?.composicao?.retirada_cpf === 'string' && fd.composicao.retirada_cpf.trim()) || null;
+      const retiradaEmail: string | null =
+        (typeof fd?.composicao?.retirada_email === 'string' && fd.composicao.retirada_email.trim()) || null;
+      const retiradaObservacao: string | null =
+        (typeof fd?.composicao?.retirada_observacao === 'string' && fd.composicao.retirada_observacao.trim()) || null;
+
       return {
         hasData,
         source: fd ? 'draft' : link ? 'link' : 'none',
@@ -153,6 +192,14 @@ export function useProposalNegotiationSummary(
         observacaoGarantia,
         codigoRobust: link?.codigo_robust ?? null,
         endereco: link?.address_summary ?? null,
+        contratoDataInicio,
+        diaVencimento,
+        retiradaPorTerceiro,
+        retiradaNome,
+        retiradaWhatsapp,
+        retiradaCpf,
+        retiradaEmail,
+        retiradaObservacao,
       };
     },
     enabled: !!proposalLinkId,

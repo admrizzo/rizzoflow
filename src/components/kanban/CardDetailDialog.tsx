@@ -80,6 +80,7 @@ import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { ProposalPartiesView } from '@/components/proposta/ProposalPartiesView';
 import { useProposalParties } from '@/hooks/useProposalParties';
 import { ProposalNegotiationSummary } from './ProposalNegotiationSummary';
+import { ProposalContractSummary } from './ProposalContractSummary';
 import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
@@ -1731,6 +1732,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {/* === BLOCO: RESUMO DA NEGOCIAÇÃO (estruturado) === */}
             {hasStructuredNegotiation && (
               <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
+            )}
+
+            {/* === BLOCO: CONTRATO (data início, vencimento, retirada de chaves) === */}
+            {card.proposal_link_id && (
+              <ProposalContractSummary proposalLinkId={card.proposal_link_id} />
             )}
 
             {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}

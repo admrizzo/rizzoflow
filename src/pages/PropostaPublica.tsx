@@ -49,6 +49,7 @@ import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
 import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
+import { CollapsibleTip } from '@/components/proposta/CollapsibleTip';
 import { isValidCPF, isValidPhone } from '@/lib/proposalMasks';
 
 // ── Upload de documentos da proposta para o Storage ──
@@ -1667,6 +1668,7 @@ export default function PropostaPublica() {
     composicao: { moradores: [{ ...emptyMorador }], responsavel_retirada: '' },
     garantia: { tipo_garantia: '', observacao: '', fiadores: [] },
     negociacao: { valor_proposto: '', aceitou_valor: '', observacao: '' },
+    contrato: { data_inicio: '', dia_vencimento: '' },
     empresa: { ...emptyEmpresa },
     representantes: [],
   });
@@ -3289,8 +3291,26 @@ export default function PropostaPublica() {
                     <Label className="text-xs">E-mail</Label>
                     <Input type="email" value={data.composicao.retirada_email || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_email: e.target.value } }))} placeholder="email@exemplo.com" className="h-11" />
                   </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs">Observação <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                    <Input
+                      value={data.composicao.retirada_observacao || ''}
+                      onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_observacao: e.target.value } }))}
+                      placeholder="Ex.: virá no horário comercial, levará procuração simples..."
+                      className="h-11"
+                    />
+                  </div>
                 </div>
               )}
+              <div className="mt-4">
+                <CollapsibleTip title="Quem pode retirar as chaves?" variant="info">
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                    Qualquer pessoa maior de 18 anos com documento válido. Ela
+                    precisará apresentar <strong className="text-foreground">RG/CPF</strong> na
+                    hora da retirada. Não se preocupe — se ainda não souber, poderá informar depois.
+                  </p>
+                </CollapsibleTip>
+              </div>
             </div>
           </div>
         </div>
@@ -3707,6 +3727,45 @@ export default function PropostaPublica() {
           </div>
         )}
 
+        {/* === BLOCO: DADOS DO CONTRATO === */}
+        <div className="bg-card rounded-2xl border p-6 space-y-5">
+          <div>
+            <h3 className="font-bold text-foreground text-lg">Dados do contrato 📅</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Essas informações nos ajudam a preparar o contrato e a primeira cobrança.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Data pretendida para início do contrato</Label>
+              <Input
+                type="date"
+                value={data.contrato?.data_inicio || ''}
+                onChange={e => update(p => ({ ...p, contrato: { ...(p.contrato || {}), data_inicio: e.target.value } }))}
+                className="h-11"
+              />
+              <p className="text-[11px] text-muted-foreground">Sujeito a confirmação após análise da proposta.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Dia de vencimento do aluguel</Label>
+              <Select
+                value={data.contrato?.dia_vencimento || ''}
+                onValueChange={v => update(p => ({ ...p, contrato: { ...(p.contrato || {}), dia_vencimento: v } }))}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Escolha o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 30 }, (_, i) => String(i + 1)).map(d => (
+                    <SelectItem key={d} value={d}>Dia {d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">Você poderá ajustar com a imobiliária, se necessário.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Important info cards */}
         <div>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informações importantes</p>
@@ -4055,6 +4114,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
                 <ReviewRow label="WhatsApp" value={vv(data.composicao.retirada_whatsapp)} />
                 <ReviewRow label="CPF" value={vv(data.composicao.retirada_cpf)} />
                 {data.composicao.retirada_email && <ReviewRow label="E-mail" value={data.composicao.retirada_email} />}
+                {data.composicao.retirada_observacao && <ReviewRow label="Observação" value={data.composicao.retirada_observacao} />}
               </>
             )}
           </div>
@@ -4104,6 +4164,22 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
               value={data.negociacao.observacao}
             />
           )}
+        </ReviewBlockNew>
+
+        {/* Contrato */}
+        <ReviewBlockNew title="Contrato" icon="📅" onFix={() => onGoToStep(6)}>
+          <ReviewRow
+            label="Data pretendida de início"
+            value={
+              data.contrato?.data_inicio
+                ? new Date(data.contrato.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')
+                : 'Não informado'
+            }
+          />
+          <ReviewRow
+            label="Dia de vencimento do aluguel"
+            value={data.contrato?.dia_vencimento ? `Dia ${data.contrato.dia_vencimento}` : 'Não informado'}
+          />
         </ReviewBlockNew>
       </div>
 

@@ -94,6 +94,7 @@ import {
   type CorrectionRequest,
 } from '@/hooks/useCorrectionRequests';
 import { useProposalLinkPublicToken } from '@/hooks/useProposalLinkPublicToken';
+import { useOpenCardRealtime } from '@/hooks/useOpenCardRealtime';
 import { buildPublicUrl } from '@/lib/appUrl';
 import { toast as sonnerToast } from 'sonner';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';

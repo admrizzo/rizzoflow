@@ -65,6 +65,8 @@ import {
   ArrowRight,
   Inbox,
   FileEdit,
+  Wrench,
+  CheckCheck,
 } from 'lucide-react';
 import { ChecklistSection } from './ChecklistSection';
 import { StageChecklistButton } from './StageChecklistButton';

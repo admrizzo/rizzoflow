@@ -29,6 +29,8 @@ const TABLES: TableSpec[] = [
   // Propostas e documentos
   { table: 'proposal_links', keys: ['proposal-links', 'cards', 'my-queue'] },
   { table: 'proposal_documents', keys: ['proposal-documents', 'cards', 'my-queue'] },
+  { table: 'proposal_correction_requests', keys: ['correction-requests', 'cards', 'my-queue'] },
+  { table: 'proposal_parties', keys: ['proposal-parties', 'cards'] },
 
   // Histórico, comentários e menções
   { table: 'card_activity_logs', keys: ['card-activity-logs'] },

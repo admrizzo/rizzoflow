@@ -403,15 +403,28 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
           setDraftId(draft.id);
           setDraftStatus(draft.status as DraftStatus);
           setLastSavedAt(new Date(draft.updated_at));
-          // Remove file data from restore (base64 too large, will be re-uploaded)
-          const formData = draft.form_data as any;
+          const rawFormData = draft.form_data as any;
+          let formData = rawFormData && typeof rawFormData === 'object'
+            ? cleanDraftFiles(rawFormData)
+            : rawFormData;
           if (formData && typeof formData === 'object') {
-            // Clear file uploads from restored data (they contain base64)
-            if (formData.documentos) {
-              formData.documentos = formData.documentos.map((cat: any) => ({
-                ...cat,
-                files: [],
-              }));
+            if (proposalLinkId) {
+              const [{ data: existingDocuments }, { data: existingParties }] = await Promise.all([
+                supabase
+                  .from('proposal_documents')
+                  .select('id, category, category_label, owner_type, owner_label, file_name, original_file_name, file_size, mime_type, storage_path, party_id')
+                  .eq('proposal_link_id', proposalLinkId),
+                supabase
+                  .from('proposal_parties' as any)
+                  .select('id, role, position, related_party_id, metadata')
+                  .eq('proposal_link_id', proposalLinkId)
+                  .order('position', { ascending: true }),
+              ]);
+              formData = hydrateDraftWithExistingDocuments(
+                formData,
+                ((existingDocuments || []) as ExistingProposalDocument[]),
+                ((existingParties || []) as ExistingProposalParty[]),
+              );
             }
             setRestoredData(formData as ProposalFormData);
             setRestoredStep(draft.current_step);

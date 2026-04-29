@@ -448,14 +448,9 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
       const codigoNum = parseInt(codigoRobust, 10);
       if (isNaN(codigoNum)) return;
 
-      // Strip base64 file data from form_data to keep payload small
-      const cleanData = {
-        ...formData,
-        documentos: formData.documentos.map(cat => ({
-          ...cat,
-          files: cat.files.map(f => ({ id: f.id, name: f.name, size: f.size, type: f.type, dataUrl: '' })),
-        })),
-      };
+      // Strip file data from form_data to keep payload small; existing uploads
+      // are restored from proposal_documents when reopening a correction link.
+      const cleanData = cleanDraftFiles(formData);
 
       const newStatus: DraftStatus = progressPercent > 5 ? 'em_andamento' : 'rascunho';
 

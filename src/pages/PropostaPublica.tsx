@@ -1843,57 +1843,12 @@ export default function PropostaPublica() {
         : '',
     ].filter(Boolean).join('\n');
 
-    const descriptionLines = pj ? [
-      `**Tipo:** Pessoa Jurídica`,
-      `**Razão Social:** ${data.empresa.razao_social || 'N/A'}`,
-      data.empresa.nome_fantasia ? `**Nome Fantasia:** ${data.empresa.nome_fantasia}` : '',
-      `**CNPJ:** ${data.empresa.cnpj || 'N/A'}`,
-      `**Ramo:** ${data.empresa.ramo_atividade || 'N/A'}`,
-      `**Telefone:** ${data.empresa.telefone || 'N/A'}`,
-      `**E-mail:** ${data.empresa.email || 'N/A'}`,
-      `**Faturamento mensal:** ${data.empresa.faturamento_mensal || 'N/A'}`,
-      `**Regime tributário:** ${data.empresa.regime_tributario || 'N/A'}`,
-      '',
-      `**Representantes:** ${data.representantes.length}`,
-      signatario
-        ? `**Signatário:** ${signatario.nome} — CPF ${signatario.cpf || 'N/A'} — ${signatario.whatsapp || 'sem WhatsApp'}`
-        : `**Signatário:** ⚠️ não indicado`,
-      '',
-      `**Imóvel:** ${imovelCodigo}`,
-      `**Endereço:** ${data.imovel.endereco || 'N/A'}`,
-      `**Valor Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
-      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
-      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
-      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
-        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
-        : `**Valor Proposto:** Aceitou valor anunciado`,
-      '',
-      `**Garantia:** ${garantiaLabel}`,
-      `**Corretor:** ${brokerName}`,
-    ] : [
-      `**Tipo:** Pessoa Física`,
-      `**Cliente:** ${clientName}`,
-      `**CPF:** ${data.dados_pessoais.cpf || 'N/A'}`,
-      `**WhatsApp:** ${data.dados_pessoais.whatsapp || 'N/A'}`,
-      `**E-mail:** ${data.dados_pessoais.email || 'N/A'}`,
-      '',
-      `**Imóvel:** ${imovelCodigo}`,
-      `**Endereço:** ${data.imovel.endereco || 'N/A'}`,
-      `**Valor Aluguel:** ${formatCurrency(property?.valor_aluguel)}`,
-      property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
-      property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
-      property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
-        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
-        : `**Valor Proposto:** Aceitou valor anunciado`,
-      '',
-      `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      `**Comprometimento:** ${percentualCalc ? percentualCalc.toFixed(1) + '%' : 'N/A'}`,
-      `**Garantia:** ${garantiaLabel}`,
-      `**Score:** ${scoreLabel} (${points}/100)`,
-      `**Corretor:** ${brokerName}`,
-    ];
+    // Descrição adicional fica vazia: todos os dados aparecem em blocos
+    // estruturados próprios (envolvidos, imóvel, negociação, garantia,
+    // corretor, score, documentos). Apenas observações livres do cliente
+    // entram aqui — neste fluxo público não há campo de observação livre,
+    // então a descrição nasce vazia e o bloco fica oculto no card.
+    const descriptionLines: string[] = [];
 
     try {
       // 0a) Persistir partes estruturadas ANTES do upload, para que cada documento

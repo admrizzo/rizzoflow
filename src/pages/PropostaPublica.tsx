@@ -3890,13 +3890,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Dados Pessoais" icon="👤" onFix={() => onGoToStep(1)} hasPending={!data.dados_pessoais.nome.trim()}>
           <ReviewRow label="Nome" value={vv(data.dados_pessoais.nome)} />
           <ReviewRow label="CPF" value={vv(data.dados_pessoais.cpf)} />
-          <ReviewRow label="Profissão" value={vv(data.dados_pessoais.profissao)} />
+          <ReviewRow label="Ocupação / Profissão" value={vv(data.dados_pessoais.profissao)} />
           <ReviewRow label="WhatsApp" value={vv(data.dados_pessoais.whatsapp)} />
           <ReviewRow label="E-mail" value={vv(data.dados_pessoais.email)} />
           <ReviewRow label="Estado Civil" value={vv(data.perfil_financeiro.estado_civil)} />
           {isCasadoOuUniao(data) && <ReviewRow label="Regime de Bens" value={vv(data.perfil_financeiro.regime_bens)} />}
           {isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && (
             <ReviewRow label="Cônjuge participa" value={data.perfil_financeiro.conjuge_participa === 'sim' ? 'Sim' : data.perfil_financeiro.conjuge_participa === 'nao' ? 'Não' : 'Não informado'} />
+          )}
+          {data.perfil_financeiro.fonte_renda && (
+            <ReviewRow label="Tipo de renda" value={data.perfil_financeiro.fonte_renda} />
           )}
           <ReviewRow label="Renda" value={vvCurrency(data.perfil_financeiro.renda_mensal)} />
           {percentual !== null && <ReviewRow label="Comprometimento" value={`${percentual.toFixed(1)}%`} warn={percentual > 30} />}
@@ -4007,7 +4010,12 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
           <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
           {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={vvCurrency(data.negociacao.valor_proposto)} />}
-          {data.negociacao.observacao && <ReviewRow label="Justificativa" value={data.negociacao.observacao} />}
+          {data.negociacao.observacao && (
+            <ReviewRow
+              label={data.negociacao.aceitou_valor === 'sim' ? 'Condições da proposta' : 'Justificativa e condições'}
+              value={data.negociacao.observacao}
+            />
+          )}
         </ReviewBlockNew>
       </div>
 

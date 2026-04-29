@@ -42,6 +42,12 @@ import {
   countAllUploadedFiles,
   countPendingRequired,
 } from '@/components/proposta/ProposalPartiesView';
+import { ProfessionInput } from '@/components/proposta/ProfessionInput';
+import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
+import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
+import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
+import { isValidCPF, isValidPhone } from '@/lib/proposalMasks';
 
 // ── Upload de documentos da proposta para o Storage ──
 function dataUrlToBlob(dataUrl: string): Blob | null {

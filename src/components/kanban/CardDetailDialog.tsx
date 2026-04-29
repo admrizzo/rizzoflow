@@ -1683,7 +1683,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* Description - Only for Locação boards (not Rescisão, Venda, DEV, Administrativo, Captação, or Manutenção) */}
-            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard && (
+            {/* Quando há resumo estruturado da negociação, só mostramos a descrição
+                adicional se já houver conteúdo (para não duplicar dados financeiros). */}
+            {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard &&
+              (!hasStructuredNegotiation || !!localDescription) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
@@ -1697,6 +1700,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   rows={2}
                   disabled={!isEditor}
                 />
+                {hasStructuredNegotiation && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Use apenas para observações livres. Os valores e a negociação já aparecem no resumo acima.
+                  </p>
+                )}
               </div>
             )}
 

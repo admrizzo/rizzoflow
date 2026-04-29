@@ -284,6 +284,14 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const { parties: vendaParties, updatePartyName } = useCardParties((isVendaBoard || isDevBoard) ? card?.id : undefined);
   // Locação: estrutura de partes da proposta pública (proposal_parties)
   const { data: proposalParties = [] } = useProposalParties(card?.id);
+  // Locação: resumo estruturado da negociação (vem do proposal_drafts/proposal_links)
+  const { data: negotiationSummary } = useProposalNegotiationSummary(card?.proposal_link_id);
+  const hasStructuredNegotiation = !!(
+    negotiationSummary?.hasData &&
+    (negotiationSummary.aluguel !== null ||
+      negotiationSummary.aceitouValor !== null ||
+      negotiationSummary.tipoAssinatura !== null)
+  );
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
     : undefined;

@@ -1,7 +1,182 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { ProposalFormData } from '@/pages/PropostaLocacao';
+import type { DocumentCategory, ProposalFormData, UploadedFile } from '@/pages/PropostaLocacao';
+
+type ExistingProposalDocument = {
+  id: string;
+  category: string;
+  category_label: string;
+  owner_type: string;
+  owner_label: string | null;
+  file_name: string;
+  original_file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  storage_path: string;
+  party_id: string | null;
+};
+
+type ExistingProposalParty = {
+  id: string;
+  role: string;
+  position: number | null;
+  related_party_id: string | null;
+  metadata: Record<string, any> | null;
+};
+
+const SPOUSE_DOC_KEYS = new Set(['documento_conjuge', 'renda_conjuge']);
+
+function existingDocToFile(doc: ExistingProposalDocument): UploadedFile {
+  return {
+    id: `existing-${doc.id}`,
+    name: doc.original_file_name || doc.file_name,
+    size: Number(doc.file_size || 0),
+    type: doc.mime_type || 'application/octet-stream',
+    dataUrl: '',
+    persisted: true,
+    existingDocumentId: doc.id,
+    storagePath: doc.storage_path,
+  };
+}
+
+function mergeFilesByCategory(categories: any[] | undefined, docs: ExistingProposalDocument[]): DocumentCategory[] | undefined {
+  if (!Array.isArray(categories)) return categories as DocumentCategory[] | undefined;
+  return categories.map((cat) => {
+    const existingFiles = docs
+      .filter((doc) => doc.category === cat.key)
+      .map(existingDocToFile);
+    if (existingFiles.length === 0) return cat;
+    const currentFiles = Array.isArray(cat.files) ? cat.files : [];
+    const currentIds = new Set(currentFiles.map((file: any) => file.existingDocumentId || file.id));
+    return {
+      ...cat,
+      files: [
+        ...currentFiles,
+        ...existingFiles.filter((file) => !currentIds.has(file.existingDocumentId || file.id)),
+      ],
+    };
+  });
+}
+
+function cleanDraftFiles(formData: any): any {
+  const cleanCategories = (categories: any[] | undefined) => Array.isArray(categories)
+    ? categories.map((cat) => ({ ...cat, files: [] }))
+    : categories;
+
+  const cleaned = {
+    ...formData,
+    documentos: cleanCategories(formData?.documentos),
+    conjuge: formData?.conjuge
+      ? { ...formData.conjuge, documentos: cleanCategories(formData.conjuge.documentos) }
+      : formData?.conjuge,
+    locatarios_adicionais: Array.isArray(formData?.locatarios_adicionais)
+      ? formData.locatarios_adicionais.map((loc: any) => ({
+          ...loc,
+          documentos: cleanCategories(loc?.documentos),
+          conjuge: loc?.conjuge
+            ? { ...loc.conjuge, documentos: cleanCategories(loc.conjuge.documentos) }
+            : loc?.conjuge,
+        }))
+      : formData?.locatarios_adicionais,
+    garantia: formData?.garantia
+      ? {
+          ...formData.garantia,
+          fiadores: Array.isArray(formData.garantia.fiadores)
+            ? formData.garantia.fiadores.map((fiador: any) => ({
+                ...fiador,
+                documentos: cleanCategories(fiador?.documentos),
+              }))
+            : formData.garantia.fiadores,
+        }
+      : formData?.garantia,
+  };
+  return cleaned;
+}
+
+function hydrateDraftWithExistingDocuments(
+  formData: any,
+  documents: ExistingProposalDocument[],
+  parties: ExistingProposalParty[],
+): any {
+  if (!formData || documents.length === 0) return formData;
+
+  const docsByParty = new Map<string, ExistingProposalDocument[]>();
+  const fallbackDocs: ExistingProposalDocument[] = [];
+  documents.forEach((doc) => {
+    if (doc.party_id) {
+      docsByParty.set(doc.party_id, [...(docsByParty.get(doc.party_id) || []), doc]);
+    } else {
+      fallbackDocs.push(doc);
+    }
+  });
+
+  const partiesByRole = (role: string) => parties
+    .filter((party) => party.role === role)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const primary = partiesByRole('primary_tenant')[0];
+  const company = partiesByRole('company')[0];
+  const additionalTenants = partiesByRole('additional_tenant');
+  const guarantors = partiesByRole('guarantor');
+  const spouses = parties.filter((party) => party.role === 'tenant_spouse' || party.role === 'guarantor_spouse');
+  const spouseFor = (parentId?: string | null, metadataPrefix?: string) => spouses.find((spouse) => {
+    if (parentId && spouse.related_party_id === parentId) return true;
+    const spouseOf = String(spouse.metadata?.spouse_of || '');
+    return !!metadataPrefix && spouseOf === metadataPrefix;
+  });
+
+  const ownFallback = (ownerTypes: string[], categoryFilter?: (doc: ExistingProposalDocument) => boolean) => fallbackDocs.filter((doc) => {
+    if (!ownerTypes.includes(doc.owner_type)) return false;
+    return categoryFilter ? categoryFilter(doc) : true;
+  });
+  const nonSpouseDoc = (doc: ExistingProposalDocument) => !SPOUSE_DOC_KEYS.has(doc.category);
+  const spouseDoc = (doc: ExistingProposalDocument) => SPOUSE_DOC_KEYS.has(doc.category);
+
+  const hydrated = { ...formData };
+  const principalDocs = docsByParty.get((company || primary)?.id || '') || ownFallback(['empresa', 'proponente'], nonSpouseDoc);
+  hydrated.documentos = mergeFilesByCategory(formData.documentos, principalDocs);
+
+  const primarySpouse = spouseFor(primary?.id, 'primary_tenant');
+  const primarySpouseDocs = docsByParty.get(primarySpouse?.id || '') || ownFallback(['tenant_spouse', 'conjuge'], spouseDoc);
+  if (formData.conjuge && primarySpouseDocs.length > 0) {
+    hydrated.conjuge = {
+      ...formData.conjuge,
+      documentos: mergeFilesByCategory(formData.conjuge.documentos, primarySpouseDocs),
+    };
+  }
+
+  if (Array.isArray(formData.locatarios_adicionais)) {
+    hydrated.locatarios_adicionais = formData.locatarios_adicionais.map((loc: any, idx: number) => {
+      const party = additionalTenants[idx];
+      const spouse = spouseFor(party?.id, `additional_tenant_${idx + 1}`);
+      return {
+        ...loc,
+        documentos: mergeFilesByCategory(loc.documentos, docsByParty.get(party?.id || '') || []),
+        conjuge: loc.conjuge
+          ? { ...loc.conjuge, documentos: mergeFilesByCategory(loc.conjuge.documentos, docsByParty.get(spouse?.id || '') || []) }
+          : loc.conjuge,
+      };
+    });
+  }
+
+  if (formData.garantia && Array.isArray(formData.garantia.fiadores)) {
+    hydrated.garantia = {
+      ...formData.garantia,
+      fiadores: formData.garantia.fiadores.map((fiador: any, idx: number) => {
+        const party = guarantors[idx];
+        const spouse = spouseFor(party?.id, `guarantor_${idx + 1}`);
+        const ownDocs = docsByParty.get(party?.id || '') || ownFallback(['fiador'], nonSpouseDoc);
+        const spouseDocsForFiador = docsByParty.get(spouse?.id || '') || ownFallback(['guarantor_spouse'], spouseDoc);
+        return {
+          ...fiador,
+          documentos: mergeFilesByCategory(fiador.documentos, [...ownDocs, ...spouseDocsForFiador]),
+        };
+      }),
+    };
+  }
+
+  return hydrated;
+}
 
 function getBrowserId(): string {
   const key = 'proposal_browser_id';

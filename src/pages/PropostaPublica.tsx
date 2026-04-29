@@ -3283,11 +3283,23 @@ export default function PropostaPublica() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">WhatsApp *</Label>
-                    <Input value={data.composicao.retirada_whatsapp || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" className="h-11" />
+                    <MaskedInput
+                      kind="phone"
+                      value={data.composicao.retirada_whatsapp || ''}
+                      onValueChange={v => update(p => ({ ...p, composicao: { ...p.composicao, retirada_whatsapp: v } }))}
+                      placeholder="(00) 00000-0000"
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">CPF *</Label>
-                    <Input value={data.composicao.retirada_cpf || ''} onChange={e => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: e.target.value } }))} placeholder="000.000.000-00" className="h-11" />
+                    <MaskedInput
+                      kind="cpf"
+                      value={data.composicao.retirada_cpf || ''}
+                      onValueChange={v => update(p => ({ ...p, composicao: { ...p.composicao, retirada_cpf: v } }))}
+                      placeholder="000.000.000-00"
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">E-mail</Label>

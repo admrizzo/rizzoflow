@@ -3727,6 +3727,45 @@ export default function PropostaPublica() {
           </div>
         )}
 
+        {/* === BLOCO: DADOS DO CONTRATO === */}
+        <div className="bg-card rounded-2xl border p-6 space-y-5">
+          <div>
+            <h3 className="font-bold text-foreground text-lg">Dados do contrato 📅</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Essas informações nos ajudam a preparar o contrato e a primeira cobrança.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Data pretendida para início do contrato</Label>
+              <Input
+                type="date"
+                value={data.contrato?.data_inicio || ''}
+                onChange={e => update(p => ({ ...p, contrato: { ...(p.contrato || {}), data_inicio: e.target.value } }))}
+                className="h-11"
+              />
+              <p className="text-[11px] text-muted-foreground">Sujeito a confirmação após análise da proposta.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Dia de vencimento do aluguel</Label>
+              <Select
+                value={data.contrato?.dia_vencimento || ''}
+                onValueChange={v => update(p => ({ ...p, contrato: { ...(p.contrato || {}), dia_vencimento: v } }))}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Escolha o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 30 }, (_, i) => String(i + 1)).map(d => (
+                    <SelectItem key={d} value={d}>Dia {d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">Você poderá ajustar com a imobiliária, se necessário.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Important info cards */}
         <div>
           <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informações importantes</p>

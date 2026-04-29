@@ -14,6 +14,8 @@ export interface ProposalNegotiationSummary {
   justificativa: string | null;
   // Assinatura
   tipoAssinatura: 'digital' | 'fisico' | null;
+  // Observação livre da etapa de Garantia
+  observacaoGarantia: string | null;
   // Códigos
   codigoRobust: number | null;
   endereco: string | null;
@@ -48,6 +50,7 @@ export function useProposalNegotiationSummary(
         valorProposto: null,
         justificativa: null,
         tipoAssinatura: null,
+        observacaoGarantia: null,
         codigoRobust: null,
         endereco: null,
       };
@@ -117,6 +120,11 @@ export function useProposalNegotiationSummary(
           fd.negociacao.observacao.trim()) ||
         null;
 
+      const observacaoGarantia: string | null =
+        (typeof fd?.garantia?.observacao === 'string' &&
+          fd.garantia.observacao.trim()) ||
+        null;
+
       const tipoAssinaturaRaw = fd?.assinatura?.tipo_contrato_assinatura;
       const tipoAssinatura: 'digital' | 'fisico' | null =
         tipoAssinaturaRaw === 'digital' || tipoAssinaturaRaw === 'fisico'
@@ -137,6 +145,7 @@ export function useProposalNegotiationSummary(
         valorProposto,
         justificativa,
         tipoAssinatura,
+        observacaoGarantia,
         codigoRobust: link?.codigo_robust ?? null,
         endereco: link?.address_summary ?? null,
       };

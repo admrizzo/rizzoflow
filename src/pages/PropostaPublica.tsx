@@ -44,6 +44,7 @@ import {
 } from '@/components/proposta/ProposalPartiesView';
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { usePublicCorrectionRequest, SECTION_LABELS } from '@/hooks/useCorrectionRequests';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';

@@ -2321,12 +2321,23 @@ export default function PropostaPublica() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></Label>
-                <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} className="mt-1.5" />
+                {isCnpj ? (
+                  <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
+                ) : (
+                  <MaskedInput
+                    kind="cpf"
+                    value={data.dados_pessoais.cpf}
+                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
+                    placeholder="000.000.000-00"
+                    className="mt-1.5"
+                  />
+                )}
               </div>
-              <div>
-                <Label className="text-sm font-medium">Profissão <span className="text-red-500">*</span></Label>
-                <Input value={data.dados_pessoais.profissao} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, profissao: e.target.value } }))} placeholder="Sua profissão" className="mt-1.5" />
-              </div>
+              <ProfessionInput
+                value={data.dados_pessoais.profissao}
+                onChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, profissao: v } }))}
+                required
+              />
             </div>
           </div>
         </FormSection>

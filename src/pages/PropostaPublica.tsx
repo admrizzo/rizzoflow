@@ -1900,7 +1900,7 @@ export default function PropostaPublica() {
       let partyMap = new Map<string, string>();
       if (proposalLink?.id) {
         try {
-          partyMap = await persistProposalParties(proposalLink.id, null, data);
+          partyMap = await persistProposalParties(proposalLink.id, null, data, proposalLink.public_token);
         } catch (partiesErr: any) {
           console.error('Erro ao salvar partes da proposta (pré-upload):', partiesErr);
           const isStruct = partiesErr instanceof ProposalPartiesError;

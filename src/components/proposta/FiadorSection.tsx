@@ -378,7 +378,13 @@ export function FiadorSection({
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label className="text-sm font-medium">CPF <span className="text-destructive">*</span></Label>
-                              <Input value={fiador.conjuge.cpf} onChange={e => onUpdateConjuge(idx, 'cpf', e.target.value)} placeholder="000.000.000-00" className="mt-1.5 h-11" />
+                              <MaskedInput
+                                kind="cpf"
+                                value={fiador.conjuge.cpf}
+                                onValueChange={v => onUpdateConjuge(idx, 'cpf', v)}
+                                placeholder="000.000.000-00"
+                                className="mt-1.5 h-11"
+                              />
                             </div>
                             <div>
                               <Label className="text-sm font-medium">Documento de identidade</Label>
@@ -388,7 +394,13 @@ export function FiadorSection({
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <Label className="text-sm font-medium">Telefone / WhatsApp</Label>
-                              <Input value={fiador.conjuge.whatsapp} onChange={e => onUpdateConjuge(idx, 'whatsapp', e.target.value)} placeholder="(00) 00000-0000" className="mt-1.5 h-11" />
+                              <MaskedInput
+                                kind="phone"
+                                value={fiador.conjuge.whatsapp}
+                                onValueChange={v => onUpdateConjuge(idx, 'whatsapp', v)}
+                                placeholder="(00) 00000-0000"
+                                className="mt-1.5 h-11"
+                              />
                             </div>
                             <div>
                               <Label className="text-sm font-medium">E-mail</Label>

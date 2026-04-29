@@ -192,6 +192,30 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const isEditor = canMoveCards;
   // Edição dos responsáveis internos: somente admin/gestor/administrativo.
   const canEditInternalBrokers = isAdminRole || isGestor || isAdministrativo;
+  // Solicitação de correção: mesmo grupo (admin/gestor/administrativo).
+  const canRequestCorrection = isAdminRole || isGestor || isAdministrativo;
+  const [correctionDialogOpen, setCorrectionDialogOpen] = useState(false);
+  const { data: correctionRequests = [] } = useCardCorrectionRequests(card?.id);
+  const pendingCorrection: CorrectionRequest | undefined = correctionRequests.find(
+    (c) => c.status === 'pending'
+  );
+  const lastResponded: CorrectionRequest | undefined = correctionRequests.find(
+    (c) => c.status === 'responded'
+  );
+  // "Correção/Complementação recebida": existe uma solicitação respondida e nenhuma pendente,
+  // e a resposta veio depois do último submitted_at conhecido.
+  const correctionReceived =
+    !pendingCorrection &&
+    !!lastResponded &&
+    !!card?.proposal_submitted_at &&
+    new Date(lastResponded.responded_at || 0).getTime() >=
+      new Date(card.proposal_submitted_at).getTime() - 5000;
+  const correctionReceivedLabel = (() => {
+    if (!lastResponded) return '';
+    const sections = lastResponded.requested_sections || [];
+    const onlyDocs = sections.length > 0 && sections.every((s) => s === 'documentos');
+    return onlyDocs ? 'Complementação recebida' : 'Correção recebida';
+  })();
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);

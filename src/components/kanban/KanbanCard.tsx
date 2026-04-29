@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
 import { isReviewOverdue } from '@/hooks/useColumnReview';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
+import { useProfiles } from '@/hooks/useProfiles';
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +40,16 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const totalItems = activeItems.length;
     const completedItems = activeItems.filter(i => i.is_completed).length;
     const hasPendingItems = totalItems > 0 && completedItems < totalItems;
+
+    // Resolve nomes dos responsáveis internos (compacto, só aparece se houver)
+    const { profiles } = useProfiles();
+    const capturingBrokerName = card.capturing_broker_id
+      ? profiles.find((p) => p.user_id === card.capturing_broker_id)?.full_name
+      : null;
+    const serviceBrokerName = card.service_broker_id
+      ? profiles.find((p) => p.user_id === card.service_broker_id)?.full_name
+      : null;
+    const hasInternalBrokers = !!(capturingBrokerName || serviceBrokerName);
 
     const hasLabels = card.labels && card.labels.length > 0;
     const hasDueDate = card.due_date;
@@ -360,6 +371,26 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                 <span className="text-[10px] text-teal-600 font-medium ml-auto whitespace-nowrap">
                   {selectedProvider.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
+              )}
+            </div>
+          )}
+
+          {/* Responsáveis internos (compacto — só aparece se houver) */}
+          {hasInternalBrokers && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {capturingBrokerName && (
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-medium">Capt:</span>
+                  <span className="truncate">{capturingBrokerName}</span>
+                </div>
+              )}
+              {serviceBrokerName && (
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                  <User className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-medium">Atend:</span>
+                  <span className="truncate">{serviceBrokerName}</span>
+                </div>
               )}
             </div>
           )}

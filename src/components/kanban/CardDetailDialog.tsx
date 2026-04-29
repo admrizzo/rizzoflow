@@ -81,6 +81,7 @@ import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSum
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';
 import { AndamentoSection } from './AndamentoSection';
+import { InternalBrokersSection } from './InternalBrokersSection';
 import { useCardParties } from '@/hooks/useCardParties';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';
@@ -158,8 +159,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   const { isAdmin, user } = useAuth();
   // Permissões operacionais centralizadas: admin, gestor e administrativo
   // podem editar; corretor permanece restrito.
-  const { canMoveCards } = usePermissions();
+  const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo } = usePermissions();
   const isEditor = canMoveCards;
+  // Edição dos responsáveis internos: somente admin/gestor/administrativo.
+  const canEditInternalBrokers = isAdminRole || isGestor || isAdministrativo;
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);
@@ -904,6 +907,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {/* === BLOCO: ANDAMENTO === */}
             {!card.is_archived && (
               <AndamentoSection card={card} canEdit={isEditor} />
+            )}
+
+            {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}
+            {!card.is_archived && (
+              <InternalBrokersSection
+                capturingBrokerId={card.capturing_broker_id ?? null}
+                serviceBrokerId={card.service_broker_id ?? null}
+                canEdit={canEditInternalBrokers}
+                onChange={(field, value) =>
+                  updateCard.mutate({ id: card.id, [field]: value })
+                }
+              />
             )}
 
             {hasReviewDeadline && !card.is_archived && reviewOverdue && (

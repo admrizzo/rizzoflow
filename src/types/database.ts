@@ -162,6 +162,9 @@ export interface Card {
   // Proposta pública vinculada
   proposal_link_id: string | null;
   proposal_submitted_at: string | null;
+  // Responsáveis internos (corretor captador / atendimento)
+  capturing_broker_id: string | null;
+  service_broker_id: string | null;
 }
 
 export interface CardParty {

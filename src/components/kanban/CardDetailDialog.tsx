@@ -909,6 +909,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <AndamentoSection card={card} canEdit={isEditor} />
             )}
 
+            {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}
+            {!card.is_archived && (
+              <InternalBrokersSection
+                capturingBrokerId={card.capturing_broker_id ?? null}
+                serviceBrokerId={card.service_broker_id ?? null}
+                canEdit={canEditInternalBrokers}
+                onChange={(field, value) =>
+                  updateCard.mutate({ id: card.id, [field]: value })
+                }
+              />
+            )}
+
             {hasReviewDeadline && !card.is_archived && reviewOverdue && (
               <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-warning/40 bg-warning/10">
                 <div className="flex items-center gap-2 min-w-0">

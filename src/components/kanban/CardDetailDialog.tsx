@@ -316,6 +316,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       negotiationSummary.aceitouValor !== null ||
       negotiationSummary.tipoAssinatura !== null)
   );
+  const visibleAdditionalDescription = useMemo(
+    () => getVisibleAdditionalDescription(localDescription),
+    [localDescription],
+  );
   const compradorPrincipal = isVendaBoard
     ? vendaParties.find(p => p.party_type === 'comprador' && p.party_number === 1)
     : undefined;
@@ -1657,7 +1661,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {card.robust_code && (
               <div className="bg-muted/30 p-4 rounded-lg border border-muted">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Documentos da proposta</h3>
-                <ProposalDocumentsSection cardId={card.id} />
+                <ProposalDocumentsSection cardId={card.id} guaranteeType={card.guarantee_type} />
               </div>
             )}
 
@@ -1731,14 +1735,14 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {/* Quando há resumo estruturado da negociação, só mostramos a descrição
                 adicional se já houver conteúdo (para não duplicar dados financeiros). */}
             {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isAdministrativoBoard && !isCaptacaoBoard && !isManutencaoBoard &&
-              (!hasStructuredNegotiation || !!localDescription) && (
+              (!hasStructuredNegotiation || !!visibleAdditionalDescription) && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <Label className="text-sm font-medium">Descrição adicional</Label>
                 </div>
                 <Textarea
-                  value={localDescription}
+                  value={hasStructuredNegotiation ? visibleAdditionalDescription : localDescription}
                   onChange={(e) => setLocalDescription(e.target.value)}
                   onBlur={() => handleFieldBlur('description', localDescription, card.description)}
                   placeholder="Outras informações relevantes..."

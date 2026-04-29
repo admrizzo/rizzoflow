@@ -157,7 +157,11 @@ function hydrateDraftWithExistingDocuments(
       const party = additionalTenants[idx];
       const spouse = spouseFor(party?.id, `additional_tenant_${idx + 1}`);
       const locFallback = ownFallback(['proponente'], nonSpouseDoc, ownerLabelIncludes(`Locatário adicional ${idx + 1}`));
-      const locSpouseFallback = ownFallback(['tenant_spouse', 'conjuge'], spouseDoc, ownerLabelIncludes('Cônjuge'));
+      const locSpouseFallback = ownFallback(
+        ['tenant_spouse', 'conjuge'],
+        spouseDoc,
+        loc?.conjuge?.nome ? ownerLabelIncludes(loc.conjuge.nome) : ownerLabelIncludes(`locatário adicional ${idx + 1}`),
+      );
       return {
         ...loc,
         documentos: mergeFilesByCategory(loc.documentos, docsByParty.get(party?.id || '') || locFallback),
@@ -175,7 +179,11 @@ function hydrateDraftWithExistingDocuments(
         const party = guarantors[idx];
         const spouse = spouseFor(party?.id, `guarantor_${idx + 1}`);
         const ownDocs = docsByParty.get(party?.id || '') || ownFallback(['fiador'], nonSpouseDoc, ownerLabelIncludes(`Fiador ${idx + 1}`));
-        const spouseDocsForFiador = docsByParty.get(spouse?.id || '') || ownFallback(['guarantor_spouse'], spouseDoc);
+        const spouseDocsForFiador = docsByParty.get(spouse?.id || '') || ownFallback(
+          ['guarantor_spouse'],
+          spouseDoc,
+          fiador?.conjuge?.nome ? ownerLabelIncludes(fiador.conjuge.nome) : ownerLabelIncludes(`fiador ${idx + 1}`),
+        );
         return {
           ...fiador,
           documentos: mergeFilesByCategory(fiador.documentos, [...ownDocs, ...spouseDocsForFiador]),

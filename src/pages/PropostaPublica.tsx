@@ -254,7 +254,8 @@ async function uploadProposalDocuments(
       // resolvemos a partir do metadata.spouse_of (vide buildPartyMap abaixo).
       const locSpousePartyKey = partyKey('tenant_spouse_of_additional', idx);
       for (const cat of loc.documentos || []) {
-        if (cat.files.length > 0) {
+        const files = getNewUploadFiles(cat.files);
+        if (files.length > 0) {
           jobs.push({
             ownerType: 'proponente',
             ownerKey,
@@ -265,12 +266,13 @@ async function uploadProposalDocuments(
             spousePartyKey: locSpousePartyKey,
             spouseName: locSpouseName,
             category: cat.key,
-            files: cat.files,
+            files,
           });
         }
       }
       for (const cat of loc.conjuge?.documentos || []) {
-        if (cat.files.length > 0) {
+        const files = getNewUploadFiles(cat.files);
+        if (files.length > 0) {
           jobs.push({
             ownerType: 'tenant_spouse',
             ownerKey: `${ownerKey}-conjuge`,
@@ -281,7 +283,7 @@ async function uploadProposalDocuments(
             spousePartyKey: locSpousePartyKey,
             spouseName: locSpouseName,
             category: cat.key,
-            files: cat.files,
+            files,
           });
         }
       }
@@ -300,7 +302,8 @@ async function uploadProposalDocuments(
     const fiadorPartyKey = partyKey('guarantor', idx);
     const fiadorSpousePartyKey = partyKey('guarantor_spouse', idx);
     for (const cat of f.documentos || []) {
-      if (cat.files.length > 0) {
+      const files = getNewUploadFiles(cat.files);
+      if (files.length > 0) {
         jobs.push({
           ownerType: 'fiador',
           ownerKey,
@@ -311,7 +314,7 @@ async function uploadProposalDocuments(
           spousePartyKey: fiadorSpousePartyKey,
           spouseName: fiadorSpouseName,
           category: cat.key,
-          files: cat.files,
+          files,
         });
       }
     }

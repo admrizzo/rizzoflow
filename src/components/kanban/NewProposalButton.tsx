@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePropertiesLocacao, Property } from '@/hooks/useProperties';
 import { useBrokers } from '@/hooks/useBrokers';
+import { useAssignableUsers } from '@/hooks/useAssignableUsers';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +39,29 @@ export function NewProposalButton() {
   const queryClient = useQueryClient();
   const { properties } = usePropertiesLocacao();
   const { brokers, isLoading: loadingBrokers } = useBrokers();
+  const { users: assignableUsers, isLoading: loadingAssignable } = useAssignableUsers();
+  const { isAdmin, isGestor, isAdministrativo, isCorretor } = usePermissions();
+
+  // Admin/Gestor/Administrativo podem atribuir qualquer usuário interno.
+  // Corretor só pode atribuir a si mesmo.
+  const canAssignAnyone = isAdmin || isGestor || isAdministrativo;
+  const lockedToSelf = isCorretor && !canAssignAnyone;
+
+  // Lista exibida no select. Para roles privilegiados, usa lista expandida
+  // (admin/gestor/corretor/administrativo). Para corretor, usa lista de corretores
+  // (mas o select fica travado no próprio usuário).
+  const selectableUsers = useMemo(() => {
+    if (canAssignAnyone) {
+      // Mescla por user_id para garantir que corretores apareçam mesmo se
+      // assignableUsers ainda estiver carregando.
+      const map = new Map<string, { user_id: string; full_name: string; email: string | null; avatar_url: string | null }>();
+      assignableUsers.forEach((u) => map.set(u.user_id, u));
+      brokers.forEach((b) => { if (!map.has(b.user_id)) map.set(b.user_id, b); });
+      return Array.from(map.values()).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    }
+    return brokers;
+  }, [canAssignAnyone, assignableUsers, brokers]);
+  const loadingUsers = canAssignAnyone ? (loadingAssignable || loadingBrokers) : loadingBrokers;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,16 +71,22 @@ export function NewProposalButton() {
   const [generatedCode, setGeneratedCode] = useState<number | null>(null);
 
   const selectedBroker = useMemo(
-    () => brokers.find((b) => b.user_id === brokerUserId) || null,
-    [brokers, brokerUserId]
+    () => selectableUsers.find((b) => b.user_id === brokerUserId) || null,
+    [selectableUsers, brokerUserId]
   );
 
-  // Pré-seleciona o usuário logado se ele for um corretor cadastrado.
+  // Pré-seleciona o usuário logado quando faz sentido:
+  // - Corretor: sempre travado no próprio usuário.
+  // - Demais roles: pré-seleciona se o próprio usuário aparece na lista.
   useEffect(() => {
-    if (!brokerUserId && user?.id && brokers.some((b) => b.user_id === user.id)) {
+    if (lockedToSelf && user?.id && brokerUserId !== user.id) {
+      setBrokerUserId(user.id);
+      return;
+    }
+    if (!brokerUserId && user?.id && selectableUsers.some((b) => b.user_id === user.id)) {
       setBrokerUserId(user.id);
     }
-  }, [user, brokers, brokerUserId]);
+  }, [user, selectableUsers, brokerUserId, lockedToSelf]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
@@ -134,6 +165,7 @@ export function NewProposalButton() {
           address: addressParts.join(', ') || null,
           proposal_responsible: brokerName,
           proposal_link_id: linkData.id,
+          responsible_user_id: selectedBroker.user_id,
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: nextPosition,
@@ -170,8 +202,12 @@ export function NewProposalButton() {
     setSearchQuery('');
     setGeneratedLink(null);
     setGeneratedCode(null);
-    if (user?.id && brokers.some((b) => b.user_id === user.id)) {
+    if (lockedToSelf && user?.id) {
       setBrokerUserId(user.id);
+    } else if (user?.id && selectableUsers.some((b) => b.user_id === user.id)) {
+      setBrokerUserId(user.id);
+    } else {
+      setBrokerUserId('');
     }
     setModalOpen(true);
   };
@@ -304,22 +340,24 @@ export function NewProposalButton() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5 text-sm font-medium">
                     <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                    Corretor responsável
+                    {canAssignAnyone ? 'Responsável pela proposta' : 'Corretor responsável'}
                     <span className="text-destructive">*</span>
                   </Label>
                   <Select
                     value={brokerUserId}
                     onValueChange={setBrokerUserId}
-                    disabled={loadingBrokers}
+                    disabled={loadingUsers || lockedToSelf}
                   >
                     <SelectTrigger
                       className={`h-11 ${!brokerUserId ? 'border-amber-400/70' : ''}`}
                     >
                       <SelectValue
                         placeholder={
-                          loadingBrokers
-                            ? 'Carregando corretores...'
-                            : 'Selecione um corretor'
+                          loadingUsers
+                            ? 'Carregando usuários...'
+                            : canAssignAnyone
+                              ? 'Selecione o responsável'
+                              : 'Selecione um corretor'
                         }
                       >
                         {selectedBroker && (
@@ -344,17 +382,17 @@ export function NewProposalButton() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-72">
-                      {brokers.length === 0 && !loadingBrokers && (
+                      {selectableUsers.length === 0 && !loadingUsers && (
                         <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                           <AlertCircle className="h-4 w-4 mx-auto mb-2 text-amber-500" />
-                          Nenhum corretor cadastrado.
+                          Nenhum usuário disponível.
                           <br />
                           <span className="text-xs">
-                            Cadastre usuários com papel <strong>Corretor</strong> em Administração → Usuários.
+                            Cadastre usuários em Administração → Usuários.
                           </span>
                         </div>
                       )}
-                      {brokers.map((b) => (
+                      {selectableUsers.map((b) => (
                         <SelectItem key={b.user_id} value={b.user_id} className="py-2">
                           <div className="flex items-center gap-2.5">
                             <Avatar className="h-7 w-7">
@@ -382,8 +420,15 @@ export function NewProposalButton() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {!brokerUserId && brokers.length > 0 && (
-                    <p className="text-xs text-amber-600">Selecione o corretor para gerar o link.</p>
+                  {lockedToSelf && (
+                    <p className="text-xs text-muted-foreground">
+                      Como corretor, a proposta é gerada em seu nome.
+                    </p>
+                  )}
+                  {!lockedToSelf && !brokerUserId && selectableUsers.length > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Selecione o responsável para gerar o link.
+                    </p>
                   )}
                 </div>
                 <Button className="w-full" size="lg" disabled={!selectedBroker || createLink.isPending} onClick={() => createLink.mutate()}>

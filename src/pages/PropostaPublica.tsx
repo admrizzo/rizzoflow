@@ -2351,7 +2351,13 @@ export default function PropostaPublica() {
                 <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
                   🇧🇷 +55
                 </div>
-                <Input value={data.dados_pessoais.whatsapp} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" />
+                <MaskedInput
+                  kind="phone"
+                  value={data.dados_pessoais.whatsapp}
+                  onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
+                  placeholder="(00) 00000-0000"
+                  className="flex-1"
+                />
               </div>
             </div>
             <div>

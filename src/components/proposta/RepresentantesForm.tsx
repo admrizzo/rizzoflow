@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { Users, Plus, Trash2, UserCheck } from 'lucide-react';
 import type { RepresentanteLegal } from '@/pages/PropostaLocacao';
 import { emptyRepresentante } from '@/pages/PropostaLocacao';
+import { ProfessionInput } from '@/components/proposta/ProfessionInput';
+import { MaskedInput } from '@/components/proposta/MaskedInput';
 
 interface RepresentantesFormProps {
   representantes: RepresentanteLegal[];
@@ -74,15 +76,27 @@ export function RepresentantesForm({ representantes, onChange }: RepresentantesF
               </div>
               <div>
                 <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
-                <Input value={r.cpf} onChange={e => update(i, { cpf: e.target.value })} placeholder="000.000.000-00" className="mt-1.5" />
+                <MaskedInput
+                  kind="cpf"
+                  value={r.cpf}
+                  onValueChange={v => update(i, { cpf: v })}
+                  placeholder="000.000.000-00"
+                  className="mt-1.5"
+                />
               </div>
-              <div>
-                <Label className="text-sm font-medium">Profissão</Label>
-                <Input value={r.profissao} onChange={e => update(i, { profissao: e.target.value })} placeholder="Profissão" className="mt-1.5" />
-              </div>
+              <ProfessionInput
+                value={r.profissao}
+                onChange={v => update(i, { profissao: v })}
+              />
               <div>
                 <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-                <Input value={r.whatsapp} onChange={e => update(i, { whatsapp: e.target.value })} placeholder="(00) 00000-0000" className="mt-1.5" />
+                <MaskedInput
+                  kind="phone"
+                  value={r.whatsapp}
+                  onValueChange={v => update(i, { whatsapp: v })}
+                  placeholder="(00) 00000-0000"
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>

@@ -42,6 +42,12 @@ import {
   countAllUploadedFiles,
   countPendingRequired,
 } from '@/components/proposta/ProposalPartiesView';
+import { ProfessionInput } from '@/components/proposta/ProfessionInput';
+import { MaskedInput } from '@/components/proposta/MaskedInput';
+import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
+import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
+import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
+import { isValidCPF, isValidPhone } from '@/lib/proposalMasks';
 
 // ── Upload de documentos da proposta para o Storage ──
 function dataUrlToBlob(dataUrl: string): Blob | null {
@@ -1149,13 +1155,27 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       }
       if (!data.dados_pessoais.nome.trim()) errors.push('Nome completo é obrigatório');
       if (!data.dados_pessoais.cpf.trim()) errors.push('CPF/CNPJ é obrigatório');
+      else if (!data.dados_pessoais.cpf.includes('/') && !isValidCPF(data.dados_pessoais.cpf)) {
+        errors.push('CPF inválido');
+      }
       if (!data.perfil_financeiro.estado_civil) errors.push('Estado civil é obrigatório');
       if (isCasadoOuUniao(data) && !data.perfil_financeiro.regime_bens) errors.push('Regime de bens é obrigatório');
       if (isCasadoOuUniao(data) && data.perfil_financeiro.regime_bens === 'Separação total / absoluta de bens' && !data.perfil_financeiro.conjuge_participa) errors.push('Informe se o cônjuge participará do contrato');
       if (!data.dados_pessoais.whatsapp.trim()) errors.push('WhatsApp é obrigatório');
+      else if (!isValidPhone(data.dados_pessoais.whatsapp)) errors.push('WhatsApp inválido (use DDD + número)');
       if (!data.dados_pessoais.email.trim()) errors.push('E-mail é obrigatório');
       if (!data.perfil_financeiro.fonte_renda) errors.push('Fonte de renda é obrigatória');
       if (!data.perfil_financeiro.renda_mensal.trim()) errors.push('Renda mensal é obrigatória');
+      // Locatários adicionais
+      for (const [idx, loc] of (data.locatarios_adicionais || []).entries()) {
+        const label = `Locatário adicional ${idx + 1}`;
+        if (loc.cpf && !isValidCPF(loc.cpf)) errors.push(`${label}: CPF inválido`);
+        if (loc.whatsapp && !isValidPhone(loc.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
+        if ((loc.estado_civil === 'Casado(a)' || loc.estado_civil === 'União Estável')) {
+          if (loc.conjuge?.cpf && !isValidCPF(loc.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
+          if (loc.conjuge?.whatsapp && !isValidPhone(loc.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
+        }
+      }
       break;
     case 2:
       if (pj) {
@@ -1165,7 +1185,9 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           const label = `Representante ${i + 1}`;
           if (!r.nome.trim()) errors.push(`${label}: nome é obrigatório`);
           if (!r.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
+          else if (!isValidCPF(r.cpf)) errors.push(`${label}: CPF inválido`);
           if (!r.whatsapp.trim()) errors.push(`${label}: WhatsApp é obrigatório`);
+          else if (!isValidPhone(r.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
           if (!r.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
         });
         const hasSignatario = data.representantes.some(r => r.is_signatario);
@@ -1175,6 +1197,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
         break;
       }
       if (needsConjuge(data) && !data.conjuge.nome.trim()) errors.push('Nome do cônjuge é obrigatório');
+      if (needsConjuge(data)) {
+        if (data.conjuge.cpf && !isValidCPF(data.conjuge.cpf)) errors.push('CPF do cônjuge inválido');
+        if (data.conjuge.whatsapp && !isValidPhone(data.conjuge.whatsapp)) errors.push('WhatsApp do cônjuge inválido');
+      }
       break;
     case 4:
       if (data.composicao.moradores.length === 0) errors.push('Informe pelo menos um morador');
@@ -1215,6 +1241,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           if (!f.nome.trim() || !f.cpf.trim() || !f.whatsapp.trim() || !f.email.trim() || !f.profissao.trim() || !f.estado_civil) {
             errors.push(`${label}: dados pessoais incompletos`);
           }
+          if (f.cpf && !isValidCPF(f.cpf)) errors.push(`${label}: CPF inválido`);
+          if (f.whatsapp && !isValidPhone(f.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
           if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
             errors.push(`${label}: informe a renda mensal`);
           }
@@ -1225,6 +1253,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
           );
           if (needsConj && (!f.conjuge.nome.trim() || !f.conjuge.cpf.trim())) {
             errors.push(`${label}: dados do cônjuge obrigatórios`);
+          }
+          if (needsConj) {
+            if (f.conjuge.cpf && !isValidCPF(f.conjuge.cpf)) errors.push(`${label}: CPF do cônjuge inválido`);
+            if (f.conjuge.whatsapp && !isValidPhone(f.conjuge.whatsapp)) errors.push(`${label}: WhatsApp do cônjuge inválido`);
           }
           for (const cat of f.documentos) {
             if (cat.key === 'renda_conjuge') continue; // opcional
@@ -2289,12 +2321,23 @@ export default function PropostaPublica() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></Label>
-                <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder={isCnpj ? '00.000.000/0000-00' : '000.000.000-00'} className="mt-1.5" />
+                {isCnpj ? (
+                  <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
+                ) : (
+                  <MaskedInput
+                    kind="cpf"
+                    value={data.dados_pessoais.cpf}
+                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
+                    placeholder="000.000.000-00"
+                    className="mt-1.5"
+                  />
+                )}
               </div>
-              <div>
-                <Label className="text-sm font-medium">Profissão <span className="text-red-500">*</span></Label>
-                <Input value={data.dados_pessoais.profissao} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, profissao: e.target.value } }))} placeholder="Sua profissão" className="mt-1.5" />
-              </div>
+              <ProfessionInput
+                value={data.dados_pessoais.profissao}
+                onChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, profissao: v } }))}
+                required
+              />
             </div>
           </div>
         </FormSection>
@@ -2308,7 +2351,13 @@ export default function PropostaPublica() {
                 <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
                   🇧🇷 +55
                 </div>
-                <Input value={data.dados_pessoais.whatsapp} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: e.target.value } }))} placeholder="(00) 00000-0000" />
+                <MaskedInput
+                  kind="phone"
+                  value={data.dados_pessoais.whatsapp}
+                  onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
+                  placeholder="(00) 00000-0000"
+                  className="flex-1"
+                />
               </div>
             </div>
             <div>
@@ -2445,6 +2494,7 @@ export default function PropostaPublica() {
                 placeholder="0,00"
                 className="mt-1.5"
               />
+              <RendaInfoBlock />
               {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
                 <div className={cn(
                   'mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2',
@@ -2536,12 +2586,17 @@ export default function PropostaPublica() {
                       </div>
                       <div>
                         <Label className="text-xs">CPF</Label>
-                        <Input value={loc.cpf} placeholder="000.000.000-00" className="mt-1"
-                          onChange={e => update(p => {
+                        <MaskedInput
+                          kind="cpf"
+                          value={loc.cpf}
+                          placeholder="000.000.000-00"
+                          className="mt-1 h-9"
+                          onValueChange={v => update(p => {
                             const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], cpf: e.target.value };
+                            arr[idx] = { ...arr[idx], cpf: v };
                             return { ...p, locatarios_adicionais: arr };
-                          })} />
+                          })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs">RG / CNH</Label>
@@ -2552,15 +2607,15 @@ export default function PropostaPublica() {
                             return { ...p, locatarios_adicionais: arr };
                           })} />
                       </div>
-                      <div>
-                        <Label className="text-xs">Profissão</Label>
-                        <Input value={loc.profissao} className="mt-1"
-                          onChange={e => update(p => {
-                            const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], profissao: e.target.value };
-                            return { ...p, locatarios_adicionais: arr };
-                          })} />
-                      </div>
+                      <ProfessionInput
+                        value={loc.profissao}
+                        inputSize="sm"
+                        onChange={v => update(p => {
+                          const arr = [...(p.locatarios_adicionais || [])];
+                          arr[idx] = { ...arr[idx], profissao: v };
+                          return { ...p, locatarios_adicionais: arr };
+                        })}
+                      />
                       <div>
                         <Label className="text-xs">E-mail</Label>
                         <Input type="email" value={loc.email} className="mt-1"
@@ -2572,12 +2627,17 @@ export default function PropostaPublica() {
                       </div>
                       <div>
                         <Label className="text-xs">WhatsApp</Label>
-                        <Input value={loc.whatsapp} placeholder="(00) 00000-0000" className="mt-1"
-                          onChange={e => update(p => {
+                        <MaskedInput
+                          kind="phone"
+                          value={loc.whatsapp}
+                          placeholder="(00) 00000-0000"
+                          className="mt-1 h-9"
+                          onValueChange={v => update(p => {
                             const arr = [...(p.locatarios_adicionais || [])];
-                            arr[idx] = { ...arr[idx], whatsapp: e.target.value };
+                            arr[idx] = { ...arr[idx], whatsapp: v };
                             return { ...p, locatarios_adicionais: arr };
-                          })} />
+                          })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs">Renda mensal</Label>
@@ -2587,6 +2647,7 @@ export default function PropostaPublica() {
                             arr[idx] = { ...arr[idx], renda_mensal: v };
                             return { ...p, locatarios_adicionais: arr };
                           })} />
+                        <RendaInfoBlock />
                       </div>
                       <div>
                         <Label className="text-xs">Estado civil</Label>
@@ -2640,12 +2701,17 @@ export default function PropostaPublica() {
                           </div>
                           <div>
                             <Label className="text-xs">CPF</Label>
-                            <Input value={loc.conjuge.cpf} className="mt-1"
-                              onChange={e => update(p => {
+                            <MaskedInput
+                              kind="cpf"
+                              value={loc.conjuge.cpf}
+                              placeholder="000.000.000-00"
+                              className="mt-1 h-9"
+                              onValueChange={v => update(p => {
                                 const arr = [...(p.locatarios_adicionais || [])];
-                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, cpf: e.target.value } };
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, cpf: v } };
                                 return { ...p, locatarios_adicionais: arr };
-                              })} />
+                              })}
+                            />
                           </div>
                           <div>
                             <Label className="text-xs">RG / CNH</Label>
@@ -2658,12 +2724,17 @@ export default function PropostaPublica() {
                           </div>
                           <div>
                             <Label className="text-xs">WhatsApp</Label>
-                            <Input value={loc.conjuge.whatsapp} className="mt-1"
-                              onChange={e => update(p => {
+                            <MaskedInput
+                              kind="phone"
+                              value={loc.conjuge.whatsapp}
+                              placeholder="(00) 00000-0000"
+                              className="mt-1 h-9"
+                              onValueChange={v => update(p => {
                                 const arr = [...(p.locatarios_adicionais || [])];
-                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, whatsapp: e.target.value } };
+                                arr[idx] = { ...arr[idx], conjuge: { ...arr[idx].conjuge, whatsapp: v } };
                                 return { ...p, locatarios_adicionais: arr };
-                              })} />
+                              })}
+                            />
                           </div>
                           <div className="sm:col-span-2">
                             <Label className="text-xs">E-mail</Label>
@@ -2847,6 +2918,8 @@ export default function PropostaPublica() {
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">Documentos 📋</h2>
           <p className="text-muted-foreground mt-1 text-sm">Envie os documentos de cada pessoa envolvida na proposta.</p>
         </div>
+
+        <DocumentTipsBlock />
 
         {/* Bloco do locatário principal / empresa */}
         <div className="rounded-2xl border bg-muted/20 p-4 space-y-3">
@@ -3459,6 +3532,7 @@ export default function PropostaPublica() {
               );
             })}
           </div>
+          <SignatureGuidelines type={data.garantia.tipo_contrato_assinatura || ''} />
         </div>
 
         {/* Observations */}
@@ -3558,10 +3632,10 @@ export default function PropostaPublica() {
           </div>
         )}
 
-        {/* Observations */}
+        {/* Justificativa */}
         <div className="bg-card rounded-2xl border p-6 space-y-3">
-          <Label className="text-sm font-semibold block">Condições ou observações <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Descreva suas condições ou observações..." rows={4} />
+          <Label className="text-sm font-semibold block">Justificativa <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+          <Textarea value={data.negociacao.observacao} onChange={e => update(p => ({ ...p, negociacao: { ...p.negociacao, observacao: e.target.value } }))} placeholder="Explique sua proposta ou condições..." rows={4} />
         </div>
 
         {/* Important info cards */}
@@ -3663,17 +3737,14 @@ function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
-          <Input value={data.cpf} onChange={e => set('cpf', e.target.value)} placeholder="000.000.000-00" className="mt-1.5" />
+          <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />
         </div>
-        <div>
-          <Label className="text-sm font-medium">Profissão</Label>
-          <Input value={data.profissao} onChange={e => set('profissao', e.target.value)} placeholder="Profissão" className="mt-1.5" />
-        </div>
+        <ProfessionInput value={data.profissao} onChange={v => set('profissao', v)} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-          <Input value={data.whatsapp} onChange={e => set('whatsapp', e.target.value)} placeholder="(00) 00000-0000" className="mt-1.5" />
+          <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />
         </div>
         <div>
           <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
@@ -3883,6 +3954,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         {/* Garantia */}
         <ReviewBlockNew title="Garantia" icon="🔒" onFix={() => onGoToStep(5)} hasPending={!data.garantia.tipo_garantia}>
           <ReviewRow label="Modalidade" value={vv(data.garantia.tipo_garantia)} />
+          <ReviewRow
+            label="Tipo de assinatura"
+            value={
+              data.garantia.tipo_contrato_assinatura === 'digital'
+                ? 'Digital'
+                : data.garantia.tipo_contrato_assinatura === 'fisico'
+                ? 'Físico / Presencial'
+                : 'Não informado'
+            }
+          />
           {data.garantia.observacao && <ReviewRow label="Observação" value={data.garantia.observacao} />}
           {data.garantia.tipo_garantia === 'Fiador' && (
             <>
@@ -3908,7 +3989,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         <ReviewBlockNew title="Negociação" icon="🤝" onFix={() => onGoToStep(6)}>
           <ReviewRow label="Aceitou valor anunciado" value={data.negociacao.aceitou_valor === 'sim' ? 'Sim' : data.negociacao.aceitou_valor === 'nao' ? 'Não' : 'Não informado'} />
           {data.negociacao.valor_proposto && <ReviewRow label="Valor proposto" value={vvCurrency(data.negociacao.valor_proposto)} />}
-          {data.negociacao.observacao && <ReviewRow label="Observação" value={data.negociacao.observacao} />}
+          {data.negociacao.observacao && <ReviewRow label="Justificativa" value={data.negociacao.observacao} />}
         </ReviewBlockNew>
       </div>
 

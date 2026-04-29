@@ -1865,7 +1865,9 @@ export default function PropostaPublica() {
       property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
+        : `**Valor Proposto:** Aceitou valor anunciado`,
       '',
       `**Garantia:** ${garantiaLabel}`,
       `**Corretor:** ${brokerName}`,
@@ -1882,7 +1884,9 @@ export default function PropostaPublica() {
       property?.condominio ? `**Condomínio:** ${formatCurrency(property.condominio)}` : '',
       property?.iptu ? `**IPTU:** ${formatCurrency(property.iptu)}` : '',
       property?.seguro_incendio ? `**Seguro Incêndio:** ${formatCurrency(property.seguro_incendio)}` : '',
-      `**Valor Proposto:** ${data.negociacao.valor_proposto || 'N/A'}`,
+      data.negociacao.aceitou_valor === 'nao' && data.negociacao.valor_proposto
+        ? `**Valor Proposto:** ${data.negociacao.valor_proposto}`
+        : `**Valor Proposto:** Aceitou valor anunciado`,
       '',
       `**Renda Mensal:** R$ ${renda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       `**Comprometimento:** ${percentualCalc ? percentualCalc.toFixed(1) + '%' : 'N/A'}`,

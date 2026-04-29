@@ -92,6 +92,9 @@ import {
   SECTION_LABELS,
   type CorrectionRequest,
 } from '@/hooks/useCorrectionRequests';
+import { useProposalLinkPublicToken } from '@/hooks/useProposalLinkPublicToken';
+import { buildPublicUrl } from '@/lib/appUrl';
+import { toast as sonnerToast } from 'sonner';
 import { useCloneToFlow } from '@/hooks/useCloneToFlow';
 import { usePropertiesLight, type PropertyLight } from '@/hooks/useProperties';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';

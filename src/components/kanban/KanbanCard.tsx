@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
@@ -64,7 +64,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
       linkStatus === null
         ? !!card.proposal_link_id
         : linkStatus !== 'enviada' && linkStatus !== 'recebida' && linkStatus !== 'finalizada';
-    const proposalInProgress = !docsReceived && linkPending;
+    const correctionPending = linkStatus === 'correction_requested';
+    const proposalInProgress = !docsReceived && linkPending && !correctionPending;
     
     // Check if document deadline is overdue
     const hasDeadline = card.document_deadline;

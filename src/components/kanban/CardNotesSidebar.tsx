@@ -7,11 +7,18 @@ import { useCommentMentions } from '@/hooks/useCommentMentions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign } from 'lucide-react';
+import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X } from 'lucide-react';
 import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MentionTextarea, extractMentionedUserIds, renderMentionText } from './MentionTextarea';
+import {
+  useCommentAttachments,
+  validateAttachment,
+  formatFileSize,
+} from '@/hooks/useCommentAttachments';
+import { CommentAttachmentList } from './CommentAttachmentList';
+import { useToast } from '@/hooks/use-toast';
 
 const { useState } = React;
 
@@ -51,10 +58,32 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
   const { user, isEditor } = useAuth();
   const { profiles } = useProfiles();
   const { cardMentions, createMentions, markMentionRead } = useCommentMentions(cardId);
+  const { byComment, uploadAttachments, deleteAttachment } = useCommentAttachments(cardId);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Ao abrir o card, marca como lidas as notificações deste card que pertencem ao usuário
+  React.useEffect(() => {
+    if (!user?.id || !cardId) return;
+    (async () => {
+      try {
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', user.id)
+          .eq('card_id', cardId)
+          .eq('is_read', false);
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      } catch (err) {
+        console.warn('[CardNotesSidebar] mark notifications read falhou:', err);
+      }
+    })();
+  }, [cardId, user?.id, queryClient]);
 
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
     queryKey: ['comments', cardId],
@@ -174,12 +203,24 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, content) => {
+    onSuccess: async (data, content) => {
       queryClient.invalidateQueries({ queryKey: ['comments', cardId] });
       if (data) {
         const mentionedIds = extractMentionedUserIds(content, profiles);
         if (mentionedIds.length > 0) {
           createMentions.mutate({ commentId: data.id, cardId, mentionedUserIds: mentionedIds });
+        }
+        if (pendingFiles.length > 0) {
+          try {
+            await uploadAttachments.mutateAsync({
+              commentId: data.id,
+              cardId,
+              files: pendingFiles,
+            });
+          } catch {
+            /* toast já mostrado pelo hook */
+          }
+          setPendingFiles([]);
         }
       }
       setNewNote('');
@@ -209,8 +250,39 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
   });
 
   const handleSubmit = () => {
-    if (!newNote.trim()) return;
+    if (!newNote.trim() && pendingFiles.length === 0) return;
+    // Garante que há texto mínimo (sistema usa content NOT NULL)
+    if (!newNote.trim() && pendingFiles.length > 0) {
+      addComment.mutate(`📎 ${pendingFiles.length} anexo(s)`);
+      return;
+    }
     addComment.mutate(newNote.trim());
+  };
+
+  const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const validFiles: File[] = [];
+    for (const f of files) {
+      const err = validateAttachment(f);
+      if (err) {
+        toast({
+          title: 'Arquivo ignorado',
+          description: `${f.name}: ${err}`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+      validFiles.push(f);
+    }
+    if (validFiles.length > 0) {
+      setPendingFiles((prev) => [...prev, ...validFiles]);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleStartEdit = (comment: Comment) => {
@@ -292,11 +364,65 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             onSubmit={handleSubmit}
             placeholder="Escrever um comentário... Use @ para mencionar"
           />
+
+          {/* Anexos pendentes */}
+          {pendingFiles.length > 0 && (
+            <div className="mt-2 flex flex-col gap-1">
+              {pendingFiles.map((f, i) => (
+                <div
+                  key={`${f.name}-${i}`}
+                  className="flex items-center gap-2 px-2 py-1 rounded bg-muted text-xs"
+                >
+                  <Paperclip className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="flex-1 truncate">{f.name}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatFileSize(f.size)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removePendingFile(i)}
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Remover"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground hidden md:inline">Shift+Enter para nova linha</span>
-            <Button 
-              onClick={handleSubmit} 
-              disabled={!newNote.trim() || addComment.isPending}
+            <div className="flex items-center gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                multiple
+                hidden
+                onChange={handlePickFiles}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => fileInputRef.current?.click()}
+                title="Anexar PDF, JPG, PNG ou WEBP (máx. 10MB)"
+              >
+                <Paperclip className="h-3 w-3 mr-1" />
+                Anexar
+              </Button>
+              <span className="text-[10px] text-muted-foreground hidden md:inline">
+                PDF/JPG/PNG/WEBP · 10MB
+              </span>
+            </div>
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                (!newNote.trim() && pendingFiles.length === 0) ||
+                addComment.isPending ||
+                uploadAttachments.isPending
+              }
               size="sm"
               className="h-7 px-3"
             >
@@ -401,6 +527,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                               )
                             )}
                           </p>
+                          <CommentAttachmentList
+                            attachments={byComment[comment.id] || []}
+                            canDelete={isOwner}
+                            onDelete={(att) => deleteAttachment.mutate(att)}
+                          />
                           {(() => {
                             const mention = cardMentions.find(
                               m => m.comment_id === comment.id && m.mentioned_user_id === user?.id

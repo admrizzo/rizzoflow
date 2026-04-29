@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DatePickerInput } from '@/components/ui/date-picker-input';
 import {
   Select,
@@ -14,10 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowRight, User, Calendar as CalendarIcon, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowRight, User, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, RotateCcw, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { isToday } from 'date-fns';
+import { isToday, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { logCardActivity } from '@/hooks/useCardActivityLogs';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidateCardQueries } from '@/lib/queryInvalidation';
 
 interface AndamentoSectionProps {
   card: CardWithRelations;
@@ -33,6 +41,11 @@ const NONE_VALUE = '__none__';
 export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const { updateCard } = useCards(card.board_id);
   const { profiles } = useProfiles();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isReopening, setIsReopening] = useState(false);
 
   const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
   const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
@@ -66,6 +79,18 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const dueDate = localDueDate;
   const overdue = dueDate ? isDateOverdue(dueDate) : false;
   const today = dueDate ? isToday(dueDate) : false;
+
+  const hasPendingAction = !!(card.next_action && card.next_action.trim());
+  const lastCompletedAt = parseDatabaseDate(card.last_completed_action_at);
+  const lastCompletedProfile = card.last_completed_action_by
+    ? profiles.find((p) => p.user_id === card.last_completed_action_by)
+    : null;
+  // Mostra botão "Reabrir" se houve conclusão nas últimas 24h e não há ação pendente
+  const canReopen =
+    !hasPendingAction &&
+    !!card.last_completed_action &&
+    !!lastCompletedAt &&
+    Date.now() - lastCompletedAt.getTime() < 24 * 60 * 60 * 1000;
 
   const handleNextActionBlur = () => {
     const next = localNextAction.trim();
@@ -123,6 +148,97 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
     persistDueDateTime(localDueDate, localDueTime);
   };
 
+  const handleMarkAsDone = async () => {
+    if (!hasPendingAction) return;
+    const actionText = (card.next_action || '').trim();
+    setIsCompleting(true);
+    const now = new Date().toISOString();
+    try {
+      const { error } = await supabase
+        .from('cards')
+        .update({
+          next_action: null,
+          next_action_due_date: null,
+          last_completed_action: actionText,
+          last_completed_action_at: now,
+          last_completed_action_by: user?.id ?? null,
+          next_action_completed_at: now,
+          next_action_completed_by: user?.id ?? null,
+        })
+        .eq('id', card.id);
+      if (error) throw error;
+
+      setLocalNextAction('');
+      setLocalDueDate(null);
+      setLocalDueTime('');
+
+      void logCardActivity({
+        cardId: card.id,
+        actorUserId: user?.id,
+        eventType: 'next_action_changed',
+        title: 'Próxima ação realizada',
+        description: `Próxima ação realizada: ${actionText}`,
+        oldValue: actionText,
+        newValue: null,
+        metadata: { completed: true, completed_at: now },
+      });
+
+      invalidateCardQueries(queryClient);
+      toast({ title: 'Próxima ação marcada como realizada.' });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao concluir ação',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    if (!card.last_completed_action) return;
+    const actionText = card.last_completed_action;
+    setIsReopening(true);
+    try {
+      const { error } = await supabase
+        .from('cards')
+        .update({
+          next_action: actionText,
+          last_completed_action: null,
+          last_completed_action_at: null,
+          last_completed_action_by: null,
+          next_action_completed_at: null,
+          next_action_completed_by: null,
+        })
+        .eq('id', card.id);
+      if (error) throw error;
+      setLocalNextAction(actionText);
+
+      void logCardActivity({
+        cardId: card.id,
+        actorUserId: user?.id,
+        eventType: 'next_action_changed',
+        title: 'Ação reaberta',
+        description: `Ação reaberta: ${actionText}`,
+        oldValue: null,
+        newValue: actionText,
+        metadata: { reopened: true },
+      });
+
+      invalidateCardQueries(queryClient);
+      toast({ title: 'Ação reaberta.' });
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao reabrir ação',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsReopening(false);
+    }
+  };
+
   const initials = (name?: string | null) =>
     (name || '?')
       .split(' ')
@@ -137,7 +253,7 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Andamento
         </h3>
-        {dueDate && (overdue || today) && (
+        {hasPendingAction && dueDate && (overdue || today) && (
           <Badge
             variant="outline"
             className={cn(
@@ -153,6 +269,37 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
         )}
       </div>
 
+      {!hasPendingAction && (
+        <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+            <Inbox className="h-4 w-4 flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium text-foreground/80">Nenhuma próxima ação definida</p>
+              {card.last_completed_action && lastCompletedAt && (
+                <p className="text-xs truncate">
+                  Última: "{card.last_completed_action}" — concluída{' '}
+                  {formatDistanceToNow(lastCompletedAt, { addSuffix: true, locale: ptBR })}
+                  {lastCompletedProfile ? ` por ${lastCompletedProfile.full_name}` : ''}
+                </p>
+              )}
+            </div>
+          </div>
+          {canReopen && canEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleReopen}
+              disabled={isReopening}
+              className="flex-shrink-0"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reabrir ação
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Próxima ação - ocupa linha cheia */}
         <div className="md:col-span-2">
@@ -160,13 +307,30 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
             Próxima ação
           </Label>
-          <Input
-            value={localNextAction}
-            onChange={(e) => setLocalNextAction(e.target.value)}
-            onBlur={handleNextActionBlur}
-            placeholder='Ex: "Cobrar comprovante de renda do fiador 2"'
-            disabled={!canEdit}
-          />
+          <div className="flex gap-2">
+            <Input
+              value={localNextAction}
+              onChange={(e) => setLocalNextAction(e.target.value)}
+              onBlur={handleNextActionBlur}
+              placeholder='Ex: "Cobrar comprovante de renda do fiador 2"'
+              disabled={!canEdit}
+              className="flex-1"
+            />
+            {hasPendingAction && canEdit && (
+              <Button
+                type="button"
+                variant="default"
+                size="default"
+                onClick={handleMarkAsDone}
+                disabled={isCompleting}
+                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+                title="Marcar próxima ação como realizada"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Marcar como realizada</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Responsável */}

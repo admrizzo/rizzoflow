@@ -2467,25 +2467,11 @@ export default function PropostaPublica() {
                 </div>
             )}
 
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Fonte de Renda <span className="text-red-500">*</span></Label>
-              <div className="grid grid-cols-2 gap-2">
-                {RENDA_SOURCES.map(r => (
-                  <button key={r.value} type="button"
-                    onClick={() => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: r.value } }))}
-                    className={cn(
-                      'flex items-center gap-2 p-3 rounded-xl border text-sm font-medium text-left transition-all',
-                      data.perfil_financeiro.fonte_renda === r.value
-                        ? 'border-accent bg-accent/5'
-                        : 'border-border hover:border-muted-foreground/40'
-                    )}
-                  >
-                    <span className="text-lg">{r.icon}</span>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <IncomeTypeInput
+              required
+              value={data.perfil_financeiro.fonte_renda}
+              onChange={v => update(p => ({ ...p, perfil_financeiro: { ...p.perfil_financeiro, fonte_renda: v } }))}
+            />
 
             <div>
               <Label className="text-sm font-medium">Renda Mensal <span className="text-red-500">*</span></Label>

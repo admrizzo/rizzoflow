@@ -194,7 +194,8 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
         const codigoNum = parseInt(codigoRobust!, 10);
         if (isNaN(codigoNum)) { setIsRestoring(false); return; }
 
-        const { data: draft } = await supabase
+        // 1) Tenta restaurar rascunho do MESMO navegador que ainda não foi enviado.
+        let { data: draft } = await supabase
           .from('proposal_drafts')
           .select('*')
           .eq('codigo_robust', codigoNum)
@@ -203,6 +204,20 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
           .order('updated_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        // 2) Fallback (modo correção / outro navegador):
+        //    se houver proposal_link_id, busca o último rascunho da MESMA proposta,
+        //    inclusive já enviado (para hidratar o formulário em modo correção).
+        if (!draft && proposalLinkId) {
+          const { data: anyDraft } = await supabase
+            .from('proposal_drafts')
+            .select('*')
+            .eq('proposal_link_id', proposalLinkId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          draft = anyDraft || null;
+        }
 
         if (draft) {
           setDraftId(draft.id);
@@ -230,7 +245,7 @@ export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true 
     }
 
     restore();
-  }, [codigoRobust, enabled]);
+  }, [codigoRobust, enabled, proposalLinkId]);
 
   const saveDraft = useCallback(async (formData: ProposalFormData, currentStep: number, progressPercent: number) => {
     if (!enabled || !codigoRobust) return;

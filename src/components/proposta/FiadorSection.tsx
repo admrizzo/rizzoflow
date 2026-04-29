@@ -305,6 +305,12 @@ export function FiadorSection({
                           className="mt-1.5 h-11"
                         />
                         <RendaInfoBlock />
+                        <div className="mt-3">
+                          <IncomeTypeInput
+                            value={fiador.tipo_renda || ''}
+                            onChange={v => onUpdateFiador(idx, { tipo_renda: v })}
+                          />
+                        </div>
                       </div>
                     )}
                     <div>

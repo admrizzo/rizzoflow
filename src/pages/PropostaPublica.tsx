@@ -4209,16 +4209,6 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
         {/* Garantia */}
         <ReviewBlockNew title="Garantia" icon="🔒" onFix={() => onGoToStep(5)} hasPending={!data.garantia.tipo_garantia}>
           <ReviewRow label="Modalidade" value={vv(data.garantia.tipo_garantia)} />
-          <ReviewRow
-            label="Tipo de assinatura"
-            value={
-              data.garantia.tipo_contrato_assinatura === 'digital'
-                ? 'Digital'
-                : data.garantia.tipo_contrato_assinatura === 'fisico'
-                ? 'Físico / Presencial'
-                : 'Não informado'
-            }
-          />
           {data.garantia.observacao && <ReviewRow label="Observação" value={data.garantia.observacao} />}
           {data.garantia.tipo_garantia === 'Fiador' && (
             <>
@@ -4228,23 +4218,31 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
                 const fr = req.renda.fiador;
                 const fi = req.imovel.fiador;
                 return (
-                  <>
+                  <div className="mt-2 pt-2 border-t border-border/60">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Requisitos</p>
                     <ReviewRow label="Fiador com renda" value={req.renda.state === 'cumprido' ? `✅ ${fr?.nome}` : `⚠️ ${req.renda.state === 'em_preenchimento' ? `Em preenchimento: ${req.renda.missing[0] || 'pendências'}` : 'Pendente'}`} />
                     <ReviewRow label="Fiador com imóvel" value={req.imovel.state === 'cumprido' ? `✅ ${fi?.nome}` : `⚠️ ${req.imovel.state === 'em_preenchimento' ? `Em preenchimento: ${req.imovel.missing[0] || 'pendências'}` : 'Pendente'}`} />
-                  </>
-                );
-              })()}
-              {data.garantia.fiadores.map((f, i) => {
-                const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
-                const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
-                const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
-                return (
-                  <div key={i}>
-                    <ReviewRow label={`Fiador ${i + 1} — ${tipoLabel}`} value={vv(f.nome)} />
-                    <ReviewRow label={`Fiador ${i + 1} — Documentos`} value={docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`} />
                   </div>
                 );
-              })}
+              })()}
+              {data.garantia.fiadores.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-border/60">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1">Fiadores</p>
+                  {data.garantia.fiadores.map((f, i) => {
+                    const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
+                    const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
+                    const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
+                    const docsLabel = docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`;
+                    return (
+                      <ReviewRow
+                        key={i}
+                        label={`${vv(f.nome) || `Fiador ${i + 1}`} — ${tipoLabel}`}
+                        value={`Documentos: ${docsLabel}`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
         </ReviewBlockNew>
@@ -4274,6 +4272,16 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           <ReviewRow
             label="Dia de vencimento do aluguel"
             value={data.contrato?.dia_vencimento ? `Dia ${data.contrato.dia_vencimento}` : 'Não informado'}
+          />
+          <ReviewRow
+            label="Tipo de assinatura"
+            value={
+              data.garantia.tipo_contrato_assinatura === 'digital'
+                ? 'Digital'
+                : data.garantia.tipo_contrato_assinatura === 'fisico'
+                ? 'Físico / Presencial'
+                : 'Não informado'
+            }
           />
         </ReviewBlockNew>
       </div>

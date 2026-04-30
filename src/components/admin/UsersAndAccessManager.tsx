@@ -541,26 +541,38 @@ export function UsersAndAccessManager() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Diagnóstico de duplicidades / inconsistências (somente admin) */}
-      {isAdmin && <UsersDiagnosticsPanel />}
+    <div className="flex flex-col h-full min-h-0 gap-3">
+      {/* TOPO FIXO ─────────────────────────────────────────────────────── */}
+      <div className="space-y-3 shrink-0">
+        {/* Diagnóstico de duplicidades / inconsistências (somente admin) */}
+        {isAdmin && <UsersDiagnosticsPanel />}
 
-      {/* Cabeçalho com ação de convite (somente admin) */}
-      {isAdmin && (
-        <div className="flex items-center justify-between">
+        {/* Cabeçalho: contador + botão convidar */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="text-sm text-muted-foreground">
-            {filteredUsers.length} de {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
+            <span className="font-medium text-foreground">{filteredUsers.length}</span>
+            {' de '}{users.length} {users.length === 1 ? 'usuário' : 'usuários'}
+            {(filterRole !== 'all' || searchTerm) && (
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 ml-2 text-xs"
+                onClick={() => { setFilterRole('all'); setSearchTerm(''); }}
+              >
+                Limpar filtros
+              </Button>
+            )}
           </div>
-          <Button size="sm" onClick={() => setInviteOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Convidar usuário
-          </Button>
+          {isAdmin && (
+            <Button size="sm" onClick={() => setInviteOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Convidar usuário
+            </Button>
+          )}
         </div>
-      )}
 
-      {/* Busca + filtro por papel */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
+        {/* Busca */}
+        <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome ou e-mail..."
@@ -569,37 +581,35 @@ export function UsersAndAccessManager() {
             className="pl-8 h-9"
           />
         </div>
-        <Select value={filterRole} onValueChange={(v) => setFilterRole(v as typeof filterRole)}>
-          <SelectTrigger className="h-9 w-full sm:w-[200px]">
-            <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-popover">
-            <SelectItem value="all">Todos os papéis</SelectItem>
-            {DISPLAY_ROLES.map((r) => (
-              <SelectItem key={r} value={r}>{ROLE_META[r].label}</SelectItem>
-            ))}
-            <SelectItem value="none">Sem acesso</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Legenda dos 4 papéis oficiais */}
-      <div className="p-3 bg-muted/30 rounded-lg">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {DISPLAY_ROLES.map((role) => {
-            const meta = ROLE_META[role];
-            const Icon = meta.icon;
-            return (
-              <TooltipProvider key={role}>
-                <Tooltip>
+        {/* Indicadores por papel (CLICÁVEIS = filtro) */}
+        <TooltipProvider>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <RoleFilterPill
+              active={filterRole === 'all'}
+              onClick={() => setFilterRole('all')}
+              label="Todos"
+              count={users.length}
+              colorClass="text-foreground"
+              activeClass="border-primary bg-primary/10"
+            />
+            {DISPLAY_ROLES.map((role) => {
+              const meta = ROLE_META[role];
+              return (
+                <Tooltip key={role}>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-help">
-                      <Icon className={`h-4 w-4 ${meta.color}`} />
-                      <div>
-                        <span className="text-xs font-semibold">{meta.label}</span>
-                        <Info className="h-3 w-3 inline ml-1 text-muted-foreground" />
-                      </div>
+                    <div>
+                      <RoleFilterPill
+                        active={filterRole === role}
+                        onClick={() =>
+                          setFilterRole((prev) => (prev === role ? 'all' : role))
+                        }
+                        label={meta.label}
+                        count={roleCounts[role]}
+                        colorClass={meta.color}
+                        Icon={meta.icon}
+                        activeClass={meta.badgeClass.replace('text-', 'ring-').split(' ')[0] + ' border-current'}
+                      />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-xs">
@@ -611,15 +621,28 @@ export function UsersAndAccessManager() {
                     </ul>
                   </TooltipContent>
                 </Tooltip>
-              </TooltipProvider>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </TooltipProvider>
+        {roleCounts.none > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setFilterRole((prev) => (prev === 'none' ? 'all' : 'none'))
+            }
+            className={`text-xs underline-offset-2 hover:underline ${
+              filterRole === 'none' ? 'text-amber-700 font-semibold' : 'text-muted-foreground'
+            }`}
+          >
+            Mostrar apenas sem acesso ({roleCounts.none})
+          </button>
+        )}
       </div>
 
-      {/* Lista de usuários */}
-      <ScrollArea className="h-[400px] pr-2">
-        <div className="space-y-2">
+      {/* LISTA DE USUÁRIOS — usa toda a altura restante ───────────────── */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1">
+        <div className="space-y-2 pb-2">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -658,7 +681,7 @@ export function UsersAndAccessManager() {
             ))
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       <DoubleConfirmDialog
         open={deleteDialogOpen}

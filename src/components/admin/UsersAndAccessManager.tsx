@@ -401,6 +401,20 @@ export function UsersAndAccessManager() {
     });
   }, [users, searchTerm, filterRole]);
 
+  // Contagem por papel para os indicadores clicáveis
+  const roleCounts = useMemo(() => {
+    const counts: Record<DisplayRole, number> = {
+      admin: 0, gestor: 0, corretor: 0, administrativo: 0,
+    };
+    let none = 0;
+    for (const u of users) {
+      const r = toDisplayRole(u.role);
+      if (r) counts[r]++;
+      else none++;
+    }
+    return { ...counts, none };
+  }, [users]);
+
   const isLoading = isLoadingUsers || isLoadingBoards;
 
   const toggleUserExpanded = (userId: string) => {

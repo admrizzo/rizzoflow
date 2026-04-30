@@ -3209,6 +3209,7 @@ export default function PropostaPublica() {
             data.documentos,
             (mutator) => update(p => ({ ...p, documentos: mutator(p.documentos) })),
             'principal',
+            isPj ? 'empresa' : 'locatario_principal',
           )}
         </div>
 
@@ -3227,6 +3228,7 @@ export default function PropostaPublica() {
               ensureConjugeDocs(data.conjuge.documentos),
               (mutator) => update(p => ({ ...p, conjuge: { ...p.conjuge, documentos: mutator(ensureConjugeDocs(p.conjuge.documentos)) } })),
               'principal-conjuge',
+              'conjuge',
             )}
           </div>
         )}
@@ -3257,6 +3259,7 @@ export default function PropostaPublica() {
                   return { ...p, locatarios_adicionais: arr };
                 }),
                 `loc-${idx}`,
+                'locatario_adicional',
               )}
               {locatarioNeedsConjuge(loc) && (
                 <div className="mt-4 rounded-xl border bg-background p-3 space-y-3">
@@ -3273,6 +3276,7 @@ export default function PropostaPublica() {
                       return { ...p, locatarios_adicionais: arr };
                     }),
                     `loc-${idx}-conjuge`,
+                    'conjuge',
                   )}
                 </div>
               )}

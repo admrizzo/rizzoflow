@@ -166,3 +166,10 @@ export function describeItem(item: CorrectionItem): string {
     || (item.party_kind ? PARTY_KIND_LABELS[item.party_kind] : null);
   return partyLabel ? `${stepLabel} → ${fieldLabel} (${partyLabel})` : `${stepLabel} → ${fieldLabel}`;
 }
+
+// Builds a stable DOM anchor key for a correction item, used for scrollIntoView
+// e highlight visual no formulário público.
+export function correctionAnchorKey(item: CorrectionItem): string {
+  const party = item.party_id || item.party_kind || 'global';
+  return `corr-${item.step}-${item.field}-${party}`;
+}

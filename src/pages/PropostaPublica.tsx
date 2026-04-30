@@ -51,7 +51,9 @@ import {
   describeItem as describeCorrectionItem,
   isStructuredItem,
   legacySectionToStep,
+  correctionAnchorKey,
   type CorrectionItem,
+  type CorrectionPartyKind,
 } from '@/lib/correctionCatalog';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
@@ -94,6 +96,78 @@ const SPOUSE_DOC_KEYS = new Set<string>(['documento_conjuge', 'renda_conjuge']);
 
 function isSpouseDocCategory(category: string): boolean {
   return SPOUSE_DOC_KEYS.has(category);
+}
+
+// Verifica se um item de correção foi atendido pelo cliente.
+// - replace_document: pelo menos um arquivo NÃO persistido na categoria/pessoa.
+// - edit_field: valor atual ≠ valor anterior (ou anterior vazio e atual preenchido).
+function isCorrectionItemFulfilled(
+  item: CorrectionItem,
+  current: ProposalFormData,
+  previous?: ProposalFormData,
+): boolean {
+  if (item.action === 'replace_document') {
+    const cats = collectDocCategoriesFor(item, current);
+    return cats.some((c) => c.files.some((f) => !f.persisted));
+  }
+  // edit_field
+  const cur = (readPersonalField(item, current) ?? '').toString().trim();
+  const prev = (readPersonalField(item, previous) ?? '').toString().trim();
+  if (prev.length === 0) return cur.length > 0;
+  return cur.length > 0 && cur !== prev;
+}
+
+function collectDocCategoriesFor(
+  item: CorrectionItem,
+  d: ProposalFormData,
+): Array<{ key: string; files: UploadedFile[] }> {
+  const out: Array<{ key: string; files: UploadedFile[] }> = [];
+  const pushFrom = (cats?: { key: string; files: UploadedFile[] }[]) => {
+    if (!cats) return;
+    cats.forEach((c) => { if (c.key === item.field) out.push(c); });
+  };
+  switch (item.party_kind) {
+    case 'locatario_principal':
+    case 'empresa':
+      pushFrom(d.documentos as any);
+      break;
+    case 'conjuge':
+      pushFrom(d.conjuge?.documentos as any);
+      (d.locatarios_adicionais || []).forEach((l) => pushFrom(l.conjuge?.documentos as any));
+      break;
+    case 'locatario_adicional':
+      (d.locatarios_adicionais || []).forEach((l) => pushFrom(l.documentos as any));
+      break;
+    default:
+      // Fallback: procura em todos os blocos PF.
+      pushFrom(d.documentos as any);
+      pushFrom(d.conjuge?.documentos as any);
+      (d.locatarios_adicionais || []).forEach((l) => {
+        pushFrom(l.documentos as any);
+        pushFrom(l.conjuge?.documentos as any);
+      });
+  }
+  return out;
+}
+
+function readPersonalField(
+  item: CorrectionItem,
+  d?: ProposalFormData,
+): string | undefined {
+  if (!d) return undefined;
+  const map: Record<string, keyof DadosPessoais> = {
+    nome_completo: 'nome',
+    cpf: 'cpf',
+    rg: 'documento_identidade' as any,
+    whatsapp: 'whatsapp',
+    email: 'email',
+    profissao: 'profissao',
+  };
+  const key = map[item.field];
+  if (!key) return undefined;
+  if (item.party_kind === 'conjuge') return (d.conjuge as any)?.[key];
+  if (item.party_kind === 'locatario_adicional') return (d.locatarios_adicionais?.[0] as any)?.[key];
+  return (d.dados_pessoais as any)?.[key];
 }
 
 // Roles válidas em proposal_parties — devem casar com o que o card/visualização espera.
@@ -1798,6 +1872,32 @@ export default function PropostaPublica() {
   // ── Correção solicitada pelo time interno ──
   const { data: pendingCorrection } = usePublicCorrectionRequest(proposalLink?.id);
 
+  // ── Helpers de correção direcionada ───────────────────────────────────────
+  // Indexa CorrectionItem por (field, party_kind) para destacar campos/docs
+  // pedidos pelo time interno e validar somente o que foi solicitado.
+  const correctionItems = useMemo<CorrectionItem[]>(() => {
+    const list = (pendingCorrection?.requested_sections || []) as any[];
+    return list.filter(isStructuredItem) as CorrectionItem[];
+  }, [pendingCorrection]);
+  const isCorrectionMode = !!pendingCorrection && correctionItems.length > 0;
+
+  // Localiza um item de correção por step+field+(party_kind opcional).
+  const findCorrection = useCallback(
+    (
+      step: CorrectionItem['step'],
+      field: string,
+      partyKind?: CorrectionPartyKind | null,
+    ): CorrectionItem | undefined => {
+      return correctionItems.find(
+        (it) =>
+          it.step === step &&
+          it.field === field &&
+          (partyKind == null || it.party_kind == null || it.party_kind === partyKind),
+      );
+    },
+    [correctionItems],
+  );
+
   // ── Restore draft data ──
   useEffect(() => {
     if (restoredData) {
@@ -1867,6 +1967,40 @@ export default function PropostaPublica() {
       }
     }
   }, [restoredData, restoredStep]);
+
+  // ── LGPD: em modo correção, reaproveita o aceite original ─────────────────
+  // Se já existe correção pendente, significa que a proposta JÁ foi enviada
+  // antes (e portanto o aceite LGPD já foi registrado). Não obrigamos o
+  // cliente a marcar de novo — preservamos o aceite original.
+  useEffect(() => {
+    if (isCorrectionMode && !termsAccepted) {
+      setTermsAccepted(true);
+    }
+  }, [isCorrectionMode, termsAccepted]);
+
+  // Snapshot dos dados restaurados (= "valor anterior" antes da correção).
+  const previousData = restoredData as ProposalFormData | undefined;
+
+  // Em modo correção, leva direto à etapa do primeiro item solicitado para
+  // o cliente não precisar percorrer a proposta inteira.
+  const correctionAutoNavigatedRef = useState({ done: false })[0];
+  useEffect(() => {
+    if (
+      isCorrectionMode &&
+      !correctionAutoNavigatedRef.done &&
+      correctionItems.length > 0
+    ) {
+      const first = correctionItems[0];
+      const target = STEP_TO_PUBLIC_STEP[first.step] ?? 7;
+      setStep(target);
+      setVisited((prev) => {
+        const next = new Set(prev);
+        for (let i = 0; i <= target; i++) next.add(i);
+        return next;
+      });
+      correctionAutoNavigatedRef.done = true;
+    }
+  }, [isCorrectionMode, correctionItems, correctionAutoNavigatedRef]);
 
   // ── Progress calculation ──
   const skipConjuge = !needsConjuge(data);
@@ -1950,13 +2084,28 @@ export default function PropostaPublica() {
   async function handleSubmit() {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    const pending = getPendingSteps(data);
-    const critical = pending.filter(p => p.critical);
-    if (critical.length > 0) {
-      toast.error('Pendências críticas', { description: critical[0].errors[0] });
-      setStep(critical[0].step);
-      setIsSubmitting(false);
-      return;
+    // Em modo correção, validamos APENAS os itens solicitados pelo time;
+    // não obrigamos o cliente a refazer toda a proposta.
+    if (isCorrectionMode) {
+      const missing = correctionItems.find((it) => !isCorrectionItemFulfilled(it, data, previousData));
+      if (missing) {
+        const targetStep = STEP_TO_PUBLIC_STEP[missing.step] ?? 7;
+        toast.error('Falta corrigir um item solicitado', {
+          description: describeCorrectionItem(missing),
+        });
+        setStep(targetStep);
+        setIsSubmitting(false);
+        return;
+      }
+    } else {
+      const pending = getPendingSteps(data);
+      const critical = pending.filter(p => p.critical);
+      if (critical.length > 0) {
+        toast.error('Pendências críticas', { description: critical[0].errors[0] });
+        setStep(critical[0].step);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const renda = parseCurrency(data.perfil_financeiro.renda_mensal);
@@ -2482,22 +2631,34 @@ export default function PropostaPublica() {
           <div className="space-y-4">
             <div>
               <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
-              <Input value={data.dados_pessoais.nome} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, nome: e.target.value } }))} placeholder="Nome completo" className="mt-1.5" />
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'nome_completo', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.nome}
+                currentValue={data.dados_pessoais.nome}
+              >
+                <Input value={data.dados_pessoais.nome} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, nome: e.target.value } }))} placeholder="Nome completo" className="mt-1.5" />
+              </FieldCorrectionWrap>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></Label>
-                {isCnpj ? (
-                  <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
-                ) : (
-                  <MaskedInput
-                    kind="cpf"
-                    value={data.dados_pessoais.cpf}
-                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
-                    placeholder="000.000.000-00"
-                    className="mt-1.5"
-                  />
-                )}
+                <FieldCorrectionWrap
+                  correction={findCorrection('personal', 'cpf', 'locatario_principal')}
+                  previousValue={previousData?.dados_pessoais?.cpf}
+                  currentValue={data.dados_pessoais.cpf}
+                >
+                  {isCnpj ? (
+                    <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
+                  ) : (
+                    <MaskedInput
+                      kind="cpf"
+                      value={data.dados_pessoais.cpf}
+                      onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
+                      placeholder="000.000.000-00"
+                      className="mt-1.5"
+                    />
+                  )}
+                </FieldCorrectionWrap>
               </div>
               <ProfessionInput
                 value={data.dados_pessoais.profissao}
@@ -2513,22 +2674,34 @@ export default function PropostaPublica() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-              <div className="flex gap-2 mt-1.5">
-                <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
-                  🇧🇷 +55
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'whatsapp', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.whatsapp}
+                currentValue={data.dados_pessoais.whatsapp}
+              >
+                <div className="flex gap-2 mt-1.5">
+                  <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
+                    🇧🇷 +55
+                  </div>
+                  <MaskedInput
+                    kind="phone"
+                    value={data.dados_pessoais.whatsapp}
+                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
+                    placeholder="(00) 00000-0000"
+                    className="flex-1"
+                  />
                 </div>
-                <MaskedInput
-                  kind="phone"
-                  value={data.dados_pessoais.whatsapp}
-                  onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
-                  placeholder="(00) 00000-0000"
-                  className="flex-1"
-                />
-              </div>
+              </FieldCorrectionWrap>
             </div>
             <div>
               <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
-              <Input type="email" value={data.dados_pessoais.email} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, email: e.target.value } }))} placeholder="seu@email.com" className="mt-1.5" />
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'email', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.email}
+                currentValue={data.dados_pessoais.email}
+              >
+                <Input type="email" value={data.dados_pessoais.email} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, email: e.target.value } }))} placeholder="seu@email.com" className="mt-1.5" />
+              </FieldCorrectionWrap>
             </div>
           </div>
         </FormSection>
@@ -3001,21 +3174,54 @@ export default function PropostaPublica() {
       categorias: DocumentCategory[],
       onUpdate: (mutator: (cats: DocumentCategory[]) => DocumentCategory[]) => void,
       keyPrefix: string,
+      partyKind?: CorrectionPartyKind | null,
     ) => (
       <div className="space-y-3">
         {categorias.map((cat, catIdx) => {
           const done = cat.files.length > 0;
+          // Documento solicitado para correção neste bloco?
+          const corrItem = findCorrection('documents', cat.key, partyKind);
+          // Considera "anterior" qualquer arquivo já persistido antes da correção.
+          const hasNewFile = cat.files.some((f) => !f.persisted);
+          const correctionPending = !!corrItem && !hasNewFile;
+          const correctionAttached = !!corrItem && hasNewFile;
+          const anchorKey = corrItem ? correctionAnchorKey(corrItem) : undefined;
           return (
-            <div key={`${keyPrefix}-${cat.key}-${catIdx}`} className={cn('bg-white rounded-2xl border p-4 space-y-3', done && 'border-green-200')}>
+            <div
+              key={`${keyPrefix}-${cat.key}-${catIdx}`}
+              {...(anchorKey ? { 'data-correction-anchor': anchorKey, id: anchorKey } : {})}
+              className={cn(
+                'bg-white rounded-2xl border p-4 space-y-3 scroll-mt-24',
+                done && !corrItem && 'border-green-200',
+                correctionPending && 'border-2 border-orange-400 bg-orange-50/40 ring-2 ring-orange-200',
+                correctionAttached && 'border-2 border-blue-300 bg-blue-50/30',
+              )}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
-                    <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
-                      done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                      {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
-                    </span>
+                    {correctionPending ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-200 text-orange-900">
+                        Correção pendente
+                      </span>
+                    ) : correctionAttached ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-blue-200 text-blue-900">
+                        Correção anexada
+                      </span>
+                    ) : (
+                      <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                        done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+                        {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                      </span>
+                    )}
                   </div>
+                  {correctionPending && (
+                    <p className="text-xs text-orange-800 mt-1.5 font-medium">
+                      Este documento precisa ser reenviado conforme solicitação da equipe.
+                      {corrItem?.note ? ` — ${corrItem.note}` : ''}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
                     <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
                   </p>
@@ -3027,11 +3233,15 @@ export default function PropostaPublica() {
                     <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
                       {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <span className="truncate flex-1 text-foreground">{file.name}</span>
-                      {file.persisted && (
+                      {file.persisted && corrItem ? (
+                        <span className="text-[10px] font-semibold text-orange-800 bg-orange-100 rounded-full px-2 py-0.5 shrink-0">
+                          Documento anterior
+                        </span>
+                      ) : file.persisted ? (
                         <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 shrink-0">
                           já enviado
                         </span>
-                      )}
+                      ) : null}
                       <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
                       {!file.persisted && (
                         <button className="text-red-400 hover:text-red-600 p-1"
@@ -3047,8 +3257,14 @@ export default function PropostaPublica() {
                   ))}
                 </div>
               )}
-              <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
-                <Upload className="h-4 w-4" /> Adicionar arquivo
+              <label className={cn(
+                'flex items-center justify-center gap-2 cursor-pointer text-sm font-medium border-2 border-dashed rounded-xl py-3 transition-colors',
+                correctionPending
+                  ? 'text-orange-800 border-orange-400 hover:bg-orange-100/40 bg-orange-50/60'
+                  : 'text-accent border-accent/30 hover:bg-accent/5',
+              )}>
+                <Upload className="h-4 w-4" />
+                {correctionPending ? 'Reenviar documento' : 'Adicionar arquivo'}
                 <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
                   const fileList = e.target.files;
                   if (!fileList) return;
@@ -3104,6 +3320,7 @@ export default function PropostaPublica() {
             data.documentos,
             (mutator) => update(p => ({ ...p, documentos: mutator(p.documentos) })),
             'principal',
+            isPj ? 'empresa' : 'locatario_principal',
           )}
         </div>
 
@@ -3122,6 +3339,7 @@ export default function PropostaPublica() {
               ensureConjugeDocs(data.conjuge.documentos),
               (mutator) => update(p => ({ ...p, conjuge: { ...p.conjuge, documentos: mutator(ensureConjugeDocs(p.conjuge.documentos)) } })),
               'principal-conjuge',
+              'conjuge',
             )}
           </div>
         )}
@@ -3152,6 +3370,7 @@ export default function PropostaPublica() {
                   return { ...p, locatarios_adicionais: arr };
                 }),
                 `loc-${idx}`,
+                'locatario_adicional',
               )}
               {locatarioNeedsConjuge(loc) && (
                 <div className="mt-4 rounded-xl border bg-background p-3 space-y-3">
@@ -3168,6 +3387,7 @@ export default function PropostaPublica() {
                       return { ...p, locatarios_adicionais: arr };
                     }),
                     `loc-${idx}-conjuge`,
+                    'conjuge',
                   )}
                 </div>
               )}
@@ -3990,7 +4210,18 @@ export default function PropostaPublica() {
                             onClick={() => {
                               setStep(targetStep);
                               setVisited((prev) => new Set(prev).add(targetStep));
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              const anchor = correctionAnchorKey(item);
+                              setTimeout(() => {
+                                const el = document.getElementById(anchor)
+                                  || document.querySelector(`[data-correction-anchor="${anchor}"]`);
+                                if (el && 'scrollIntoView' in el) {
+                                  (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  (el as HTMLElement).classList.add('ring-4', 'ring-orange-400');
+                                  setTimeout(() => (el as HTMLElement).classList.remove('ring-4', 'ring-orange-400'), 1600);
+                                } else {
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                              }, 120);
                             }}
                             className="text-left text-xs px-3 py-2 rounded-md bg-white border border-orange-200 text-orange-900 hover:bg-orange-100 transition-colors"
                           >
@@ -4011,19 +4242,34 @@ export default function PropostaPublica() {
                 <p className="text-xs text-orange-700 mt-3">
                   Após corrigir os itens acima, vá até a etapa <strong>Revisão</strong> e clique em <strong>Enviar Registro</strong> para reenviar.
                 </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 border-orange-400 text-orange-900 hover:bg-orange-100"
-                  onClick={() => {
-                    setStep(7);
-                    setVisited((prev) => new Set(prev).add(7));
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  Ir para Revisão e enviar
-                </Button>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      // Atalho: envia direto a correção a partir de onde o cliente está,
+                      // sem precisar percorrer a proposta nem reaceitar LGPD.
+                      handleSubmit();
+                    }}
+                  >
+                    {isSubmitting ? 'Enviando…' : 'Enviar correção'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-orange-400 text-orange-900 hover:bg-orange-100"
+                    onClick={() => {
+                      setStep(7);
+                      setVisited((prev) => new Set(prev).add(7));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Ir para Revisão
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -4043,21 +4289,23 @@ export default function PropostaPublica() {
             </Button>
           ) : (
             <Button onClick={() => {
-              const pending = getPendingSteps(data);
-              const critical = pending.filter(p => p.critical);
               if (!termsAccepted) {
                 toast.error('Aceite os termos', { description: 'Você precisa aceitar os termos para enviar o registro.' });
                 return;
               }
-              if (critical.length > 0) {
-                toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
-                setStep(critical[0].step);
-                setVisited(prev => new Set(prev).add(critical[0].step));
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
+              if (!isCorrectionMode) {
+                const pending = getPendingSteps(data);
+                const critical = pending.filter(p => p.critical);
+                if (critical.length > 0) {
+                  toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
+                  setStep(critical[0].step);
+                  setVisited(prev => new Set(prev).add(critical[0].step));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  return;
+                }
               }
               handleSubmit();
-            }} disabled={isSubmitting || !termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
+            }} disabled={isSubmitting || !termsAccepted || (!isCorrectionMode && getPendingSteps(data).some(p => p.critical))} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
               {isSubmitting ? (
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
               ) : (
@@ -4072,29 +4320,98 @@ export default function PropostaPublica() {
 }
 
 // ── Reusable Person Fields (clean version) ──
-function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: (d: DadosPessoais) => void }) {
+function PersonFieldsClean({
+  data,
+  onChange,
+  corrections,
+  previous,
+}: {
+  data: DadosPessoais;
+  onChange: (d: DadosPessoais) => void;
+  corrections?: Partial<Record<keyof DadosPessoais, CorrectionItem>>;
+  previous?: Partial<DadosPessoais>;
+}) {
   const set = (key: keyof DadosPessoais, val: string) => onChange({ ...data, [key]: val });
+  const wrap = (
+    fieldKey: keyof DadosPessoais,
+    label: React.ReactNode,
+    input: React.ReactNode,
+  ) => {
+    const corr = corrections?.[fieldKey];
+    if (!corr) {
+      return (
+        <>
+          <Label className="text-sm font-medium">{label}</Label>
+          {input}
+        </>
+      );
+    }
+    const anchor = correctionAnchorKey(corr);
+    const prevVal = previous?.[fieldKey];
+    const changed = prevVal != null && String(prevVal).trim() !== String(data[fieldKey] ?? '').trim() && String(data[fieldKey] ?? '').trim().length > 0;
+    return (
+      <div
+        id={anchor}
+        data-correction-anchor={anchor}
+        className={cn(
+          'rounded-lg p-3 -m-1 scroll-mt-24 border-2',
+          changed ? 'border-blue-300 bg-blue-50/30' : 'border-orange-400 bg-orange-50/40',
+        )}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <Label className="text-sm font-medium">{label}</Label>
+          <span className={cn(
+            'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+            changed ? 'bg-blue-200 text-blue-900' : 'bg-orange-200 text-orange-900',
+          )}>
+            {changed ? 'Correção anexada' : 'Correção pendente'}
+          </span>
+        </div>
+        {input}
+        {prevVal ? (
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            Valor informado anteriormente: <span className="font-medium">{String(prevVal)}</span>
+          </p>
+        ) : null}
+        {corr.note ? (
+          <p className="text-[11px] text-orange-800 mt-1">{corr.note}</p>
+        ) : null}
+      </div>
+    );
+  };
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
-        <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" className="mt-1.5" />
+        {wrap(
+          'nome',
+          <>Nome completo <span className="text-red-500">*</span></>,
+          <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" className="mt-1.5" />,
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
-          <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />
+          {wrap(
+            'cpf',
+            <>CPF <span className="text-red-500">*</span></>,
+            <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />,
+          )}
         </div>
         <ProfessionInput value={data.profissao} onChange={v => set('profissao', v)} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-          <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />
+          {wrap(
+            'whatsapp',
+            <>WhatsApp <span className="text-red-500">*</span></>,
+            <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />,
+          )}
         </div>
         <div>
-          <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
-          <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5" />
+          {wrap(
+            'email',
+            <>E-mail <span className="text-red-500">*</span></>,
+            <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5" />,
+          )}
         </div>
       </div>
     </div>
@@ -4427,6 +4744,55 @@ function ReviewRow({ label, value, warn }: { label: string; value: string; warn?
       <span className={cn('font-medium text-right', isNotInformed && 'text-red-500', warn && 'text-red-500')}>
         {value}
       </span>
+    </div>
+  );
+}
+
+// Wrapper visual para campos solicitados em correção direcionada.
+// Mostra borda laranja ("Correção pendente") até o valor mudar; depois
+// fica azul ("Correção anexada"). Exibe o valor anterior abaixo.
+function FieldCorrectionWrap({
+  correction,
+  previousValue,
+  currentValue,
+  children,
+}: {
+  correction?: CorrectionItem;
+  previousValue?: string | null;
+  currentValue: string;
+  children: React.ReactNode;
+}) {
+  if (!correction) return <>{children}</>;
+  const anchor = correctionAnchorKey(correction);
+  const prev = (previousValue ?? '').trim();
+  const cur = (currentValue ?? '').trim();
+  const changed = prev.length === 0 ? cur.length > 0 : cur.length > 0 && cur !== prev;
+  return (
+    <div
+      id={anchor}
+      data-correction-anchor={anchor}
+      className={cn(
+        'rounded-lg p-3 -m-1 mt-0 scroll-mt-24 border-2',
+        changed ? 'border-blue-300 bg-blue-50/30' : 'border-orange-400 bg-orange-50/40',
+      )}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className={cn(
+          'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+          changed ? 'bg-blue-200 text-blue-900' : 'bg-orange-200 text-orange-900',
+        )}>
+          {changed ? 'Correção anexada' : 'Correção pendente'}
+        </span>
+      </div>
+      {children}
+      {prev ? (
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Valor informado anteriormente: <span className="font-medium">{prev}</span>
+        </p>
+      ) : null}
+      {correction.note ? (
+        <p className="text-[11px] text-orange-800 mt-1">{correction.note}</p>
+      ) : null}
     </div>
   );
 }

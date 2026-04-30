@@ -4166,12 +4166,13 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
             <>
               <ReviewRow label="Fiadores cadastrados" value={String(data.garantia.fiadores.length)} />
               {(() => {
-                const fr = data.garantia.fiadores.find(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
-                const fi = data.garantia.fiadores.find(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
+                const req = getFiadorRequirementStates(data.garantia.fiadores);
+                const fr = req.renda.fiador;
+                const fi = req.imovel.fiador;
                 return (
                   <>
-                    <ReviewRow label="Fiador com renda" value={fr ? `✅ ${fr.nome}` : '⚠️ Pendente'} />
-                    <ReviewRow label="Fiador com imóvel" value={fi ? `✅ ${fi.nome}` : '⚠️ Pendente'} />
+                    <ReviewRow label="Fiador com renda" value={req.renda.state === 'cumprido' ? `✅ ${fr?.nome}` : `⚠️ ${req.renda.state === 'em_preenchimento' ? `Em preenchimento: ${req.renda.missing[0] || 'pendências'}` : 'Pendente'}`} />
+                    <ReviewRow label="Fiador com imóvel" value={req.imovel.state === 'cumprido' ? `✅ ${fi?.nome}` : `⚠️ ${req.imovel.state === 'em_preenchimento' ? `Em preenchimento: ${req.imovel.missing[0] || 'pendências'}` : 'Pendente'}`} />
                   </>
                 );
               })()}

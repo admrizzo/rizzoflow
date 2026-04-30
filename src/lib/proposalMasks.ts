@@ -107,3 +107,59 @@ export function detectIncomeTypeOption(value: string | null | undefined): Income
   if (v.includes('aluguel') || v.includes('investiment')) return 'Renda de aluguel/investimentos';
   return 'Outro';
 }
+
+// ───────── E-mail ─────────
+export function isValidEmail(value: string): boolean {
+  const v = (value || '').trim();
+  if (!v) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+// ───────── Validade mínima de fiador ─────────
+/**
+ * Considera um fiador "válido" para fins de cálculo dos requisitos
+ * (fiador com renda / fiador com imóvel) na etapa Garantia.
+ *
+ * Mínimos exigidos:
+ * - tipo_fiador definido ('renda' | 'imovel' | 'ambos')
+ * - nome completo preenchido
+ * - CPF válido
+ * - telefone/WhatsApp válido
+ * - e-mail válido
+ * - se incluir renda, renda_mensal preenchida
+ *
+ * Documentos, endereço e cônjuge continuam sendo exigidos pela
+ * validação final do envio — esta função só governa os badges/chips
+ * e o gating dos botões "Adicionar fiador com renda/imóvel".
+ */
+export function isFiadorMinValid(f: {
+  tipo_fiador?: string;
+  nome?: string;
+  cpf?: string;
+  whatsapp?: string;
+  email?: string;
+  renda_mensal?: string;
+}): boolean {
+  const tipo = f?.tipo_fiador;
+  if (tipo !== 'renda' && tipo !== 'imovel' && tipo !== 'ambos') return false;
+  if (!(f?.nome || '').trim()) return false;
+  if (!isValidCPF(f?.cpf || '')) return false;
+  if (!isValidPhone(f?.whatsapp || '')) return false;
+  if (!isValidEmail(f?.email || '')) return false;
+  if ((tipo === 'renda' || tipo === 'ambos') && !(f?.renda_mensal || '').trim()) return false;
+  return true;
+}
+
+/** Existe um fiador iniciado (tipo selecionado) mas ainda incompleto para o requisito dado. */
+export function hasFiadorInProgress(
+  fiadores: Array<{ tipo_fiador?: string } & Parameters<typeof isFiadorMinValid>[0]>,
+  requisito: 'renda' | 'imovel',
+): boolean {
+  return fiadores.some(f => {
+    const tipo = f?.tipo_fiador;
+    const matches = requisito === 'renda'
+      ? (tipo === 'renda' || tipo === 'ambos')
+      : (tipo === 'imovel' || tipo === 'ambos');
+    return matches && !isFiadorMinValid(f);
+  });
+}

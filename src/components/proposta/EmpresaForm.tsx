@@ -1,10 +1,11 @@
-import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Building, DollarSign, MapPin } from 'lucide-react';
 import type { EmpresaData } from '@/pages/PropostaLocacao';
 import { REGIME_TRIBUTARIO_OPTIONS } from '@/pages/PropostaLocacao';
+import { AddressFields } from '@/components/proposta/AddressFields';
 
 interface EmpresaFormProps {
   data: EmpresaData;
@@ -85,36 +86,18 @@ export function EmpresaForm({ data, onChange }: EmpresaFormProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium">CEP</Label>
-              <Input value={data.cep} onChange={e => set('cep', e.target.value)} placeholder="00000-000" className="mt-1.5" />
-            </div>
-            <div className="sm:col-span-2">
-              <Label className="text-sm font-medium">Logradouro</Label>
-              <Input value={data.logradouro} onChange={e => set('logradouro', e.target.value)} placeholder="Rua, Avenida..." className="mt-1.5" />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Número</Label>
-              <Input value={data.numero} onChange={e => set('numero', e.target.value)} placeholder="Nº" className="mt-1.5" />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Complemento</Label>
-              <Input value={data.complemento} onChange={e => set('complemento', e.target.value)} placeholder="Sala, andar..." className="mt-1.5" />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Bairro</Label>
-              <Input value={data.bairro} onChange={e => set('bairro', e.target.value)} placeholder="Bairro" className="mt-1.5" />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Cidade</Label>
-              <Input value={data.cidade} onChange={e => set('cidade', e.target.value)} placeholder="Cidade" className="mt-1.5" />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">UF</Label>
-              <Input value={data.uf} onChange={e => set('uf', e.target.value.toUpperCase().slice(0, 2))} placeholder="UF" className="mt-1.5" maxLength={2} />
-            </div>
-          </div>
+          <AddressFields
+            value={{
+              cep: data.cep,
+              logradouro: data.logradouro,
+              numero: data.numero,
+              complemento: data.complemento,
+              bairro: data.bairro,
+              cidade: data.cidade,
+              uf: data.uf,
+            }}
+            onChange={(patch) => onChange({ ...data, ...patch })}
+          />
         </div>
       </div>
 

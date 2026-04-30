@@ -16,6 +16,7 @@ import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
+import { AddressFields } from '@/components/proposta/AddressFields';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -425,40 +426,19 @@ export function FiadorSection({
                       <MapPin className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                       <h5 className="font-bold text-foreground text-sm">Endereço do fiador</h5>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">CEP <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.cep} onChange={e => onUpdateFiador(idx, { cep: e.target.value })} placeholder="00000-000" className="mt-1.5 h-11" />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Logradouro <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.logradouro} onChange={e => onUpdateFiador(idx, { logradouro: e.target.value })} placeholder="Rua, Av..." className="mt-1.5 h-11" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Número <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.numero} onChange={e => onUpdateFiador(idx, { numero: e.target.value })} placeholder="Nº" className="mt-1.5 h-11" />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Complemento</Label>
-                        <Input value={fiador.complemento} onChange={e => onUpdateFiador(idx, { complemento: e.target.value })} placeholder="Apto..." className="mt-1.5 h-11" />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Bairro <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.bairro} onChange={e => onUpdateFiador(idx, { bairro: e.target.value })} placeholder="Bairro" className="mt-1.5 h-11" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Cidade <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.cidade} onChange={e => onUpdateFiador(idx, { cidade: e.target.value })} placeholder="Cidade" className="mt-1.5 h-11" />
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">UF <span className="text-destructive">*</span></Label>
-                        <Input value={fiador.uf} onChange={e => onUpdateFiador(idx, { uf: e.target.value })} placeholder="UF" className="mt-1.5 h-11" maxLength={2} />
-                      </div>
-                    </div>
+                    <AddressFields
+                      markRequired
+                      value={{
+                        cep: fiador.cep,
+                        logradouro: fiador.logradouro,
+                        numero: fiador.numero,
+                        complemento: fiador.complemento,
+                        bairro: fiador.bairro,
+                        cidade: fiador.cidade,
+                        uf: fiador.uf,
+                      }}
+                      onChange={(patch) => onUpdateFiador(idx, patch)}
+                    />
                   </div>
 
                   {/* Documentos por fiador */}

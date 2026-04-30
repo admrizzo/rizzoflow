@@ -2043,6 +2043,14 @@ export default function PropostaPublica() {
     data.perfil_financeiro.renda_mensal
   );
 
+  const percentualComprometimentoTotal = calcPercentualComprometimentoTotal(
+    data.imovel.valor_aluguel,
+    property?.condominio ?? null,
+    property?.iptu ?? null,
+    property?.seguro_incendio ?? null,
+    data.perfil_financeiro.renda_mensal,
+  );
+
   const stepErrors = validateStep(step, data);
   const isStepValid = stepErrors.length === 0;
 

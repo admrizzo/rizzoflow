@@ -2149,7 +2149,11 @@ export default function PropostaPublica() {
           if (targetCardId) {
             const onlyDocs =
               (pendingCorrection.requested_sections || []).length > 0 &&
-              (pendingCorrection.requested_sections || []).every((s: string) => s === 'documentos');
+              (pendingCorrection.requested_sections || []).every((s: any) =>
+                typeof s === 'string'
+                  ? s === 'documentos'
+                  : isStructuredItem(s) && s.step === 'documents',
+              );
             const title = onlyDocs
               ? '📎 Complementação de documentos recebida'
               : '✅ Cliente respondeu à solicitação de correção';

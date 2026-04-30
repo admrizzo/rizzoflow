@@ -585,8 +585,8 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
         const req = getFiadorRequirementStates(fs);
-        if (!req.hasIncomeGuarantor) errors.push(`Fiador com renda pendente: ${req.renda.missing[0] || 'cadastro e documentos obrigatórios'}.`);
-        if (!req.hasPropertyGuarantor) errors.push(`Fiador com imóvel pendente: ${req.imovel.missing[0] || 'cadastro e documentos obrigatórios'}.`);
+        if (!req.hasIncomeGuarantor) errors.push(`Fiador com renda pendente: ${req.renda.missing.join(', ') || 'cadastro e documentos obrigatórios'}.`);
+        if (!req.hasPropertyGuarantor) errors.push(`Fiador com imóvel pendente: ${req.imovel.missing.join(', ') || 'cadastro e documentos obrigatórios'}.`);
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
           if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);

@@ -92,10 +92,16 @@ function PartyCard({
         <Row label={party.role === 'company' ? 'Faturamento mensal' : 'Renda'} value={formatCurrency(party.income)} />
         {party.role === 'primary_tenant' && party.metadata?.comprometimento_percent != null && (
           <Row
-            label="Comprometimento de renda"
-            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}%${
-              Number(party.metadata.comprometimento_percent) > 30 ? ' (acima de 30%)' : ''
-            }`}
+            label="Comprometimento (aluguel)"
+            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}% — ${classifyLabel(Number(party.metadata.comprometimento_percent))}`}
+          />
+        )}
+        {party.role === 'primary_tenant' &&
+          party.metadata?.comprometimento_percent_total != null &&
+          Math.abs(Number(party.metadata.comprometimento_percent_total) - Number(party.metadata.comprometimento_percent ?? 0)) > 0.05 && (
+          <Row
+            label="Comprometimento (custo total)"
+            value={`${Number(party.metadata.comprometimento_percent_total).toFixed(1)}% — ${classifyLabel(Number(party.metadata.comprometimento_percent_total))}`}
           />
         )}
         <Row label="Endereço" value={party.address} />

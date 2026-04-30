@@ -55,7 +55,10 @@ interface CardNotesSidebarProps {
 
 export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSidebarProps>(
   ({ cardId, showDetails = true, onToggleDetails }, ref) => {
-  const { user, isEditor } = useAuth();
+  const { user, isEditor, roles } = useAuth();
+  // Corretor (sem papel operacional) pode comentar com tipos restritos.
+  const isCorretorOnly = !isEditor && roles.includes('corretor');
+  const canComment = isEditor || isCorretorOnly;
   const { profiles } = useProfiles();
   const { cardMentions, createMentions, markMentionRead } = useCommentMentions(cardId);
   const { byComment, uploadAttachments, deleteAttachment } = useCommentAttachments(cardId);
@@ -326,43 +329,69 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       </div>
 
       {/* Add new note */}
-      {isEditor && (
+      {canComment && (
         <div className="p-3 border-b bg-background">
           {/* Quick action buttons */}
           <div className="flex gap-1 mb-2">
+            {isEditor && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => setNewNote(prev => prev ? prev + '\n📋 Atualização: ' : '📋 Atualização: ')}
+                >
+                  <MessageCirclePlus className="h-3 w-3 mr-1" />
+                  Atualização
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => setNewNote(prev => prev ? prev + '\n⚠️ Pendência: ' : '⚠️ Pendência: ')}
+                >
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Pendência
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => setNewNote(prev => prev ? prev + '\n✅ Conclusão: ' : '✅ Conclusão: ')}
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Conclusão
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               size="sm"
               className="h-6 text-[10px] px-2"
-              onClick={() => setNewNote(prev => prev ? prev + '\n📋 Atualização: ' : '📋 Atualização: ')}
+              onClick={() => setNewNote(prev => prev ? prev + '\n📝 Observação: ' : '📝 Observação: ')}
             >
               <MessageCirclePlus className="h-3 w-3 mr-1" />
-              Atualização
+              Observação
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="h-6 text-[10px] px-2"
-              onClick={() => setNewNote(prev => prev ? prev + '\n⚠️ Pendência: ' : '⚠️ Pendência: ')}
+              onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
             >
-              <AlertCircle className="h-3 w-3 mr-1" />
-              Pendência
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 text-[10px] px-2"
-              onClick={() => setNewNote(prev => prev ? prev + '\n✅ Conclusão: ' : '✅ Conclusão: ')}
-            >
-              <CheckCircle2 className="h-3 w-3 mr-1" />
-              Conclusão
+              <MessageCirclePlus className="h-3 w-3 mr-1" />
+              Resumo da negociação
             </Button>
           </div>
           <MentionTextarea
             value={newNote}
             onChange={setNewNote}
             onSubmit={handleSubmit}
-            placeholder="Escrever um comentário... Use @ para mencionar"
+            placeholder={
+              isCorretorOnly
+                ? 'Registrar observação ou resumo da negociação...'
+                : 'Escrever um comentário... Use @ para mencionar'
+            }
           />
 
           {/* Anexos pendentes */}

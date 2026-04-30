@@ -84,9 +84,26 @@ Deno.serve(async (req) => {
       return json({ error: `Papel inválido. Use: ${VALID_ROLES.join(', ')}`, requestId }, 400)
     }
 
-    // 4. Verifica se e-mail já existe
+    // 4. Verifica se e-mail já existe (auth.users OU profiles)
     const { data: existing } = await supabaseAdmin.auth.admin.listUsers()
     const already = existing?.users?.find(u => u.email?.toLowerCase() === email)
+
+    // Defesa em profundidade: também checa duplicidade em profiles (case-insensitive),
+    // útil quando há registros legados sem correspondente em auth.
+    const { data: profileDupes } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, email')
+      .ilike('email', email)
+
+    if (!already && profileDupes && profileDupes.length > 0) {
+      console.warn(`[invite-user:${requestId}] Email ${email} já existe em profiles sem auth correspondente`)
+      return json({
+        error: 'Já existe um perfil com este e-mail no sistema, mas sem conta de acesso. ' +
+          'Acesse Diagnóstico de Usuários para resolver a inconsistência antes de convidar novamente.',
+        requestId,
+      }, 409)
+    }
+
     if (already) {
       const syncError = await syncProfile(supabaseAdmin, already.id, fullName, email)
       if (syncError) {

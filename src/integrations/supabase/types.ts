@@ -1482,6 +1482,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          must_change_password: boolean
           updated_at: string
           user_id: string
         }
@@ -1492,6 +1493,7 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
+          must_change_password?: boolean
           updated_at?: string
           user_id: string
         }
@@ -1502,6 +1504,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          must_change_password?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -2343,10 +2346,13 @@ export type Database = {
       list_internal_users: {
         Args: never
         Returns: {
+          avatar_url: string
           created_at: string
           department: string
           email: string
           full_name: string
+          last_sign_in_at: string
+          must_change_password: boolean
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]

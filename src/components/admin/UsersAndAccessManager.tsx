@@ -1273,3 +1273,51 @@ function UserCard({
     </Collapsible>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Indicador clicável que serve como filtro por papel
+// ─────────────────────────────────────────────────────────────────────────────
+interface RoleFilterPillProps {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+  colorClass: string;
+  Icon?: typeof Shield;
+  activeClass?: string;
+}
+
+function RoleFilterPill({
+  active,
+  onClick,
+  label,
+  count,
+  colorClass,
+  Icon,
+  activeClass,
+}: RoleFilterPillProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`group flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-left transition-all ${
+        active
+          ? `border-primary bg-primary/10 ring-1 ring-primary/40 ${activeClass ?? ''}`
+          : 'border-border bg-muted/30 hover:bg-muted/60'
+      }`}
+    >
+      <span className="flex items-center gap-1.5 min-w-0">
+        {Icon && <Icon className={`h-3.5 w-3.5 shrink-0 ${colorClass}`} />}
+        <span className="text-xs font-medium truncate">{label}</span>
+      </span>
+      <span
+        className={`text-[11px] font-semibold tabular-nums px-1.5 rounded ${
+          active ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}

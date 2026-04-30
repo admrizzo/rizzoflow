@@ -111,7 +111,7 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl w-[min(96vw,1100px)] h-[92vh] max-h-[92vh] overflow-hidden flex flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5" />
@@ -131,7 +131,11 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={effectiveTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+        <Tabs
+          value={effectiveTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+          className="flex-1 min-h-0 flex flex-col"
+        >
           <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-3'}`}>
             {isAdmin && (
               <TabsTrigger value="flows" className="flex items-center gap-2">
@@ -160,15 +164,15 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
           </TabsList>
 
           {isAdmin && (
-            <TabsContent value="flows" className="mt-4">
-              <ScrollArea className="h-[450px] pr-4">
+            <TabsContent value="flows" className="mt-4 flex-1 min-h-0">
+              <ScrollArea className="h-full pr-4">
                 <BoardsManager />
               </ScrollArea>
             </TabsContent>
           )}
 
-          <TabsContent value="fields" className="mt-4">
-            <ScrollArea className="h-[450px] pr-4">
+          <TabsContent value="fields" className="mt-4 flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Configure campos personalizados dos cards de cada fluxo.
               </p>
@@ -234,12 +238,15 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="users" className="mt-4">
+          <TabsContent
+            value="users"
+            className="mt-4 flex-1 min-h-0 data-[state=active]:flex data-[state=active]:flex-col"
+          >
             <UsersAndAccessManager />
           </TabsContent>
 
-          <TabsContent value="labels" className="mt-4">
-            <ScrollArea className="h-[450px] pr-4">
+          <TabsContent value="labels" className="mt-4 flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4">
               <p className="text-sm text-muted-foreground mb-4">
                 Gerencie as etiquetas disponíveis para categorizar os cards.
               </p>
@@ -248,8 +255,8 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
           </TabsContent>
 
           {isAdmin && (
-            <TabsContent value="providers" className="mt-4">
-              <ScrollArea className="h-[450px] pr-4">
+            <TabsContent value="providers" className="mt-4 flex-1 min-h-0">
+              <ScrollArea className="h-full pr-4">
                 <ProviderRegistryManager />
               </ScrollArea>
             </TabsContent>

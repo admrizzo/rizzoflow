@@ -160,8 +160,20 @@ export function FiadorSection({
       {/* Cards de fiadores */}
       {fiadores.map((fiador, idx) => {
         const { complete, missing } = isFiadorComplete(fiador);
-        const tipoLabel = fiador.tipo_fiador === 'renda' ? 'Renda' : fiador.tipo_fiador === 'imovel' ? 'Imóvel' : '—';
-        const TipoIcon = fiador.tipo_fiador === 'renda' ? Wallet : fiador.tipo_fiador === 'imovel' ? Home : UserPlus;
+        const tipoLabel = fiador.tipo_fiador === 'renda'
+          ? 'Renda'
+          : fiador.tipo_fiador === 'imovel'
+            ? 'Imóvel'
+            : fiador.tipo_fiador === 'ambos'
+              ? 'Renda + Imóvel'
+              : '—';
+        const TipoIcon = fiador.tipo_fiador === 'renda'
+          ? Wallet
+          : fiador.tipo_fiador === 'imovel'
+            ? Home
+            : fiador.tipo_fiador === 'ambos'
+              ? ShieldCheck
+              : UserPlus;
 
         return (
           <div
@@ -201,47 +213,35 @@ export function FiadorSection({
               {/* Tipo de fiador */}
               <div>
                 <Label className="text-sm font-semibold mb-3 block">Tipo de fiador <span className="text-destructive">*</span></Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button type="button"
-                    onClick={() => onUpdateFiador(idx, { tipo_fiador: 'renda' })}
-                    className={cn(
-                      'flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
-                      fiador.tipo_fiador === 'renda'
-                        ? 'border-accent bg-accent/5'
-                        : 'border-border hover:border-muted-foreground/40',
-                    )}
-                  >
-                    <div className={cn(
-                      'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                      fiador.tipo_fiador === 'renda' ? 'bg-accent/10' : 'bg-muted',
-                    )}>
-                      <Wallet className={cn('h-4 w-4', fiador.tipo_fiador === 'renda' ? 'text-accent' : 'text-muted-foreground')} strokeWidth={2} />
-                    </div>
-                    <div>
-                      <p className={cn('font-bold text-sm', fiador.tipo_fiador === 'renda' ? 'text-accent' : 'text-foreground')}>Fiador com renda</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Comprova renda superior a 3x o aluguel</p>
-                    </div>
-                  </button>
-                  <button type="button"
-                    onClick={() => onUpdateFiador(idx, { tipo_fiador: 'imovel' })}
-                    className={cn(
-                      'flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
-                      fiador.tipo_fiador === 'imovel'
-                        ? 'border-accent bg-accent/5'
-                        : 'border-border hover:border-muted-foreground/40',
-                    )}
-                  >
-                    <div className={cn(
-                      'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                      fiador.tipo_fiador === 'imovel' ? 'bg-accent/10' : 'bg-muted',
-                    )}>
-                      <Home className={cn('h-4 w-4', fiador.tipo_fiador === 'imovel' ? 'text-accent' : 'text-muted-foreground')} strokeWidth={2} />
-                    </div>
-                    <div>
-                      <p className={cn('font-bold text-sm', fiador.tipo_fiador === 'imovel' ? 'text-accent' : 'text-foreground')}>Fiador com imóvel</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Possui imóvel quitado em Goiânia</p>
-                    </div>
-                  </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {([
+                    { key: 'renda', icon: Wallet, title: 'Fiador com renda', desc: 'Comprova renda superior a 3x o aluguel' },
+                    { key: 'imovel', icon: Home, title: 'Fiador com imóvel', desc: 'Possui imóvel quitado em Goiânia' },
+                    { key: 'ambos', icon: ShieldCheck, title: 'Renda e imóvel', desc: 'Mesmo fiador comprova renda e possui imóvel' },
+                  ] as const).map((opt) => {
+                    const Icon = opt.icon;
+                    const selected = fiador.tipo_fiador === opt.key;
+                    return (
+                      <button key={opt.key} type="button"
+                        onClick={() => onUpdateFiador(idx, { tipo_fiador: opt.key })}
+                        className={cn(
+                          'flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all',
+                          selected ? 'border-accent bg-accent/5' : 'border-border hover:border-muted-foreground/40',
+                        )}
+                      >
+                        <div className={cn(
+                          'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+                          selected ? 'bg-accent/10' : 'bg-muted',
+                        )}>
+                          <Icon className={cn('h-4 w-4', selected ? 'text-accent' : 'text-muted-foreground')} strokeWidth={2} />
+                        </div>
+                        <div>
+                          <p className={cn('font-bold text-sm', selected ? 'text-accent' : 'text-foreground')}>{opt.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

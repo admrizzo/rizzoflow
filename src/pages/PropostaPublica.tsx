@@ -2020,7 +2020,13 @@ export default function PropostaPublica() {
       let uploadStats = { attempted: 0, succeeded: 0 };
       if (proposalLink?.id) {
         try {
-          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data, partyMap);
+          uploadStats = await uploadProposalDocuments(
+            null,
+            proposalLink.id,
+            data,
+            partyMap,
+            pendingCorrection?.id || null,
+          );
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
           toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.', {

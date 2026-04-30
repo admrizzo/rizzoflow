@@ -1789,14 +1789,27 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </div>
                     {pendingCorrection.requested_sections?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
-                        {pendingCorrection.requested_sections.map((s) => (
-                          <span
-                            key={s}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                          >
-                            {SECTION_LABELS[s] || s}
-                          </span>
-                        ))}
+                        {pendingCorrection.requested_sections.map((s, idx) => {
+                          if (typeof s === 'string') {
+                            return (
+                              <span
+                                key={`s-${idx}`}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
+                              >
+                                {(SECTION_LABELS as any)[s] || s}
+                              </span>
+                            );
+                          }
+                          return (
+                            <span
+                              key={`i-${idx}`}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
+                              title={s.note || undefined}
+                            >
+                              {describeCorrectionItem(s)}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                     <p className="text-sm text-orange-900 whitespace-pre-wrap">

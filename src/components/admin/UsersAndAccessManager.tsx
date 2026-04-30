@@ -70,6 +70,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { buildPublicUrl } from '@/lib/appUrl';
 import { useQueryClient } from '@tanstack/react-query';
+import { UsersDiagnosticsPanel } from './UsersDiagnosticsPanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Apenas os 4 papéis oficiais aparecem na interface.
@@ -527,6 +528,9 @@ export function UsersAndAccessManager() {
 
   return (
     <div className="space-y-4">
+      {/* Diagnóstico de duplicidades / inconsistências (somente admin) */}
+      {isAdmin && <UsersDiagnosticsPanel />}
+
       {/* Cabeçalho com ação de convite (somente admin) */}
       {isAdmin && (
         <div className="flex items-center justify-between">

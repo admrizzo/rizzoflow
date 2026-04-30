@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole } from '@/types/database';
@@ -10,6 +11,9 @@ export interface InternalUser {
   department: string | null;
   role: AppRole | null;
   created_at: string;
+  avatar_url?: string | null;
+  must_change_password?: boolean;
+  last_sign_in_at?: string | null;
 }
 
 /**
@@ -28,6 +32,33 @@ export function useInternalUsers() {
     },
     staleTime: 30_000,
   });
+
+  // Realtime: qualquer alteração em profiles / user_roles / user_boards
+  // invalida a lista para refletir sem F5.
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-users-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['internal-users'] });
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['internal-users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_boards' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['internal-users'] });
+        queryClient.invalidateQueries({ queryKey: ['all-user-boards'] });
+        queryClient.invalidateQueries({ queryKey: ['my-user-boards'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-boards'] });
+        queryClient.invalidateQueries({ queryKey: ['boards'] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const setUserRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
@@ -71,6 +102,40 @@ export function useInternalUsers() {
     },
   });
 
+  /**
+   * Admin redefine a senha de um usuário interno.
+   * Chama a Edge Function admin-reset-password (Service Role no servidor).
+   */
+  const resetUserPassword = useMutation({
+    mutationFn: async ({
+      userId,
+      password,
+      mustChangePassword,
+    }: { userId: string; password: string; mustChangePassword: boolean }) => {
+      const { data, error } = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          user_id: userId,
+          password,
+          must_change_password: mustChangePassword,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['internal-users'] });
+      toast.success(
+        variables.mustChangePassword
+          ? 'Senha redefinida. O usuário precisará criar uma nova no próximo acesso.'
+          : 'Senha redefinida com sucesso.',
+      );
+    },
+    onError: (err: Error) => {
+      toast.error('Erro ao redefinir senha', { description: err.message });
+    },
+  });
+
   const adminCount = users.filter((u) => u.role === 'admin').length;
 
   return {
@@ -80,5 +145,6 @@ export function useInternalUsers() {
     adminCount,
     setUserRole,
     removeUserRole,
+    resetUserPassword,
   };
 }

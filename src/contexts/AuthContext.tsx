@@ -299,6 +299,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (profileData) {
         setProfile(profileData as Profile);
+
+        // Se o admin marcou must_change_password, força o fluxo de
+        // redefinição mesmo em login normal por senha.
+        if ((profileData as Profile & { must_change_password?: boolean }).must_change_password) {
+          try {
+            sessionStorage.setItem('rizzo:needs-password-reset', '1');
+          } catch {
+            // ignore
+          }
+        }
       }
 
       // Fetch roles

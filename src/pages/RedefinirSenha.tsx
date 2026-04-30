@@ -75,6 +75,16 @@ export default function RedefinirSenha() {
       return;
     }
 
+    // Limpa também a flag persistente em profiles, se existir.
+    try {
+      await supabase
+        .from('profiles')
+        .update({ must_change_password: false })
+        .eq('user_id', user.id);
+    } catch {
+      // não bloqueia o fluxo se update falhar
+    }
+
     try {
       sessionStorage.removeItem('rizzo:needs-password-reset');
     } catch {

@@ -21,6 +21,7 @@ import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
+import { isFiadorMinValid } from '@/lib/proposalMasks';
 
 // ── Structured Variables ──
 
@@ -583,10 +584,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
-        if (!hasRenda) errors.push('Informe um fiador com renda.');
-        if (!hasImovel) errors.push('Informe um fiador com imóvel.');
+        const hasRenda = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
+        const hasImovel = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
+        if (!hasRenda) errors.push('Informe um fiador com renda válido.');
+        if (!hasImovel) errors.push('Informe um fiador com imóvel válido.');
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
           if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);
@@ -870,8 +871,8 @@ export default function PropostaLocacao() {
   // ── Garantia step (Fiador estruturado) ──
   function renderGarantiaStep() {
     const fiadores = data.garantia.fiadores;
-    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+    // hasRenda/hasImovel são recalculados dentro de FiadorSection com base na
+    // validade real dos fiadores (não apenas o tipo selecionado).
     const rentValue = parseCurrency(data.imovel.valor_aluguel);
 
     const updateFiador = (index: number, patch: Partial<FiadorData>) => {
@@ -957,8 +958,6 @@ export default function PropostaLocacao() {
         {data.garantia.tipo_garantia === 'Fiador' && (
           <FiadorSection
             fiadores={fiadores}
-            hasRenda={hasRenda}
-            hasImovel={hasImovel}
             rentValue={rentValue}
             onUpdateFiador={updateFiador}
             onUpdateConjuge={updateFiadorConjuge}
@@ -968,6 +967,7 @@ export default function PropostaLocacao() {
             onRemoveFiador={removeFiador}
           />
         )}
+
 
         <div>
           <Label>Observações</Label>

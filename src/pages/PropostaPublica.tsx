@@ -4608,3 +4608,52 @@ function ReviewRow({ label, value, warn }: { label: string; value: string; warn?
     </div>
   );
 }
+
+// Wrapper visual para campos solicitados em correção direcionada.
+// Mostra borda laranja ("Correção pendente") até o valor mudar; depois
+// fica azul ("Correção anexada"). Exibe o valor anterior abaixo.
+function FieldCorrectionWrap({
+  correction,
+  previousValue,
+  currentValue,
+  children,
+}: {
+  correction?: CorrectionItem;
+  previousValue?: string | null;
+  currentValue: string;
+  children: React.ReactNode;
+}) {
+  if (!correction) return <>{children}</>;
+  const anchor = correctionAnchorKey(correction);
+  const prev = (previousValue ?? '').trim();
+  const cur = (currentValue ?? '').trim();
+  const changed = prev.length === 0 ? cur.length > 0 : cur.length > 0 && cur !== prev;
+  return (
+    <div
+      id={anchor}
+      data-correction-anchor={anchor}
+      className={cn(
+        'rounded-lg p-3 -m-1 mt-0 scroll-mt-24 border-2',
+        changed ? 'border-blue-300 bg-blue-50/30' : 'border-orange-400 bg-orange-50/40',
+      )}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className={cn(
+          'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+          changed ? 'bg-blue-200 text-blue-900' : 'bg-orange-200 text-orange-900',
+        )}>
+          {changed ? 'Correção anexada' : 'Correção pendente'}
+        </span>
+      </div>
+      {children}
+      {prev ? (
+        <p className="text-[11px] text-muted-foreground mt-1.5">
+          Valor informado anteriormente: <span className="font-medium">{prev}</span>
+        </p>
+      ) : null}
+      {correction.note ? (
+        <p className="text-[11px] text-orange-800 mt-1">{correction.note}</p>
+      ) : null}
+    </div>
+  );
+}

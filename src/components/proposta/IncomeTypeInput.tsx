@@ -22,7 +22,7 @@ export function IncomeTypeInput({
   value,
   onChange,
   required,
-  label = 'Tipo de renda',
+  label = 'Fonte de renda',
   className,
   inputSize = 'md',
 }: Props) {

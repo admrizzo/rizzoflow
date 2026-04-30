@@ -19,7 +19,7 @@ interface Props {
  * Compatível com valores antigos em texto livre: se o valor não bater
  * com a lista, é tratado como "Outro" e exibido no campo de texto.
  */
-export function ProfessionInput({ value, onChange, required, label = 'Profissão', className, inputSize = 'md' }: Props) {
+export function ProfessionInput({ value, onChange, required, label = 'Profissão / Ocupação', className, inputSize = 'md' }: Props) {
   const initialOption = useMemo(() => detectProfessionOption(value), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [option, setOption] = useState<string>(initialOption || '');
   const [outroText, setOutroText] = useState<string>(initialOption === 'Outro' ? value : '');
@@ -69,7 +69,7 @@ export function ProfessionInput({ value, onChange, required, label = 'Profissão
       {option === 'Outro' && (
         <div className="mt-2">
           <Label className="text-xs text-muted-foreground">
-            Informe a profissão {required && <span className="text-red-500">*</span>}
+            Informe a profissão / ocupação {required && <span className="text-red-500">*</span>}
           </Label>
           <Input
             value={outroText}

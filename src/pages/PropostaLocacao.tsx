@@ -2010,7 +2010,7 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
             <ReviewBlock title="👤 Dados Pessoais" items={[
               ['Nome', v(data.dados_pessoais.nome)],
               ['CPF/CNPJ', v(data.dados_pessoais.cpf)],
-              ['Profissão', v(data.dados_pessoais.profissao)],
+              ['Profissão / Ocupação', v(data.dados_pessoais.profissao)],
               ['WhatsApp', v(data.dados_pessoais.whatsapp)],
               ['E-mail', v(data.dados_pessoais.email)],
             ]} onFix={() => onGoToStep(1)} />

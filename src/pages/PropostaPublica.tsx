@@ -4167,12 +4167,12 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
             <>
               <ReviewRow label="Fiadores cadastrados" value={String(data.garantia.fiadores.length)} />
               {(() => {
-                const fr = data.garantia.fiadores.find(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-                const fi = data.garantia.fiadores.find(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+                const fr = data.garantia.fiadores.find(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
+                const fi = data.garantia.fiadores.find(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
                 return (
                   <>
-                    <ReviewRow label="Fiador com renda" value={fr?.nome?.trim() ? `✅ ${fr.nome}` : '⚠️ Pendente'} />
-                    <ReviewRow label="Fiador com imóvel" value={fi?.nome?.trim() ? `✅ ${fi.nome}` : '⚠️ Pendente'} />
+                    <ReviewRow label="Fiador com renda" value={fr ? `✅ ${fr.nome}` : '⚠️ Pendente'} />
+                    <ReviewRow label="Fiador com imóvel" value={fi ? `✅ ${fi.nome}` : '⚠️ Pendente'} />
                   </>
                 );
               })()}

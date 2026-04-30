@@ -4181,29 +4181,98 @@ export default function PropostaPublica() {
 }
 
 // ── Reusable Person Fields (clean version) ──
-function PersonFieldsClean({ data, onChange }: { data: DadosPessoais; onChange: (d: DadosPessoais) => void }) {
+function PersonFieldsClean({
+  data,
+  onChange,
+  corrections,
+  previous,
+}: {
+  data: DadosPessoais;
+  onChange: (d: DadosPessoais) => void;
+  corrections?: Partial<Record<keyof DadosPessoais, CorrectionItem>>;
+  previous?: Partial<DadosPessoais>;
+}) {
   const set = (key: keyof DadosPessoais, val: string) => onChange({ ...data, [key]: val });
+  const wrap = (
+    fieldKey: keyof DadosPessoais,
+    label: React.ReactNode,
+    input: React.ReactNode,
+  ) => {
+    const corr = corrections?.[fieldKey];
+    if (!corr) {
+      return (
+        <>
+          <Label className="text-sm font-medium">{label}</Label>
+          {input}
+        </>
+      );
+    }
+    const anchor = correctionAnchorKey(corr);
+    const prevVal = previous?.[fieldKey];
+    const changed = prevVal != null && String(prevVal).trim() !== String(data[fieldKey] ?? '').trim() && String(data[fieldKey] ?? '').trim().length > 0;
+    return (
+      <div
+        id={anchor}
+        data-correction-anchor={anchor}
+        className={cn(
+          'rounded-lg p-3 -m-1 scroll-mt-24 border-2',
+          changed ? 'border-blue-300 bg-blue-50/30' : 'border-orange-400 bg-orange-50/40',
+        )}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <Label className="text-sm font-medium">{label}</Label>
+          <span className={cn(
+            'text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+            changed ? 'bg-blue-200 text-blue-900' : 'bg-orange-200 text-orange-900',
+          )}>
+            {changed ? 'Correção anexada' : 'Correção pendente'}
+          </span>
+        </div>
+        {input}
+        {prevVal ? (
+          <p className="text-[11px] text-muted-foreground mt-1.5">
+            Valor informado anteriormente: <span className="font-medium">{String(prevVal)}</span>
+          </p>
+        ) : null}
+        {corr.note ? (
+          <p className="text-[11px] text-orange-800 mt-1">{corr.note}</p>
+        ) : null}
+      </div>
+    );
+  };
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
-        <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" className="mt-1.5" />
+        {wrap(
+          'nome',
+          <>Nome completo <span className="text-red-500">*</span></>,
+          <Input value={data.nome} onChange={e => set('nome', e.target.value)} placeholder="Nome completo" className="mt-1.5" />,
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">CPF <span className="text-red-500">*</span></Label>
-          <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />
+          {wrap(
+            'cpf',
+            <>CPF <span className="text-red-500">*</span></>,
+            <MaskedInput kind="cpf" value={data.cpf} onValueChange={v => set('cpf', v)} placeholder="000.000.000-00" className="mt-1.5" />,
+          )}
         </div>
         <ProfessionInput value={data.profissao} onChange={v => set('profissao', v)} />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-          <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />
+          {wrap(
+            'whatsapp',
+            <>WhatsApp <span className="text-red-500">*</span></>,
+            <MaskedInput kind="phone" value={data.whatsapp} onValueChange={v => set('whatsapp', v)} placeholder="(00) 00000-0000" className="mt-1.5" />,
+          )}
         </div>
         <div>
-          <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
-          <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5" />
+          {wrap(
+            'email',
+            <>E-mail <span className="text-red-500">*</span></>,
+            <Input type="email" value={data.email} onChange={e => set('email', e.target.value)} placeholder="email@exemplo.com" className="mt-1.5" />,
+          )}
         </div>
       </div>
     </div>

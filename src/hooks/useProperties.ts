@@ -47,13 +47,14 @@ export type PropertyLight = Pick<
   | 'valor_venda'
   | 'condominio'
   | 'iptu'
+  | 'seguro_incendio'
   | 'status_imovel'
   | 'foto_principal'
   | 'last_synced_at'
 >;
 
 const LIGHT_COLUMNS =
-  'id, codigo_robust, titulo, tipo_imovel, finalidade, logradouro, bairro, cidade, estado, numero, valor_aluguel, valor_venda, condominio, iptu, status_imovel, foto_principal, last_synced_at';
+  'id, codigo_robust, titulo, tipo_imovel, finalidade, logradouro, bairro, cidade, estado, numero, valor_aluguel, valor_venda, condominio, iptu, seguro_incendio, status_imovel, foto_principal, last_synced_at';
 
 export function useProperties() {
   return usePropertiesBase();
@@ -143,8 +144,16 @@ function usePropertiesBase(finalidade?: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['properties'] }),
+        queryClient.invalidateQueries({ queryKey: ['properties-light'] }),
+        queryClient.invalidateQueries({ queryKey: ['property'] }),
+        queryClient.invalidateQueries({ queryKey: ['public-property'] }),
+        queryClient.invalidateQueries({ queryKey: ['proposal-negotiation-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['cards'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queue'] }),
+      ]);
       toast({
         title: 'Imóveis sincronizados!',
         description: `${data.upserted} imóveis atualizados do CRM.`,

@@ -51,7 +51,9 @@ import {
   describeItem as describeCorrectionItem,
   isStructuredItem,
   legacySectionToStep,
+  correctionAnchorKey,
   type CorrectionItem,
+  type CorrectionPartyKind,
 } from '@/lib/correctionCatalog';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';

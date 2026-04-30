@@ -17,7 +17,7 @@ import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { AddressFields } from '@/components/proposta/AddressFields';
-import { isFiadorMinValid, hasFiadorInProgress } from '@/lib/proposalMasks';
+import { getFiadorRequirementStates, type FiadorRequirementState } from '@/lib/proposalMasks';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -88,12 +88,24 @@ export function FiadorSection({
   onUpdateFiador, onUpdateConjuge, onAddFile, onRemoveFile, onAddFiador, onRemoveFiador,
 }: FiadorSectionProps) {
   const rendaMin = rentValue > 0 ? rentValue * 3 : 0;
-  // Requisitos só são considerados cumpridos quando existe um fiador
-  // VÁLIDO (dados mínimos preenchidos), não apenas pelo tipo selecionado.
-  const hasRenda = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
-  const hasImovel = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
-  const rendaInProgress = !hasRenda && hasFiadorInProgress(fiadores, 'renda');
-  const imovelInProgress = !hasImovel && hasFiadorInProgress(fiadores, 'imovel');
+  const requirementStates = getFiadorRequirementStates(fiadores);
+  const rendaState = requirementStates.renda.state;
+  const imovelState = requirementStates.imovel.state;
+  const hasRenda = requirementStates.hasIncomeGuarantor;
+  const hasImovel = requirementStates.hasPropertyGuarantor;
+  const stateClasses = (state: FiadorRequirementState) => state === 'cumprido'
+    ? 'bg-accent text-accent-foreground border-accent'
+    : state === 'em_preenchimento'
+      ? 'bg-warning text-warning-foreground border-warning'
+      : 'bg-muted text-muted-foreground border-border';
+  const stateTextClasses = (state: FiadorRequirementState) => state === 'pendente'
+    ? 'text-muted-foreground'
+    : 'text-foreground';
+  const stateIcon = (state: FiadorRequirementState, fallback: string) => {
+    if (state === 'cumprido') return <Check className="h-3 w-3" strokeWidth={3} />;
+    if (state === 'em_preenchimento') return <AlertCircle className="h-3 w-3" strokeWidth={2.5} />;
+    return <span className="text-[10px] font-bold">{fallback}</span>;
+  };
 
   return (
     <div className="space-y-6">

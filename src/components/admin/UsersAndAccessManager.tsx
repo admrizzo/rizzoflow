@@ -1013,7 +1013,18 @@ function UserCard({
                   ) : (
                     <Badge className="text-[10px] px-1.5 py-0 bg-gray-50 text-gray-500">
                       <UserX className="h-2.5 w-2.5 mr-1" />
-                      Sem papel definido
+                      Sem acesso
+                    </Badge>
+                  )}
+                  {/* Status operacional */}
+                  {user.must_change_password && (
+                    <Badge className="text-[10px] px-1.5 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                      Trocar senha no próximo acesso
+                    </Badge>
+                  )}
+                  {!user.last_sign_in_at && user.role && (
+                    <Badge className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                      Convite pendente
                     </Badge>
                   )}
                   {!isAdminRole && userBoardsInfo.length > 0 && (

@@ -374,7 +374,7 @@ export function ProposalPartiesView({ parties, compact = false, className, docsB
  */
 export function buildPartiesFromFormData(
   data: any,
-  opts?: { comprometimentoPercent?: number | null },
+  opts?: { comprometimentoPercent?: number | null; comprometimentoPercentTotal?: number | null },
 ): ProposalParty[] {
   // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
   const parseNum = (s: any): number | null => {

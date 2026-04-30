@@ -294,9 +294,49 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
     if (!inner.has(ownerLabel)) inner.set(ownerLabel, []);
     return inner.get(ownerLabel)!;
   };
+
+  // Helper: tenta achar a party correspondente a um documento sem party_id
+  // baseado em owner_type + owner_label/nome. Usado para reaproveitar
+  // documentos legados (sem vínculo direto) dentro do bloco correto.
+  const normalize = (s: string | null | undefined) =>
+    String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+
+  const findMatchingPartyId = (doc: ProposalDocument): string | null => {
+    const ot = doc.owner_type || '';
+    const ol = normalize(doc.owner_label);
+    if (!ol) return null;
+    for (const p of visibleParties as any[]) {
+      const pOwnerType = ROLE_TO_OWNER_TYPE[p.role] || 'outros';
+      // Para cônjuges, ownerType visual é "conjuge"
+      const partyName = normalize(p.name);
+      const matchesOwnerType =
+        ot === pOwnerType ||
+        ot === p.role || // legacy: alguns docs salvos com role bruto
+        (ot === 'conjuge' && (p.role === 'tenant_spouse' || p.role === 'guarantor_spouse'));
+      if (!matchesOwnerType) continue;
+      if (partyName && ol.includes(partyName)) return p.id;
+      // Fallback por role-only quando há apenas uma party desse tipo
+      const sameRoleCount = (visibleParties as any[]).filter(
+        (x) => (ROLE_TO_OWNER_TYPE[x.role] || 'outros') === pOwnerType,
+      ).length;
+      if (sameRoleCount === 1) return p.id;
+    }
+    return null;
+  };
+
   for (const d of visibleDocs) {
     if (d.party_id && blocksByPartyId.has(d.party_id)) {
       blocksByPartyId.get(d.party_id)!.docs.push(d);
+      continue;
+    }
+    // Tenta auto-vincular docs sem party_id quando há correspondência clara
+    const matchedId = findMatchingPartyId(d);
+    if (matchedId && blocksByPartyId.has(matchedId)) {
+      blocksByPartyId.get(matchedId)!.docs.push(d);
     } else {
       const ownerType = d.owner_type || 'outros';
       const ownerLabel = d.owner_label || OWNER_TYPE_LABELS[ownerType] || 'Outros';

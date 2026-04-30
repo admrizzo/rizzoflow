@@ -21,7 +21,7 @@ import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
-import { isFiadorMinValid } from '@/lib/proposalMasks';
+import { getFiadorRequirementStates } from '@/lib/proposalMasks';
 
 // ── Structured Variables ──
 
@@ -584,10 +584,9 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
-        const hasImovel = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
-        if (!hasRenda) errors.push('Informe um fiador com renda válido.');
-        if (!hasImovel) errors.push('Informe um fiador com imóvel válido.');
+        const req = getFiadorRequirementStates(fs);
+        if (!req.hasIncomeGuarantor) errors.push(`Fiador com renda pendente: ${req.renda.missing[0] || 'cadastro e documentos obrigatórios'}.`);
+        if (!req.hasPropertyGuarantor) errors.push(`Fiador com imóvel pendente: ${req.imovel.missing[0] || 'cadastro e documentos obrigatórios'}.`);
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
           if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);

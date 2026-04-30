@@ -120,7 +120,7 @@ export interface GarantiaInfo {
   tipo_contrato_assinatura?: 'digital' | 'fisico' | '';
 }
 
-export type FiadorTipo = 'renda' | 'imovel' | '';
+export type FiadorTipo = 'renda' | 'imovel' | 'ambos' | '';
 
 export type FiadorDocKey =
   | 'documento_foto'
@@ -337,9 +337,21 @@ const FIADOR_DOC_CONJUGE_RENDA: FiadorDocumentCategory = {
 };
 
 function buildFiadorDocs(tipo: FiadorTipo, casadoComConjuge: boolean): FiadorDocumentCategory[] {
-  const base = tipo === 'imovel'
-    ? FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }))
-    : FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  let base: FiadorDocumentCategory[];
+  if (tipo === 'imovel') {
+    base = FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }));
+  } else if (tipo === 'ambos') {
+    // União: foto + renda + matrícula + residência + estado civil (sem duplicar)
+    const seen = new Set<string>();
+    base = [];
+    for (const c of [...FIADOR_DOC_RENDA, ...FIADOR_DOC_IMOVEL]) {
+      if (seen.has(c.key)) continue;
+      seen.add(c.key);
+      base.push({ ...c, files: [] });
+    }
+  } else {
+    base = FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  }
   if (casadoComConjuge) {
     base.push({ ...FIADOR_DOC_CONJUGE_OBRIG, files: [] });
     base.push({ ...FIADOR_DOC_CONJUGE_RENDA, files: [] });

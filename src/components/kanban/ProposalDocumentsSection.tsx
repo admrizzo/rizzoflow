@@ -95,6 +95,7 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
     ownerKey: string;
     personName: string;
     personRole: string;
+    partyId?: string | null;
   }>(null);
   const [previewDoc, setPreviewDoc] = useState<ProposalDocument | null>(null);
 
@@ -354,6 +355,7 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
               ownerKey: block.key,
               personName: block.personName,
               personRole: block.personRole,
+              partyId: block.key, // block.key === party.id quando vindo de proposal_parties
             })}>
             <Plus className="h-3 w-3 mr-1" />
             Complementar
@@ -432,6 +434,7 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
           personName={addCtx.personName}
           personRole={addCtx.personRole}
           existingFinalNames={existingFinalNames}
+          partyId={addCtx.partyId ?? null}
         />
       )}
       <DocumentPreviewDialog

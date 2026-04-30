@@ -201,6 +201,55 @@ export function UsersDiagnosticsPanel() {
               </Section>
 
               <Section
+                title="E-mails muito parecidos (possível typo / duplicidade)"
+                count={data.near_duplicate_emails?.length ?? 0}
+                description="Contas distintas com e-mails quase idênticos no mesmo domínio. Pode ser a mesma pessoa cadastrada duas vezes por erro de digitação."
+              >
+                {(data.near_duplicate_emails ?? []).map((dup, i) => (
+                  <div key={i} className="rounded border bg-background p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-muted-foreground">
+                        Domínio: <span className="font-mono">{dup.domain}</span>
+                      </span>
+                      <Badge variant="outline">distância {dup.distance}</Badge>
+                    </div>
+                    <ul className="mt-1 space-y-0.5">
+                      {dup.users.map((u) => (
+                        <li key={u.user_id} className="text-muted-foreground">
+                          • <span className="font-mono">{u.email}</span> ·{' '}
+                          {u.last_sign_in_at
+                            ? `último acesso ${new Date(u.last_sign_in_at).toLocaleDateString('pt-BR')}`
+                            : 'nunca acessou'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </Section>
+
+              <Section
+                title="Nomes duplicados (mesma pessoa em mais de uma conta?)"
+                count={data.duplicate_names?.length ?? 0}
+                description="Mais de um perfil compartilha o mesmo nome completo. Verifique se não é a mesma pessoa cadastrada duas vezes."
+              >
+                {(data.duplicate_names ?? []).map((dup) => (
+                  <div key={dup.name} className="rounded border bg-background p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium capitalize">{dup.name}</span>
+                      <Badge variant="outline">{dup.count} contas</Badge>
+                    </div>
+                    <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                      {dup.profiles.map((p) => (
+                        <li key={p.user_id}>
+                          • <span className="font-mono">{p.email ?? '(sem e-mail)'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </Section>
+
+              <Section
                 title="Perfis sem conta de acesso"
                 count={data.profiles_without_auth.length}
                 description="O usuário aparece em perfis mas não consegue logar. Geralmente exige reconvite ou remoção."
@@ -222,6 +271,31 @@ export function UsersDiagnosticsPanel() {
                   <div key={u.user_id} className="rounded border bg-background p-2">
                     {u.email} ·{' '}
                     <span className="font-mono">{u.user_id.slice(0, 8)}…</span>
+                  </div>
+                ))}
+              </Section>
+
+              <Section
+                title="Usuários com papel mas sem fluxo"
+                count={data.users_with_role_no_board?.length ?? 0}
+                description="Têm papel atribuído mas nenhum fluxo liberado — não vão conseguir trabalhar até receber acesso a algum fluxo."
+              >
+                {(data.users_with_role_no_board ?? []).map((u) => (
+                  <div key={u.user_id} className="rounded border bg-background p-2">
+                    {u.full_name ?? '(sem nome)'} · {u.email ?? '(sem e-mail)'} ·{' '}
+                    <Badge variant="outline" className="text-[10px]">{u.role}</Badge>
+                  </div>
+                ))}
+              </Section>
+
+              <Section
+                title="Usuários sem papel atribuído"
+                count={data.users_without_role?.length ?? 0}
+                description="Conseguem logar mas não têm papel definido — não terão acesso operacional ao sistema."
+              >
+                {(data.users_without_role ?? []).map((u) => (
+                  <div key={u.user_id} className="rounded border bg-background p-2">
+                    {u.full_name ?? '(sem nome)'} · {u.email}
                   </div>
                 ))}
               </Section>

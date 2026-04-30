@@ -1800,6 +1800,32 @@ export default function PropostaPublica() {
   // ── Correção solicitada pelo time interno ──
   const { data: pendingCorrection } = usePublicCorrectionRequest(proposalLink?.id);
 
+  // ── Helpers de correção direcionada ───────────────────────────────────────
+  // Indexa CorrectionItem por (field, party_kind) para destacar campos/docs
+  // pedidos pelo time interno e validar somente o que foi solicitado.
+  const correctionItems = useMemo<CorrectionItem[]>(() => {
+    const list = (pendingCorrection?.requested_sections || []) as any[];
+    return list.filter(isStructuredItem) as CorrectionItem[];
+  }, [pendingCorrection]);
+  const isCorrectionMode = !!pendingCorrection && correctionItems.length > 0;
+
+  // Localiza um item de correção por step+field+(party_kind opcional).
+  const findCorrection = useCallback(
+    (
+      step: CorrectionItem['step'],
+      field: string,
+      partyKind?: CorrectionPartyKind | null,
+    ): CorrectionItem | undefined => {
+      return correctionItems.find(
+        (it) =>
+          it.step === step &&
+          it.field === field &&
+          (partyKind == null || it.party_kind == null || it.party_kind === partyKind),
+      );
+    },
+    [correctionItems],
+  );
+
   // ── Restore draft data ──
   useEffect(() => {
     if (restoredData) {

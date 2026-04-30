@@ -957,8 +957,6 @@ export default function PropostaLocacao() {
         {data.garantia.tipo_garantia === 'Fiador' && (
           <FiadorSection
             fiadores={fiadores}
-            hasRenda={hasRenda}
-            hasImovel={hasImovel}
             rentValue={rentValue}
             onUpdateFiador={updateFiador}
             onUpdateConjuge={updateFiadorConjuge}

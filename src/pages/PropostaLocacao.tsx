@@ -120,7 +120,7 @@ export interface GarantiaInfo {
   tipo_contrato_assinatura?: 'digital' | 'fisico' | '';
 }
 
-export type FiadorTipo = 'renda' | 'imovel' | '';
+export type FiadorTipo = 'renda' | 'imovel' | 'ambos' | '';
 
 export type FiadorDocKey =
   | 'documento_foto'
@@ -337,9 +337,21 @@ const FIADOR_DOC_CONJUGE_RENDA: FiadorDocumentCategory = {
 };
 
 function buildFiadorDocs(tipo: FiadorTipo, casadoComConjuge: boolean): FiadorDocumentCategory[] {
-  const base = tipo === 'imovel'
-    ? FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }))
-    : FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  let base: FiadorDocumentCategory[];
+  if (tipo === 'imovel') {
+    base = FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }));
+  } else if (tipo === 'ambos') {
+    // União: foto + renda + matrícula + residência + estado civil (sem duplicar)
+    const seen = new Set<string>();
+    base = [];
+    for (const c of [...FIADOR_DOC_RENDA, ...FIADOR_DOC_IMOVEL]) {
+      if (seen.has(c.key)) continue;
+      seen.add(c.key);
+      base.push({ ...c, files: [] });
+    }
+  } else {
+    base = FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  }
   if (casadoComConjuge) {
     base.push({ ...FIADOR_DOC_CONJUGE_OBRIG, files: [] });
     base.push({ ...FIADOR_DOC_CONJUGE_RENDA, files: [] });
@@ -571,18 +583,18 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => f.tipo_fiador === 'renda');
-        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel');
-        if (!hasRenda) errors.push('É necessário adicionar um fiador com renda');
-        if (!hasImovel) errors.push('É necessário adicionar um fiador com imóvel quitado');
+        const hasRenda = fs.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+        if (!hasRenda) errors.push('Informe um fiador com renda.');
+        if (!hasImovel) errors.push('Informe um fiador com imóvel.');
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
-          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda ou imóvel)`);
+          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);
           if (!f.nome.trim()) errors.push(`${label}: nome é obrigatório`);
           if (!f.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
           if (!f.whatsapp.trim()) errors.push(`${label}: telefone é obrigatório`);
           if (!f.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
-          if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
+          if ((f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos') && !f.renda_mensal.trim()) {
             errors.push(`${label}: renda mensal é obrigatória`);
           }
           if (fiadorNeedsConjuge(f) && !f.conjuge.nome.trim()) {
@@ -858,8 +870,8 @@ export default function PropostaLocacao() {
   // ── Garantia step (Fiador estruturado) ──
   function renderGarantiaStep() {
     const fiadores = data.garantia.fiadores;
-    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
-    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
     const rentValue = parseCurrency(data.imovel.valor_aluguel);
 
     const updateFiador = (index: number, patch: Partial<FiadorData>) => {
@@ -1994,20 +2006,25 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
         <ReviewBlock title="🔒 Garantia" items={[
           ['Modalidade', v(data.garantia.tipo_garantia)],
           ...(data.garantia.tipo_garantia === 'Fiador'
-            ? [
-                ['Fiadores cadastrados', String(data.garantia.fiadores.length)] as [string, string],
-                ['Possui fiador com renda', data.garantia.fiadores.some(f => f.tipo_fiador === 'renda') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
-                ['Possui fiador com imóvel', data.garantia.fiadores.some(f => f.tipo_fiador === 'imovel') ? '✅ Sim' : '⚠️ Pendente'] as [string, string],
-                ...data.garantia.fiadores.flatMap((f, i) => {
-                  const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : 'Tipo não definido';
+            ? (() => {
+                const fs = data.garantia.fiadores;
+                const fiadorRenda = fs.find(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+                const fiadorImovel = fs.find(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+                return [
+                  ['Fiadores cadastrados', String(fs.length)] as [string, string],
+                  ['Fiador com renda', fiadorRenda?.nome?.trim() ? `✅ ${fiadorRenda.nome}` : 'Pendente ⚠️'] as [string, string],
+                  ['Fiador com imóvel', fiadorImovel?.nome?.trim() ? `✅ ${fiadorImovel.nome}` : 'Pendente ⚠️'] as [string, string],
+                  ...fs.flatMap((f, i) => {
+                    const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
                   const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
                   const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
                   return [
                     [`Fiador ${i + 1} — ${tipoLabel}`, v(f.nome)],
                     [`Fiador ${i + 1} — Documentos`, docsTotal === 0 ? 'Selecione o tipo' : `${docsOk}/${docsTotal} ${docsOk === docsTotal ? '✅' : '⚠️'}`],
                   ] as [string, string][];
-                }),
-              ]
+                  }),
+                ];
+              })()
             : []),
         ]} onFix={() => onGoToStep(6)} />
         <ReviewBlock title="📄 Documentos" items={

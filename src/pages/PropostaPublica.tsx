@@ -976,9 +976,20 @@ const FIADOR_DOC_CONJUGE_RENDA: FiadorDocumentCategory = {
 };
 
 function buildFiadorDocs(tipo: FiadorTipo, casadoComConjuge: boolean): FiadorDocumentCategory[] {
-  const base = tipo === 'imovel'
-    ? FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }))
-    : FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  let base: FiadorDocumentCategory[];
+  if (tipo === 'imovel') {
+    base = FIADOR_DOC_IMOVEL.map(c => ({ ...c, files: [] }));
+  } else if (tipo === 'ambos') {
+    const seen = new Set<string>();
+    base = [];
+    for (const c of [...FIADOR_DOC_RENDA, ...FIADOR_DOC_IMOVEL]) {
+      if (seen.has(c.key)) continue;
+      seen.add(c.key);
+      base.push({ ...c, files: [] });
+    }
+  } else {
+    base = FIADOR_DOC_RENDA.map(c => ({ ...c, files: [] }));
+  }
   if (casadoComConjuge) {
     base.push({ ...FIADOR_DOC_CONJUGE_OBRIG, files: [] });
     base.push({ ...FIADOR_DOC_CONJUGE_RENDA, files: [] });
@@ -1307,19 +1318,19 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       }
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => f.tipo_fiador === 'renda');
-        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel');
-        if (!hasRenda) errors.push('É necessário adicionar um fiador com renda');
-        if (!hasImovel) errors.push('É necessário adicionar um fiador com imóvel quitado');
+        const hasRenda = fs.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+        if (!hasRenda) errors.push('Informe um fiador com renda.');
+        if (!hasImovel) errors.push('Informe um fiador com imóvel.');
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
-          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda ou imóvel)`);
+          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);
           if (!f.nome.trim() || !f.cpf.trim() || !f.whatsapp.trim() || !f.email.trim() || !f.profissao.trim() || !f.estado_civil) {
             errors.push(`${label}: dados pessoais incompletos`);
           }
           if (f.cpf && !isValidCPF(f.cpf)) errors.push(`${label}: CPF inválido`);
           if (f.whatsapp && !isValidPhone(f.whatsapp)) errors.push(`${label}: WhatsApp inválido`);
-          if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
+          if ((f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos') && !f.renda_mensal.trim()) {
             errors.push(`${label}: informe a renda mensal`);
           }
           const isCasado = f.estado_civil === 'Casado(a)' || f.estado_civil === 'União Estável';
@@ -3421,8 +3432,8 @@ export default function PropostaPublica() {
 
     // Status da regra principal
     const fiadores = data.garantia.fiadores;
-    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
-    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
 
     return (
       <div className="space-y-8">
@@ -4157,10 +4168,18 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
           {data.garantia.tipo_garantia === 'Fiador' && (
             <>
               <ReviewRow label="Fiadores cadastrados" value={String(data.garantia.fiadores.length)} />
-              <ReviewRow label="Fiador com renda" value={data.garantia.fiadores.some(f => f.tipo_fiador === 'renda') ? '✅ Sim' : '⚠️ Pendente'} />
-              <ReviewRow label="Fiador com imóvel" value={data.garantia.fiadores.some(f => f.tipo_fiador === 'imovel') ? '✅ Sim' : '⚠️ Pendente'} />
+              {(() => {
+                const fr = data.garantia.fiadores.find(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+                const fi = data.garantia.fiadores.find(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+                return (
+                  <>
+                    <ReviewRow label="Fiador com renda" value={fr?.nome?.trim() ? `✅ ${fr.nome}` : '⚠️ Pendente'} />
+                    <ReviewRow label="Fiador com imóvel" value={fi?.nome?.trim() ? `✅ ${fi.nome}` : '⚠️ Pendente'} />
+                  </>
+                );
+              })()}
               {data.garantia.fiadores.map((f, i) => {
-                const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : 'Tipo não definido';
+                const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
                 const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;
                 const docsOk = f.documentos.filter(d => d.key !== 'renda_conjuge' && d.files.length > 0).length;
                 return (

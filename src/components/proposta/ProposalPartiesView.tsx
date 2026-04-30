@@ -82,8 +82,22 @@ function PartyCard({
         <Row label="E-mail" value={party.email} />
         <Row label="Telefone" value={party.phone} />
         <Row label="Estado civil" value={party.marital_status} />
+        {party.role === 'primary_tenant' && party.metadata?.regime_bens && (
+          <Row label="Regime de bens" value={String(party.metadata.regime_bens)} />
+        )}
         <Row label="Profissão" value={party.profession} />
+        {(party.role === 'primary_tenant' || party.role === 'additional_tenant') && party.metadata?.fonte_renda && (
+          <Row label="Tipo de renda" value={String(party.metadata.fonte_renda)} />
+        )}
         <Row label={party.role === 'company' ? 'Faturamento mensal' : 'Renda'} value={formatCurrency(party.income)} />
+        {party.role === 'primary_tenant' && party.metadata?.comprometimento_percent != null && (
+          <Row
+            label="Comprometimento de renda"
+            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}%${
+              Number(party.metadata.comprometimento_percent) > 30 ? ' (acima de 30%)' : ''
+            }`}
+          />
+        )}
         <Row label="Endereço" value={party.address} />
         {party.role === 'guarantor' && (
           <Row

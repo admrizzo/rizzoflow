@@ -57,7 +57,7 @@ function isFiadorComplete(f: FiadorData): { complete: boolean; missing: string[]
   if (!f.whatsapp.trim()) missing.push('WhatsApp');
   if (!f.email.trim()) missing.push('E-mail');
   if (!f.estado_civil) missing.push('Estado civil');
-  if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) missing.push('Renda mensal');
+  if ((f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos') && !f.renda_mensal.trim()) missing.push('Renda mensal');
   if (fiadorIsCasado(f) && !f.regime_bens) missing.push('Regime de bens');
   if (fiadorNeedsConjuge(f)) {
     if (!f.conjuge.nome.trim()) missing.push('Nome do cônjuge');

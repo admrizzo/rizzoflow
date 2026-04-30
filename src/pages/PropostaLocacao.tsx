@@ -870,8 +870,8 @@ export default function PropostaLocacao() {
   // ── Garantia step (Fiador estruturado) ──
   function renderGarantiaStep() {
     const fiadores = data.garantia.fiadores;
-    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda');
-    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel');
+    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
     const rentValue = parseCurrency(data.imovel.valor_aluguel);
 
     const updateFiador = (index: number, patch: Partial<FiadorData>) => {

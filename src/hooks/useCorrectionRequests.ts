@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { logCardActivity } from './useCardActivityLogs';
+import type { CorrectionItem } from '@/lib/correctionCatalog';
 
 export type CorrectionStatus = 'pending' | 'responded' | 'canceled';
 
@@ -16,13 +17,17 @@ export type CorrectionSection =
   | 'negociacao'
   | 'outro';
 
+// requested_sections agora pode conter strings (formato legado) ou objetos
+// CorrectionItem (formato estruturado novo). Sempre tratar os dois casos.
+export type CorrectionSectionEntry = CorrectionSection | CorrectionItem;
+
 export interface CorrectionRequest {
   id: string;
   proposal_link_id: string;
   card_id: string | null;
   requested_by: string | null;
   status: CorrectionStatus;
-  requested_sections: CorrectionSection[];
+  requested_sections: CorrectionSectionEntry[];
   message: string;
   created_at: string;
   responded_at: string | null;
@@ -78,7 +83,7 @@ export function useCreateCorrectionRequest() {
     mutationFn: async (params: {
       proposalLinkId: string;
       cardId: string | null;
-      sections: CorrectionSection[];
+      sections: CorrectionSectionEntry[];
       message: string;
     }) => {
       const { proposalLinkId, cardId, sections, message } = params;

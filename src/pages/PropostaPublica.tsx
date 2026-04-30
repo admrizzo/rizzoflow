@@ -45,6 +45,14 @@ import {
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { usePublicCorrectionRequest, SECTION_LABELS } from '@/hooks/useCorrectionRequests';
+import {
+  STEP_TO_PUBLIC_STEP,
+  STEP_LABELS as CORR_STEP_LABELS,
+  describeItem as describeCorrectionItem,
+  isStructuredItem,
+  legacySectionToStep,
+  type CorrectionItem,
+} from '@/lib/correctionCatalog';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
@@ -2141,7 +2149,11 @@ export default function PropostaPublica() {
           if (targetCardId) {
             const onlyDocs =
               (pendingCorrection.requested_sections || []).length > 0 &&
-              (pendingCorrection.requested_sections || []).every((s: string) => s === 'documentos');
+              (pendingCorrection.requested_sections || []).every((s: any) =>
+                typeof s === 'string'
+                  ? s === 'documentos'
+                  : isStructuredItem(s) && s.step === 'documents',
+              );
             const title = onlyDocs
               ? '📎 Complementação de documentos recebida'
               : '✅ Cliente respondeu à solicitação de correção';
@@ -3947,23 +3959,71 @@ export default function PropostaPublica() {
                 {pendingCorrection.requested_sections?.length > 0 && (
                   <div className="mt-3">
                     <p className="text-xs font-semibold text-orange-800 mb-1.5">
-                      Blocos a revisar:
+                      Itens a revisar (clique para ir direto):
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {pendingCorrection.requested_sections.map((s) => (
-                        <span
-                          key={s}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                        >
-                          {SECTION_LABELS[s] || s}
-                        </span>
-                      ))}
+                    <div className="flex flex-col gap-1.5">
+                      {pendingCorrection.requested_sections.map((s: any, idx: number) => {
+                        if (typeof s === 'string') {
+                          const targetStep = STEP_TO_PUBLIC_STEP[legacySectionToStep(s)];
+                          return (
+                            <button
+                              key={`s-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                setStep(targetStep);
+                                setVisited((prev) => new Set(prev).add(targetStep));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="text-left text-xs font-medium px-3 py-2 rounded-md bg-white border border-orange-200 text-orange-900 hover:bg-orange-100 transition-colors"
+                            >
+                              <span className="font-semibold">→ </span>
+                              {(SECTION_LABELS as any)[s] || s}
+                            </button>
+                          );
+                        }
+                        const item = s as CorrectionItem;
+                        const targetStep = STEP_TO_PUBLIC_STEP[item.step] ?? 7;
+                        return (
+                          <button
+                            key={`i-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              setStep(targetStep);
+                              setVisited((prev) => new Set(prev).add(targetStep));
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="text-left text-xs px-3 py-2 rounded-md bg-white border border-orange-200 text-orange-900 hover:bg-orange-100 transition-colors"
+                          >
+                            <div className="font-semibold">
+                              → {describeCorrectionItem(item)}
+                            </div>
+                            {item.note && (
+                              <div className="text-[11px] text-orange-700 mt-0.5 whitespace-pre-wrap">
+                                {item.note}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
                 <p className="text-xs text-orange-700 mt-3">
-                  Após corrigir, clique em <strong>Enviar Registro</strong> ao final para reenviar a proposta.
+                  Após corrigir os itens acima, vá até a etapa <strong>Revisão</strong> e clique em <strong>Enviar Registro</strong> para reenviar.
                 </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 border-orange-400 text-orange-900 hover:bg-orange-100"
+                  onClick={() => {
+                    setStep(7);
+                    setVisited((prev) => new Set(prev).add(7));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  Ir para Revisão e enviar
+                </Button>
               </div>
             </div>
           </div>

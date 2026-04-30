@@ -1896,6 +1896,40 @@ export default function PropostaPublica() {
     }
   }, [restoredData, restoredStep]);
 
+  // ── LGPD: em modo correção, reaproveita o aceite original ─────────────────
+  // Se já existe correção pendente, significa que a proposta JÁ foi enviada
+  // antes (e portanto o aceite LGPD já foi registrado). Não obrigamos o
+  // cliente a marcar de novo — preservamos o aceite original.
+  useEffect(() => {
+    if (isCorrectionMode && !termsAccepted) {
+      setTermsAccepted(true);
+    }
+  }, [isCorrectionMode, termsAccepted]);
+
+  // Snapshot dos dados restaurados (= "valor anterior" antes da correção).
+  const previousData = restoredData as ProposalFormData | undefined;
+
+  // Em modo correção, leva direto à etapa do primeiro item solicitado para
+  // o cliente não precisar percorrer a proposta inteira.
+  const correctionAutoNavigatedRef = useState({ done: false })[0];
+  useEffect(() => {
+    if (
+      isCorrectionMode &&
+      !correctionAutoNavigatedRef.done &&
+      correctionItems.length > 0
+    ) {
+      const first = correctionItems[0];
+      const target = STEP_TO_PUBLIC_STEP[first.step] ?? 7;
+      setStep(target);
+      setVisited((prev) => {
+        const next = new Set(prev);
+        for (let i = 0; i <= target; i++) next.add(i);
+        return next;
+      });
+      correctionAutoNavigatedRef.done = true;
+    }
+  }, [isCorrectionMode, correctionItems, correctionAutoNavigatedRef]);
+
   // ── Progress calculation ──
   const skipConjuge = !needsConjuge(data);
   const { totalPercent: progressPercent, stepStatuses } = calcFormProgress(data, PUBLIC_STEP_WEIGHTS, skipConjuge);

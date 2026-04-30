@@ -4123,7 +4123,18 @@ export default function PropostaPublica() {
                             onClick={() => {
                               setStep(targetStep);
                               setVisited((prev) => new Set(prev).add(targetStep));
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              const anchor = correctionAnchorKey(item);
+                              setTimeout(() => {
+                                const el = document.getElementById(anchor)
+                                  || document.querySelector(`[data-correction-anchor="${anchor}"]`);
+                                if (el && 'scrollIntoView' in el) {
+                                  (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                  (el as HTMLElement).classList.add('ring-4', 'ring-orange-400');
+                                  setTimeout(() => (el as HTMLElement).classList.remove('ring-4', 'ring-orange-400'), 1600);
+                                } else {
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                              }, 120);
                             }}
                             className="text-left text-xs px-3 py-2 rounded-md bg-white border border-orange-200 text-orange-900 hover:bg-orange-100 transition-colors"
                           >

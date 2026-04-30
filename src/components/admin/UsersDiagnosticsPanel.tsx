@@ -25,11 +25,23 @@ interface DiagnoseResponse {
   summary: { auth_users: number; profiles: number; roles: number; boards: number };
   duplicate_emails: Array<{ email: string; count: number; users: Array<{ user_id: string; created_at: string; last_sign_in_at: string | null }> }>;
   duplicate_profile_emails: Array<{ email: string; count: number; profiles: Array<{ user_id: string; full_name: string | null }> }>;
+  near_duplicate_emails: Array<{
+    domain: string;
+    distance: number;
+    users: Array<{ user_id: string; email: string; created_at: string; last_sign_in_at: string | null }>;
+  }>;
+  duplicate_names: Array<{
+    name: string;
+    count: number;
+    profiles: Array<{ user_id: string; full_name: string | null; email: string | null }>;
+  }>;
   profiles_without_auth: Array<{ user_id: string; full_name: string | null; email: string | null }>;
   auth_without_profile: Array<{ user_id: string; email: string }>;
   roles_without_profile: Array<{ user_id: string; role: string }>;
   boards_without_profile: Array<{ user_id: string; board_id: string }>;
   multiple_roles: Array<{ user_id: string; roles: string[] }>;
+  users_with_role_no_board: Array<{ user_id: string; role: string; full_name: string | null; email: string | null }>;
+  users_without_role: Array<{ user_id: string; email: string; full_name: string | null }>;
 }
 
 /**

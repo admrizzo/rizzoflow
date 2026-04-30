@@ -525,7 +525,7 @@ export function buildPartiesFromFormData(
         income: parseNum(loc.renda_mensal),
         address: loc.endereco || null,
         position: pos++,
-        metadata: {},
+        metadata: { fonte_renda: loc.fonte_renda || null },
       });
       const lc = loc.conjuge;
       if (lc && (lc.nome || lc.cpf || lc.email)) {

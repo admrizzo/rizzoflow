@@ -1644,6 +1644,7 @@ export type Database = {
           card_id: string | null
           category: string
           category_label: string
+          correction_request_id: string | null
           created_at: string
           file_name: string
           file_size: number | null
@@ -1663,6 +1664,7 @@ export type Database = {
           card_id?: string | null
           category: string
           category_label: string
+          correction_request_id?: string | null
           created_at?: string
           file_name: string
           file_size?: number | null
@@ -1682,6 +1684,7 @@ export type Database = {
           card_id?: string | null
           category?: string
           category_label?: string
+          correction_request_id?: string | null
           created_at?: string
           file_name?: string
           file_size?: number | null

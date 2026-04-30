@@ -119,8 +119,22 @@ export function AddComplementaryDocDialog({
         .replace(/\s+/g, '_')
         .slice(0, 60) || 'complementar';
 
+      // Resolve proposal_link_id do card para manter o vínculo correto do documento
+      let proposalLinkId: string | null = null;
+      try {
+        const { data: cardRow } = await supabase
+          .from('cards')
+          .select('proposal_link_id')
+          .eq('id', cardId)
+          .maybeSingle();
+        proposalLinkId = (cardRow as any)?.proposal_link_id || null;
+      } catch (err) {
+        console.warn('Não foi possível resolver proposal_link_id:', err);
+      }
+
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
+        proposal_link_id: proposalLinkId,
         party_id: partyId ?? null,
         category: categoryKey,
         category_label: effectiveDocType,

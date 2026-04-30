@@ -46,7 +46,6 @@ import {
   Crown,
   ChevronDown,
   Trash2,
-  Info,
   Camera,
   Briefcase,
   Building2,

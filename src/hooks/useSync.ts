@@ -49,6 +49,9 @@ export function useSync() {
       // 2. Invalidar queries locais que dependem dos dados sincronizados
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['properties'] }),
+        queryClient.invalidateQueries({ queryKey: ['properties-light'] }),
+        queryClient.invalidateQueries({ queryKey: ['property'] }),
+        queryClient.invalidateQueries({ queryKey: ['proposal-negotiation-summary'] }),
         queryClient.invalidateQueries({ queryKey: ['cards'] }),
         queryClient.invalidateQueries({ queryKey: ['my-queue'] }),
         queryClient.invalidateQueries({ queryKey: ['card-detail-from-queue'] }),

@@ -927,6 +927,7 @@ interface UserCardProps {
   isSaving: boolean;
   onResendInvite: () => void;
   onGenerateAccessLink: () => void;
+  onResetPassword: () => void;
   isResendingInvite: boolean;
   isGeneratingLink: boolean;
 }
@@ -951,6 +952,7 @@ function UserCard({
   isSaving,
   onResendInvite,
   onGenerateAccessLink,
+  onResetPassword,
   isResendingInvite,
   isGeneratingLink,
 }: UserCardProps) {
@@ -1172,6 +1174,18 @@ function UserCard({
                     <Link2 className="h-3.5 w-3.5 mr-1" />
                   )}
                   Gerar link de acesso
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResetPassword();
+                  }}
+                >
+                  <KeyRound className="h-3.5 w-3.5 mr-1" />
+                  Redefinir senha
                 </Button>
                 <Button
                   variant="outline"

@@ -969,6 +969,7 @@ export default function PropostaLocacao() {
           />
         )}
 
+
         <div>
           <Label>Observações</Label>
           <Textarea

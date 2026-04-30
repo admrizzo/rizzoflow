@@ -532,16 +532,16 @@ export function FiadorSection({
         );
       })}
 
-      {/* Botões inteligentes — só aparecem se o requisito ainda falta */}
-      {(!hasRenda || !hasImovel) && (
-        <div className={cn('grid gap-3', !hasRenda && !hasImovel ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
-          {!hasRenda && (
+      {/* Botões inteligentes — só aparecem se o requisito está pendente */}
+      {(rendaState === 'pendente' || imovelState === 'pendente') && (
+        <div className={cn('grid gap-3', rendaState === 'pendente' && imovelState === 'pendente' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
+          {rendaState === 'pendente' && (
             <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('renda')}>
               <span className="flex items-center gap-2 font-bold text-sm"><Wallet className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com renda</span>
               <span className="text-xs text-muted-foreground font-normal">Renda &gt; 3x o aluguel</span>
             </Button>
           )}
-          {!hasImovel && (
+          {imovelState === 'pendente' && (
             <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('imovel')}>
               <span className="flex items-center gap-2 font-bold text-sm"><Home className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com imóvel</span>
               <span className="text-xs text-muted-foreground font-normal">Imóvel quitado em Goiânia</span>
@@ -550,8 +550,30 @@ export function FiadorSection({
         </div>
       )}
 
+      {/* Status visual dos requisitos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className={cn(
+          'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm',
+          rendaState === 'cumprido' ? 'border-accent/30 bg-accent/5' : rendaState === 'em_preenchimento' ? 'border-warning/30 bg-warning/5' : 'border-border bg-muted/30',
+        )}>
+          {rendaState === 'cumprido' ? <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} /> : <AlertCircle className={cn('h-4 w-4 shrink-0', rendaState === 'em_preenchimento' ? 'text-warning' : 'text-muted-foreground')} strokeWidth={2} />}
+          <span className="font-semibold text-foreground">
+            {rendaState === 'cumprido' ? 'Fiador com renda cadastrado' : rendaState === 'em_preenchimento' ? 'Fiador com renda em preenchimento' : 'Fiador com renda pendente'}
+          </span>
+        </div>
+        <div className={cn(
+          'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm',
+          imovelState === 'cumprido' ? 'border-accent/30 bg-accent/5' : imovelState === 'em_preenchimento' ? 'border-warning/30 bg-warning/5' : 'border-border bg-muted/30',
+        )}>
+          {imovelState === 'cumprido' ? <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} /> : <AlertCircle className={cn('h-4 w-4 shrink-0', imovelState === 'em_preenchimento' ? 'text-warning' : 'text-muted-foreground')} strokeWidth={2} />}
+          <span className="font-semibold text-foreground">
+            {imovelState === 'cumprido' ? 'Fiador com imóvel cadastrado' : imovelState === 'em_preenchimento' ? 'Fiador com imóvel em preenchimento' : 'Fiador com imóvel pendente'}
+          </span>
+        </div>
+      </div>
+
       {/* Status visual: cumprido (verde) ou em preenchimento (âmbar) */}
-      {(hasRenda || hasImovel || rendaInProgress || imovelInProgress) && (
+      {false && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {hasRenda && (
             <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">

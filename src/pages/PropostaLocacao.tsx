@@ -21,7 +21,7 @@ import { FiadorSection } from '@/components/proposta/FiadorSection';
 import { EmpresaForm } from '@/components/proposta/EmpresaForm';
 import { RepresentantesForm } from '@/components/proposta/RepresentantesForm';
 import { getPropertyDisplayName } from '@/lib/propertyIdentification';
-import { isFiadorMinValid } from '@/lib/proposalMasks';
+import { getFiadorRequirementStates } from '@/lib/proposalMasks';
 
 // ── Structured Variables ──
 
@@ -584,10 +584,9 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
-        const hasImovel = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
-        if (!hasRenda) errors.push('Informe um fiador com renda válido.');
-        if (!hasImovel) errors.push('Informe um fiador com imóvel válido.');
+        const req = getFiadorRequirementStates(fs);
+        if (!req.hasIncomeGuarantor) errors.push(`Fiador com renda pendente: ${req.renda.missing.join(', ') || 'cadastro e documentos obrigatórios'}.`);
+        if (!req.hasPropertyGuarantor) errors.push(`Fiador com imóvel pendente: ${req.imovel.missing.join(', ') || 'cadastro e documentos obrigatórios'}.`);
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
           if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);
@@ -2008,12 +2007,13 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
           ...(data.garantia.tipo_garantia === 'Fiador'
             ? (() => {
                 const fs = data.garantia.fiadores;
-                const fiadorRenda = fs.find(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-                const fiadorImovel = fs.find(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+                const req = getFiadorRequirementStates(fs);
+                const fiadorRenda = req.renda.fiador;
+                const fiadorImovel = req.imovel.fiador;
                 return [
                   ['Fiadores cadastrados', String(fs.length)] as [string, string],
-                  ['Fiador com renda', fiadorRenda?.nome?.trim() ? `✅ ${fiadorRenda.nome}` : 'Pendente ⚠️'] as [string, string],
-                  ['Fiador com imóvel', fiadorImovel?.nome?.trim() ? `✅ ${fiadorImovel.nome}` : 'Pendente ⚠️'] as [string, string],
+                  ['Fiador com renda', req.renda.state === 'cumprido' ? `✅ ${fiadorRenda?.nome}` : `⚠️ ${req.renda.state === 'em_preenchimento' ? `Em preenchimento: ${req.renda.missing[0] || 'pendências'}` : 'Pendente'}`] as [string, string],
+                  ['Fiador com imóvel', req.imovel.state === 'cumprido' ? `✅ ${fiadorImovel?.nome}` : `⚠️ ${req.imovel.state === 'em_preenchimento' ? `Em preenchimento: ${req.imovel.missing[0] || 'pendências'}` : 'Pendente'}`] as [string, string],
                   ...fs.flatMap((f, i) => {
                     const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
                   const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;

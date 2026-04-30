@@ -17,7 +17,7 @@ import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { AddressFields } from '@/components/proposta/AddressFields';
-import { isFiadorMinValid, hasFiadorInProgress } from '@/lib/proposalMasks';
+import { getFiadorRequirementStates, type FiadorRequirementState } from '@/lib/proposalMasks';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -88,12 +88,24 @@ export function FiadorSection({
   onUpdateFiador, onUpdateConjuge, onAddFile, onRemoveFile, onAddFiador, onRemoveFiador,
 }: FiadorSectionProps) {
   const rendaMin = rentValue > 0 ? rentValue * 3 : 0;
-  // Requisitos só são considerados cumpridos quando existe um fiador
-  // VÁLIDO (dados mínimos preenchidos), não apenas pelo tipo selecionado.
-  const hasRenda = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
-  const hasImovel = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
-  const rendaInProgress = !hasRenda && hasFiadorInProgress(fiadores, 'renda');
-  const imovelInProgress = !hasImovel && hasFiadorInProgress(fiadores, 'imovel');
+  const requirementStates = getFiadorRequirementStates(fiadores);
+  const rendaState = requirementStates.renda.state;
+  const imovelState = requirementStates.imovel.state;
+  const hasRenda = requirementStates.hasIncomeGuarantor;
+  const hasImovel = requirementStates.hasPropertyGuarantor;
+  const stateClasses = (state: FiadorRequirementState) => state === 'cumprido'
+    ? 'bg-accent text-accent-foreground border-accent'
+    : state === 'em_preenchimento'
+      ? 'bg-warning text-warning-foreground border-warning'
+      : 'bg-muted text-muted-foreground border-border';
+  const stateTextClasses = (state: FiadorRequirementState) => state === 'pendente'
+    ? 'text-muted-foreground'
+    : 'text-foreground';
+  const stateIcon = (state: FiadorRequirementState, fallback: string) => {
+    if (state === 'cumprido') return <Check className="h-3 w-3" strokeWidth={3} />;
+    if (state === 'em_preenchimento') return <AlertCircle className="h-3 w-3" strokeWidth={2.5} />;
+    return <span className="text-[10px] font-bold">{fallback}</span>;
+  };
 
   return (
     <div className="space-y-6">
@@ -109,12 +121,12 @@ export function FiadorSection({
             <ul className="mt-3 space-y-2">
               <li className="flex items-start gap-2.5 text-sm">
                 <span className={cn(
-                  'w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5',
-                  hasRenda ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground border border-border',
+                  'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+                  stateClasses(rendaState),
                 )}>
-                  {hasRenda ? <Check className="h-3 w-3" strokeWidth={3} /> : <span className="text-[10px] font-bold">1</span>}
+                  {stateIcon(rendaState, '1')}
                 </span>
-                <span className={cn(hasRenda ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className={cn(stateTextClasses(rendaState))}>
                   <strong className="text-foreground">1 fiador com renda comprovada</strong> superior a 3x o valor do aluguel
                   {rendaMin > 0 && (
                     <span className="block text-xs text-muted-foreground mt-0.5">
@@ -125,12 +137,12 @@ export function FiadorSection({
               </li>
               <li className="flex items-start gap-2.5 text-sm">
                 <span className={cn(
-                  'w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5',
-                  hasImovel ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground border border-border',
+                  'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+                  stateClasses(imovelState),
                 )}>
-                  {hasImovel ? <Check className="h-3 w-3" strokeWidth={3} /> : <span className="text-[10px] font-bold">2</span>}
+                  {stateIcon(imovelState, '2')}
                 </span>
-                <span className={cn(hasImovel ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className={cn(stateTextClasses(imovelState))}>
                   <strong className="text-foreground">1 fiador com imóvel quitado</strong> na região de Goiânia
                 </span>
               </li>
@@ -138,20 +150,6 @@ export function FiadorSection({
           </div>
         </div>
       </div>
-
-      {/* Mensagens inteligentes */}
-      {!hasRenda && fiadores.length > 0 && (
-        <div className="bg-warning/5 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground">É necessário adicionar um <strong>fiador com renda</strong>.</p>
-        </div>
-      )}
-      {!hasImovel && fiadores.length > 0 && (
-        <div className="bg-warning/5 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground">É necessário adicionar um <strong>fiador com imóvel quitado</strong>.</p>
-        </div>
-      )}
 
       {/* Header da lista */}
       <div className="flex items-center gap-3">
@@ -295,7 +293,7 @@ export function FiadorSection({
                         <Input value={fiador.email} onChange={e => onUpdateFiador(idx, { email: e.target.value })} placeholder="email@exemplo.com" className="mt-1.5 h-11" />
                       </div>
                     </div>
-                    {fiador.tipo_fiador === 'renda' && (
+                    {(fiador.tipo_fiador === 'renda' || fiador.tipo_fiador === 'ambos') && (
                       <div>
                         <Label className="text-sm font-medium">
                           Renda mensal <span className="text-destructive">*</span>
@@ -534,16 +532,16 @@ export function FiadorSection({
         );
       })}
 
-      {/* Botões inteligentes — só aparecem se o requisito ainda falta */}
-      {(!hasRenda || !hasImovel) && (
-        <div className={cn('grid gap-3', !hasRenda && !hasImovel ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
-          {!hasRenda && (
+      {/* Botões inteligentes — só aparecem se o requisito está pendente */}
+      {(rendaState === 'pendente' || imovelState === 'pendente') && (
+        <div className={cn('grid gap-3', rendaState === 'pendente' && imovelState === 'pendente' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
+          {rendaState === 'pendente' && (
             <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('renda')}>
               <span className="flex items-center gap-2 font-bold text-sm"><Wallet className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com renda</span>
               <span className="text-xs text-muted-foreground font-normal">Renda &gt; 3x o aluguel</span>
             </Button>
           )}
-          {!hasImovel && (
+          {imovelState === 'pendente' && (
             <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('imovel')}>
               <span className="flex items-center gap-2 font-bold text-sm"><Home className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com imóvel</span>
               <span className="text-xs text-muted-foreground font-normal">Imóvel quitado em Goiânia</span>
@@ -552,36 +550,27 @@ export function FiadorSection({
         </div>
       )}
 
-      {/* Status visual: cumprido (verde) ou em preenchimento (âmbar) */}
-      {(hasRenda || hasImovel || rendaInProgress || imovelInProgress) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {hasRenda && (
-            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
-              <span className="font-semibold text-foreground">Fiador com renda cadastrado</span>
-            </div>
-          )}
-          {!hasRenda && rendaInProgress && (
-            <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-              <AlertCircle className="h-4 w-4 text-warning shrink-0" strokeWidth={2} />
-              <span className="font-semibold text-foreground">Fiador com renda em preenchimento</span>
-            </div>
-          )}
-          {hasImovel && (
-            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
-              <span className="font-semibold text-foreground">Fiador com imóvel cadastrado</span>
-            </div>
-          )}
-          {!hasImovel && imovelInProgress && (
-            <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-              <AlertCircle className="h-4 w-4 text-warning shrink-0" strokeWidth={2} />
-              <span className="font-semibold text-foreground">Fiador com imóvel em preenchimento</span>
-            </div>
-          )}
+      {/* Status visual dos requisitos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className={cn(
+          'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm',
+          rendaState === 'cumprido' ? 'border-accent/30 bg-accent/5' : rendaState === 'em_preenchimento' ? 'border-warning/30 bg-warning/5' : 'border-border bg-muted/30',
+        )}>
+          {rendaState === 'cumprido' ? <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} /> : <AlertCircle className={cn('h-4 w-4 shrink-0', rendaState === 'em_preenchimento' ? 'text-warning' : 'text-muted-foreground')} strokeWidth={2} />}
+          <span className="font-semibold text-foreground">
+            {rendaState === 'cumprido' ? 'Fiador com renda cadastrado' : rendaState === 'em_preenchimento' ? 'Fiador com renda em preenchimento' : 'Fiador com renda pendente'}
+          </span>
         </div>
-      )}
-
+        <div className={cn(
+          'flex items-center gap-2 rounded-xl border px-4 py-3 text-sm',
+          imovelState === 'cumprido' ? 'border-accent/30 bg-accent/5' : imovelState === 'em_preenchimento' ? 'border-warning/30 bg-warning/5' : 'border-border bg-muted/30',
+        )}>
+          {imovelState === 'cumprido' ? <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} /> : <AlertCircle className={cn('h-4 w-4 shrink-0', imovelState === 'em_preenchimento' ? 'text-warning' : 'text-muted-foreground')} strokeWidth={2} />}
+          <span className="font-semibold text-foreground">
+            {imovelState === 'cumprido' ? 'Fiador com imóvel cadastrado' : imovelState === 'em_preenchimento' ? 'Fiador com imóvel em preenchimento' : 'Fiador com imóvel pendente'}
+          </span>
+        </div>
+      </div>
       {/* Resumo quando ambos requisitos estão completos */}
       {hasRenda && hasImovel && (
         <div className="rounded-2xl border border-accent/30 bg-accent/5 p-4 flex items-start gap-3">

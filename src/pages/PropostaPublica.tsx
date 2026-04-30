@@ -2544,22 +2544,34 @@ export default function PropostaPublica() {
           <div className="space-y-4">
             <div>
               <Label className="text-sm font-medium">Nome completo <span className="text-red-500">*</span></Label>
-              <Input value={data.dados_pessoais.nome} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, nome: e.target.value } }))} placeholder="Nome completo" className="mt-1.5" />
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'nome_completo', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.nome}
+                currentValue={data.dados_pessoais.nome}
+              >
+                <Input value={data.dados_pessoais.nome} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, nome: e.target.value } }))} placeholder="Nome completo" className="mt-1.5" />
+              </FieldCorrectionWrap>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">{isCnpj ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></Label>
-                {isCnpj ? (
-                  <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
-                ) : (
-                  <MaskedInput
-                    kind="cpf"
-                    value={data.dados_pessoais.cpf}
-                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
-                    placeholder="000.000.000-00"
-                    className="mt-1.5"
-                  />
-                )}
+                <FieldCorrectionWrap
+                  correction={findCorrection('personal', 'cpf', 'locatario_principal')}
+                  previousValue={previousData?.dados_pessoais?.cpf}
+                  currentValue={data.dados_pessoais.cpf}
+                >
+                  {isCnpj ? (
+                    <Input value={data.dados_pessoais.cpf} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: e.target.value } }))} placeholder="00.000.000/0000-00" className="mt-1.5" />
+                  ) : (
+                    <MaskedInput
+                      kind="cpf"
+                      value={data.dados_pessoais.cpf}
+                      onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, cpf: v } }))}
+                      placeholder="000.000.000-00"
+                      className="mt-1.5"
+                    />
+                  )}
+                </FieldCorrectionWrap>
               </div>
               <ProfessionInput
                 value={data.dados_pessoais.profissao}
@@ -2575,22 +2587,34 @@ export default function PropostaPublica() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">WhatsApp <span className="text-red-500">*</span></Label>
-              <div className="flex gap-2 mt-1.5">
-                <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
-                  🇧🇷 +55
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'whatsapp', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.whatsapp}
+                currentValue={data.dados_pessoais.whatsapp}
+              >
+                <div className="flex gap-2 mt-1.5">
+                  <div className="flex items-center gap-1 px-3 bg-muted rounded-md border text-sm text-muted-foreground shrink-0">
+                    🇧🇷 +55
+                  </div>
+                  <MaskedInput
+                    kind="phone"
+                    value={data.dados_pessoais.whatsapp}
+                    onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
+                    placeholder="(00) 00000-0000"
+                    className="flex-1"
+                  />
                 </div>
-                <MaskedInput
-                  kind="phone"
-                  value={data.dados_pessoais.whatsapp}
-                  onValueChange={v => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, whatsapp: v } }))}
-                  placeholder="(00) 00000-0000"
-                  className="flex-1"
-                />
-              </div>
+              </FieldCorrectionWrap>
             </div>
             <div>
               <Label className="text-sm font-medium">E-mail <span className="text-red-500">*</span></Label>
-              <Input type="email" value={data.dados_pessoais.email} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, email: e.target.value } }))} placeholder="seu@email.com" className="mt-1.5" />
+              <FieldCorrectionWrap
+                correction={findCorrection('personal', 'email', 'locatario_principal')}
+                previousValue={previousData?.dados_pessoais?.email}
+                currentValue={data.dados_pessoais.email}
+              >
+                <Input type="email" value={data.dados_pessoais.email} onChange={e => update(p => ({ ...p, dados_pessoais: { ...p.dados_pessoais, email: e.target.value } }))} placeholder="seu@email.com" className="mt-1.5" />
+              </FieldCorrectionWrap>
             </div>
           </div>
         </FormSection>

@@ -42,17 +42,20 @@ const queryClient = new QueryClient({
   },
 });
 
-function needsPasswordReset(): boolean {
+function needsPasswordReset(profile?: { must_change_password?: boolean } | null): boolean {
   try {
-    return sessionStorage.getItem('rizzo:needs-password-reset') === '1';
+    if (sessionStorage.getItem('rizzo:needs-password-reset') === '1') return true;
   } catch {
-    return false;
+    // ignore
   }
+  // Fonte da verdade persistente: a flag em profiles. Garante que o bloqueio
+  // sobreviva a fechar/abrir aba ou trocar de dispositivo.
+  return !!profile?.must_change_password;
 }
 
 // Index component that handles redirects
 function IndexRedirect() {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -63,7 +66,7 @@ function IndexRedirect() {
   }
 
   // Sessão de recovery/invite: NUNCA entra direto no sistema.
-  if (user && needsPasswordReset()) {
+  if (user && needsPasswordReset(profile)) {
     return <Navigate to="/redefinir-senha" replace />;
   }
 
@@ -77,7 +80,7 @@ function IndexRedirect() {
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -92,7 +95,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Bloqueia acesso ao app até a senha ser definida.
-  if (needsPasswordReset()) {
+  if (needsPasswordReset(profile)) {
     return <Navigate to="/redefinir-senha" replace />;
   }
 
@@ -108,7 +111,7 @@ function isAuthPasswordFlow() {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -119,7 +122,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Em fluxo de recovery/invite, manda para a página dedicada de senha.
-  if (user && (needsPasswordReset() || isAuthPasswordFlow())) {
+  if (user && (needsPasswordReset(profile) || isAuthPasswordFlow())) {
     return <Navigate to="/redefinir-senha" replace />;
   }
 
@@ -138,7 +141,7 @@ function RoleRoute({
   children: React.ReactNode;
   allow: (perms: ReturnType<typeof usePermissions>) => boolean;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const perms = usePermissions();
 
   if (isLoading) {
@@ -153,7 +156,7 @@ function RoleRoute({
     return <Navigate to="/auth" replace />;
   }
 
-  if (needsPasswordReset()) {
+  if (needsPasswordReset(profile)) {
     return <Navigate to="/redefinir-senha" replace />;
   }
 

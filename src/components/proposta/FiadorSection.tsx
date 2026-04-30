@@ -121,12 +121,12 @@ export function FiadorSection({
             <ul className="mt-3 space-y-2">
               <li className="flex items-start gap-2.5 text-sm">
                 <span className={cn(
-                  'w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5',
-                  hasRenda ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground border border-border',
+                  'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+                  stateClasses(rendaState),
                 )}>
-                  {hasRenda ? <Check className="h-3 w-3" strokeWidth={3} /> : <span className="text-[10px] font-bold">1</span>}
+                  {stateIcon(rendaState, '1')}
                 </span>
-                <span className={cn(hasRenda ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className={cn(stateTextClasses(rendaState))}>
                   <strong className="text-foreground">1 fiador com renda comprovada</strong> superior a 3x o valor do aluguel
                   {rendaMin > 0 && (
                     <span className="block text-xs text-muted-foreground mt-0.5">
@@ -137,12 +137,12 @@ export function FiadorSection({
               </li>
               <li className="flex items-start gap-2.5 text-sm">
                 <span className={cn(
-                  'w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5',
-                  hasImovel ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground border border-border',
+                  'w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5',
+                  stateClasses(imovelState),
                 )}>
-                  {hasImovel ? <Check className="h-3 w-3" strokeWidth={3} /> : <span className="text-[10px] font-bold">2</span>}
+                  {stateIcon(imovelState, '2')}
                 </span>
-                <span className={cn(hasImovel ? 'text-foreground' : 'text-muted-foreground')}>
+                <span className={cn(stateTextClasses(imovelState))}>
                   <strong className="text-foreground">1 fiador com imóvel quitado</strong> na região de Goiânia
                 </span>
               </li>
@@ -150,20 +150,6 @@ export function FiadorSection({
           </div>
         </div>
       </div>
-
-      {/* Mensagens inteligentes */}
-      {!hasRenda && fiadores.length > 0 && (
-        <div className="bg-warning/5 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground">É necessário adicionar um <strong>fiador com renda</strong>.</p>
-        </div>
-      )}
-      {!hasImovel && fiadores.length > 0 && (
-        <div className="bg-warning/5 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground">É necessário adicionar um <strong>fiador com imóvel quitado</strong>.</p>
-        </div>
-      )}
 
       {/* Header da lista */}
       <div className="flex items-center gap-3">

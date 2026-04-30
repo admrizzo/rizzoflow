@@ -494,6 +494,10 @@ export function buildPartiesFromFormData(
           opts?.comprometimentoPercent != null && isFinite(opts.comprometimentoPercent)
             ? opts.comprometimentoPercent
             : null,
+        comprometimento_percent_total:
+          opts?.comprometimentoPercentTotal != null && isFinite(opts.comprometimentoPercentTotal)
+            ? opts.comprometimentoPercentTotal
+            : null,
       },
     });
     const cj = data?.conjuge;

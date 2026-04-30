@@ -325,6 +325,9 @@ export function ProposalDocumentsSection({ cardId, guaranteeType }: ProposalDocu
           {doc.is_complementary && (
             <Badge className="text-[10px] py-0 h-4 bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Complementar</Badge>
           )}
+          {!doc.is_complementary && doc.correction_request_id && (
+            <Badge className="text-[10px] py-0 h-4 bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Correção recebida</Badge>
+          )}
           <span>{formatFileSize(doc.file_size)}</span>
           <span>•</span>
           <span>{format(new Date(doc.uploaded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>

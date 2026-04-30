@@ -18,6 +18,7 @@ export interface ProposalDocument {
   is_complementary?: boolean | null;
   original_file_name?: string | null;
   uploaded_by?: string | null;
+  correction_request_id?: string | null;
 }
 
 export interface CategorizedDocument extends ProposalDocument {

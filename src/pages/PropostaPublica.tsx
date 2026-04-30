@@ -148,6 +148,7 @@ async function uploadProposalDocuments(
   proposalLinkId: string | null,
   data: ProposalFormData,
   partyMap: Map<string, string> = new Map(),
+  correctionRequestId: string | null = null,
 ): Promise<{ attempted: number; succeeded: number }> {
   type Job = {
     ownerType: string;
@@ -176,6 +177,7 @@ async function uploadProposalDocuments(
       file_size: number;
       mime_type: string;
       storage_path: string;
+      correction_request_id?: string | null;
     };
   };
 
@@ -408,6 +410,7 @@ async function uploadProposalDocuments(
             file_size: file.size,
             mime_type: file.type,
             storage_path: path,
+            correction_request_id: correctionRequestId,
           },
         });
       }
@@ -2017,7 +2020,13 @@ export default function PropostaPublica() {
       let uploadStats = { attempted: 0, succeeded: 0 };
       if (proposalLink?.id) {
         try {
-          uploadStats = await uploadProposalDocuments(null, proposalLink.id, data, partyMap);
+          uploadStats = await uploadProposalDocuments(
+            null,
+            proposalLink.id,
+            data,
+            partyMap,
+            pendingCorrection?.id || null,
+          );
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
           toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.', {

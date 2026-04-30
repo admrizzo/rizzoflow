@@ -293,7 +293,7 @@ export function FiadorSection({
                         <Input value={fiador.email} onChange={e => onUpdateFiador(idx, { email: e.target.value })} placeholder="email@exemplo.com" className="mt-1.5 h-11" />
                       </div>
                     </div>
-                    {fiador.tipo_fiador === 'renda' && (
+                    {(fiador.tipo_fiador === 'renda' || fiador.tipo_fiador === 'ambos') && (
                       <div>
                         <Label className="text-sm font-medium">
                           Renda mensal <span className="text-destructive">*</span>

@@ -830,9 +830,9 @@ export default function PropostaLocacao() {
     }
 
     // Calculate score for the card description
-    const renda = parseFloat(data.perfil_financeiro.renda_mensal.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-    const aluguel = parseFloat(data.imovel.valor_aluguel.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-    const percentualCalc = renda > 0 ? (aluguel / renda) * 100 : null;
+    const renda = parseCurrency(data.perfil_financeiro.renda_mensal);
+    const aluguel = parseCurrency(data.imovel.valor_aluguel);
+    const percentualCalc = renda > 0 ? Math.round((aluguel / renda) * 1000) / 10 : null;
     const { score, points } = calcScore(data, percentualCalc);
 
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';

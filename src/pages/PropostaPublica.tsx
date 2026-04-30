@@ -27,6 +27,9 @@ import type {
 } from '@/pages/PropostaLocacao';
 import {
   calcPercentualComprometimento,
+  calcPercentualComprometimentoTotal,
+  classifyComprometimento,
+  comprometimentoLabel,
   emptyEmpresa, emptyRepresentante, REGIME_TRIBUTARIO_OPTIONS, PJ_DOC_CATEGORIES,
   emptyLocatarioAdicional,
 } from '@/pages/PropostaLocacao';

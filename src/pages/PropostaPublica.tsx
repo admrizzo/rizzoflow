@@ -4214,7 +4214,7 @@ export default function PropostaPublica() {
   }
 
   function renderStep7() {
-    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} property={property} />;
+    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} percentualTotal={percentualComprometimentoTotal} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} property={property} />;
   }
 
   const stepRenderers = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7];
@@ -4481,8 +4481,8 @@ function PersonFieldsClean({
 }
 
 // ── Review Step ──
-function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAccepted, onTermsChange, property }: {
-  data: ProposalFormData; showConjuge: boolean; percentual: number | null; onGoToStep: (step: number) => void;
+function ReviewStepPublic({ data, showConjuge, percentual, percentualTotal, onGoToStep, termsAccepted, onTermsChange, property }: {
+  data: ProposalFormData; showConjuge: boolean; percentual: number | null; percentualTotal: number | null; onGoToStep: (step: number) => void;
   termsAccepted: boolean; onTermsChange: (v: boolean) => void; property: PropertyData;
 }) {
   const pendingSteps = getPendingSteps(data);
@@ -4494,7 +4494,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
-  const partiesPreview = buildPartiesFromFormData(data, { comprometimentoPercent: percentual });
+  const partiesPreview = buildPartiesFromFormData(data, { comprometimentoPercent: percentual, comprometimentoPercentTotal: percentualTotal });
 
   return (
     <div className="space-y-8">

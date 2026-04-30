@@ -2012,13 +2012,28 @@ export default function PropostaPublica() {
   async function handleSubmit() {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    const pending = getPendingSteps(data);
-    const critical = pending.filter(p => p.critical);
-    if (critical.length > 0) {
-      toast.error('Pendências críticas', { description: critical[0].errors[0] });
-      setStep(critical[0].step);
-      setIsSubmitting(false);
-      return;
+    // Em modo correção, validamos APENAS os itens solicitados pelo time;
+    // não obrigamos o cliente a refazer toda a proposta.
+    if (isCorrectionMode) {
+      const missing = correctionItems.find((it) => !isCorrectionItemFulfilled(it, data, previousData));
+      if (missing) {
+        const targetStep = STEP_TO_PUBLIC_STEP[missing.step] ?? 7;
+        toast.error('Falta corrigir um item solicitado', {
+          description: describeCorrectionItem(missing),
+        });
+        setStep(targetStep);
+        setIsSubmitting(false);
+        return;
+      }
+    } else {
+      const pending = getPendingSteps(data);
+      const critical = pending.filter(p => p.critical);
+      if (critical.length > 0) {
+        toast.error('Pendências críticas', { description: critical[0].errors[0] });
+        setStep(critical[0].step);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const renda = parseCurrency(data.perfil_financeiro.renda_mensal);

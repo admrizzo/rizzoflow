@@ -1318,10 +1318,10 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       }
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
-        if (!hasRenda) errors.push('Informe um fiador com renda.');
-        if (!hasImovel) errors.push('Informe um fiador com imóvel.');
+        const hasRenda = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
+        const hasImovel = fs.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
+        if (!hasRenda) errors.push('Informe um fiador com renda válido.');
+        if (!hasImovel) errors.push('Informe um fiador com imóvel válido.');
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
           if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);

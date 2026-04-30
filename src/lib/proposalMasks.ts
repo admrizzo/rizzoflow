@@ -155,14 +155,16 @@ export function getFiadorRequirementMissing(
   if (!isValidCPF(f?.cpf || '')) missing.push('CPF válido');
   if (!isValidPhone(f?.whatsapp || '')) missing.push('WhatsApp/telefone válido');
   if (!isValidEmail(f?.email || '')) missing.push('e-mail válido');
-  if (requisito === 'renda' && !(f?.renda_mensal || '').trim()) missing.push('renda mensal');
+  const requiresIncomeDocs = requisito === 'renda' || tipo === 'ambos';
+  const requiresPropertyDocs = requisito === 'imovel' || tipo === 'ambos';
+  if (requiresIncomeDocs && !(f?.renda_mensal || '').trim()) missing.push('renda mensal');
   if (!hasRequiredFiles(f?.documentos, ['documento_foto', 'comprovante_residencia', 'certidao_estado_civil'])) {
     missing.push('documentos pessoais obrigatórios');
   }
-  if (requisito === 'renda' && !hasRequiredFiles(f?.documentos, ['comprovante_renda'])) {
+  if (requiresIncomeDocs && !hasRequiredFiles(f?.documentos, ['comprovante_renda'])) {
     missing.push('documentos de renda');
   }
-  if (requisito === 'imovel' && !hasRequiredFiles(f?.documentos, ['matricula_imovel'])) {
+  if (requiresPropertyDocs && !hasRequiredFiles(f?.documentos, ['matricula_imovel'])) {
     missing.push('matrícula/certidão do imóvel');
   }
   return missing;

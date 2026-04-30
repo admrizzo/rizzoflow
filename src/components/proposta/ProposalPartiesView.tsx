@@ -28,6 +28,14 @@ function formatCurrency(value: number | null | undefined): string | null {
   }
 }
 
+function classifyLabel(percent: number): string {
+  if (!isFinite(percent)) return '';
+  if (percent > 100) return 'Renda inferior ao custo mensal';
+  if (percent > 50) return 'Alto comprometimento';
+  if (percent > 30) return 'Atenção';
+  return 'Compatível';
+}
+
 function Row({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value || !String(value).trim()) return null;
   return (

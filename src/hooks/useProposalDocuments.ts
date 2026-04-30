@@ -92,6 +92,13 @@ export const OWNER_TYPE_ORDER = [
   'empresa',
   'representante',
   'fiador',
+  'tenant_spouse',
+  'guarantor_spouse',
+  'guarantor',
+  'company',
+  'legal_representative',
+  'primary_tenant',
+  'additional_tenant',
   'outros',
 ] as const;
 
@@ -102,4 +109,14 @@ export const OWNER_TYPE_LABELS: Record<string, string> = {
   representante: 'Representante Legal',
   fiador: 'Fiadores',
   outros: 'Outros',
+  // Variantes técnicas (caso documento legado tenha sido salvo com role bruto)
+  primary_tenant: 'Locatário principal',
+  additional_tenant: 'Locatário adicional',
+  tenant_spouse: 'Cônjuge do locatário',
+  guarantor: 'Fiadores',
+  guarantor_spouse: 'Cônjuge do fiador',
+  company: 'Empresa',
+  legal_representative: 'Representante Legal',
+  company_representative: 'Representante da empresa',
+  other: 'Outros',
 };

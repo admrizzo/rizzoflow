@@ -175,11 +175,36 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
       const ADMINISTRATIVO_BOARD_ID = 'e9a38d52-7403-4aec-87af-c886774af748';
       
       if (card.board_id !== ADMINISTRATIVO_BOARD_ID) {
-        const { data: templates } = await supabase
+        // Lê config do board para saber QUAIS templates devem ser aplicados.
+        // Fonte oficial: board_config.auto_apply_checklist_templates (gerenciado em
+        // Administração > Fluxos > Checklists). Se a config não existir ainda
+        // (board legado sem registro em board_config), mantemos o comportamento
+        // anterior de aplicar todos os templates do board para não regressar
+        // fluxos antigos. Se existir e a lista estiver vazia, nada é aplicado.
+        const { data: boardCfg } = await supabase
+          .from('board_config')
+          .select('auto_apply_checklist_templates')
+          .eq('board_id', card.board_id)
+          .maybeSingle();
+
+        let templatesQuery = supabase
           .from('checklist_templates')
           .select('*')
           .eq('board_id', card.board_id)
           .order('position');
+
+        if (boardCfg) {
+          const activeIds = Array.isArray(boardCfg.auto_apply_checklist_templates)
+            ? boardCfg.auto_apply_checklist_templates
+            : [];
+          if (activeIds.length === 0) {
+            // Config existe e está vazia — nenhum template deve ser aplicado.
+            return newCard;
+          }
+          templatesQuery = templatesQuery.in('id', activeIds);
+        }
+
+        const { data: templates } = await templatesQuery;
 
         if (templates && templates.length > 0) {
           // For Venda board, only auto-create IMÓVEL checklist

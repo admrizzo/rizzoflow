@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useUserBoards } from '@/hooks/useUserBoards';
 import { useBoards } from '@/hooks/useBoards';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,6 +60,10 @@ import {
   Link2,
   Copy,
   AlertTriangle as AlertTriangleIcon,
+  Search,
+  KeyRound,
+  RefreshCw,
+  Filter,
 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,7 +175,7 @@ function toDisplayRole(role: AppRole | null): DisplayRole | null {
 }
 
 export function UsersAndAccessManager() {
-  const { users, isLoading: isLoadingUsers, adminCount, setUserRole, removeUserRole } = useInternalUsers();
+  const { users, isLoading: isLoadingUsers, adminCount, setUserRole, removeUserRole, resetUserPassword } = useInternalUsers();
   const { allUserBoards, addUserToBoard, removeUserFromBoard, updateBoardAdmin, isLoading: isLoadingBoards } = useUserBoards();
   const { boards } = useBoards();
   const { user: currentUser, isAdmin } = useAuth();
@@ -184,6 +188,18 @@ export function UsersAndAccessManager() {
   const [uploadingUserId, setUploadingUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingUploadUserId = useRef<string | null>(null);
+
+  // Busca + filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState<'all' | DisplayRole | 'none'>('all');
+
+  // Redefinir senha
+  const [resetPwdDialog, setResetPwdDialog] = useState<{
+    open: boolean;
+    user: InternalUser | null;
+  }>({ open: false, user: null });
+  const [resetPwdValue, setResetPwdValue] = useState('');
+  const [resetForceChange, setResetForceChange] = useState(true);
 
   // Convite de novo usuário interno
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -328,6 +344,62 @@ export function UsersAndAccessManager() {
     }
   };
 
+  const handleOpenResetPassword = (u: InternalUser) => {
+    setResetPwdValue('');
+    setResetForceChange(true);
+    setResetPwdDialog({ open: true, user: u });
+  };
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let out = '';
+    for (let i = 0; i < 12; i++) {
+      out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    setResetPwdValue(out);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!resetPwdDialog.user) return;
+    if (resetPwdValue.length < 8) {
+      toast({
+        title: 'Senha muito curta',
+        description: 'Use pelo menos 8 caracteres.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      await resetUserPassword.mutateAsync({
+        userId: resetPwdDialog.user.user_id,
+        password: resetPwdValue,
+        mustChangePassword: resetForceChange,
+      });
+      try {
+        await navigator.clipboard.writeText(resetPwdValue);
+      } catch {
+        // ignore
+      }
+      setResetPwdDialog({ open: false, user: null });
+      setResetPwdValue('');
+    } catch {
+      // erro já tratado no hook
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return users.filter((u) => {
+      if (term) {
+        const haystack = `${u.full_name ?? ''} ${u.email ?? ''}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+      if (filterRole === 'all') return true;
+      if (filterRole === 'none') return !u.role;
+      return toDisplayRole(u.role) === filterRole;
+    });
+  }, [users, searchTerm, filterRole]);
+
   const isLoading = isLoadingUsers || isLoadingBoards;
 
   const toggleUserExpanded = (userId: string) => {
@@ -459,7 +531,7 @@ export function UsersAndAccessManager() {
       {isAdmin && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {users.length} {users.length === 1 ? 'usuário interno' : 'usuários internos'}
+            {filteredUsers.length} de {users.length} {users.length === 1 ? 'usuário' : 'usuários'}
           </div>
           <Button size="sm" onClick={() => setInviteOpen(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
@@ -467,6 +539,32 @@ export function UsersAndAccessManager() {
           </Button>
         </div>
       )}
+
+      {/* Busca + filtro por papel */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou e-mail..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-9"
+          />
+        </div>
+        <Select value={filterRole} onValueChange={(v) => setFilterRole(v as typeof filterRole)}>
+          <SelectTrigger className="h-9 w-full sm:w-[200px]">
+            <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover">
+            <SelectItem value="all">Todos os papéis</SelectItem>
+            {DISPLAY_ROLES.map((r) => (
+              <SelectItem key={r} value={r}>{ROLE_META[r].label}</SelectItem>
+            ))}
+            <SelectItem value="none">Sem acesso</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Legenda dos 4 papéis oficiais */}
       <div className="p-3 bg-muted/30 rounded-lg">
@@ -504,13 +602,13 @@ export function UsersAndAccessManager() {
       {/* Lista de usuários */}
       <ScrollArea className="h-[400px] pr-2">
         <div className="space-y-2">
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Nenhum usuário encontrado.</p>
+              <p>{users.length === 0 ? 'Nenhum usuário encontrado.' : 'Nenhum usuário corresponde aos filtros.'}</p>
             </div>
           ) : (
-            users.map((u) => (
+            filteredUsers.map((u) => (
               <UserCard
                 key={u.user_id}
                 user={u}
@@ -535,6 +633,7 @@ export function UsersAndAccessManager() {
                 isSaving={setUserRole.isPending || removeUserRole.isPending}
                 onResendInvite={() => handleResendInvite(u)}
                 onGenerateAccessLink={() => handleGenerateAccessLink(u)}
+                onResetPassword={() => handleOpenResetPassword(u)}
                 isResendingInvite={resendingUserId === u.user_id}
                 isGeneratingLink={generatingLinkUserId === u.user_id}
               />
@@ -551,6 +650,96 @@ export function UsersAndAccessManager() {
         description={`Tem certeza que deseja excluir ${userToDelete?.name}? Esta ação é permanente e removerá o perfil do usuário do sistema.`}
         confirmText="EXCLUIR"
       />
+
+      {/* Dialog de redefinição de senha */}
+      <Dialog
+        open={resetPwdDialog.open}
+        onOpenChange={(open) => {
+          if (!resetUserPassword.isPending) setResetPwdDialog((p) => ({ ...p, open }));
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Redefinir senha
+            </DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para <strong>{resetPwdDialog.user?.full_name}</strong>.
+              A senha será aplicada imediatamente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-pwd">Nova senha (mín. 8 caracteres)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="reset-pwd"
+                  type="text"
+                  value={resetPwdValue}
+                  onChange={(e) => setResetPwdValue(e.target.value)}
+                  placeholder="Digite ou gere uma senha"
+                  disabled={resetUserPassword.isPending}
+                  className="font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateRandomPassword}
+                  disabled={resetUserPassword.isPending}
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                  Gerar
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A senha será copiada para a área de transferência ao confirmar.
+              </p>
+            </div>
+
+            <label className="flex items-start gap-2 rounded-md border p-3 text-sm cursor-pointer hover:bg-muted/40">
+              <Checkbox
+                checked={resetForceChange}
+                onCheckedChange={(c) => setResetForceChange(c === true)}
+                disabled={resetUserPassword.isPending}
+                className="mt-0.5"
+              />
+              <div>
+                <div className="font-medium">Forçar troca no próximo acesso</div>
+                <div className="text-xs text-muted-foreground">
+                  No próximo login, o usuário será obrigado a criar uma nova senha
+                  antes de acessar o sistema.
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setResetPwdDialog({ open: false, user: null })}
+              disabled={resetUserPassword.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmResetPassword} disabled={resetUserPassword.isPending || resetPwdValue.length < 8}>
+              {resetUserPassword.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Redefinir senha
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Diálogo do link de primeiro acesso / recuperação */}
       <Dialog

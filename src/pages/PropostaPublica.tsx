@@ -50,7 +50,7 @@ import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';
 import { SignatureGuidelines } from '@/components/proposta/SignatureGuidelines';
 import { CollapsibleTip } from '@/components/proposta/CollapsibleTip';
-import { isValidCPF, isValidPhone } from '@/lib/proposalMasks';
+import { isValidCPF, isValidPhone, isFiadorMinValid } from '@/lib/proposalMasks';
 
 // ── Upload de documentos da proposta para o Storage ──
 function dataUrlToBlob(dataUrl: string): Blob | null {
@@ -3432,8 +3432,8 @@ export default function PropostaPublica() {
 
     // Status da regra principal
     const fiadores = data.garantia.fiadores;
-    const hasRenda = fiadores.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-    const hasImovel = fiadores.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+    // hasRenda/hasImovel agora exigem fiador VÁLIDO (dados mínimos preenchidos),
+    // não apenas a seleção do tipo. FiadorSection recalcula internamente também.
 
     return (
       <div className="space-y-8">

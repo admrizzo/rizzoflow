@@ -142,6 +142,145 @@ Deno.serve(async (req) => {
       .filter(([, rs]) => rs.length > 1)
       .map(([user_id, rs]) => ({ user_id, roles: rs }))
 
+    // 7) Near-duplicates por e-mail (mesmo domínio + local-part muito parecida).
+    //    Pega cenários como "guilherme.lacerda@x" vs "guilherme.larcerda@x"
+    //    (typo de uma letra).
+    function normalizeLocal(local: string): string {
+      return local
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\+.*$/, '')
+        .replace(/\./g, '')
+    }
+    function levenshtein(a: string, b: string): number {
+      if (a === b) return 0
+      const m = a.length, n = b.length
+      if (Math.abs(m - n) > 2) return 99
+      const dp: number[] = Array(n + 1).fill(0).map((_, i) => i)
+      for (let i = 1; i <= m; i++) {
+        let prev = i - 1
+        dp[0] = i
+        for (let j = 1; j <= n; j++) {
+          const tmp = dp[j]
+          dp[j] = a[i - 1] === b[j - 1]
+            ? prev
+            : 1 + Math.min(prev, dp[j], dp[j - 1])
+          prev = tmp
+        }
+      }
+      return dp[n]
+    }
+
+    type AuthLite = { id: string; email: string; created_at: string; last_sign_in_at: string | null }
+    const byDomain = new Map<string, Array<{ u: AuthLite; norm: string; localRaw: string }>>()
+    for (const u of authUsers) {
+      const at = u.email.indexOf('@')
+      if (at <= 0) continue
+      const local = u.email.slice(0, at)
+      const domain = u.email.slice(at + 1)
+      const norm = normalizeLocal(local)
+      if (!byDomain.has(domain)) byDomain.set(domain, [])
+      byDomain.get(domain)!.push({ u, norm, localRaw: local })
+    }
+    const seenPairs = new Set<string>()
+    const nearDuplicateEmails: Array<{
+      domain: string
+      distance: number
+      users: Array<{ user_id: string; email: string; created_at: string; last_sign_in_at: string | null }>
+    }> = []
+    // Não reporta os que já são duplicidades exatas
+    const exactDupKey = new Set(duplicateEmails.map((d) => d.email))
+    for (const [domain, list] of byDomain.entries()) {
+      for (let i = 0; i < list.length; i++) {
+        for (let j = i + 1; j < list.length; j++) {
+          const a = list[i], b = list[j]
+          if (a.u.email === b.u.email) continue
+          if (exactDupKey.has(a.u.email) || exactDupKey.has(b.u.email)) continue
+          // ignora variações triviais (a===b após normalizar = duplicidade lógica)
+          const dist = levenshtein(a.norm, b.norm)
+          // Considera "near-duplicate" quando:
+          //  - normalizado é igual (ex.: ponto a mais), OU
+          //  - distância de edição ≤ 1 e ambos têm pelo menos 4 chars
+          if (
+            (a.norm === b.norm) ||
+            (dist <= 1 && Math.min(a.norm.length, b.norm.length) >= 4)
+          ) {
+            const key = [a.u.id, b.u.id].sort().join(':')
+            if (seenPairs.has(key)) continue
+            seenPairs.add(key)
+            nearDuplicateEmails.push({
+              domain,
+              distance: dist,
+              users: [a.u, b.u].map((u) => ({
+                user_id: u.id,
+                email: u.email,
+                created_at: u.created_at,
+                last_sign_in_at: u.last_sign_in_at,
+              })),
+            })
+          }
+        }
+      }
+    }
+
+    // 8) Nomes duplicados (mesma pessoa em mais de uma conta)
+    function normalizeName(n: string | null): string {
+      if (!n) return ''
+      return n
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    }
+    const byName = new Map<string, typeof profiles>()
+    for (const p of profiles) {
+      const key = normalizeName(p.full_name)
+      if (!key) continue
+      if (!byName.has(key)) byName.set(key, [])
+      byName.get(key)!.push(p)
+    }
+    const duplicateNames = Array.from(byName.entries())
+      .filter(([, list]) => list.length > 1)
+      .map(([name, list]) => ({
+        name,
+        count: list.length,
+        profiles: list.map((p) => ({
+          user_id: p.user_id,
+          full_name: p.full_name,
+          email: p.email,
+        })),
+      }))
+
+    // 9) Usuários com papel mas sem fluxo (admins não precisam — têm acesso total)
+    const boardUserSet = new Set(boards.map((b) => b.user_id))
+    const usersWithRoleNoBoard = roles
+      .filter((r) => r.role !== 'admin' && !boardUserSet.has(r.user_id))
+      .map((r) => {
+        const profile = profiles.find((p) => p.user_id === r.user_id)
+        const auth = authUsers.find((u) => u.id === r.user_id)
+        return {
+          user_id: r.user_id,
+          role: r.role,
+          full_name: profile?.full_name ?? null,
+          email: profile?.email ?? auth?.email ?? null,
+        }
+      })
+
+    // 10) Usuários sem papel
+    const roleUserSet = new Set(roles.map((r) => r.user_id))
+    const usersWithoutRole = authUsers
+      .filter((u) => !roleUserSet.has(u.id))
+      .map((u) => {
+        const profile = profiles.find((p) => p.user_id === u.id)
+        return {
+          user_id: u.id,
+          email: u.email,
+          full_name: profile?.full_name ?? null,
+        }
+      })
+
     const totalIssues =
       duplicateEmails.length +
       duplicateProfileEmails.length +
@@ -149,7 +288,11 @@ Deno.serve(async (req) => {
       authWithoutProfile.length +
       rolesWithoutProfile.length +
       boardsWithoutProfile.length +
-      multipleRoles.length
+      multipleRoles.length +
+      nearDuplicateEmails.length +
+      duplicateNames.length +
+      usersWithRoleNoBoard.length +
+      usersWithoutRole.length
 
     return json({
       ok: true,
@@ -164,11 +307,15 @@ Deno.serve(async (req) => {
       },
       duplicate_emails: duplicateEmails,
       duplicate_profile_emails: duplicateProfileEmails,
+      near_duplicate_emails: nearDuplicateEmails,
+      duplicate_names: duplicateNames,
       profiles_without_auth: profilesWithoutAuth,
       auth_without_profile: authWithoutProfile,
       roles_without_profile: rolesWithoutProfile,
       boards_without_profile: boardsWithoutProfile,
       multiple_roles: multipleRoles,
+      users_with_role_no_board: usersWithRoleNoBoard,
+      users_without_role: usersWithoutRole,
     }, 200)
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

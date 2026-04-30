@@ -2007,12 +2007,13 @@ function ReviewStep({ data, showConjuge, percentual, onGoToStep }: {
           ...(data.garantia.tipo_garantia === 'Fiador'
             ? (() => {
                 const fs = data.garantia.fiadores;
-                const fiadorRenda = fs.find(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
-                const fiadorImovel = fs.find(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+                const req = getFiadorRequirementStates(fs);
+                const fiadorRenda = req.renda.fiador;
+                const fiadorImovel = req.imovel.fiador;
                 return [
                   ['Fiadores cadastrados', String(fs.length)] as [string, string],
-                  ['Fiador com renda', fiadorRenda?.nome?.trim() ? `✅ ${fiadorRenda.nome}` : 'Pendente ⚠️'] as [string, string],
-                  ['Fiador com imóvel', fiadorImovel?.nome?.trim() ? `✅ ${fiadorImovel.nome}` : 'Pendente ⚠️'] as [string, string],
+                  ['Fiador com renda', req.renda.state === 'cumprido' ? `✅ ${fiadorRenda?.nome}` : `⚠️ ${req.renda.state === 'em_preenchimento' ? `Em preenchimento: ${req.renda.missing[0] || 'pendências'}` : 'Pendente'}`] as [string, string],
+                  ['Fiador com imóvel', req.imovel.state === 'cumprido' ? `✅ ${fiadorImovel?.nome}` : `⚠️ ${req.imovel.state === 'em_preenchimento' ? `Em preenchimento: ${req.imovel.missing[0] || 'pendências'}` : 'Pendente'}`] as [string, string],
                   ...fs.flatMap((f, i) => {
                     const tipoLabel = f.tipo_fiador === 'renda' ? 'Renda' : f.tipo_fiador === 'imovel' ? 'Imóvel' : f.tipo_fiador === 'ambos' ? 'Renda + Imóvel' : 'Tipo não definido';
                   const docsTotal = f.documentos.filter(d => d.key !== 'renda_conjuge').length;

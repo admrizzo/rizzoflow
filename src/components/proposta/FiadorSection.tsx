@@ -529,24 +529,61 @@ export function FiadorSection({
         );
       })}
 
-      {/* Botões para adicionar fiadores */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('renda')}>
-          <span className="flex items-center gap-2 font-bold text-sm"><Wallet className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com renda</span>
-          <span className="text-xs text-muted-foreground font-normal">Renda &gt; 3x o aluguel</span>
-        </Button>
-        <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('imovel')}>
-          <span className="flex items-center gap-2 font-bold text-sm"><Home className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com imóvel</span>
-          <span className="text-xs text-muted-foreground font-normal">Imóvel quitado em Goiânia</span>
-        </Button>
-      </div>
-
-      {/* Botão genérico, caso queira escolher tipo depois */}
-      {fiadores.length > 0 && (
-        <Button type="button" variant="ghost" className="w-full rounded-xl text-sm" onClick={() => onAddFiador('')}>
-          <Plus className="h-4 w-4 mr-1" /> Adicionar outro fiador (escolher tipo depois)
-        </Button>
+      {/* Botões inteligentes — só aparecem se o requisito ainda falta */}
+      {(!hasRenda || !hasImovel) && (
+        <div className={cn('grid gap-3', !hasRenda && !hasImovel ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}>
+          {!hasRenda && (
+            <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('renda')}>
+              <span className="flex items-center gap-2 font-bold text-sm"><Wallet className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com renda</span>
+              <span className="text-xs text-muted-foreground font-normal">Renda &gt; 3x o aluguel</span>
+            </Button>
+          )}
+          {!hasImovel && (
+            <Button type="button" variant="outline" className="rounded-xl h-auto py-3 flex flex-col gap-1" onClick={() => onAddFiador('imovel')}>
+              <span className="flex items-center gap-2 font-bold text-sm"><Home className="h-4 w-4 text-accent" strokeWidth={2} /> Adicionar fiador com imóvel</span>
+              <span className="text-xs text-muted-foreground font-normal">Imóvel quitado em Goiânia</span>
+            </Button>
+          )}
+        </div>
       )}
+
+      {/* Status visual quando um requisito já foi atendido */}
+      {(hasRenda || hasImovel) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {hasRenda && (
+            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
+              <span className="font-semibold text-foreground">Fiador com renda cadastrado</span>
+            </div>
+          )}
+          {hasImovel && (
+            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
+              <span className="font-semibold text-foreground">Fiador com imóvel cadastrado</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resumo quando ambos requisitos estão completos */}
+      {hasRenda && hasImovel && (
+        <div className="rounded-2xl border border-accent/30 bg-accent/5 p-4 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-accent text-accent-foreground flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-5 w-5" strokeWidth={2} />
+          </div>
+          <div>
+            <p className="font-bold text-foreground text-sm">Requisitos principais de fiador preenchidos</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Você já cadastrou ao menos um fiador com renda e um com imóvel. Caso queira incluir um fiador adicional, use a opção abaixo.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Caso excepcional — sempre disponível, com destaque reduzido */}
+      <Button type="button" variant="ghost" className="w-full rounded-xl text-sm text-muted-foreground hover:text-foreground" onClick={() => onAddFiador('')}>
+        <Plus className="h-4 w-4 mr-1" /> Adicionar outro fiador
+      </Button>
     </div>
   );
 }

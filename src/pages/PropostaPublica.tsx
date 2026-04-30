@@ -3063,21 +3063,54 @@ export default function PropostaPublica() {
       categorias: DocumentCategory[],
       onUpdate: (mutator: (cats: DocumentCategory[]) => DocumentCategory[]) => void,
       keyPrefix: string,
+      partyKind?: CorrectionPartyKind | null,
     ) => (
       <div className="space-y-3">
         {categorias.map((cat, catIdx) => {
           const done = cat.files.length > 0;
+          // Documento solicitado para correção neste bloco?
+          const corrItem = findCorrection('documents', cat.key, partyKind);
+          // Considera "anterior" qualquer arquivo já persistido antes da correção.
+          const hasNewFile = cat.files.some((f) => !f.persisted);
+          const correctionPending = !!corrItem && !hasNewFile;
+          const correctionAttached = !!corrItem && hasNewFile;
+          const anchorKey = corrItem ? correctionAnchorKey(corrItem) : undefined;
           return (
-            <div key={`${keyPrefix}-${cat.key}-${catIdx}`} className={cn('bg-white rounded-2xl border p-4 space-y-3', done && 'border-green-200')}>
+            <div
+              key={`${keyPrefix}-${cat.key}-${catIdx}`}
+              {...(anchorKey ? { 'data-correction-anchor': anchorKey, id: anchorKey } : {})}
+              className={cn(
+                'bg-white rounded-2xl border p-4 space-y-3 scroll-mt-24',
+                done && !corrItem && 'border-green-200',
+                correctionPending && 'border-2 border-orange-400 bg-orange-50/40 ring-2 ring-orange-200',
+                correctionAttached && 'border-2 border-blue-300 bg-blue-50/30',
+              )}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="font-bold text-sm text-foreground">{cat.label}</h4>
-                    <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
-                      done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
-                      {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
-                    </span>
+                    {correctionPending ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-orange-200 text-orange-900">
+                        Correção pendente
+                      </span>
+                    ) : correctionAttached ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-blue-200 text-blue-900">
+                        Correção anexada
+                      </span>
+                    ) : (
+                      <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider',
+                        done ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+                        {done ? `${cat.files.length} arquivo(s)` : 'Pendente'}
+                      </span>
+                    )}
                   </div>
+                  {correctionPending && (
+                    <p className="text-xs text-orange-800 mt-1.5 font-medium">
+                      Este documento precisa ser reenviado conforme solicitação da equipe.
+                      {corrItem?.note ? ` — ${corrItem.note}` : ''}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
                     <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {cat.help}
                   </p>
@@ -3089,11 +3122,15 @@ export default function PropostaPublica() {
                     <div key={file.id} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
                       {file.type.startsWith('image/') ? <Image className="h-4 w-4 text-muted-foreground shrink-0" /> : <FileText className="h-4 w-4 text-muted-foreground shrink-0" />}
                       <span className="truncate flex-1 text-foreground">{file.name}</span>
-                      {file.persisted && (
+                      {file.persisted && corrItem ? (
+                        <span className="text-[10px] font-semibold text-orange-800 bg-orange-100 rounded-full px-2 py-0.5 shrink-0">
+                          Documento anterior
+                        </span>
+                      ) : file.persisted ? (
                         <span className="text-[10px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 shrink-0">
                           já enviado
                         </span>
-                      )}
+                      ) : null}
                       <span className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</span>
                       {!file.persisted && (
                         <button className="text-red-400 hover:text-red-600 p-1"
@@ -3109,8 +3146,14 @@ export default function PropostaPublica() {
                   ))}
                 </div>
               )}
-              <label className="flex items-center justify-center gap-2 cursor-pointer text-sm text-accent font-medium hover:bg-accent/5 border-2 border-dashed border-accent/30 rounded-xl py-3 transition-colors">
-                <Upload className="h-4 w-4" /> Adicionar arquivo
+              <label className={cn(
+                'flex items-center justify-center gap-2 cursor-pointer text-sm font-medium border-2 border-dashed rounded-xl py-3 transition-colors',
+                correctionPending
+                  ? 'text-orange-800 border-orange-400 hover:bg-orange-100/40 bg-orange-50/60'
+                  : 'text-accent border-accent/30 hover:bg-accent/5',
+              )}>
+                <Upload className="h-4 w-4" />
+                {correctionPending ? 'Reenviar documento' : 'Adicionar arquivo'}
                 <input type="file" accept={ACCEPTED_FILE_TYPES} multiple className="hidden" onChange={e => {
                   const fileList = e.target.files;
                   if (!fileList) return;

@@ -54,7 +54,7 @@ export function RequestCorrectionDialog({ open, onOpenChange, proposalLinkId, ca
   const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
   const [message, setMessage] = useState('');
   const create = useCreateCorrectionRequest();
-  const { data: cardParties = [] } = useCardParties(cardId || undefined);
+  const { parties: cardParties = [] } = useCardParties(cardId || undefined);
 
   const reset = () => { setItems([emptyItem()]); setMessage(''); };
 

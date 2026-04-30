@@ -372,7 +372,10 @@ export function ProposalPartiesView({ parties, compact = false, className, docsB
  * para uso na tela de Revisão da proposta pública. A mesma estrutura é
  * exibida pelo `ProposalPartiesView`.
  */
-export function buildPartiesFromFormData(data: any): ProposalParty[] {
+export function buildPartiesFromFormData(
+  data: any,
+  opts?: { comprometimentoPercent?: number | null },
+): ProposalParty[] {
   // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
   const parseNum = (s: any): number | null => {
     if (s == null) return null;
@@ -470,7 +473,14 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       income: parseNum(pf.renda_mensal),
       address: null,
       position: pos++,
-      metadata: {},
+      metadata: {
+        fonte_renda: pf.fonte_renda || null,
+        regime_bens: pf.regime_bens || null,
+        comprometimento_percent:
+          opts?.comprometimentoPercent != null && isFinite(opts.comprometimentoPercent)
+            ? opts.comprometimentoPercent
+            : null,
+      },
     });
     const cj = data?.conjuge;
     if (cj && (cj.nome || cj.cpf || cj.email)) {

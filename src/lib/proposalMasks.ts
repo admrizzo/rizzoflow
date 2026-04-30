@@ -46,14 +46,19 @@ export function isValidPhone(value: string): boolean {
   return d.length === 10 || d.length === 11;
 }
 
-// ───────── Profissão ─────────
+// ───────── Profissão / Ocupação ─────────
+// Lista de PROFISSÕES (o que a pessoa faz). Diferente de fonte de renda.
 export const PROFESSION_OPTIONS = [
-  'Empregado CLT',
-  'Funcionário Público',
-  'Autônomo',
-  'Empresário',
-  'Aposentado',
+  'Arquiteto(a)',
+  'Médico(a)',
+  'Advogado(a)',
+  'Corretor(a)',
+  'Professor(a)',
+  'Vendedor(a)',
+  'Empresário(a)',
+  'Aposentado(a)',
   'Estudante',
+  'Do lar',
   'Outro',
 ] as const;
 
@@ -66,19 +71,33 @@ export type ProfessionOption = typeof PROFESSION_OPTIONS[number];
 export function detectProfessionOption(value: string | null | undefined): ProfessionOption {
   const v = (value || '').trim();
   if (!v) return '' as unknown as ProfessionOption;
-  const found = PROFESSION_OPTIONS.find(p => p.toLowerCase() === v.toLowerCase());
-  return found ?? 'Outro';
+  const lower = v.toLowerCase();
+  const found = PROFESSION_OPTIONS.find(p => p.toLowerCase() === lower);
+  if (found) return found;
+  // Mapeamentos legados — valores antigos que ficavam misturados com fonte de renda
+  if (lower.startsWith('arquitet')) return 'Arquiteto(a)';
+  if (lower.startsWith('médic') || lower.startsWith('medic')) return 'Médico(a)';
+  if (lower.startsWith('advogad')) return 'Advogado(a)';
+  if (lower.startsWith('corretor')) return 'Corretor(a)';
+  if (lower.startsWith('professor')) return 'Professor(a)';
+  if (lower.startsWith('vendedor')) return 'Vendedor(a)';
+  if (lower.startsWith('empresári') || lower.startsWith('empresari')) return 'Empresário(a)';
+  if (lower.startsWith('aposentad')) return 'Aposentado(a)';
+  if (lower.includes('estudante')) return 'Estudante';
+  if (lower.includes('do lar') || lower.includes('dona de casa')) return 'Do lar';
+  return 'Outro';
 }
 
-// ───────── Tipo de renda (origem da renda) ─────────
+// ───────── Fonte de renda (de onde vem o dinheiro) ─────────
+// Diferente de profissão: aqui descrevemos a ORIGEM da renda mensal.
 export const INCOME_TYPE_OPTIONS = [
-  'Empregado CLT',
-  'Funcionário Público',
-  'Autônomo',
-  'Empresário',
-  'Aposentado/Pensionista',
-  'Estudante',
-  'Renda de aluguel/investimentos',
+  'Salário CLT',
+  'Funcionário público / concursado',
+  'Pró-labore / empresa própria',
+  'Autônomo / prestação de serviço',
+  'Aposentadoria / pensão',
+  'Rendimentos / investimentos',
+  'Ajuda familiar',
   'Outro',
 ] as const;
 
@@ -97,14 +116,14 @@ export function detectIncomeTypeOption(value: string | null | undefined): Income
   // Match direto com novas opções
   const direct = INCOME_TYPE_OPTIONS.find(o => o.toLowerCase() === v);
   if (direct) return direct;
-  // Mapeamentos legados
-  if (v.startsWith('empregado')) return 'Empregado CLT';
-  if (v.includes('público') || v.includes('publico') || v.includes('servidor')) return 'Funcionário Público';
-  if (v.startsWith('autônomo') || v.startsWith('autonomo')) return 'Autônomo';
-  if (v.startsWith('empresário') || v.startsWith('empresario')) return 'Empresário';
-  if (v.includes('aposentad') || v.includes('pension')) return 'Aposentado/Pensionista';
-  if (v.includes('estudante')) return 'Estudante';
-  if (v.includes('aluguel') || v.includes('investiment')) return 'Renda de aluguel/investimentos';
+  // Mapeamentos legados — antigamente "tipo de renda" reusava valores de profissão
+  if (v.includes('clt') || v.startsWith('empregado') || v.startsWith('salário') || v.startsWith('salario')) return 'Salário CLT';
+  if (v.includes('público') || v.includes('publico') || v.includes('servidor') || v.includes('concurs')) return 'Funcionário público / concursado';
+  if (v.includes('pró-labore') || v.includes('pro-labore') || v.includes('prolabore') || v.startsWith('empresári') || v.startsWith('empresari') || v.includes('empresa própria') || v.includes('empresa propria')) return 'Pró-labore / empresa própria';
+  if (v.startsWith('autônomo') || v.startsWith('autonomo') || v.includes('prestação de serviço') || v.includes('prestacao de servico') || v.includes('freelan')) return 'Autônomo / prestação de serviço';
+  if (v.includes('aposentad') || v.includes('pension')) return 'Aposentadoria / pensão';
+  if (v.includes('aluguel') || v.includes('investiment') || v.includes('rendiment')) return 'Rendimentos / investimentos';
+  if (v.includes('ajuda') || v.includes('familiar') || v.includes('família') || v.includes('familia')) return 'Ajuda familiar';
   return 'Outro';
 }
 

@@ -115,7 +115,90 @@ export function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-// ───────── Validade mínima de fiador ─────────
+// ───────── Validade de fiador ─────────
+type FiadorRequirementType = 'renda' | 'imovel';
+export type FiadorRequirementState = 'pendente' | 'em_preenchimento' | 'cumprido';
+
+export interface FiadorRequirementStatus {
+  state: FiadorRequirementState;
+  fiador?: { nome?: string; tipo_fiador?: string } | null;
+  missing: string[];
+}
+
+export interface FiadorRequirementSummary {
+  renda: FiadorRequirementStatus;
+  imovel: FiadorRequirementStatus;
+  hasIncomeGuarantor: boolean;
+  hasPropertyGuarantor: boolean;
+}
+
+function fiadorMatchesRequirement(tipo: string | undefined, requisito: FiadorRequirementType): boolean {
+  if (requisito === 'renda') return tipo === 'renda' || tipo === 'ambos';
+  return tipo === 'imovel' || tipo === 'ambos';
+}
+
+function hasRequiredFiles(
+  documentos: Array<{ key?: string; files?: unknown[] }> | undefined,
+  keys: string[],
+): boolean {
+  return keys.every((key) => documentos?.some((doc) => doc.key === key && (doc.files || []).length > 0));
+}
+
+export function getFiadorRequirementMissing(
+  f: Parameters<typeof isFiadorMinValid>[0] & { documentos?: Array<{ key?: string; files?: unknown[] }> },
+  requisito: FiadorRequirementType,
+): string[] {
+  const missing: string[] = [];
+  const tipo = f?.tipo_fiador;
+  if (!fiadorMatchesRequirement(tipo, requisito)) missing.push('tipo de fiador');
+  if (!(f?.nome || '').trim()) missing.push('nome completo');
+  if (!isValidCPF(f?.cpf || '')) missing.push('CPF válido');
+  if (!isValidPhone(f?.whatsapp || '')) missing.push('WhatsApp/telefone válido');
+  if (!isValidEmail(f?.email || '')) missing.push('e-mail válido');
+  if (requisito === 'renda' && !(f?.renda_mensal || '').trim()) missing.push('renda mensal');
+  if (!hasRequiredFiles(f?.documentos, ['documento_foto', 'comprovante_residencia', 'certidao_estado_civil'])) {
+    missing.push('documentos pessoais obrigatórios');
+  }
+  if (requisito === 'renda' && !hasRequiredFiles(f?.documentos, ['comprovante_renda'])) {
+    missing.push('documentos de renda');
+  }
+  if (requisito === 'imovel' && !hasRequiredFiles(f?.documentos, ['matricula_imovel'])) {
+    missing.push('matrícula/certidão do imóvel');
+  }
+  return missing;
+}
+
+export function isFiadorRequirementComplete(
+  f: Parameters<typeof isFiadorMinValid>[0] & { documentos?: Array<{ key?: string; files?: unknown[] }> },
+  requisito: FiadorRequirementType,
+): boolean {
+  return getFiadorRequirementMissing(f, requisito).length === 0;
+}
+
+function getSingleFiadorRequirementStatus(
+  fiadores: Array<Parameters<typeof isFiadorMinValid>[0] & { documentos?: Array<{ key?: string; files?: unknown[] }> }>,
+  requisito: FiadorRequirementType,
+): FiadorRequirementStatus {
+  const started = fiadores.filter((f) => fiadorMatchesRequirement(f?.tipo_fiador, requisito));
+  const complete = started.find((f) => isFiadorRequirementComplete(f, requisito));
+  if (complete) return { state: 'cumprido', fiador: complete, missing: [] };
+  if (started.length === 0) return { state: 'pendente', fiador: null, missing: [] };
+  return { state: 'em_preenchimento', fiador: started[0], missing: getFiadorRequirementMissing(started[0], requisito) };
+}
+
+export function getFiadorRequirementStates(
+  fiadores: Array<Parameters<typeof isFiadorMinValid>[0] & { documentos?: Array<{ key?: string; files?: unknown[] }> }>,
+): FiadorRequirementSummary {
+  const renda = getSingleFiadorRequirementStatus(fiadores, 'renda');
+  const imovel = getSingleFiadorRequirementStatus(fiadores, 'imovel');
+  return {
+    renda,
+    imovel,
+    hasIncomeGuarantor: renda.state === 'cumprido',
+    hasPropertyGuarantor: imovel.state === 'cumprido',
+  };
+}
+
 /**
  * Considera um fiador "válido" para fins de cálculo dos requisitos
  * (fiador com renda / fiador com imóvel) na etapa Garantia.
@@ -155,11 +238,5 @@ export function hasFiadorInProgress(
   fiadores: Array<{ tipo_fiador?: string } & Parameters<typeof isFiadorMinValid>[0]>,
   requisito: 'renda' | 'imovel',
 ): boolean {
-  return fiadores.some(f => {
-    const tipo = f?.tipo_fiador;
-    const matches = requisito === 'renda'
-      ? (tipo === 'renda' || tipo === 'ambos')
-      : (tipo === 'imovel' || tipo === 'ambos');
-    return matches && !isFiadorMinValid(f);
-  });
+  return getSingleFiadorRequirementStatus(fiadores, requisito).state === 'em_preenchimento';
 }

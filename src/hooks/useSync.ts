@@ -51,6 +51,7 @@ export function useSync() {
         queryClient.invalidateQueries({ queryKey: ['properties'] }),
         queryClient.invalidateQueries({ queryKey: ['properties-light'] }),
         queryClient.invalidateQueries({ queryKey: ['property'] }),
+        queryClient.invalidateQueries({ queryKey: ['public-property'] }),
         queryClient.invalidateQueries({ queryKey: ['proposal-negotiation-summary'] }),
         queryClient.invalidateQueries({ queryKey: ['cards'] }),
         queryClient.invalidateQueries({ queryKey: ['my-queue'] }),

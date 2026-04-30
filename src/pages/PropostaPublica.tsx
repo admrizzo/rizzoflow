@@ -4242,19 +4242,34 @@ export default function PropostaPublica() {
                 <p className="text-xs text-orange-700 mt-3">
                   Após corrigir os itens acima, vá até a etapa <strong>Revisão</strong> e clique em <strong>Enviar Registro</strong> para reenviar.
                 </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 border-orange-400 text-orange-900 hover:bg-orange-100"
-                  onClick={() => {
-                    setStep(7);
-                    setVisited((prev) => new Set(prev).add(7));
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  Ir para Revisão e enviar
-                </Button>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      // Atalho: envia direto a correção a partir de onde o cliente está,
+                      // sem precisar percorrer a proposta nem reaceitar LGPD.
+                      handleSubmit();
+                    }}
+                  >
+                    {isSubmitting ? 'Enviando…' : 'Enviar correção'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-orange-400 text-orange-900 hover:bg-orange-100"
+                    onClick={() => {
+                      setStep(7);
+                      setVisited((prev) => new Set(prev).add(7));
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    Ir para Revisão
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

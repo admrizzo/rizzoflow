@@ -45,6 +45,14 @@ import {
 import { ProfessionInput } from '@/components/proposta/ProfessionInput';
 import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { usePublicCorrectionRequest, SECTION_LABELS } from '@/hooks/useCorrectionRequests';
+import {
+  STEP_TO_PUBLIC_STEP,
+  STEP_LABELS as CORR_STEP_LABELS,
+  describeItem as describeCorrectionItem,
+  isStructuredItem,
+  legacySectionToStep,
+  type CorrectionItem,
+} from '@/lib/correctionCatalog';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { DocumentTipsBlock } from '@/components/proposta/DocumentTipsBlock';

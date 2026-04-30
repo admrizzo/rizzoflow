@@ -447,7 +447,7 @@ export function FiadorSection({
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
                         <h5 className="font-bold text-foreground text-sm">
-                          Documentos do fiador {fiador.tipo_fiador === 'renda' ? 'com renda' : 'com imóvel'}
+                          Documentos do fiador {fiador.tipo_fiador === 'renda' ? 'com renda' : fiador.tipo_fiador === 'imovel' ? 'com imóvel' : 'com renda e imóvel'}
                         </h5>
                       </div>
                       <p className="text-xs text-muted-foreground">Todos os documentos abaixo (exceto opcionais) são obrigatórios para análise da fiança.</p>

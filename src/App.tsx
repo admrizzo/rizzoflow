@@ -22,6 +22,7 @@ const PropostaPublica = lazy(() => import("./pages/PropostaPublica"));
 const ProviderPortal = lazy(() => import("./pages/ProviderPortal"));
 const Demo = lazy(() => import("./pages/Demo"));
 const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
+const DesignPreview = lazy(() => import("./pages/DesignPreview"));
 
 function RouteFallback() {
   return (
@@ -212,6 +213,7 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/design-preview" element={<DesignPreview />} />
               <Route
                 path="/redefinir-senha"
                 element={<RedefinirSenha />}

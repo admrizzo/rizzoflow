@@ -93,6 +93,8 @@ function PartyCard({
                 ? 'Renda'
                 : party.metadata?.tipo_fiador === 'imovel'
                 ? 'Imóvel'
+                : party.metadata?.tipo_fiador === 'ambos'
+                ? 'Renda + Imóvel'
                 : null
             }
           />

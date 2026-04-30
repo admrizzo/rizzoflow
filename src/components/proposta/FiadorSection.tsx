@@ -17,6 +17,7 @@ import { MaskedInput } from '@/components/proposta/MaskedInput';
 import { RendaInfoBlock } from '@/components/proposta/RendaInfoBlock';
 import { IncomeTypeInput } from '@/components/proposta/IncomeTypeInput';
 import { AddressFields } from '@/components/proposta/AddressFields';
+import { isFiadorMinValid, hasFiadorInProgress } from '@/lib/proposalMasks';
 
 const ACCEPTED_FILE_TYPES = '.jpg,.jpeg,.png,.pdf';
 const ACCEPTED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -73,8 +74,6 @@ function isFiadorComplete(f: FiadorData): { complete: boolean; missing: string[]
 
 interface FiadorSectionProps {
   fiadores: FiadorData[];
-  hasRenda: boolean;
-  hasImovel: boolean;
   rentValue: number;
   onUpdateFiador: (index: number, patch: Partial<FiadorData>) => void;
   onUpdateConjuge: (index: number, field: keyof FiadorConjugeData, value: string) => void;
@@ -85,10 +84,16 @@ interface FiadorSectionProps {
 }
 
 export function FiadorSection({
-  fiadores, hasRenda, hasImovel, rentValue,
+  fiadores, rentValue,
   onUpdateFiador, onUpdateConjuge, onAddFile, onRemoveFile, onAddFiador, onRemoveFiador,
 }: FiadorSectionProps) {
   const rendaMin = rentValue > 0 ? rentValue * 3 : 0;
+  // Requisitos só são considerados cumpridos quando existe um fiador
+  // VÁLIDO (dados mínimos preenchidos), não apenas pelo tipo selecionado.
+  const hasRenda = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos'));
+  const hasImovel = fiadores.some(f => isFiadorMinValid(f) && (f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos'));
+  const rendaInProgress = !hasRenda && hasFiadorInProgress(fiadores, 'renda');
+  const imovelInProgress = !hasImovel && hasFiadorInProgress(fiadores, 'imovel');
 
   return (
     <div className="space-y-6">

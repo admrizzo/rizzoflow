@@ -433,17 +433,72 @@ const initialData: ProposalFormData = {
 };
 
 // ── Helper: parse currency string to number ──
-function parseCurrency(val: string): number {
-  const cleaned = val.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.');
-  return parseFloat(cleaned) || 0;
+/**
+ * Converte valores monetários em string para número.
+ * Aceita "R$ 10.000,00", "10000", "10000.00", "10.000,00".
+ * Regra: se contém vírgula → formato BR (ponto = milhar, vírgula = decimal).
+ * Sem vírgula → ponto é decimal nativo de JS (não é separador de milhar).
+ */
+function parseCurrency(val: string | number | null | undefined): number {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return isFinite(val) ? val : 0;
+  const s = String(val).trim();
+  if (!s) return 0;
+  const cleaned = s.replace(/[^\d,.-]/g, '');
+  if (!cleaned) return 0;
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned;
+  const n = parseFloat(normalized);
+  return isFinite(n) ? n : 0;
 }
 
-// ── Helper: calc percentual_comprometimento ──
-export function calcPercentualComprometimento(valorAluguel: string, rendaMensal: string): number | null {
+// ── Helper: calc percentual_comprometimento (aluguel / renda) ──
+export function calcPercentualComprometimento(
+  valorAluguel: string | number | null | undefined,
+  rendaMensal: string | number | null | undefined,
+): number | null {
   const aluguel = parseCurrency(valorAluguel);
   const renda = parseCurrency(rendaMensal);
   if (renda <= 0) return null;
-  return Math.round((aluguel / renda) * 10000) / 100; // 2 decimal places
+  return Math.round((aluguel / renda) * 1000) / 10; // 1 casa decimal
+}
+
+// ── Helper: calc percentual de comprometimento sobre custo mensal total ──
+export function calcPercentualComprometimentoTotal(
+  valorAluguel: string | number | null | undefined,
+  condominio: string | number | null | undefined,
+  iptu: string | number | null | undefined,
+  seguro: string | number | null | undefined,
+  rendaMensal: string | number | null | undefined,
+): number | null {
+  const renda = parseCurrency(rendaMensal);
+  if (renda <= 0) return null;
+  const total =
+    parseCurrency(valorAluguel) +
+    parseCurrency(condominio) +
+    parseCurrency(iptu) +
+    parseCurrency(seguro);
+  return Math.round((total / renda) * 1000) / 10;
+}
+
+// ── Classifica nível de comprometimento ──
+export type ComprometimentoLevel = 'compativel' | 'atencao' | 'alto' | 'inviavel';
+export function classifyComprometimento(percent: number | null | undefined): ComprometimentoLevel | null {
+  if (percent == null || !isFinite(percent)) return null;
+  if (percent > 100) return 'inviavel';
+  if (percent > 50) return 'alto';
+  if (percent > 30) return 'atencao';
+  return 'compativel';
+}
+export function comprometimentoLabel(level: ComprometimentoLevel | null): string {
+  switch (level) {
+    case 'compativel': return 'Compatível';
+    case 'atencao': return 'Atenção';
+    case 'alto': return 'Alto comprometimento';
+    case 'inviavel': return 'Renda inferior ao custo mensal';
+    default: return '';
+  }
 }
 
 // ── Helper: display value or "Não informado" ──
@@ -775,9 +830,9 @@ export default function PropostaLocacao() {
     }
 
     // Calculate score for the card description
-    const renda = parseFloat(data.perfil_financeiro.renda_mensal.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-    const aluguel = parseFloat(data.imovel.valor_aluguel.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-    const percentualCalc = renda > 0 ? (aluguel / renda) * 100 : null;
+    const renda = parseCurrency(data.perfil_financeiro.renda_mensal);
+    const aluguel = parseCurrency(data.imovel.valor_aluguel);
+    const percentualCalc = renda > 0 ? Math.round((aluguel / renda) * 1000) / 10 : null;
     const { score, points } = calcScore(data, percentualCalc);
 
     const scoreLabel = score === 'forte' ? 'Forte' : score === 'media' ? 'Média' : 'Risco';

@@ -27,6 +27,9 @@ import type {
 } from '@/pages/PropostaLocacao';
 import {
   calcPercentualComprometimento,
+  calcPercentualComprometimentoTotal,
+  classifyComprometimento,
+  comprometimentoLabel,
   emptyEmpresa, emptyRepresentante, REGIME_TRIBUTARIO_OPTIONS, PJ_DOC_CATEGORIES,
   emptyLocatarioAdicional,
 } from '@/pages/PropostaLocacao';
@@ -1345,6 +1348,61 @@ function formatCurrency(n: number | null | undefined): string {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * Badge de comprometimento de renda.
+ * Mostra:
+ *  - "Aluguel compromete X% da renda"
+ *  - "Custo mensal total compromete Y% da renda" (quando diferente do aluguel)
+ * Classifica em Compatível (≤30%), Atenção (≤50%), Alto (>50%) ou Inviável (>100%).
+ */
+function ComprometimentoBadge({
+  percentAluguel,
+  percentTotal,
+  hasRent,
+  hasIncome,
+}: {
+  percentAluguel: number | null;
+  percentTotal: number | null;
+  hasRent: boolean;
+  hasIncome: boolean;
+}) {
+  if (!hasRent) return null;
+  if (!hasIncome || percentAluguel == null) {
+    return (
+      <div className="mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2 bg-muted text-muted-foreground">
+        <AlertCircle className="h-4 w-4" />
+        Informe a renda para calcular o comprometimento.
+      </div>
+    );
+  }
+  const level = classifyComprometimento(percentTotal ?? percentAluguel);
+  const cls =
+    level === 'compativel'
+      ? 'bg-green-50 text-green-700'
+      : level === 'atencao'
+      ? 'bg-amber-50 text-amber-700'
+      : 'bg-red-50 text-red-700';
+  const Icon = level === 'compativel' ? Check : AlertCircle;
+  const showTotal = percentTotal != null && Math.abs((percentTotal ?? 0) - percentAluguel) > 0.05;
+  return (
+    <div className={cn('mt-2 p-3 rounded-lg text-sm flex flex-col gap-1', cls)}>
+      <div className="flex items-center gap-2 font-medium">
+        <Icon className="h-4 w-4" />
+        {comprometimentoLabel(level)}
+      </div>
+      <div className="text-xs leading-relaxed">
+        Aluguel compromete <strong>{percentAluguel.toFixed(1)}%</strong> da renda.
+        {showTotal && (
+          <>
+            {' '}Custo mensal total (aluguel + condomínio + IPTU + seguro) compromete{' '}
+            <strong>{(percentTotal as number).toFixed(1)}%</strong>.
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';
@@ -2038,6 +2096,14 @@ export default function PropostaPublica() {
   const percentualComprometimento = calcPercentualComprometimento(
     data.imovel.valor_aluguel,
     data.perfil_financeiro.renda_mensal
+  );
+
+  const percentualComprometimentoTotal = calcPercentualComprometimentoTotal(
+    data.imovel.valor_aluguel,
+    property?.condominio ?? null,
+    property?.iptu ?? null,
+    property?.seguro_incendio ?? null,
+    data.perfil_financeiro.renda_mensal,
   );
 
   const stepErrors = validateStep(step, data);
@@ -2820,16 +2886,12 @@ export default function PropostaPublica() {
                 className="mt-1.5"
               />
               <RendaInfoBlock />
-              {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
-                <div className={cn(
-                  'mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2',
-                  percentualComprometimento > 30 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
-                )}>
-                  {percentualComprometimento > 30 ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                  Comprometimento de renda: {percentualComprometimento.toFixed(1)}%
-                  {percentualComprometimento > 30 && ' — acima de 30%'}
-                </div>
-              )}
+              <ComprometimentoBadge
+                percentAluguel={percentualComprometimento}
+                percentTotal={percentualComprometimentoTotal}
+                hasRent={parseCurrency(data.imovel.valor_aluguel) > 0}
+                hasIncome={parseCurrency(data.perfil_financeiro.renda_mensal) > 0}
+              />
             </div>
           </div>
         </FormSection>
@@ -4152,7 +4214,7 @@ export default function PropostaPublica() {
   }
 
   function renderStep7() {
-    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} property={property} />;
+    return <ReviewStepPublic data={data} showConjuge={showConjuge} percentual={percentualComprometimento} percentualTotal={percentualComprometimentoTotal} onGoToStep={s => { setStep(s); setVisited(prev => new Set(prev).add(s)); }} termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} property={property} />;
   }
 
   const stepRenderers = [renderStep0, renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7];
@@ -4419,8 +4481,8 @@ function PersonFieldsClean({
 }
 
 // ── Review Step ──
-function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAccepted, onTermsChange, property }: {
-  data: ProposalFormData; showConjuge: boolean; percentual: number | null; onGoToStep: (step: number) => void;
+function ReviewStepPublic({ data, showConjuge, percentual, percentualTotal, onGoToStep, termsAccepted, onTermsChange, property }: {
+  data: ProposalFormData; showConjuge: boolean; percentual: number | null; percentualTotal: number | null; onGoToStep: (step: number) => void;
   termsAccepted: boolean; onTermsChange: (v: boolean) => void; property: PropertyData;
 }) {
   const pendingSteps = getPendingSteps(data);
@@ -4432,7 +4494,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
-  const partiesPreview = buildPartiesFromFormData(data, { comprometimentoPercent: percentual });
+  const partiesPreview = buildPartiesFromFormData(data, { comprometimentoPercent: percentual, comprometimentoPercentTotal: percentualTotal });
 
   return (
     <div className="space-y-8">

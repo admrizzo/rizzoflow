@@ -28,6 +28,14 @@ function formatCurrency(value: number | null | undefined): string | null {
   }
 }
 
+function classifyLabel(percent: number): string {
+  if (!isFinite(percent)) return '';
+  if (percent > 100) return 'Renda inferior ao custo mensal';
+  if (percent > 50) return 'Alto comprometimento';
+  if (percent > 30) return 'Atenção';
+  return 'Compatível';
+}
+
 function Row({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value || !String(value).trim()) return null;
   return (
@@ -92,10 +100,16 @@ function PartyCard({
         <Row label={party.role === 'company' ? 'Faturamento mensal' : 'Renda'} value={formatCurrency(party.income)} />
         {party.role === 'primary_tenant' && party.metadata?.comprometimento_percent != null && (
           <Row
-            label="Comprometimento de renda"
-            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}%${
-              Number(party.metadata.comprometimento_percent) > 30 ? ' (acima de 30%)' : ''
-            }`}
+            label="Comprometimento (aluguel)"
+            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}% — ${classifyLabel(Number(party.metadata.comprometimento_percent))}`}
+          />
+        )}
+        {party.role === 'primary_tenant' &&
+          party.metadata?.comprometimento_percent_total != null &&
+          Math.abs(Number(party.metadata.comprometimento_percent_total) - Number(party.metadata.comprometimento_percent ?? 0)) > 0.05 && (
+          <Row
+            label="Comprometimento (custo total)"
+            value={`${Number(party.metadata.comprometimento_percent_total).toFixed(1)}% — ${classifyLabel(Number(party.metadata.comprometimento_percent_total))}`}
           />
         )}
         <Row label="Endereço" value={party.address} />
@@ -374,7 +388,7 @@ export function ProposalPartiesView({ parties, compact = false, className, docsB
  */
 export function buildPartiesFromFormData(
   data: any,
-  opts?: { comprometimentoPercent?: number | null },
+  opts?: { comprometimentoPercent?: number | null; comprometimentoPercentTotal?: number | null },
 ): ProposalParty[] {
   // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
   const parseNum = (s: any): number | null => {
@@ -479,6 +493,10 @@ export function buildPartiesFromFormData(
         comprometimento_percent:
           opts?.comprometimentoPercent != null && isFinite(opts.comprometimentoPercent)
             ? opts.comprometimentoPercent
+            : null,
+        comprometimento_percent_total:
+          opts?.comprometimentoPercentTotal != null && isFinite(opts.comprometimentoPercentTotal)
+            ? opts.comprometimentoPercentTotal
             : null,
       },
     });

@@ -6,7 +6,6 @@ import { useInternalUsers, InternalUser } from '@/hooks/useInternalUsers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -63,7 +62,6 @@ import {
   Search,
   KeyRound,
   RefreshCw,
-  Filter,
 } from 'lucide-react';
 import { AppRole } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';

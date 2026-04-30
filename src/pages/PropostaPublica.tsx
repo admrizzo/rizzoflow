@@ -4274,21 +4274,23 @@ export default function PropostaPublica() {
             </Button>
           ) : (
             <Button onClick={() => {
-              const pending = getPendingSteps(data);
-              const critical = pending.filter(p => p.critical);
               if (!termsAccepted) {
                 toast.error('Aceite os termos', { description: 'Você precisa aceitar os termos para enviar o registro.' });
                 return;
               }
-              if (critical.length > 0) {
-                toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
-                setStep(critical[0].step);
-                setVisited(prev => new Set(prev).add(critical[0].step));
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                return;
+              if (!isCorrectionMode) {
+                const pending = getPendingSteps(data);
+                const critical = pending.filter(p => p.critical);
+                if (critical.length > 0) {
+                  toast.error('Pendências críticas impedem o envio', { description: `Corrija: ${critical[0].label} — ${critical[0].errors[0]}` });
+                  setStep(critical[0].step);
+                  setVisited(prev => new Set(prev).add(critical[0].step));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  return;
+                }
               }
               handleSubmit();
-            }} disabled={isSubmitting || !termsAccepted || getPendingSteps(data).some(p => p.critical)} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
+            }} disabled={isSubmitting || !termsAccepted || (!isCorrectionMode && getPendingSteps(data).some(p => p.critical))} className="flex-1 h-12 rounded-xl text-base font-bold bg-green-600 hover:bg-green-700 disabled:bg-muted disabled:text-muted-foreground">
               {isSubmitting ? (
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
               ) : (

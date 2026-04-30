@@ -97,33 +97,22 @@ export function useProposalNegotiationSummary(
       const draft = drafts?.[0];
       const fd: any = draft?.form_data || null;
 
-      // Aluguel: prioriza draft.imovel.valor_aluguel, depois link.rent_value
+      const { data: prop } = link?.codigo_robust
+        ? await supabase
+            .from('properties')
+            .select('valor_aluguel, condominio, iptu, seguro_incendio, logradouro, numero, bairro, cidade, estado')
+            .eq('codigo_robust', link.codigo_robust)
+            .maybeSingle()
+        : { data: null };
+
+      // Dados financeiros do imóvel sempre vêm primeiro do CRM sincronizado.
+      // Draft/link são fallback para propostas antigas ou imóvel ausente no feed.
       const aluguel =
-        num(fd?.imovel?.valor_aluguel) ?? num(link?.rent_value) ?? null;
-
-      // Condomínio/IPTU/Seguro: o draft normalmente não guarda — vêm do imóvel referenciado
-      // Se houver, podem estar em fd.imovel.* ou em fd.encargos
-      let condominio = num(fd?.imovel?.condominio) ?? num(fd?.encargos?.condominio);
-      let iptu = num(fd?.imovel?.iptu) ?? num(fd?.encargos?.iptu);
-      let seguro =
-        num(fd?.imovel?.seguro_incendio) ?? num(fd?.encargos?.seguro_incendio);
-
-      // Fallback: busca pelo codigo_robust em properties
-      if (
-        link?.codigo_robust &&
-        (condominio === null || iptu === null || seguro === null)
-      ) {
-        const { data: prop } = await supabase
-          .from('properties')
-          .select('condominio, iptu, seguro_incendio')
-          .eq('codigo_robust', link.codigo_robust)
-          .maybeSingle();
-        if (prop) {
-          if (condominio === null) condominio = num(prop.condominio);
-          if (iptu === null) iptu = num(prop.iptu);
-          if (seguro === null) seguro = num(prop.seguro_incendio);
-        }
-      }
+        num(prop?.valor_aluguel) ?? num(fd?.imovel?.valor_aluguel) ?? num(link?.rent_value) ?? null;
+      const condominio = num(prop?.condominio) ?? num(fd?.imovel?.condominio) ?? num(fd?.encargos?.condominio);
+      const iptu = num(prop?.iptu) ?? num(fd?.imovel?.iptu) ?? num(fd?.encargos?.iptu);
+      const seguro =
+        num(prop?.seguro_incendio) ?? num(fd?.imovel?.seguro_incendio) ?? num(fd?.encargos?.seguro_incendio);
 
       const totalMensal =
         (aluguel ?? 0) + (condominio ?? 0) + (iptu ?? 0) + (seguro ?? 0);
@@ -191,7 +180,9 @@ export function useProposalNegotiationSummary(
         tipoAssinatura,
         observacaoGarantia,
         codigoRobust: link?.codigo_robust ?? null,
-        endereco: link?.address_summary ?? null,
+        endereco: prop
+          ? [prop.logradouro, prop.numero, prop.bairro, prop.cidade, prop.estado].filter(Boolean).join(', ')
+          : link?.address_summary ?? null,
         contratoDataInicio,
         diaVencimento,
         retiradaPorTerceiro,

@@ -2823,16 +2823,12 @@ export default function PropostaPublica() {
                 className="mt-1.5"
               />
               <RendaInfoBlock />
-              {percentualComprometimento !== null && parseCurrency(data.imovel.valor_aluguel) > 0 && (
-                <div className={cn(
-                  'mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2',
-                  percentualComprometimento > 30 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
-                )}>
-                  {percentualComprometimento > 30 ? <AlertCircle className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                  Comprometimento de renda: {percentualComprometimento.toFixed(1)}%
-                  {percentualComprometimento > 30 && ' — acima de 30%'}
-                </div>
-              )}
+              <ComprometimentoBadge
+                percentAluguel={percentualComprometimento}
+                percentTotal={percentualComprometimentoTotal}
+                hasRent={parseCurrency(data.imovel.valor_aluguel) > 0}
+                hasIncome={parseCurrency(data.perfil_financeiro.renda_mensal) > 0}
+              />
             </div>
           </div>
         </FormSection>

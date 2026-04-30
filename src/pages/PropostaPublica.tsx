@@ -98,6 +98,78 @@ function isSpouseDocCategory(category: string): boolean {
   return SPOUSE_DOC_KEYS.has(category);
 }
 
+// Verifica se um item de correção foi atendido pelo cliente.
+// - replace_document: pelo menos um arquivo NÃO persistido na categoria/pessoa.
+// - edit_field: valor atual ≠ valor anterior (ou anterior vazio e atual preenchido).
+function isCorrectionItemFulfilled(
+  item: CorrectionItem,
+  current: ProposalFormData,
+  previous?: ProposalFormData,
+): boolean {
+  if (item.action === 'replace_document') {
+    const cats = collectDocCategoriesFor(item, current);
+    return cats.some((c) => c.files.some((f) => !f.persisted));
+  }
+  // edit_field
+  const cur = (readPersonalField(item, current) ?? '').toString().trim();
+  const prev = (readPersonalField(item, previous) ?? '').toString().trim();
+  if (prev.length === 0) return cur.length > 0;
+  return cur.length > 0 && cur !== prev;
+}
+
+function collectDocCategoriesFor(
+  item: CorrectionItem,
+  d: ProposalFormData,
+): Array<{ key: string; files: UploadedFile[] }> {
+  const out: Array<{ key: string; files: UploadedFile[] }> = [];
+  const pushFrom = (cats?: { key: string; files: UploadedFile[] }[]) => {
+    if (!cats) return;
+    cats.forEach((c) => { if (c.key === item.field) out.push(c); });
+  };
+  switch (item.party_kind) {
+    case 'locatario_principal':
+    case 'empresa':
+      pushFrom(d.documentos as any);
+      break;
+    case 'conjuge':
+      pushFrom(d.conjuge?.documentos as any);
+      (d.locatarios_adicionais || []).forEach((l) => pushFrom(l.conjuge?.documentos as any));
+      break;
+    case 'locatario_adicional':
+      (d.locatarios_adicionais || []).forEach((l) => pushFrom(l.documentos as any));
+      break;
+    default:
+      // Fallback: procura em todos os blocos PF.
+      pushFrom(d.documentos as any);
+      pushFrom(d.conjuge?.documentos as any);
+      (d.locatarios_adicionais || []).forEach((l) => {
+        pushFrom(l.documentos as any);
+        pushFrom(l.conjuge?.documentos as any);
+      });
+  }
+  return out;
+}
+
+function readPersonalField(
+  item: CorrectionItem,
+  d?: ProposalFormData,
+): string | undefined {
+  if (!d) return undefined;
+  const map: Record<string, keyof DadosPessoais> = {
+    nome_completo: 'nome',
+    cpf: 'cpf',
+    rg: 'documento_identidade' as any,
+    whatsapp: 'whatsapp',
+    email: 'email',
+    profissao: 'profissao',
+  };
+  const key = map[item.field];
+  if (!key) return undefined;
+  if (item.party_kind === 'conjuge') return (d.conjuge as any)?.[key];
+  if (item.party_kind === 'locatario_adicional') return (d.locatarios_adicionais?.[0] as any)?.[key];
+  return (d.dados_pessoais as any)?.[key];
+}
+
 // Roles válidas em proposal_parties — devem casar com o que o card/visualização espera.
 const VALID_PARTY_ROLES = new Set<string>([
   'primary_tenant',

@@ -571,37 +571,6 @@ export function FiadorSection({
           </span>
         </div>
       </div>
-
-      {/* Status visual: cumprido (verde) ou em preenchimento (âmbar) */}
-      {false && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {hasRenda && (
-            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
-              <span className="font-semibold text-foreground">Fiador com renda cadastrado</span>
-            </div>
-          )}
-          {!hasRenda && rendaInProgress && (
-            <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-              <AlertCircle className="h-4 w-4 text-warning shrink-0" strokeWidth={2} />
-              <span className="font-semibold text-foreground">Fiador com renda em preenchimento</span>
-            </div>
-          )}
-          {hasImovel && (
-            <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-              <Check className="h-4 w-4 text-accent shrink-0" strokeWidth={3} />
-              <span className="font-semibold text-foreground">Fiador com imóvel cadastrado</span>
-            </div>
-          )}
-          {!hasImovel && imovelInProgress && (
-            <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-              <AlertCircle className="h-4 w-4 text-warning shrink-0" strokeWidth={2} />
-              <span className="font-semibold text-foreground">Fiador com imóvel em preenchimento</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Resumo quando ambos requisitos estão completos */}
       {hasRenda && hasImovel && (
         <div className="rounded-2xl border border-accent/30 bg-accent/5 p-4 flex items-start gap-3">

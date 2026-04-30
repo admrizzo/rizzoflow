@@ -82,8 +82,22 @@ function PartyCard({
         <Row label="E-mail" value={party.email} />
         <Row label="Telefone" value={party.phone} />
         <Row label="Estado civil" value={party.marital_status} />
+        {party.role === 'primary_tenant' && party.metadata?.regime_bens && (
+          <Row label="Regime de bens" value={String(party.metadata.regime_bens)} />
+        )}
         <Row label="Profissão" value={party.profession} />
+        {(party.role === 'primary_tenant' || party.role === 'additional_tenant') && party.metadata?.fonte_renda && (
+          <Row label="Tipo de renda" value={String(party.metadata.fonte_renda)} />
+        )}
         <Row label={party.role === 'company' ? 'Faturamento mensal' : 'Renda'} value={formatCurrency(party.income)} />
+        {party.role === 'primary_tenant' && party.metadata?.comprometimento_percent != null && (
+          <Row
+            label="Comprometimento de renda"
+            value={`${Number(party.metadata.comprometimento_percent).toFixed(1)}%${
+              Number(party.metadata.comprometimento_percent) > 30 ? ' (acima de 30%)' : ''
+            }`}
+          />
+        )}
         <Row label="Endereço" value={party.address} />
         {party.role === 'guarantor' && (
           <Row
@@ -358,7 +372,10 @@ export function ProposalPartiesView({ parties, compact = false, className, docsB
  * para uso na tela de Revisão da proposta pública. A mesma estrutura é
  * exibida pelo `ProposalPartiesView`.
  */
-export function buildPartiesFromFormData(data: any): ProposalParty[] {
+export function buildPartiesFromFormData(
+  data: any,
+  opts?: { comprometimentoPercent?: number | null },
+): ProposalParty[] {
   // Aceita BR ("1.800,00") e JS-numérico ("1800.00").
   const parseNum = (s: any): number | null => {
     if (s == null) return null;
@@ -456,7 +473,14 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
       income: parseNum(pf.renda_mensal),
       address: null,
       position: pos++,
-      metadata: {},
+      metadata: {
+        fonte_renda: pf.fonte_renda || null,
+        regime_bens: pf.regime_bens || null,
+        comprometimento_percent:
+          opts?.comprometimentoPercent != null && isFinite(opts.comprometimentoPercent)
+            ? opts.comprometimentoPercent
+            : null,
+      },
     });
     const cj = data?.conjuge;
     if (cj && (cj.nome || cj.cpf || cj.email)) {
@@ -501,7 +525,7 @@ export function buildPartiesFromFormData(data: any): ProposalParty[] {
         income: parseNum(loc.renda_mensal),
         address: loc.endereco || null,
         position: pos++,
-        metadata: {},
+        metadata: { fonte_renda: loc.fonte_renda || null },
       });
       const lc = loc.conjuge;
       if (lc && (lc.nome || lc.cpf || lc.email)) {

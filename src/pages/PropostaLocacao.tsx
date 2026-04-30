@@ -583,18 +583,18 @@ function validateStep(step: number, data: ProposalFormData): string[] {
       if (!data.garantia.tipo_garantia) errors.push('Garantia é obrigatória');
       if (data.garantia.tipo_garantia === 'Fiador') {
         const fs = data.garantia.fiadores;
-        const hasRenda = fs.some(f => f.tipo_fiador === 'renda');
-        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel');
-        if (!hasRenda) errors.push('É necessário adicionar um fiador com renda');
-        if (!hasImovel) errors.push('É necessário adicionar um fiador com imóvel quitado');
+        const hasRenda = fs.some(f => f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos');
+        const hasImovel = fs.some(f => f.tipo_fiador === 'imovel' || f.tipo_fiador === 'ambos');
+        if (!hasRenda) errors.push('Informe um fiador com renda.');
+        if (!hasImovel) errors.push('Informe um fiador com imóvel.');
         fs.forEach((f, i) => {
           const label = `Fiador ${i + 1}`;
-          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda ou imóvel)`);
+          if (!f.tipo_fiador) errors.push(`${label}: selecione o tipo (renda, imóvel ou ambos)`);
           if (!f.nome.trim()) errors.push(`${label}: nome é obrigatório`);
           if (!f.cpf.trim()) errors.push(`${label}: CPF é obrigatório`);
           if (!f.whatsapp.trim()) errors.push(`${label}: telefone é obrigatório`);
           if (!f.email.trim()) errors.push(`${label}: e-mail é obrigatório`);
-          if (f.tipo_fiador === 'renda' && !f.renda_mensal.trim()) {
+          if ((f.tipo_fiador === 'renda' || f.tipo_fiador === 'ambos') && !f.renda_mensal.trim()) {
             errors.push(`${label}: renda mensal é obrigatória`);
           }
           if (fiadorNeedsConjuge(f) && !f.conjuge.nome.trim()) {

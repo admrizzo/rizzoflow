@@ -4055,7 +4055,7 @@ function ReviewStepPublic({ data, showConjuge, percentual, onGoToStep, termsAcce
   const pj = isPJ(data);
 
   const firstPendingStep = pendingSteps.length > 0 ? pendingSteps[0] : null;
-  const partiesPreview = buildPartiesFromFormData(data);
+  const partiesPreview = buildPartiesFromFormData(data, { comprometimentoPercent: percentual });
 
   return (
     <div className="space-y-8">

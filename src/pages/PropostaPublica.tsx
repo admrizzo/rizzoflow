@@ -776,132 +776,197 @@ async function persistProposalParties(
     }
   }
 
-  // ── Idempotência: apaga partes anteriores deste link ──
-  {
-    // Preferimos a RPC SECURITY DEFINER (`clear_public_proposal_parties`) para
-    // não depender de permissões diretas de DELETE em proposal_parties pelo
-    // formulário público. Caímos no DELETE direto apenas se a RPC não existir
-    // (compatibilidade com ambientes antigos).
-    let delErr: any = null;
-    // publicToken vem do escopo do call site (parâmetro da função).
-    if (publicToken) {
-      const { error: rpcErr } = await supabase.rpc(
-        'clear_public_proposal_parties' as any,
-        { _public_token: publicToken, _proposal_link_id: proposalLinkId } as any,
-      );
-      delErr = rpcErr || null;
-      // Se a função não existir no banco ainda, usa fallback.
-      if (delErr && /function .* does not exist|PGRST202|404/i.test(delErr.message || '')) {
-        const { error: fbErr } = await supabase
-          .from('proposal_parties' as any)
-          .delete()
-          .eq('proposal_link_id', proposalLinkId);
-        delErr = fbErr || null;
+  // ── Merge idempotente: NÃO apagar tudo. Preserva IDs para que documentos
+  //    existentes (incluindo de correções anteriores) permaneçam vinculados
+  //    aos mesmos blocos visuais. Sem essa preservação, cada reenvio de
+  //    correção criava blocos duplicados de fiadores / cônjuges.
+  //
+  //    Estratégia:
+  //      1. Carrega partes existentes do proposal_link.
+  //      2. Constrói uma chave canônica idêntica à de `partyKey()` para cada
+  //         parte existente, derivando role + índice a partir dos metadados.
+  //      3. Para cada nova linha: se já existe match → UPDATE in-place
+  //         (mantém id). Se não existe → INSERT.
+  //      4. Partes existentes que não casam com nenhuma nova linha
+  //         (ex.: fiador removido) só são removidas se NÃO tiverem
+  //         documentos vinculados — caso contrário mantém-se órfãs (com
+  //         metadata.removed=true) para preservar histórico de documentos.
+  const existingPartiesQ = await supabase
+    .from('proposal_parties' as any)
+    .select('id, role, position, metadata, related_party_id')
+    .eq('proposal_link_id', proposalLinkId);
+  if (existingPartiesQ.error) {
+    throw new ProposalPartiesError(
+      `Falha ao carregar partes existentes: ${existingPartiesQ.error.message}`,
+      'Não foi possível ler envolvidos anteriores desta proposta. Tente novamente.',
+      existingPartiesQ.error,
+    );
+  }
+  const existingParties = (existingPartiesQ.data as any[]) || [];
+
+  // Deriva chave canônica de uma parte EXISTENTE para casar com partyKey() das novas.
+  const canonicalKeyForExisting = (p: any): string | null => {
+    const md = p.metadata || {};
+    switch (p.role) {
+      case 'primary_tenant':
+        return partyKey('primary_tenant', 0);
+      case 'company':
+        return partyKey('company', 0);
+      case 'additional_tenant': {
+        const idx = (md.tenant_index ?? 0) - 1;
+        return idx >= 0 ? partyKey('additional_tenant', idx) : null;
       }
-    } else {
-      const { error: fbErr } = await supabase
-        .from('proposal_parties' as any)
-        .delete()
-        .eq('proposal_link_id', proposalLinkId);
-      delErr = fbErr || null;
+      case 'guarantor': {
+        const idx = (md.guarantor_index ?? 0) - 1;
+        return idx >= 0 ? partyKey('guarantor', idx) : null;
+      }
+      case 'tenant_spouse': {
+        const so = String(md.spouse_of || '');
+        if (so === 'primary_tenant') return partyKey('tenant_spouse', 0);
+        const m = /^additional_tenant_(\d+)$/.exec(so);
+        if (m) return partyKey('tenant_spouse_of_additional', Number(m[1]) - 1);
+        return null;
+      }
+      case 'guarantor_spouse': {
+        const so = String(md.spouse_of || '');
+        const m = /^guarantor_(\d+)$/.exec(so);
+        if (m) return partyKey('guarantor_spouse', Number(m[1]) - 1);
+        return null;
+      }
+      case 'legal_representative': {
+        // Sem índice em metadados — usa posição relativa entre representantes
+        const reps = existingParties
+          .filter((x: any) => x.role === 'legal_representative')
+          .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
+        const idx = reps.findIndex((x: any) => x.id === p.id);
+        return idx >= 0 ? partyKey('legal_representative', idx) : null;
+      }
+      default:
+        return null;
     }
-    if (delErr) {
-      console.error('[persistProposalParties] Falha ao limpar partes anteriores', delErr);
-      throw new ProposalPartiesError(
-        `Erro ao limpar proposal_parties anteriores: ${delErr.message}`,
-        'Não foi possível limpar envolvidos anteriores desta proposta. Tente novamente em instantes.',
-        delErr,
-      );
-    }
+  };
+
+  const existingByKey = new Map<string, any>();
+  for (const p of existingParties) {
+    const k = canonicalKeyForExisting(p);
+    if (k && !existingByKey.has(k)) existingByKey.set(k, p);
   }
 
-  // ── Etapa 1: insere apenas as partes principais (sem cônjuges) ──
+  const map = new Map<string, string>();
+
+  // 1ª passada: principais (não-cônjuges) — UPDATE/INSERT
   const principalIdx: number[] = [];
   const spouseIdx: number[] = [];
   rows.forEach((_, i) => (isSpouseKey(rowKeys[i]) ? spouseIdx.push(i) : principalIdx.push(i)));
 
-  const map = new Map<string, string>();
-
-  if (principalIdx.length > 0) {
-    const principalRows = principalIdx.map((i) => rows[i]);
-    const { data: insertedP, error: insPErr } = await supabase
-      .from('proposal_parties' as any)
-      .insert(principalRows as any)
-      .select('id, position');
-    if (insPErr) {
-      console.error('[persistProposalParties] Insert principais falhou', {
-        error: insPErr,
-        rows: principalRows.map(maskRowForLog),
-      });
-      const detail = insPErr.message || insPErr.details || insPErr.hint || 'erro desconhecido';
-      throw new ProposalPartiesError(
-        `Falha ao inserir partes principais: ${detail}`,
-        `Não foi possível salvar locatários/fiadores: ${detail}`,
-        insPErr,
-      );
-    }
-    const sortedP = [...((insertedP as any[]) || [])].sort(
-      (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    );
-    if (sortedP.length !== principalIdx.length) {
-      throw new ProposalPartiesError(
-        `Quantidade inserida ≠ enviada (principais: ${sortedP.length} / ${principalIdx.length})`,
-        'Falha ao salvar todos os envolvidos da proposta. Tente novamente.',
-      );
-    }
-    principalIdx.forEach((origIdx, j) => {
-      map.set(rowKeys[origIdx], sortedP[j].id);
-    });
-  }
-
-  // ── Etapa 2: insere cônjuges já com related_party_id resolvido ──
-  if (spouseIdx.length > 0) {
-    const spouseRowsWithParent = spouseIdx.map((i) => {
-      const childKey = rowKeys[i];
-      const pk = parentKeyFor(childKey)!;
-      const parentId = map.get(pk);
-      if (!parentId) {
-        // já validado acima, mas defensivo
+  for (const i of principalIdx) {
+    const key = rowKeys[i];
+    const row = rows[i];
+    const existing = existingByKey.get(key);
+    if (existing) {
+      const { error: updErr } = await supabase
+        .from('proposal_parties' as any)
+        .update(row as any)
+        .eq('id', existing.id);
+      if (updErr) {
+        console.error('[persistProposalParties] Update principal falhou', { key, error: updErr });
         throw new ProposalPartiesError(
-          `Pai não encontrado para cônjuge ${childKey}`,
-          `Não foi possível vincular o cônjuge de "${personLabel(pk, rows[rowKeys.indexOf(pk)])}".`,
+          `Falha ao atualizar parte ${key}: ${updErr.message}`,
+          `Não foi possível atualizar dados de "${personLabel(key, row)}".`,
+          updErr,
         );
       }
-      return { ...rows[i], related_party_id: parentId };
-    });
+      map.set(key, existing.id);
+    } else {
+      const { data: ins, error: insErr } = await supabase
+        .from('proposal_parties' as any)
+        .insert(row as any)
+        .select('id')
+        .single();
+      if (insErr || !ins) {
+        console.error('[persistProposalParties] Insert principal falhou', { key, error: insErr });
+        throw new ProposalPartiesError(
+          `Falha ao inserir parte ${key}: ${insErr?.message || 'sem dados'}`,
+          `Não foi possível salvar "${personLabel(key, row)}".`,
+          insErr,
+        );
+      }
+      map.set(key, (ins as any).id);
+    }
+  }
 
-    const { data: insertedS, error: insSErr } = await supabase
-      .from('proposal_parties' as any)
-      .insert(spouseRowsWithParent as any)
-      .select('id, position');
-    if (insSErr) {
-      console.error('[persistProposalParties] Insert cônjuges falhou', {
-        error: insSErr,
-        rows: spouseRowsWithParent.map(maskRowForLog),
-      });
-      const detail = insSErr.message || insSErr.details || insSErr.hint || 'erro desconhecido';
-      // Tenta achar a primeira pessoa-cônjuge do lote para dar contexto
-      const firstSpouseKey = rowKeys[spouseIdx[0]];
-      const firstSpouseRow = rows[spouseIdx[0]];
-      const personName = personLabel(firstSpouseKey, firstSpouseRow);
+  // 2ª passada: cônjuges — UPDATE/INSERT já com related_party_id resolvido
+  for (const i of spouseIdx) {
+    const key = rowKeys[i];
+    const pk = parentKeyFor(key)!;
+    const parentId = map.get(pk);
+    if (!parentId) {
       throw new ProposalPartiesError(
-        `Falha ao inserir cônjuges: ${detail}`,
-        `Não foi possível salvar dados de cônjuge (${personName}): ${detail}`,
-        insSErr,
+        `Pai não encontrado para cônjuge ${key}`,
+        `Não foi possível vincular o cônjuge de "${personLabel(pk, rows[rowKeys.indexOf(pk)])}".`,
       );
     }
-    const sortedS = [...((insertedS as any[]) || [])].sort(
-      (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    );
-    if (sortedS.length !== spouseIdx.length) {
-      throw new ProposalPartiesError(
-        `Quantidade inserida ≠ enviada (cônjuges: ${sortedS.length} / ${spouseIdx.length})`,
-        'Falha ao salvar todos os cônjuges. Tente novamente.',
-      );
+    const row = { ...rows[i], related_party_id: parentId };
+    const existing = existingByKey.get(key);
+    if (existing) {
+      const { error: updErr } = await supabase
+        .from('proposal_parties' as any)
+        .update(row as any)
+        .eq('id', existing.id);
+      if (updErr) {
+        console.error('[persistProposalParties] Update cônjuge falhou', { key, error: updErr });
+        throw new ProposalPartiesError(
+          `Falha ao atualizar cônjuge ${key}: ${updErr.message}`,
+          `Não foi possível atualizar cônjuge de "${personLabel(pk, rows[rowKeys.indexOf(pk)])}".`,
+          updErr,
+        );
+      }
+      map.set(key, existing.id);
+    } else {
+      const { data: ins, error: insErr } = await supabase
+        .from('proposal_parties' as any)
+        .insert(row as any)
+        .select('id')
+        .single();
+      if (insErr || !ins) {
+        console.error('[persistProposalParties] Insert cônjuge falhou', { key, error: insErr });
+        throw new ProposalPartiesError(
+          `Falha ao inserir cônjuge ${key}: ${insErr?.message || 'sem dados'}`,
+          `Não foi possível salvar cônjuge de "${personLabel(pk, rows[rowKeys.indexOf(pk)])}".`,
+          insErr,
+        );
+      }
+      map.set(key, (ins as any).id);
     }
-    spouseIdx.forEach((origIdx, j) => {
-      map.set(rowKeys[origIdx], sortedS[j].id);
-    });
+  }
+
+  // 3ª passada: remove partes obsoletas SOMENTE se não tiverem documentos.
+  const newKeys = new Set(rowKeys);
+  const obsoleteParties = existingParties.filter((p: any) => {
+    const k = canonicalKeyForExisting(p);
+    return !k || !newKeys.has(k);
+  });
+  if (obsoleteParties.length > 0) {
+    const ids = obsoleteParties.map((p: any) => p.id);
+    const { data: docsForObsolete } = await supabase
+      .from('proposal_documents')
+      .select('party_id')
+      .in('party_id', ids);
+    const protectedIds = new Set<string>(((docsForObsolete as any[]) || []).map((d) => d.party_id));
+    const removableIds = ids.filter((id) => !protectedIds.has(id));
+    if (removableIds.length > 0) {
+      // Primeiro remove cônjuges referenciando essas partes (related_party_id),
+      // depois as próprias. Aqui só removemos as próprias — cônjuges desses
+      // titulares também são "obsoletos" e entrarão neste mesmo lote (já que
+      // a chave canônica deles também sumiu).
+      const { error: delErr } = await supabase
+        .from('proposal_parties' as any)
+        .delete()
+        .in('id', removableIds);
+      if (delErr) {
+        console.warn('[persistProposalParties] Falha ao remover obsoletos (mantendo)', delErr);
+      }
+    }
   }
 
   return map;

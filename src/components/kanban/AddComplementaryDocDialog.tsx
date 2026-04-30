@@ -49,6 +49,7 @@ interface AddComplementaryDocDialogProps {
   personName: string;
   personRole: string;
   existingFinalNames: string[];
+  partyId?: string | null;
 }
 
 export function AddComplementaryDocDialog({
@@ -61,6 +62,7 @@ export function AddComplementaryDocDialog({
   personName,
   personRole,
   existingFinalNames,
+  partyId,
 }: AddComplementaryDocDialogProps) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -119,6 +121,7 @@ export function AddComplementaryDocDialog({
 
       const { error: insErr } = await supabase.from('proposal_documents').insert({
         card_id: cardId,
+        party_id: partyId ?? null,
         category: categoryKey,
         category_label: effectiveDocType,
         owner_type: ownerType,

@@ -93,6 +93,7 @@ import {
   SECTION_LABELS,
   type CorrectionRequest,
 } from '@/hooks/useCorrectionRequests';
+import { describeItem as describeCorrectionItem } from '@/lib/correctionCatalog';
 import { useProposalLinkPublicToken } from '@/hooks/useProposalLinkPublicToken';
 import { useOpenCardRealtime } from '@/hooks/useOpenCardRealtime';
 import { buildPublicUrl } from '@/lib/appUrl';

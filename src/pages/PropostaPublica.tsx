@@ -1348,6 +1348,61 @@ function formatCurrency(n: number | null | undefined): string {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/**
+ * Badge de comprometimento de renda.
+ * Mostra:
+ *  - "Aluguel compromete X% da renda"
+ *  - "Custo mensal total compromete Y% da renda" (quando diferente do aluguel)
+ * Classifica em Compatível (≤30%), Atenção (≤50%), Alto (>50%) ou Inviável (>100%).
+ */
+function ComprometimentoBadge({
+  percentAluguel,
+  percentTotal,
+  hasRent,
+  hasIncome,
+}: {
+  percentAluguel: number | null;
+  percentTotal: number | null;
+  hasRent: boolean;
+  hasIncome: boolean;
+}) {
+  if (!hasRent) return null;
+  if (!hasIncome || percentAluguel == null) {
+    return (
+      <div className="mt-2 p-3 rounded-lg text-sm font-medium flex items-center gap-2 bg-muted text-muted-foreground">
+        <AlertCircle className="h-4 w-4" />
+        Informe a renda para calcular o comprometimento.
+      </div>
+    );
+  }
+  const level = classifyComprometimento(percentTotal ?? percentAluguel);
+  const cls =
+    level === 'compativel'
+      ? 'bg-green-50 text-green-700'
+      : level === 'atencao'
+      ? 'bg-amber-50 text-amber-700'
+      : 'bg-red-50 text-red-700';
+  const Icon = level === 'compativel' ? Check : AlertCircle;
+  const showTotal = percentTotal != null && Math.abs((percentTotal ?? 0) - percentAluguel) > 0.05;
+  return (
+    <div className={cn('mt-2 p-3 rounded-lg text-sm flex flex-col gap-1', cls)}>
+      <div className="flex items-center gap-2 font-medium">
+        <Icon className="h-4 w-4" />
+        {comprometimentoLabel(level)}
+      </div>
+      <div className="text-xs leading-relaxed">
+        Aluguel compromete <strong>{percentAluguel.toFixed(1)}%</strong> da renda.
+        {showTotal && (
+          <>
+            {' '}Custo mensal total (aluguel + condomínio + IPTU + seguro) compromete{' '}
+            <strong>{(percentTotal as number).toFixed(1)}%</strong>.
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function isCasadoOuUniao(data: ProposalFormData) {
   const civil = data.perfil_financeiro.estado_civil;
   return civil === 'Casado(a)' || civil === 'União Estável';

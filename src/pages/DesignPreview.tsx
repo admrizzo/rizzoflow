@@ -312,6 +312,7 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const [isBoardDragging, setIsBoardDragging] = useState(false);
 
   const canStartBoardDrag = (target: EventTarget | null) => {
     if (!(target instanceof HTMLElement)) return false;
@@ -326,6 +327,7 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
       scrollLeft: scrollRef.current.scrollLeft,
       moved: false,
     };
+    setIsBoardDragging(true);
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -338,6 +340,7 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
 
   const stopBoardDrag = () => {
     dragRef.current.active = false;
+    setIsBoardDragging(false);
   };
 
   return (
@@ -360,8 +363,8 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
         flex: 1, minHeight: 0,
         overflowX: "auto", overflowY: "auto",
         padding: "8px 16px 24px",
-        cursor: dragRef.current.active ? "grabbing" : "grab",
-        userSelect: dragRef.current.active ? "none" : "auto",
+        cursor: isBoardDragging ? "grabbing" : "grab",
+        userSelect: isBoardDragging ? "none" : "auto",
       }}>
         <div style={{
           display: "inline-flex", gap: 12, alignItems: "flex-start",

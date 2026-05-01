@@ -422,3 +422,87 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
     </div>
   );
 }
+
+/**
+ * Stepper horizontal mostrando as etapas reais (columns) do board do card.
+ * Inspirado no preview Modelo C — Focus Semi-Dark. Visual apenas: não altera
+ * column_id; movimentação continua via drag-and-drop / fluxos existentes.
+ */
+function StageStepper({
+  columns,
+  currentColumnId,
+}: {
+  columns: Array<{ id: string; name: string; position: number }>;
+  currentColumnId: string | null | undefined;
+}) {
+  if (!columns || columns.length === 0) return null;
+
+  const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
+
+  return (
+    <div className="mb-4 rounded-lg border border-border bg-muted/20 px-3 py-4 overflow-x-auto lp-thin-scroll">
+      <div className="flex items-start gap-0 min-w-max md:min-w-0">
+        {columns.map((col, i) => {
+          const state: 'done' | 'current' | 'todo' =
+            currentIndex === -1
+              ? 'todo'
+              : i < currentIndex
+              ? 'done'
+              : i === currentIndex
+              ? 'current'
+              : 'todo';
+          const isLast = i === columns.length - 1;
+          return (
+            <div
+              key={col.id}
+              className="relative flex-1 min-w-[110px] flex flex-col items-center gap-2 px-1"
+            >
+              {/* Connector line (atrás do círculo) */}
+              {!isLast && (
+                <div
+                  className={cn(
+                    'absolute top-[11px] left-1/2 right-[-50%] h-[2px] z-0',
+                    i < currentIndex
+                      ? 'bg-emerald-500'
+                      : 'bg-border'
+                  )}
+                />
+              )}
+              {/* Bolinha do passo */}
+              <div
+                className={cn(
+                  'relative z-10 h-[22px] w-[22px] rounded-full inline-flex items-center justify-center border-2',
+                  state === 'done' &&
+                    'bg-emerald-500 border-transparent text-white',
+                  state === 'current' &&
+                    'bg-amber-500 border-transparent text-white',
+                  state === 'todo' && 'bg-background border-border text-muted-foreground'
+                )}
+                title={col.name}
+              >
+                {state === 'done' ? (
+                  <CheckCircle2 className="h-3 w-3" />
+                ) : state === 'current' ? (
+                  <Clock className="h-3 w-3" />
+                ) : (
+                  <CircleDashed className="h-3 w-3" />
+                )}
+              </div>
+              {/* Label */}
+              <span
+                className={cn(
+                  'text-[10.5px] font-semibold text-center leading-tight max-w-[100px] uppercase tracking-wider',
+                  state === 'current'
+                    ? 'text-foreground'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {col.name}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

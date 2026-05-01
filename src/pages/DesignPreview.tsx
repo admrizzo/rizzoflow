@@ -1439,7 +1439,7 @@ function MobileGallery() {
         <Smartphone size={14} color={P.textMuted} />
         <strong style={{ fontSize: 13, color: P.text }}>Versão mobile — telas principais</strong>
         <span style={{ fontSize: 11.5, color: P.textMuted }}>
-          Dashboard · Card aberto · Gerar proposta · Minha Fila · Proposta pública
+          Dashboard · Card aberto · Gerar proposta · Minha Fila · Chat interno · Proposta pública
         </span>
       </div>
       <div style={{

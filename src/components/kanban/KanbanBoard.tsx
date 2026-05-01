@@ -637,7 +637,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
                 (boardRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
               }}
               {...provided.droppableProps}
-              className="flex gap-2 p-2 sm:p-3 overflow-auto min-h-[calc(100vh-8rem)] cursor-grab select-none"
+              className="flex gap-2 p-2 sm:p-3 overflow-auto min-h-[calc(100vh-8rem)] cursor-grab select-none lp-thin-scroll"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}

@@ -156,7 +156,7 @@ function IconBtn({ children, title, onClick, active }: { children: React.ReactNo
  * ========================================================================= */
 function HeaderC({
   view, onView, onOpenProposal, onOpenQueue, onOpenMetrics, onOpenProposals,
-  onOpenAdmin, onOpenArchived, onSync,
+  onOpenAdmin, onOpenArchived, onSync, onOpenChat, chatUnread,
 }: {
   view: string;
   onView: (v: string) => void;
@@ -167,6 +167,8 @@ function HeaderC({
   onOpenAdmin: () => void;
   onOpenArchived: () => void;
   onSync: () => void;
+  onOpenChat: () => void;
+  chatUnread: number;
 }) {
   return (
     <header style={{
@@ -232,6 +234,33 @@ function HeaderC({
           </button>
 
           <IconBtn title="Notificações"><Bell size={15} /></IconBtn>
+
+          {/* Chat interno */}
+          <button
+            onClick={onOpenChat}
+            title="Chat interno da equipe"
+            style={{
+              position: "relative",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 30, height: 30, borderRadius: 8,
+              background: "transparent", border: "none", color: "#fff",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.10)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <MessageSquare size={15} />
+            {chatUnread > 0 && (
+              <span style={{
+                position: "absolute", top: -2, right: -2,
+                minWidth: 16, height: 16, padding: "0 4px",
+                borderRadius: 999, background: P.accent, color: "#fff",
+                fontSize: 10, fontWeight: 800,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                border: "2px solid " + P.primaryDark,
+              }}>{chatUnread > 99 ? "99+" : chatUnread}</span>
+            )}
+          </button>
 
           <IconBtn title="Administração" onClick={onOpenAdmin}><Settings size={15} /></IconBtn>
 
@@ -1358,8 +1387,7 @@ function VariationCShell({
   const [chatPinned, setChatPinned] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const RAIL_W = 64;
-  const DRAWER_W = 820;
+  const DRAWER_W = 760;
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1372,10 +1400,12 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
+        onOpenChat={() => setChatOpen((v) => !v)}
+        chatUnread={totalUnread}
       />
 
       <div style={{
-        marginRight: chatOpen && chatPinned ? DRAWER_W : RAIL_W,
+        marginRight: chatOpen && chatPinned ? DRAWER_W : 0,
         transition: "margin-right .2s ease",
       }}>
         {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
@@ -1389,48 +1419,24 @@ function VariationCShell({
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
 
-      {/* Chat — barra lateral direita fixa (desktop) */}
-      <ChatRail
-        width={RAIL_W}
-        totalUnread={totalUnread}
-        activeConvId={activeConvId}
-        onSelect={(id) => { setActiveConvId(id); setChatOpen(true); }}
-        onToggle={() => setChatOpen((v) => !v)}
-        chatOpen={chatOpen}
-      />
-
-      {/* Botão flutuante mobile (visível apenas em telas pequenas) */}
-      <button
-        onClick={() => setChatOpen((v) => !v)}
-        title="Abrir chat interno"
-        className="lp-chat-fab"
-        style={{
-          position: "fixed", right: 16, bottom: 16, zIndex: 70,
-          width: 52, height: 52, borderRadius: 999, border: "none",
-          background: P.accent, color: "#fff", cursor: "pointer",
-          boxShadow: "0 6px 18px rgba(229,0,70,0.35)",
-          display: "none", alignItems: "center", justifyContent: "center",
-        }}
-      >
-        <MessageSquare size={20} />
-        {totalUnread > 0 && (
-          <span style={{
-            position: "absolute", top: -2, right: -2, minWidth: 18, height: 18,
-            padding: "0 5px", borderRadius: 999, background: P.primaryDark, color: "#fff",
-            fontSize: 10.5, fontWeight: 800, display: "inline-flex",
-            alignItems: "center", justifyContent: "center",
-            border: "2px solid #fff",
-          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
-        )}
-      </button>
       <style>{`
         @media (max-width: 768px) {
-          .lp-chat-rail { display: none !important; }
-          .lp-chat-fab { display: inline-flex !important; }
           .lp-chat-drawer { width: 100vw !important; max-width: 100vw !important; }
           .lp-chat-drawer-list { width: 100% !important; }
         }
       `}</style>
+
+      {/* Backdrop quando chat está aberto e não fixado */}
+      {chatOpen && !chatPinned && (
+        <div
+          onClick={() => setChatOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 55,
+            background: "rgba(20,30,40,0.28)",
+            animation: "lpFadeIn .15s ease",
+          }}
+        />
+      )}
 
       {chatOpen && (
         <ChatDrawer
@@ -1440,7 +1446,7 @@ function VariationCShell({
           activeConvId={activeConvId}
           setActiveConvId={setActiveConvId}
           width={DRAWER_W}
-          rightOffset={RAIL_W}
+          rightOffset={0}
         />
       )}
 

@@ -1387,7 +1387,7 @@ function VariationCShell({
   const [chatPinned, setChatPinned] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const DRAWER_W = 420;
+  const DRAWER_W = 760;
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC

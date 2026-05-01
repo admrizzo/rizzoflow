@@ -1440,6 +1440,7 @@ function VariationCShell({
   // 3 estados: "collapsed" (apenas rail), "expanded" (rail + painel), "pinned" (igual a expanded mas marcado)
   const [chatState, setChatState] = useState<"collapsed" | "expanded" | "pinned">("collapsed");
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [chatFullOpen, setChatFullOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
   const RAIL_W = 56;
@@ -1517,6 +1518,7 @@ function VariationCShell({
               onClose={() => setChatState("collapsed")}
               activeConvId={activeConvId}
               setActiveConvId={setActiveConvId}
+              onExpandFull={() => setChatFullOpen(true)}
             />
           )}
         </div>
@@ -1578,6 +1580,39 @@ function VariationCShell({
             setActiveConvId={setActiveConvId}
             fullscreen
           />
+        </div>
+      )}
+
+      {chatFullOpen && (
+        <div
+          onClick={() => setChatFullOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 95,
+            background: "rgba(15,23,30,0.55)", backdropFilter: "blur(2px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(960px, 100%)", height: "min(720px, 92vh)",
+              background: "#fff", borderRadius: 14, overflow: "hidden",
+              boxShadow: "0 24px 60px rgba(20,30,40,0.35)",
+              display: "flex", flexDirection: "column",
+            }}
+          >
+            <ChatPanel
+              width={960}
+              pinned={false}
+              onTogglePin={() => {}}
+              onClose={() => setChatFullOpen(false)}
+              activeConvId={activeConvId}
+              setActiveConvId={setActiveConvId}
+              fullscreen
+              onCollapseFull={() => setChatFullOpen(false)}
+            />
+          </div>
         </div>
       )}
 

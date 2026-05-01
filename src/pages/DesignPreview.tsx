@@ -399,7 +399,8 @@ function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) 
           · sinais sutis: verde ok · âmbar atenção · vermelho vencido · neutro sem alerta
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10 }}>
+      <div style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10, minWidth: 1140 }}>
         {samples.map((s) => (
           <div key={s.c.id}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: P.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -408,6 +409,7 @@ function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) 
             <KanbanCard c={s.c} onClick={() => onOpenCard(s.c)} />
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
@@ -512,7 +514,7 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
   else if (isOk) cardShadow = "0 1px 2px rgba(20,30,40,0.05)";
 
   return (
-    <div onClick={onClick} style={{
+    <div data-kanban-card="true" onClick={onClick} style={{
       background: "#fff", borderRadius: 10, padding: 10,
       border: `1px solid ${P.border}`,
       boxShadow: cardShadow, cursor: "pointer", position: "relative",

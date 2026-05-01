@@ -965,9 +965,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             {/* Review Deadline Section - Only show for columns with review_deadline_days */}
             {/* === BLOCO A: STATUS === */}
             {!card.is_archived && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Status</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <section className="rounded-lg border border-border bg-card overflow-hidden">
+                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</h3>
+                </header>
+                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
                   {/* Current stage */}
                   <div>
                     <p className="text-[10px] text-muted-foreground mb-0.5">Etapa atual</p>
@@ -1016,7 +1019,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
             )}
 
             {/* === BLOCO: ANDAMENTO === */}

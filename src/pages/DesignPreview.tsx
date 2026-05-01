@@ -22,6 +22,7 @@ import {
   X, MoreHorizontal, MoreVertical, Eye, Download, Upload, Pencil, Trash2,
   Archive, LayoutGrid, ListChecks, KanbanSquare, Key, Tag, FolderOpen,
   CheckSquare, AlertCircle, RotateCcw, ChevronUp, Info, LogOut, Home,
+  Pin, PinOff, Smile, Image as ImageIcon, File as FileIcon, CornerUpLeft, ArrowLeft,
 } from "lucide-react";
 
 /* =========================================================================
@@ -155,7 +156,7 @@ function IconBtn({ children, title, onClick, active }: { children: React.ReactNo
  * ========================================================================= */
 function HeaderC({
   view, onView, onOpenProposal, onOpenQueue, onOpenMetrics, onOpenProposals,
-  onOpenAdmin, onOpenArchived, onSync,
+  onOpenAdmin, onOpenArchived, onSync, onOpenChat, chatUnread,
 }: {
   view: string;
   onView: (v: string) => void;
@@ -166,6 +167,8 @@ function HeaderC({
   onOpenAdmin: () => void;
   onOpenArchived: () => void;
   onSync: () => void;
+  onOpenChat: () => void;
+  chatUnread: number;
 }) {
   return (
     <header style={{
@@ -231,6 +234,28 @@ function HeaderC({
           </button>
 
           <IconBtn title="Notificações"><Bell size={15} /></IconBtn>
+
+          {/* Chat interno */}
+          <button
+            title="Chat interno da equipe"
+            onClick={onOpenChat}
+            style={{
+              position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer",
+              background: "rgba(255,255,255,0.06)", color: "#fff",
+            }}
+          >
+            <MessageSquare size={15} />
+            {chatUnread > 0 && (
+              <span style={{
+                position: "absolute", top: -4, right: -4, minWidth: 16, height: 16,
+                padding: "0 4px", borderRadius: 999, background: P.accent, color: "#fff",
+                fontSize: 10, fontWeight: 800, display: "inline-flex",
+                alignItems: "center", justifyContent: "center",
+                boxShadow: `0 0 0 2px ${P.primaryDark}`,
+              }}>{chatUnread > 99 ? "99+" : chatUnread}</span>
+            )}
+          </button>
 
           <IconBtn title="Administração" onClick={onOpenAdmin}><Settings size={15} /></IconBtn>
 
@@ -1353,6 +1378,10 @@ function VariationCShell({
   openCard: KCard | null; setOpenCard: (c: KCard | null) => void;
   showProposalModal: boolean; setShowProposalModal: (v: boolean) => void;
 }) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPinned, setChatPinned] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string>("g-geral");
+  const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1365,17 +1394,34 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
+        onOpenChat={() => setChatOpen((v) => !v)}
+        chatUnread={totalUnread}
       />
 
-      {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
+      <div style={{
+        marginRight: chatOpen && chatPinned ? 380 : 0,
+        transition: "margin-right .2s ease",
+      }}>
+        {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
       {view === "queue" && <MyQueue />}
       {view === "metrics" && <Metrics />}
       {view === "proposals" && <Proposals />}
       {view === "admin" && <AdminScreen />}
       {view === "archived" && <ArchivedScreen />}
+      </div>
 
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
+
+      {chatOpen && (
+        <ChatDrawer
+          pinned={chatPinned}
+          onTogglePin={() => setChatPinned((v) => !v)}
+          onClose={() => setChatOpen(false)}
+          activeConvId={activeConvId}
+          setActiveConvId={setActiveConvId}
+        />
+      )}
 
       {/* Mobile gallery */}
       <MobileGallery />
@@ -1393,7 +1439,7 @@ function MobileGallery() {
         <Smartphone size={14} color={P.textMuted} />
         <strong style={{ fontSize: 13, color: P.text }}>Versão mobile — telas principais</strong>
         <span style={{ fontSize: 11.5, color: P.textMuted }}>
-          Dashboard · Card aberto · Gerar proposta · Minha Fila · Proposta pública
+          Dashboard · Card aberto · Gerar proposta · Minha Fila · Chat interno · Proposta pública
         </span>
       </div>
       <div style={{
@@ -1403,6 +1449,7 @@ function MobileGallery() {
         <Phone label="Card aberto"><MobileCardDetail /></Phone>
         <Phone label="Gerar proposta"><MobileNewProposal /></Phone>
         <Phone label="Minha Fila"><MobileMyQueue /></Phone>
+        <Phone label="Chat interno"><MobileChat /></Phone>
         <Phone label="Proposta pública"><MobilePublicProposal /></Phone>
       </div>
     </div>
@@ -1785,5 +1832,471 @@ function ProsCons({ title, items, tone }: { title: string; items: string[]; tone
         {items.map((i) => <li key={i}>{i}</li>)}
       </ul>
     </div>
+  );
+}
+
+/* =========================================================================
+ * CHAT INTERNO — prévia visual (Variação C / Focus Semi-Dark)
+ * Comunicação geral da equipe, separado dos comentários do card.
+ * Apenas visual — sem lógica real.
+ * ========================================================================= */
+type ChatConv = {
+  id: string;
+  kind: "all" | "group" | "dm";
+  name: string;
+  initials: string;
+  color: string;
+  lastMsg: string;
+  lastTime: string;
+  unread: number;
+  online?: boolean;
+};
+
+const CHAT_CONVERSATIONS: ChatConv[] = [
+  { id: "all",         kind: "all",   name: "Todos",          initials: "TT", color: P.primary, lastMsg: "Aviso geral · sistema atualizado às 14h", lastTime: "agora",  unread: 1 },
+  { id: "g-geral",     kind: "group", name: "Geral",          initials: "GE", color: "#4a6572", lastMsg: "Marina: bom dia equipe! ☀️",                lastTime: "09:42",  unread: 4 },
+  { id: "g-gestao",    kind: "group", name: "Gestão",         initials: "GS", color: "#5d4e7a", lastMsg: "Patrícia: fechamos 14 contratos esta sem…", lastTime: "09:10",  unread: 0 },
+  { id: "g-adm",       kind: "group", name: "Administrativo", initials: "AD", color: "#6b5b3e", lastMsg: "Você: enviei a planilha de garantias",     lastTime: "ontem",  unread: 0 },
+  { id: "g-cor",       kind: "group", name: "Corretores",     initials: "CO", color: "#3e6b5b", lastMsg: "Rafael: quem cobre visita 16h Higienópolis?", lastTime: "08:55", unread: 2 },
+  { id: "g-loc",       kind: "group", name: "Locação",        initials: "LO", color: P.info,    lastMsg: "Beatriz: contrato LOC-2829 aprovado ✅",   lastTime: "08:30",  unread: 0 },
+  { id: "g-vnd",       kind: "group", name: "Vendas",         initials: "VN", color: "#a04a14", lastMsg: "Diego: visita confirmada — Vila Mariana",  lastTime: "ontem",  unread: 0 },
+  { id: "u-marina",    kind: "dm",    name: "Marina Castro",  initials: "MC", color: "#3a5a78", lastMsg: "Pode revisar o LOC-2841 quando puder?",    lastTime: "09:48",  unread: 1, online: true },
+  { id: "u-rafael",    kind: "dm",    name: "Rafael Souza",   initials: "RS", color: "#7a3a3a", lastMsg: "Cliente pediu correção no comprovante",    lastTime: "09:20",  unread: 0, online: true },
+  { id: "u-patricia",  kind: "dm",    name: "Patrícia Lima",  initials: "PL", color: "#5a3a78", lastMsg: "Reunião amanhã 10h ok?",                    lastTime: "08:12",  unread: 0 },
+  { id: "u-andre",     kind: "dm",    name: "André Pinto",    initials: "AP", color: "#3a785a", lastMsg: "Garantia definida: fiador",                lastTime: "ontem",  unread: 0 },
+  { id: "u-camila",    kind: "dm",    name: "Camila Duarte",  initials: "CD", color: "#785a3a", lastMsg: "Obrigada! 🙏",                              lastTime: "ontem",  unread: 0, online: true },
+];
+
+type ChatMsg = {
+  id: string;
+  author: string;
+  initials: string;
+  color: string;
+  time: string;
+  text?: string;
+  mine?: boolean;
+  attachment?: { kind: "pdf" | "image" | "doc"; name: string; size: string };
+  dateSep?: string;
+};
+
+const CHAT_MESSAGES: Record<string, ChatMsg[]> = {
+  "g-geral": [
+    { id: "d1", author: "", initials: "", color: "", time: "", dateSep: "Hoje" },
+    { id: "m1", author: "Marina Castro", initials: "MC", color: "#3a5a78", time: "09:42", text: "Bom dia equipe! ☀️ Lembrete: alinhamento de fechamento às 14h." },
+    { id: "m2", author: "Rafael Souza",  initials: "RS", color: "#7a3a3a", time: "09:43", text: "Anotado 👍" },
+    { id: "m3", author: "Patrícia Lima", initials: "PL", color: "#5a3a78", time: "09:45", text: "Segue a pauta da reunião:", attachment: { kind: "pdf", name: "Pauta_alinhamento_14h.pdf", size: "212 KB" } },
+    { id: "m4", author: "Você",          initials: "GL", color: P.accent,  time: "09:47", mine: true, text: "Recebido. Vou levar os números do mês." },
+    { id: "m5", author: "Beatriz Rocha", initials: "BR", color: "#3a785a", time: "09:50", text: "Prints do funil:", attachment: { kind: "image", name: "funil_outubro.png", size: "1.4 MB" } },
+    { id: "m6", author: "Você",          initials: "GL", color: P.accent,  time: "09:52", mine: true, text: "Perfeito 🚀" },
+  ],
+};
+
+function ChatDrawer({
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId,
+}: {
+  pinned: boolean;
+  onTogglePin: () => void;
+  onClose: () => void;
+  activeConvId: string;
+  setActiveConvId: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
+  const filtered = useMemo(
+    () => CHAT_CONVERSATIONS.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())),
+    [query],
+  );
+  const groups = filtered.filter((c) => c.kind !== "dm");
+  const dms = filtered.filter((c) => c.kind === "dm");
+
+  return (
+    <aside style={{
+      position: "fixed", top: 0, right: 0, bottom: 0,
+      width: 760, maxWidth: "96vw",
+      display: "flex", zIndex: 60,
+      boxShadow: pinned ? "none" : "-18px 0 40px rgba(20,30,40,0.18)",
+      background: P.card, borderLeft: `1px solid ${P.border}`,
+      fontFamily: fontStack,
+    }}>
+      {/* Lista de conversas */}
+      <div style={{
+        width: 290, borderRight: `1px solid ${P.border}`,
+        display: "flex", flexDirection: "column", background: "#fafbfc",
+      }}>
+        <div style={{
+          padding: "12px 12px 8px", background: P.primaryDark, color: "#fff",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <MessageSquare size={15} />
+          <strong style={{ fontSize: 13 }}>Chat interno</strong>
+          <span style={{ marginLeft: "auto", fontSize: 10.5, opacity: 0.7 }}>Equipe Rizzo</span>
+        </div>
+        <div style={{ padding: 10, borderBottom: `1px solid ${P.border}` }}>
+          <div style={{ position: "relative" }}>
+            <Search size={13} style={{ position: "absolute", left: 9, top: 9, color: P.textMuted }} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar conversa"
+              style={{
+                width: "100%", height: 30, borderRadius: 8,
+                border: `1px solid ${P.border}`, background: "#fff",
+                padding: "0 10px 0 28px", fontSize: 12, outline: "none", fontFamily: fontStack,
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <ChatGroupLabel label="Geral" />
+          {groups.filter((g) => g.kind === "all").map((c) => (
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+          ))}
+          <ChatGroupLabel label="Grupos" />
+          {groups.filter((g) => g.kind === "group").map((c) => (
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+          ))}
+          <ChatGroupLabel label="Mensagens diretas" />
+          {dms.map((c) => (
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Conversa */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#fff" }}>
+        {/* Cabeçalho da conversa */}
+        <div style={{
+          height: 52, padding: "0 14px", display: "flex", alignItems: "center", gap: 10,
+          borderBottom: `1px solid ${P.border}`, background: "#fff",
+        }}>
+          <Avatar initials={active.initials} size={32} bg={active.color} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
+            <div style={{ fontSize: 11, color: P.textMuted }}>
+              {active.kind === "dm" ? (active.online ? "Online" : "Offline") :
+               active.kind === "group" ? "Grupo · 12 membros" : "Canal aberto a toda a equipe"}
+            </div>
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+            <button title={pinned ? "Desafixar" : "Fixar conversa"} onClick={onTogglePin} style={chatHeaderBtn}>
+              {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+            </button>
+            <button title="Mais ações" style={chatHeaderBtn}><MoreHorizontal size={15} /></button>
+            <button title="Fechar" onClick={onClose} style={chatHeaderBtn}><X size={16} /></button>
+          </div>
+        </div>
+
+        {/* Mensagens */}
+        <div style={{
+          flex: 1, overflowY: "auto", padding: "16px 18px",
+          background: "linear-gradient(180deg, #fafbfc 0%, #ffffff 100%)",
+          display: "flex", flexDirection: "column", gap: 10,
+        }}>
+          {(CHAT_MESSAGES[active.id] ?? CHAT_MESSAGES["g-geral"]).map((m) => (
+            m.dateSep
+              ? <ChatDateSep key={m.id} label={m.dateSep} />
+              : <ChatBubble key={m.id} m={m} />
+          ))}
+        </div>
+
+        {/* Composer */}
+        <div style={{
+          borderTop: `1px solid ${P.border}`, padding: 10, background: "#fff",
+          display: "flex", alignItems: "flex-end", gap: 8,
+        }}>
+          <button title="Anexar" style={chatComposerBtn}><Paperclip size={16} /></button>
+          <button title="Emoji" style={chatComposerBtn}><Smile size={16} /></button>
+          <textarea
+            placeholder={`Mensagem para ${active.name}…`}
+            rows={1}
+            style={{
+              flex: 1, resize: "none", minHeight: 36, maxHeight: 120,
+              border: `1px solid ${P.border}`, borderRadius: 10,
+              padding: "8px 12px", fontSize: 13, fontFamily: fontStack,
+              outline: "none", lineHeight: 1.4, color: P.text,
+            }}
+          />
+          <button title="Enviar" style={{
+            background: P.accent, color: "#fff", border: "none",
+            borderRadius: 10, height: 36, padding: "0 14px",
+            fontWeight: 700, fontSize: 12.5, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            boxShadow: "0 2px 6px rgba(229,0,70,0.3)",
+          }}>
+            <Send size={14} /> Enviar
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+const chatHeaderBtn: React.CSSProperties = {
+  width: 30, height: 30, borderRadius: 8, border: "none", background: "transparent",
+  color: P.textMuted, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+};
+const chatComposerBtn: React.CSSProperties = {
+  width: 36, height: 36, borderRadius: 10, border: `1px solid ${P.border}`,
+  background: "#fafbfc", color: P.textMuted, cursor: "pointer",
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+};
+
+function ChatGroupLabel({ label }: { label: string }) {
+  return (
+    <div style={{
+      padding: "10px 12px 4px", fontSize: 10.5, fontWeight: 800,
+      color: P.textSubtle, textTransform: "uppercase", letterSpacing: 0.6,
+    }}>{label}</div>
+  );
+}
+
+function ChatConvRow({ c, active, onClick }: { c: ChatConv; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: "100%", display: "flex", gap: 10, alignItems: "center",
+        padding: "10px 12px", border: "none", cursor: "pointer", textAlign: "left",
+        background: active ? "#eef4fa" : "transparent",
+        borderLeft: `3px solid ${active ? P.accent : "transparent"}`,
+        transition: "background .12s",
+      }}
+    >
+      <div style={{ position: "relative" }}>
+        <Avatar initials={c.initials} size={34} bg={c.color} />
+        {c.online && (
+          <span style={{
+            position: "absolute", bottom: 0, right: 0, width: 9, height: 9,
+            borderRadius: 999, background: P.success, border: "2px solid #fafbfc",
+          }} />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: P.text, flex: 1, minWidth: 0,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+          <span style={{ fontSize: 10.5, color: P.textMuted, flexShrink: 0 }}>{c.lastTime}</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: P.textMuted,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+          {c.lastMsg}
+        </div>
+      </div>
+      {c.unread > 0 && (
+        <span style={{
+          minWidth: 18, height: 18, borderRadius: 999, background: P.accent, color: "#fff",
+          fontSize: 10.5, fontWeight: 800, padding: "0 6px",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+        }}>{c.unread}</span>
+      )}
+    </button>
+  );
+}
+
+function ChatDateSep({ label }: { label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0 8px" }}>
+      <div style={{ flex: 1, height: 1, background: P.border }} />
+      <span style={{
+        fontSize: 10.5, fontWeight: 800, color: P.textMuted,
+        background: "#fff", padding: "2px 10px", borderRadius: 999,
+        border: `1px solid ${P.border}`, textTransform: "uppercase", letterSpacing: 0.5,
+      }}>{label}</span>
+      <div style={{ flex: 1, height: 1, background: P.border }} />
+    </div>
+  );
+}
+
+function ChatBubble({ m }: { m: ChatMsg }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const mine = !!m.mine;
+  return (
+    <div style={{
+      display: "flex", gap: 8, alignItems: "flex-end",
+      flexDirection: mine ? "row-reverse" : "row",
+    }}>
+      {!mine && <Avatar initials={m.initials} size={28} bg={m.color} />}
+      <div style={{ maxWidth: "72%", position: "relative" }}>
+        {!mine && (
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: P.textMuted, marginBottom: 2, paddingLeft: 2 }}>
+            {m.author} <span style={{ fontWeight: 500, marginLeft: 4 }}>{m.time}</span>
+          </div>
+        )}
+        <div
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+          style={{
+            position: "relative",
+            background: mine ? P.primary : "#f1f5f8",
+            color: mine ? "#fff" : P.text,
+            padding: m.attachment ? "8px 10px" : "8px 12px",
+            borderRadius: 12,
+            borderTopRightRadius: mine ? 4 : 12,
+            borderTopLeftRadius: mine ? 12 : 4,
+            fontSize: 13, lineHeight: 1.45,
+            boxShadow: "0 1px 2px rgba(20,30,40,0.06)",
+          }}
+        >
+          {m.text && <div>{m.text}</div>}
+          {m.attachment && (
+            <div style={{
+              marginTop: m.text ? 8 : 0,
+              display: "flex", alignItems: "center", gap: 10,
+              background: mine ? "rgba(255,255,255,0.10)" : "#fff",
+              border: `1px solid ${mine ? "rgba(255,255,255,0.18)" : P.border}`,
+              borderRadius: 10, padding: "8px 10px",
+            }}>
+              <span style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: m.attachment.kind === "pdf" ? "#fde4e7"
+                  : m.attachment.kind === "image" ? "#e7f4ec" : "#eef4fa",
+                color: m.attachment.kind === "pdf" ? "#a01633"
+                  : m.attachment.kind === "image" ? "#2f7d52" : "#1e3a52",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {m.attachment.kind === "pdf" ? <FileText size={15} />
+                  : m.attachment.kind === "image" ? <ImageIcon size={15} />
+                  : <FileIcon size={15} />}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700,
+                  color: mine ? "#fff" : P.text,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {m.attachment.name}
+                </div>
+                <div style={{ fontSize: 10.5, opacity: mine ? 0.8 : 0.7 }}>
+                  {m.attachment.size} · {m.attachment.kind.toUpperCase()}
+                </div>
+              </div>
+              <Download size={14} style={{ opacity: 0.8 }} />
+            </div>
+          )}
+
+          {/* Menu de mensagem (hover) */}
+          {menuOpen && (
+            <div style={{
+              position: "absolute", top: -10, [mine ? "left" : "right"]: -8,
+              background: "#fff", border: `1px solid ${P.border}`, borderRadius: 8,
+              boxShadow: "0 6px 16px rgba(20,30,40,0.12)", display: "flex", padding: 2,
+            } as React.CSSProperties}>
+              <button title="Responder" style={msgMenuBtn}><CornerUpLeft size={13} /></button>
+              <button title="Deletar" style={{ ...msgMenuBtn, color: P.accent }}><Trash2 size={13} /></button>
+            </div>
+          )}
+        </div>
+        {mine && (
+          <div style={{ fontSize: 10.5, color: P.textMuted, marginTop: 2, textAlign: "right", paddingRight: 4 }}>
+            {m.time} · enviada
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const msgMenuBtn: React.CSSProperties = {
+  width: 26, height: 24, border: "none", background: "transparent",
+  color: P.textMuted, cursor: "pointer", borderRadius: 6,
+  display: "inline-flex", alignItems: "center", justifyContent: "center",
+};
+
+/* ----- Mobile chat (galeria) ----- */
+export function MobileChat() {
+  const [view, setView] = useState<"list" | "conv">("list");
+  const active = CHAT_CONVERSATIONS[1];
+  return (
+    <>
+      <div style={{ background: P.primaryDark, color: "#fff", padding: "10px 12px",
+        display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        {view === "conv" && (
+          <button onClick={() => setView("list")} style={{
+            background: "transparent", border: "none", color: "#fff", cursor: "pointer", padding: 0,
+          }}><ArrowLeft size={16} /></button>
+        )}
+        <MessageSquare size={14} />
+        <strong style={{ fontSize: 12.5 }}>{view === "list" ? "Chat interno" : active.name}</strong>
+        <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.75 }}>
+          {view === "list" ? `${CHAT_CONVERSATIONS.reduce((a,c)=>a+c.unread,0)} novas` : "Online"}
+        </span>
+      </div>
+
+      {view === "list" && (
+        <div style={{ flex: 1, overflowY: "auto", background: "#fafbfc" }}>
+          <div style={{ padding: 8 }}>
+            <div style={{ position: "relative" }}>
+              <Search size={12} style={{ position: "absolute", left: 9, top: 9, color: P.textMuted }} />
+              <input placeholder="Buscar conversa" style={{
+                width: "100%", height: 30, borderRadius: 8, border: `1px solid ${P.border}`,
+                background: "#fff", padding: "0 10px 0 26px", fontSize: 12, outline: "none", fontFamily: fontStack,
+              }} />
+            </div>
+          </div>
+          {CHAT_CONVERSATIONS.slice(0, 7).map((c) => (
+            <button key={c.id} onClick={() => setView("conv")} style={{
+              width: "100%", display: "flex", gap: 8, alignItems: "center",
+              padding: "8px 10px", border: "none", background: "transparent",
+              borderBottom: `1px solid ${P.borderSoft}`, cursor: "pointer", textAlign: "left",
+            }}>
+              <Avatar initials={c.initials} size={32} bg={c.color} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: P.text, flex: 1,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                  <span style={{ fontSize: 10, color: P.textMuted }}>{c.lastTime}</span>
+                </div>
+                <div style={{ fontSize: 11, color: P.textMuted,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.lastMsg}</div>
+              </div>
+              {c.unread > 0 && (
+                <span style={{
+                  minWidth: 16, height: 16, borderRadius: 999, background: P.accent, color: "#fff",
+                  fontSize: 9.5, fontWeight: 800, padding: "0 5px",
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                }}>{c.unread}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === "conv" && (
+        <>
+          <div style={{ flex: 1, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 8,
+            background: "linear-gradient(180deg, #fafbfc 0%, #fff 100%)" }}>
+            <ChatDateSep label="Hoje" />
+            {(CHAT_MESSAGES["g-geral"] ?? []).filter((m) => !m.dateSep).slice(0, 5).map((m) => (
+              <div key={m.id} style={{ display: "flex", gap: 6,
+                flexDirection: m.mine ? "row-reverse" : "row", alignItems: "flex-end" }}>
+                {!m.mine && <Avatar initials={m.initials} size={22} bg={m.color} />}
+                <div style={{
+                  maxWidth: "78%", padding: "6px 10px", fontSize: 11.5, lineHeight: 1.4,
+                  background: m.mine ? P.primary : "#f1f5f8",
+                  color: m.mine ? "#fff" : P.text,
+                  borderRadius: 10,
+                  borderTopRightRadius: m.mine ? 3 : 10,
+                  borderTopLeftRadius: m.mine ? 10 : 3,
+                }}>
+                  {!m.mine && <div style={{ fontSize: 9.5, fontWeight: 800, color: P.textMuted, marginBottom: 2 }}>{m.author}</div>}
+                  {m.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: `1px solid ${P.border}`, padding: 8, background: "#fff",
+            display: "flex", alignItems: "center", gap: 6 }}>
+            <Paperclip size={14} color={P.textMuted} />
+            <input placeholder="Mensagem…" style={{
+              flex: 1, height: 30, borderRadius: 8, border: `1px solid ${P.border}`,
+              padding: "0 10px", fontSize: 12, outline: "none", fontFamily: fontStack,
+            }} />
+            <button style={{
+              background: P.accent, color: "#fff", border: "none", borderRadius: 8,
+              height: 30, width: 36, cursor: "pointer", display: "inline-flex",
+              alignItems: "center", justifyContent: "center",
+            }}><Send size={13} /></button>
+          </div>
+        </>
+      )}
+    </>
   );
 }

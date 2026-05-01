@@ -1419,6 +1419,7 @@ function VariationCShell({
   const expanded = chatState === "expanded" || chatState === "pinned";
   const pinned = chatState === "pinned";
   return (
+    <>
     <section className="lp-app-shell" style={{
       margin: "10px 16px 0",
       height: "calc(100vh - 94px)",
@@ -1546,9 +1547,10 @@ function VariationCShell({
         </div>
       )}
 
-      {/* Mobile gallery */}
-      <MobileGallery />
     </section>
+    {/* Mobile gallery */}
+    <MobileGallery />
+    </>
   );
 }
 

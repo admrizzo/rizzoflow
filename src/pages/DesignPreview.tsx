@@ -22,7 +22,7 @@ import {
   X, MoreHorizontal, MoreVertical, Eye, Download, Upload, Pencil, Trash2,
   Archive, LayoutGrid, ListChecks, KanbanSquare, Key, Tag, FolderOpen,
   CheckSquare, AlertCircle, RotateCcw, ChevronUp, Info, LogOut, Home,
-  Pin, PinOff, Smile, Image as ImageIcon, File as FileIcon, CornerUpLeft, ArrowLeft,
+  Pin, PinOff, Smile, Image as ImageIcon, File as FileIcon, CornerUpLeft, ArrowLeft, Maximize2, Minimize2,
 } from "lucide-react";
 
 /* =========================================================================
@@ -361,6 +361,7 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
         onMouseMove={handleMouseMove}
         onMouseUp={stopBoardDrag}
         onMouseLeave={stopBoardDrag}
+        className="lp-thin-scroll"
         style={{
         flex: 1, minHeight: 0,
         overflowX: "auto", overflowY: "auto",
@@ -521,7 +522,9 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
       border: `1px solid ${P.border}`,
       boxShadow: cardShadow, cursor: "pointer", position: "relative",
       borderLeft: `3px solid ${leftBar}`,
-      transition: "transform 80ms ease",
+      transition: "transform 80ms ease, box-shadow 120ms ease",
+      minHeight: 132,
+      display: "flex", flexDirection: "column",
     }}>
       {/* Topo: código + menu */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
@@ -534,16 +537,24 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
         </button>
       </div>
 
-      {/* Título */}
-      <div style={{ fontSize: 13, fontWeight: 700, color: P.text, lineHeight: 1.3, marginBottom: 2 }}>
+      {/* Título — até 2 linhas, com tooltip nativo */}
+      <div title={c.title} style={{
+        fontSize: 13, fontWeight: 700, color: P.text, lineHeight: 1.3, marginBottom: 2,
+        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+        overflow: "hidden", wordBreak: "break-word",
+      }}>
         {c.title}
       </div>
-      <div style={{ fontSize: 11.5, color: P.textMuted, marginBottom: 8, lineHeight: 1.35 }}>
+      {/* Endereço — 1 linha com reticências */}
+      <div title={c.address} style={{
+        fontSize: 11.5, color: P.textMuted, marginBottom: 8, lineHeight: 1.35,
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+      }}>
         {c.address}
       </div>
 
       {/* Status + alerts */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 8, minHeight: 20 }}>
         <StatusBadge s={c.status} sm />
         {c.alerts ? (
           <span style={{
@@ -565,9 +576,15 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
         ) : null}
       </div>
 
-      {/* Rodapé: broker + valor + prazo */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      {/* Rodapé: broker + valor + prazo — sem sobreposição */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        gap: 8, marginTop: "auto",
+      }}>
+        <div title={c.broker} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          minWidth: 0, flex: "1 1 auto", overflow: "hidden",
+        }}>
           {c.brokerInitials !== "—" ? (
             <Avatar initials={c.brokerInitials} size={20} />
           ) : (
@@ -576,13 +593,20 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
               display: "inline-flex", alignItems: "center", justifyContent: "center", color: P.textSubtle,
             }}><User size={11} /></span>
           )}
-          <span style={{ fontSize: 11, color: P.textMuted, fontWeight: 600 }}>{c.broker}</span>
+          <span style={{
+            fontSize: 11, color: P.textMuted, fontWeight: 600,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            minWidth: 0,
+          }}>{c.broker}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {c.value && <span style={{ fontSize: 11, color: P.text, fontWeight: 700 }}>{c.value}</span>}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "0 0 auto" }}>
+          {c.value && <span title={c.value} style={{
+            fontSize: 11, color: P.text, fontWeight: 700, whiteSpace: "nowrap",
+          }}>{c.value}</span>}
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 3,
             color: isLate ? "#a01633" : P.textMuted, fontSize: 10.5, fontWeight: 700,
+            whiteSpace: "nowrap",
           }}>
             <Clock size={10} /> {c.deadline}
           </span>
@@ -1416,6 +1440,7 @@ function VariationCShell({
   // 3 estados: "collapsed" (apenas rail), "expanded" (rail + painel), "pinned" (igual a expanded mas marcado)
   const [chatState, setChatState] = useState<"collapsed" | "expanded" | "pinned">("collapsed");
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [chatFullOpen, setChatFullOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
   const RAIL_W = 56;
@@ -1493,6 +1518,7 @@ function VariationCShell({
               onClose={() => setChatState("collapsed")}
               activeConvId={activeConvId}
               setActiveConvId={setActiveConvId}
+              onExpandFull={() => setChatFullOpen(true)}
             />
           )}
         </div>
@@ -1554,6 +1580,39 @@ function VariationCShell({
             setActiveConvId={setActiveConvId}
             fullscreen
           />
+        </div>
+      )}
+
+      {chatFullOpen && (
+        <div
+          onClick={() => setChatFullOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 95,
+            background: "rgba(15,23,30,0.55)", backdropFilter: "blur(2px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(960px, 100%)", height: "min(720px, 92vh)",
+              background: "#fff", borderRadius: 14, overflow: "hidden",
+              boxShadow: "0 24px 60px rgba(20,30,40,0.35)",
+              display: "flex", flexDirection: "column",
+            }}
+          >
+            <ChatPanel
+              width={960}
+              pinned={false}
+              onTogglePin={() => {}}
+              onClose={() => setChatFullOpen(false)}
+              activeConvId={activeConvId}
+              setActiveConvId={setActiveConvId}
+              fullscreen
+              onCollapseFull={() => setChatFullOpen(false)}
+            />
+          </div>
         </div>
       )}
 
@@ -2182,6 +2241,7 @@ function RailItem({
 
 function ChatPanel({
   pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 360, fullscreen = false,
+  onExpandFull, onCollapseFull,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
@@ -2190,6 +2250,8 @@ function ChatPanel({
   setActiveConvId: (id: string) => void;
   width?: number;
   fullscreen?: boolean;
+  onExpandFull?: () => void;
+  onCollapseFull?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
@@ -2216,7 +2278,7 @@ function ChatPanel({
       display: "grid", gridTemplateRows: "auto 1fr auto",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
-      height: fullscreen ? "100vh" : "100%",
+      height: "100%",
       minHeight: 0,
       overflow: "hidden",
     }}>
@@ -2240,6 +2302,16 @@ function ChatPanel({
             {!fullscreen && (
               <button title={pinned ? "Desafixar" : "Fixar"} onClick={onTogglePin} style={chatHeaderBtn}>
                 {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+              </button>
+            )}
+            {!fullscreen && onExpandFull && (
+              <button title="Abrir chat completo" onClick={onExpandFull} style={chatHeaderBtn}>
+                <Maximize2 size={14} />
+              </button>
+            )}
+            {fullscreen && onCollapseFull && (
+              <button title="Voltar ao chat lateral" onClick={onCollapseFull} style={chatHeaderBtn}>
+                <Minimize2 size={14} />
               </button>
             )}
             <button title="Mais ações" style={chatHeaderBtn}><MoreHorizontal size={15} /></button>

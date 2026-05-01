@@ -1,117 +1,91 @@
-## Objetivo da Fase 1
+# Fase 2 — Aplicar Focus / Semi-Dark no "chrome" abaixo do Header
 
-Trazer para o sistema real **apenas** o "chrome" semi-dark aprovado no `/design-preview` (variante C — Focus) e o refinamento visual de cards/colunas do Kanban. Sem chat, sem dark no Kanban, sem mexer em regra de negócio.
+## Contexto
 
-## Escopo confirmado
+Na Fase 1 trouxemos do `/design-preview` (modelo C — Focus / Semi-Dark) o Header semi-dark e o refinamento dos cards/colunas do Kanban. Agora o problema visível é a faixa **logo abaixo do Header** (BoardSelector + fundo do `<main>`) que ainda usa um **gradiente colorido por board** (`linear-gradient(board.color, board.color+dd)`). Isso quebra a hierarquia "chrome escuro · Kanban claro" do modelo C.
 
-- **Tema**: semi-dark só nos painéis (Header + faixa superior). Área do Kanban segue clara como hoje.
-- **Aplicar em**: Header e Kanban (KanbanBoard, KanbanColumn, ColumnHeader, KanbanCard).
-- **Chat lateral**: NÃO criar agora. Apenas reservar uma "sombra" lateral fina de 56px no shell (rail visual desabilitada com tooltip "Em breve") OU adiar totalmente para Fase 2 — ver decisão abaixo.
-- **Demais páginas** (CentralPropostas, MinhaFila, AdminFlow, dialogs de card, propostas) ficam para fases seguintes.
+Esta fase trata apenas dessa faixa e da tela de seleção de fluxos. Continuamos sem mexer no chat e sem alterar o Kanban em si.
 
-## O que NÃO muda nesta fase
+## Áreas afetadas
 
-- Banco, migrations, RLS, edge functions, automações.
-- Regras de propostas, documentos, correção, etapas.
-- Permissões, AuthContext, hooks de dados.
-- `CardDetailDialog` e fluxo de abertura do card (apenas o card fechado no board recebe refinamento).
-- `Header.tsx` mantém TODOS os botões existentes (Minha Fila, Sincronizar, Propostas, Notificações, Admin, Perfil, Filtros, Arquivados, Busca, BoardName).
-- Rotas, navegação, comportamento.
+1. `src/pages/Dashboard.tsx` — fundo do shell e da `<main>`.
+2. `src/components/layout/BoardSelector.tsx` — barra de tabs de fluxos (Meus Fluxos / Métricas / boards).
+3. `src/components/layout/FlowsOverview.tsx` — tela inicial "Seus Fluxos" (cards de boards).
 
-## Mudanças propostas
+## O que NÃO muda
 
-### 1. `src/index.css` — tokens semi-dark do "chrome"
+- Nenhum hook, query, realtime, mutation, edge function, RLS, migration.
+- Nenhum botão removido (Meus Fluxos, Métricas, todos os boards, toggles Kanban/Prestadores, NewProposalButton).
+- Nenhuma rota, nenhum comportamento de seleção de board, nenhum localStorage.
+- `KanbanBoard`, `KanbanColumn`, `KanbanCard`, `ColumnHeader` — não tocar.
+- `Header.tsx` — não tocar (já está na Fase 1).
+- Drag-and-drop, badges, contagens, permissões — intactos.
+- Cor do board (`board.color`) **continua** sendo usada como acento (ex.: chip ativo, ícone), só deixa de pintar a tela inteira.
 
-Adicionar variáveis novas (sem mexer nos tokens existentes que regem cards/Kanban):
+## Mudanças propostas (apenas estilo)
 
-```css
-:root {
-  /* Focus semi-dark chrome (Header + painéis superiores) */
-  --chrome-bg: 215 28% 14%;          /* fundo escuro do header */
-  --chrome-bg-elevated: 215 25% 18%; /* faixa de subtítulo / board name */
-  --chrome-fg: 0 0% 96%;
-  --chrome-fg-muted: 215 15% 70%;
-  --chrome-border: 215 20% 24%;
-  --chrome-accent: 340 100% 55%;     /* rosa Rizzo realçado para fundo escuro */
-}
-```
+### 1. `Dashboard.tsx`
 
-Acrescentar utilitário `.lp-thin-scroll` (já existe no preview) na camada utilities para uso pontual no Kanban.
+- Trocar o `bgStyle` (gradiente colorido por board) por **fundo neutro do app**:
+  - `bg-background` no shell (área do Kanban segue clara, como o modelo C exige).
+  - Faixas de chrome (Header + BoardSelector) usam `--chrome-bg` / `--chrome-bg-elevated`.
+- A "memória de cor" do board passa a aparecer só como **fina linha de 2px** abaixo do BoardSelector (`background: board.color`) — preserva identidade visual sem poluir.
+- Loader (`authLoading`) mantém `bg-primary` (já é navy Rizzo, ok).
 
-### 2. `src/components/layout/Header.tsx` — só estilos, sem remover nada
+### 2. `BoardSelector.tsx`
 
-- Trocar `bg-black/20 backdrop-blur-sm` por `bg-[hsl(var(--chrome-bg))]` com borda inferior `border-b border-[hsl(var(--chrome-border))]`.
-- Inputs/Buttons: ajustar contraste sobre o novo fundo (mantendo `text-white` e `hover:bg-white/10`).
-- Faixa do `selectedBoard`: divisor mais sutil; nome do board com `text-white/95 font-semibold`.
-- Avatar, NotificationsPopover, todos os botões (Minha Fila, Sincronizar, Settings, Propostas) **permanecem**, só ganham espaçamento de 6px e raio 8px consistente.
-- Nenhuma prop nova, nenhuma lógica alterada.
+- Container ganha fundo `hsl(var(--chrome-bg-elevated))` + `border-b border-[hsl(var(--chrome-border))]`, padding mais confortável (`px-4 py-2`), `lp-thin-scroll` no overflow horizontal.
+- Botões dos boards:
+  - Inativo: `text-white/75 hover:bg-white/10 hover:text-white`, sem `bg-white/10` por padrão (mais limpo).
+  - Ativo: pílula clara (`bg-white text-foreground font-semibold`) com **borda inferior 2px na cor do board** como acento; remove `scale-105` (mexer escala causa jitter na faixa).
+  - Badge de contagem: `bg-white/15 text-white/80` quando inativo, `bg-muted text-foreground` quando ativo.
+- Botão "Métricas" e "Meus Fluxos": mesmo padrão, sem o `bg-slate-600/50` atual.
+- Mantém `iconMap`, `displayName` (regex), `Check` no ativo, todos os handlers.
 
-### 3. `src/components/kanban/ColumnHeader.tsx` — refinamento
+### 3. `FlowsOverview.tsx`
 
-- Header da coluna com fundo `bg-card` claro, borda inferior fina, título 13px/700 e contador em chip neutro 11px.
-- Manter ações existentes (menu, contadores) intactas.
+- Container: fundo `bg-background` (era transparente sobre gradiente). Headline `text-foreground` em vez de `text-white`.
+- Cards dos fluxos: usar `Card` com `border-border bg-card`, hover `shadow-md` em vez de `scale + shadow-xl`. Faixa de cor superior do board (`h-1.5`) preservada como acento.
+- Skeletons: trocar `bg-white/95` por `bg-card`.
+- Mensagem "Nenhum fluxo disponível": `text-muted-foreground`.
 
-### 4. `src/components/kanban/KanbanColumn.tsx` — densidade
+## Tokens já existentes (não criar novos)
 
-- Largura fixa consistente (304px), gap 12px entre cards, padding interno 10px.
-- Aplicar `lp-thin-scroll` no scroll vertical da lista de cards.
+`--chrome-bg`, `--chrome-bg-elevated`, `--chrome-fg`, `--chrome-fg-muted`, `--chrome-border`, `.lp-thin-scroll`, mais os tokens semânticos (`--background`, `--card`, `--foreground`, `--muted`, `--border`).
 
-### 5. `src/components/kanban/KanbanCard.tsx` — padronização visual
+## Riscos e mitigação
 
-Apenas estilos (sem mexer em props, handlers ou lógica de drag):
+- **Risco**: usuários acostumados ao "fundo colorido por board" podem estranhar. **Mitigação**: a cor vira acento (linha sob BoardSelector + faixa do card no overview), identidade do board permanece reconhecível.
+- **Risco**: contraste do BoardSelector escuro com Kanban claro abaixo. **Mitigação**: borda inferior `--chrome-border` cria separação clara, igual ao preview C.
+- **Sem risco de lógica**: nenhuma prop/handler/query alterada.
 
-- `minHeight: 132`, raio 10, sombra suave, borda 1px `hsl(var(--border))`.
-- Título: 13px/700, `line-clamp: 2`, `title` attr para tooltip nativo.
-- Endereço/resumo: 12px, `line-clamp: 1`.
-- Linha inferior com responsável (avatar 22px com iniciais), prazo e valor — sem sobreposição, `flex-wrap` controlado.
-- Estados visuais (mantendo a lógica que já existe para deadline/correção):
-  - Em dia / docs ok → `borderLeft: 3px solid` verde discreto.
-  - Correção solicitada → âmbar.
-  - Vencido → vermelho (accent rosa só para alerta crítico).
-  - Pendência → cinza com sombra leve.
-  - Neutro → sem realce.
-- Badges atuais permanecem; só padronizo altura 18px e tipografia 10.5px.
+## Arquivos alterados
 
-### 6. `src/components/kanban/KanbanBoard.tsx` — somente container
+- `src/pages/Dashboard.tsx` (apenas o bloco `bgStyle` + classes do wrapper)
+- `src/components/layout/BoardSelector.tsx` (apenas `className`/`style`)
+- `src/components/layout/FlowsOverview.tsx` (apenas `className`/`style`)
 
-- Faixa superior do board (acima das colunas) ganha fundo `--chrome-bg-elevated` e fica grudada ao Header.
-- `lp-thin-scroll` na rolagem horizontal das colunas.
-- Drag-to-scroll horizontal: **só adicionar** se não conflitar com o react-beautiful-dnd / dnd-kit já em uso. Se houver risco, fica para Fase 2.
+Total estimado: ~30 linhas modificadas, zero linhas de lógica.
 
-## Estratégia de segurança
+## Como testar
 
-- Nenhum hook, nenhuma query, nenhum `useEffect` novo com side-effect de dados.
-- Cada arquivo é editado isoladamente; após cada arquivo, conferir build.
-- Diff focado em `className`, `style` e tokens — sem renomear props, sem remover JSX.
+**Desktop (1280–1920)**
+1. `/dashboard` sem board selecionado → fundo neutro, FlowsOverview com cards claros sobre fundo claro, header escuro continua intacto.
+2. Selecionar cada board → BoardSelector mostra board ativo como pílula clara com linha de cor do board; Kanban abre claro como hoje.
+3. Drag-and-drop entre colunas, abrir card, sincronizar, notificações, admin, perfil → tudo funcional.
+4. Toggle "Arquivados", busca global, filtros → comportamento idêntico.
+5. Board Manutenção → toggle Kanban/Prestadores aparece e funciona.
 
-## Decisão pendente (mini)
+**Mobile (375–414)**
+1. BoardSelector rola horizontalmente com scrollbar fina.
+2. FlowsOverview empilha em 1 coluna; cards continuam clicáveis.
+3. Header e menus colapsam como antes.
 
-Sobre o "espaço lateral reservado" do chat: posso (a) **não fazer nada agora** (mais seguro) ou (b) adicionar um trilho fino de 56px à direita do Kanban com ícone "Chat — Em breve" desabilitado. Vou assumir **(a) não fazer nada** para não introduzir layout novo que depois precise ser refeito quando o chat real existir. Se preferir (b), me avise.
+**Build**: alteração só de `className`/`style`, sem novas dependências; build deve ficar limpo.
 
-## Como testar (depois da implementação)
+## Fora desta fase (próximas, sob aprovação)
 
-**Desktop (1280–1920)**:
-1. `/dashboard` — Header escuro, todos os botões clicáveis, busca/filtros/arquivados funcionando.
-2. Selecionar um board → cards padronizados, sem texto cortado, badges visíveis.
-3. Abrir um card → `CardDetailDialog` continua idêntico.
-4. Drag-and-drop entre colunas → funciona como hoje.
-5. Sincronizar, Notificações, Admin, Perfil → abrem normalmente.
-
-**Mobile (375–414)**:
-1. Header não quebra; menus colapsam como antes.
-2. Kanban rola horizontalmente; cards continuam legíveis.
-
-## Entregáveis
-
-Arquivos previstos para Fase 1:
-- `src/index.css` (adições)
-- `src/components/layout/Header.tsx` (estilos)
-- `src/components/kanban/KanbanBoard.tsx` (container)
-- `src/components/kanban/KanbanColumn.tsx` (densidade)
-- `src/components/kanban/ColumnHeader.tsx` (estilos)
-- `src/components/kanban/KanbanCard.tsx` (visual)
-
-Fora desta fase (próximas, sob aprovação):
-- Fase 2: Chat lateral real (tabelas, RLS, realtime) — requer aprovação explícita de mudança de banco.
-- Fase 3: Refinar dialogs (CardDetail, Propostas) e Central de Propostas.
-- Fase 4: AdminFlow / MinhaFila com mesmo padrão.
+- Fase 3: refinar `FilterPopover`, `NotificationsPopover`, `GlobalSearchResults` para o mesmo padrão semi-dark/elevated.
+- Fase 4: `CardDetailDialog` e dialogs de proposta.
+- Fase 5: `AdminFlow`, `MinhaFila`, `CentralPropostas`.
+- Fase 6 (depende de decisão de produto): chat lateral real (banco + RLS).

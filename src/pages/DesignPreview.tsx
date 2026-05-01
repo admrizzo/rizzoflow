@@ -22,7 +22,7 @@ import {
   X, MoreHorizontal, MoreVertical, Eye, Download, Upload, Pencil, Trash2,
   Archive, LayoutGrid, ListChecks, KanbanSquare, Key, Tag, FolderOpen,
   CheckSquare, AlertCircle, RotateCcw, ChevronUp, Info, LogOut, Home,
-  Pin, PinOff, Smile, Image as ImageIcon, File as FileIcon, CornerUpLeft, ArrowLeft,
+  Pin, PinOff, Smile, Image as ImageIcon, File as FileIcon, CornerUpLeft, ArrowLeft, Maximize2, Minimize2,
 } from "lucide-react";
 
 /* =========================================================================

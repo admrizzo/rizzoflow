@@ -26,6 +26,8 @@ import { useToast } from '@/hooks/use-toast';
 import { logCardActivity } from '@/hooks/useCardActivityLogs';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateCardQueries } from '@/lib/queryInvalidation';
+import { useColumns } from '@/hooks/useColumns';
+import { CircleDashed } from 'lucide-react';
 
 interface AndamentoSectionProps {
   card: CardWithRelations;
@@ -44,6 +46,7 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { columns } = useColumns(card.board_id);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
 
@@ -268,6 +271,12 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
           </Badge>
         )}
       </div>
+
+      {/* Stage Stepper — etapas reais do board (Modelo C / Focus Semi-Dark) */}
+      <StageStepper
+        columns={columns}
+        currentColumnId={card.column_id}
+      />
 
       {!hasPendingAction && (
         <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-3 flex items-center justify-between gap-3">

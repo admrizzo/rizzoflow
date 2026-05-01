@@ -1358,6 +1358,8 @@ function VariationCShell({
   const [chatPinned, setChatPinned] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
+  const RAIL_W = 64;
+  const DRAWER_W = 820;
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1370,12 +1372,10 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
-        onOpenChat={() => setChatOpen((v) => !v)}
-        chatUnread={totalUnread}
       />
 
       <div style={{
-        marginRight: chatOpen && chatPinned ? 380 : 0,
+        marginRight: chatOpen && chatPinned ? DRAWER_W : RAIL_W,
         transition: "margin-right .2s ease",
       }}>
         {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
@@ -1389,6 +1389,49 @@ function VariationCShell({
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
 
+      {/* Chat — barra lateral direita fixa (desktop) */}
+      <ChatRail
+        width={RAIL_W}
+        totalUnread={totalUnread}
+        activeConvId={activeConvId}
+        onSelect={(id) => { setActiveConvId(id); setChatOpen(true); }}
+        onToggle={() => setChatOpen((v) => !v)}
+        chatOpen={chatOpen}
+      />
+
+      {/* Botão flutuante mobile (visível apenas em telas pequenas) */}
+      <button
+        onClick={() => setChatOpen((v) => !v)}
+        title="Abrir chat interno"
+        className="lp-chat-fab"
+        style={{
+          position: "fixed", right: 16, bottom: 16, zIndex: 70,
+          width: 52, height: 52, borderRadius: 999, border: "none",
+          background: P.accent, color: "#fff", cursor: "pointer",
+          boxShadow: "0 6px 18px rgba(229,0,70,0.35)",
+          display: "none", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <MessageSquare size={20} />
+        {totalUnread > 0 && (
+          <span style={{
+            position: "absolute", top: -2, right: -2, minWidth: 18, height: 18,
+            padding: "0 5px", borderRadius: 999, background: P.primaryDark, color: "#fff",
+            fontSize: 10.5, fontWeight: 800, display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            border: "2px solid #fff",
+          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
+        )}
+      </button>
+      <style>{`
+        @media (max-width: 768px) {
+          .lp-chat-rail { display: none !important; }
+          .lp-chat-fab { display: inline-flex !important; }
+          .lp-chat-drawer { width: 100vw !important; max-width: 100vw !important; }
+          .lp-chat-drawer-list { width: 100% !important; }
+        }
+      `}</style>
+
       {chatOpen && (
         <ChatDrawer
           pinned={chatPinned}
@@ -1396,6 +1439,8 @@ function VariationCShell({
           onClose={() => setChatOpen(false)}
           activeConvId={activeConvId}
           setActiveConvId={setActiveConvId}
+          width={DRAWER_W}
+          rightOffset={RAIL_W}
         />
       )}
 

@@ -333,16 +333,8 @@ export default function Dashboard() {
     );
   }
 
-  // Determine background color - gray for overview, board color when selected
-  const bgStyle = selectedBoard 
-    ? { background: `linear-gradient(135deg, ${selectedBoard.color}, ${selectedBoard.color}dd)` }
-    : { background: 'linear-gradient(135deg, #374151, #1f2937)' }; // Gray for overview
-
   return (
-    <div 
-      className="min-h-screen transition-colors duration-300"
-      style={bgStyle}
-    >
+    <div className="min-h-screen bg-background">
       <Header
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -361,7 +353,16 @@ export default function Dashboard() {
         onSelectBoard={handleSelectBoard}
          cardCounts={Object.keys(cardCounts).length > 0 ? cardCounts : stableCardCounts}
       />
-      
+
+      {/* Fina linha de cor do board selecionado — preserva identidade visual sem poluir o chrome */}
+      {selectedBoard && (
+        <div
+          className="h-[2px] w-full"
+          style={{ backgroundColor: selectedBoard.color }}
+          aria-hidden="true"
+        />
+      )}
+
       <main>
         {searchQuery.trim().length >= 2 ? (
           <GlobalSearchResults 

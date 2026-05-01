@@ -27,7 +27,13 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
   const isAdminFlow = location.pathname === '/admin-flow';
 
   return (
-    <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto">
+    <div
+      className="px-4 py-2 flex items-center gap-2 overflow-x-auto lp-thin-scroll border-b"
+      style={{
+        backgroundColor: 'hsl(var(--chrome-bg-elevated))',
+        borderColor: 'hsl(var(--chrome-border))',
+      }}
+    >
       {/* Home/All flows button */}
       <Button
         variant="ghost"
@@ -35,10 +41,10 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
         asChild={isAdminFlow}
         onClick={isAdminFlow ? undefined : () => onSelectBoard(null)}
         className={cn(
-          "flex items-center gap-2 px-4 py-1.5 rounded-md transition-all whitespace-nowrap border-2",
+          "flex items-center gap-2 px-3 py-1.5 rounded-md whitespace-nowrap",
           !selectedBoard && !isAdminFlow
-            ? "bg-white text-primary font-semibold border-white shadow-md" 
-            : "bg-transparent text-white border-white/50 hover:bg-white/10 hover:border-white"
+            ? "bg-white text-foreground font-semibold shadow-sm"
+            : "bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
         )}
       >
         {isAdminFlow ? (
@@ -54,7 +60,7 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
         )}
       </Button>
 
-      <div className="w-px h-6 bg-white/30 mx-1" />
+      <div className="w-px h-5 bg-white/15 mx-1" />
 
       {/* Admin Flow button - using Link for proper navigation */}
       <Button
@@ -62,10 +68,10 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
         size="sm"
         asChild
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-md transition-all whitespace-nowrap",
-          isAdminFlow 
-            ? "bg-white text-gray-900 font-semibold shadow-md hover:bg-white hover:text-gray-900" 
-            : "bg-slate-600/50 text-white/80 hover:bg-slate-600 hover:text-white border border-slate-500"
+          "flex items-center gap-2 px-3 py-1.5 rounded-md whitespace-nowrap",
+          isAdminFlow
+            ? "bg-white text-foreground font-semibold shadow-sm hover:bg-white hover:text-foreground"
+            : "bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
         )}
       >
         <Link to="/admin-flow">
@@ -75,7 +81,7 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
         </Link>
       </Button>
 
-      <div className="w-px h-6 bg-white/30 mx-1" />
+      <div className="w-px h-5 bg-white/15 mx-1" />
 
       {boards.map((board) => {
         const Icon = iconMap[board.icon] || ClipboardList;
@@ -91,27 +97,25 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
             size="sm"
             onClick={() => onSelectBoard(board)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap relative",
-              isSelected 
-                ? "bg-white text-gray-900 font-bold shadow-lg hover:bg-white hover:text-gray-900 ring-2 ring-white/50 scale-105" 
-                : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+              "flex items-center gap-2 px-3 py-1.5 rounded-md whitespace-nowrap relative",
+              isSelected
+                ? "bg-white text-foreground font-semibold shadow-sm hover:bg-white hover:text-foreground"
+                : "bg-transparent text-white/75 hover:bg-white/10 hover:text-white"
             )}
+            style={isSelected ? { boxShadow: `inset 0 -2px 0 0 ${board.color}` } : undefined}
           >
             {isSelected && (
               <Check className="h-4 w-4 text-green-600 shrink-0" />
             )}
             <Icon className={cn("h-4 w-4 shrink-0", !isSelected && "opacity-70")} />
-            <span className={cn(
-              "transition-all",
-              isSelected ? "text-base" : "text-sm"
-            )}>{displayName}</span>
+            <span className="text-sm">{displayName}</span>
             <Badge 
               variant="secondary" 
               className={cn(
                 "ml-1 h-5 min-w-[20px] px-1.5 text-xs font-medium shrink-0",
-                isSelected 
-                  ? "bg-green-100 text-green-800 ring-1 ring-green-300" 
-                  : "bg-white/20 text-white/80"
+                isSelected
+                  ? "bg-muted text-foreground"
+                  : "bg-white/15 text-white/80"
               )}
             >
               {count}

@@ -24,7 +24,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 function FlowCardSkeleton() {
   return (
-    <Card className="bg-white/95 backdrop-blur border-0 overflow-hidden">
+    <Card className="bg-card border border-border overflow-hidden">
       <Skeleton className="h-2 w-full" />
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
@@ -42,10 +42,10 @@ function FlowCardSkeleton() {
 
 export function FlowsOverview({ boards, onSelectBoard, cardCounts, isLoading }: FlowsOverviewProps) {
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center px-4 py-8 bg-background">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Seus Fluxos</h1>
-        <p className="text-white/80 text-lg">Selecione um fluxo para visualizar o quadro Kanban</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Seus Fluxos</h1>
+        <p className="text-muted-foreground text-lg">Selecione um fluxo para visualizar o quadro Kanban</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full">
@@ -64,8 +64,8 @@ export function FlowsOverview({ boards, onSelectBoard, cardCounts, isLoading }: 
               <Card
                 key={board.id}
                 className={cn(
-                  "cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-xl",
-                  "bg-white/95 backdrop-blur border-0 overflow-hidden group"
+                  "cursor-pointer hover:shadow-md",
+                  "bg-card border border-border overflow-hidden group"
                 )}
                 onClick={() => onSelectBoard(board)}
               >
@@ -87,7 +87,7 @@ export function FlowsOverview({ boards, onSelectBoard, cardCounts, isLoading }: 
                       </div>
                       <CardTitle className="text-lg">{board.name}</CardTitle>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -116,7 +116,7 @@ export function FlowsOverview({ boards, onSelectBoard, cardCounts, isLoading }: 
       </div>
 
       {!isLoading && boards.length === 0 && (
-        <div className="text-center text-white/70 py-12">
+        <div className="text-center text-muted-foreground py-12">
           <ClipboardList className="h-16 w-16 mx-auto mb-4 opacity-50" />
           <p className="text-xl">Nenhum fluxo disponível</p>
           <p className="text-sm mt-2">Entre em contato com um administrador para obter acesso.</p>

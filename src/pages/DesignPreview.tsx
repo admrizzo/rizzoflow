@@ -361,6 +361,7 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
         onMouseMove={handleMouseMove}
         onMouseUp={stopBoardDrag}
         onMouseLeave={stopBoardDrag}
+        className="lp-thin-scroll"
         style={{
         flex: 1, minHeight: 0,
         overflowX: "auto", overflowY: "auto",

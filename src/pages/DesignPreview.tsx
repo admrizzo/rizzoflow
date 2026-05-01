@@ -2050,7 +2050,7 @@ function ChatRailNative({
         background: P.primaryDark, color: "#fff",
         borderRight: expanded ? "1px solid rgba(255,255,255,0.06)" : "none",
         display: "flex", flexDirection: "column", alignItems: "center",
-        padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
+        padding: "8px 0 10px", gap: 4, fontFamily: fontStack,
         height: "100%", overflow: "hidden",
       }}
     >
@@ -2060,13 +2060,13 @@ function ChatRailNative({
         title={expanded ? "Recolher chat" : "Abrir chat interno"}
         style={{
           position: "relative",
-          width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
+          width: 36, height: 36, borderRadius: 10, border: "none", cursor: "pointer",
           background: expanded ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           transition: "background .15s ease",
         }}
       >
-        <MessageSquare size={18} />
+        <MessageSquare size={16} />
         {totalUnread > 0 && (
           <span style={{
             position: "absolute", top: -3, right: -3, minWidth: 18, height: 18,
@@ -2081,7 +2081,7 @@ function ChatRailNative({
       <RailDivider />
 
       {/* Grupos / canais */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4 }}>
+      <div className="lp-thin-scroll" style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4, width: "100%" }}>
         {groups.map((c) => (
           <RailItem
             key={c.id}
@@ -2091,10 +2091,10 @@ function ChatRailNative({
             onClick={() => onSelect(c.id)}
           >
             <span style={{
-              width: 40, height: 40, borderRadius: 12,
+              width: 32, height: 32, borderRadius: 9,
               background: c.color, color: "#fff",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 800, fontSize: 12.5, letterSpacing: 0.3,
+              fontWeight: 800, fontSize: 11, letterSpacing: 0.3,
             }}>{c.initials}</span>
           </RailItem>
         ))}
@@ -2112,15 +2112,15 @@ function ChatRailNative({
           >
             <span style={{ position: "relative", display: "inline-block" }}>
               <span style={{
-                width: 40, height: 40, borderRadius: 999,
+                width: 32, height: 32, borderRadius: 999,
                 background: c.color, color: "#fff",
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: 12.5,
+                fontWeight: 800, fontSize: 11,
               }}>{c.initials}</span>
               {c.online && (
                 <span style={{
                   position: "absolute", right: -1, bottom: -1,
-                  width: 11, height: 11, borderRadius: 999,
+                  width: 9, height: 9, borderRadius: 999,
                   background: P.success, border: `2px solid ${P.primaryDark}`,
                 }} />
               )}

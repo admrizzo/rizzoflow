@@ -1,120 +1,117 @@
-## Objetivo
+## Objetivo da Fase 1
 
-Permitir que o time solicite correção específica (etapa + campo/documento + pessoa + mensagem) e que o cliente, ao abrir o link, vá direto ao item, corrija apenas aquilo e clique em "Enviar correção" — sem percorrer a proposta inteira.
+Trazer para o sistema real **apenas** o "chrome" semi-dark aprovado no `/design-preview` (variante C — Focus) e o refinamento visual de cards/colunas do Kanban. Sem chat, sem dark no Kanban, sem mexer em regra de negócio.
 
-## 1. Estrutura de dados (correção estruturada)
+## Escopo confirmado
 
-Hoje `proposal_correction_requests.requested_sections` é `jsonb` armazenando array de strings (`['documentos','fiador',...]`). Vamos manter o formato compatível, mas aceitar **objetos estruturados** dentro do mesmo array:
+- **Tema**: semi-dark só nos painéis (Header + faixa superior). Área do Kanban segue clara como hoje.
+- **Aplicar em**: Header e Kanban (KanbanBoard, KanbanColumn, ColumnHeader, KanbanCard).
+- **Chat lateral**: NÃO criar agora. Apenas reservar uma "sombra" lateral fina de 56px no shell (rail visual desabilitada com tooltip "Em breve") OU adiar totalmente para Fase 2 — ver decisão abaixo.
+- **Demais páginas** (CentralPropostas, MinhaFila, AdminFlow, dialogs de card, propostas) ficam para fases seguintes.
 
-```json
-[
-  {
-    "step": "documents",
-    "field": "proof_of_income",
-    "party_id": "uuid-or-null",
-    "party_label": "Fiador 1 — João Silva",
-    "label": "Comprovante de renda",
-    "action": "replace_document"
-  },
-  {
-    "step": "personal",
-    "field": "whatsapp",
-    "party_label": "Locatário principal",
-    "label": "WhatsApp",
-    "action": "edit_field"
-  }
-]
+## O que NÃO muda nesta fase
+
+- Banco, migrations, RLS, edge functions, automações.
+- Regras de propostas, documentos, correção, etapas.
+- Permissões, AuthContext, hooks de dados.
+- `CardDetailDialog` e fluxo de abertura do card (apenas o card fechado no board recebe refinamento).
+- `Header.tsx` mantém TODOS os botões existentes (Minha Fila, Sincronizar, Propostas, Notificações, Admin, Perfil, Filtros, Arquivados, Busca, BoardName).
+- Rotas, navegação, comportamento.
+
+## Mudanças propostas
+
+### 1. `src/index.css` — tokens semi-dark do "chrome"
+
+Adicionar variáveis novas (sem mexer nos tokens existentes que regem cards/Kanban):
+
+```css
+:root {
+  /* Focus semi-dark chrome (Header + painéis superiores) */
+  --chrome-bg: 215 28% 14%;          /* fundo escuro do header */
+  --chrome-bg-elevated: 215 25% 18%; /* faixa de subtítulo / board name */
+  --chrome-fg: 0 0% 96%;
+  --chrome-fg-muted: 215 15% 70%;
+  --chrome-border: 215 20% 24%;
+  --chrome-accent: 340 100% 55%;     /* rosa Rizzo realçado para fundo escuro */
+}
 ```
 
-Sem migração de schema — o campo já é `jsonb`. Strings antigas continuam funcionando (retrocompatível).
+Acrescentar utilitário `.lp-thin-scroll` (já existe no preview) na camada utilities para uso pontual no Kanban.
 
-## 2. Catálogo de etapas e campos (frontend)
+### 2. `src/components/layout/Header.tsx` — só estilos, sem remover nada
 
-Novo arquivo `src/lib/correctionCatalog.ts`:
+- Trocar `bg-black/20 backdrop-blur-sm` por `bg-[hsl(var(--chrome-bg))]` com borda inferior `border-b border-[hsl(var(--chrome-border))]`.
+- Inputs/Buttons: ajustar contraste sobre o novo fundo (mantendo `text-white` e `hover:bg-white/10`).
+- Faixa do `selectedBoard`: divisor mais sutil; nome do board com `text-white/95 font-semibold`.
+- Avatar, NotificationsPopover, todos os botões (Minha Fila, Sincronizar, Settings, Propostas) **permanecem**, só ganham espaçamento de 6px e raio 8px consistente.
+- Nenhuma prop nova, nenhuma lógica alterada.
 
-- `CorrectionStep`: `personal | documents | residents | guarantee | negotiation | contract | review`
-- `STEP_LABELS` para exibição
-- `STEP_TO_PUBLIC_STEP` mapeando para o índice do stepper em `PropostaPublica.tsx`
-- `FIELD_CATALOG`: lista de campos por etapa, cada um com `{ key, label, action: 'edit_field'|'replace_document', appliesToParties: ('locatario_principal'|'locatario_adicional'|'conjuge'|'fiador'|'conjuge_fiador'|'empresa'|'representante')[] }`
-- `PARTY_KIND_LABELS`
+### 3. `src/components/kanban/ColumnHeader.tsx` — refinamento
 
-## 3. Modal de solicitar correção (`RequestCorrectionDialog.tsx`)
+- Header da coluna com fundo `bg-card` claro, borda inferior fina, título 13px/700 e contador em chip neutro 11px.
+- Manter ações existentes (menu, contadores) intactas.
 
-Reescrita do conteúdo:
+### 4. `src/components/kanban/KanbanColumn.tsx` — densidade
 
-- Lista de "itens de correção" (n itens). Cada item:
-  - Select **Etapa**
-  - Select **Campo/documento** (filtrado pela etapa)
-  - Select **Pessoa relacionada** (filtrado pelo campo: só exibe se aplicável; carrega `card_parties` reais quando o card existir; senão usa rótulos genéricos)
-  - Botão remover
-- Botão "+ Adicionar outro item de correção"
-- Textarea de **mensagem geral** (obrigatória)
-- Botão "Solicitar correção" — envia `requested_sections` como array de objetos estruturados.
+- Largura fixa consistente (304px), gap 12px entre cards, padding interno 10px.
+- Aplicar `lp-thin-scroll` no scroll vertical da lista de cards.
 
-`useCreateCorrectionRequest` aceita o novo formato (apenas tipagem; a coluna já é `jsonb`).
+### 5. `src/components/kanban/KanbanCard.tsx` — padronização visual
 
-## 4. Página pública (`PropostaPublica.tsx`)
+Apenas estilos (sem mexer em props, handlers ou lógica de drag):
 
-### 4.1 Banner de correção
+- `minHeight: 132`, raio 10, sombra suave, borda 1px `hsl(var(--border))`.
+- Título: 13px/700, `line-clamp: 2`, `title` attr para tooltip nativo.
+- Endereço/resumo: 12px, `line-clamp: 1`.
+- Linha inferior com responsável (avatar 22px com iniciais), prazo e valor — sem sobreposição, `flex-wrap` controlado.
+- Estados visuais (mantendo a lógica que já existe para deadline/correção):
+  - Em dia / docs ok → `borderLeft: 3px solid` verde discreto.
+  - Correção solicitada → âmbar.
+  - Vencido → vermelho (accent rosa só para alerta crítico).
+  - Pendência → cinza com sombra leve.
+  - Neutro → sem realce.
+- Badges atuais permanecem; só padronizo altura 18px e tipografia 10.5px.
 
-Quando `pendingCorrection` existe e contém objetos estruturados:
+### 6. `src/components/kanban/KanbanBoard.tsx` — somente container
 
-- Mostra cada item como card clicável com: `etapa → campo (pessoa)` + descrição.
-- Clicar leva direto para a etapa via `setCurrentStep(STEP_TO_PUBLIC_STEP[item.step])`, e dispara um `scrollIntoView` + highlight no campo, usando `data-correction-key={field}` em inputs/blocos.
+- Faixa superior do board (acima das colunas) ganha fundo `--chrome-bg-elevated` e fica grudada ao Header.
+- `lp-thin-scroll` na rolagem horizontal das colunas.
+- Drag-to-scroll horizontal: **só adicionar** se não conflitar com o react-beautiful-dnd / dnd-kit já em uso. Se houver risco, fica para Fase 2.
 
-### 4.2 Modo "correção direcionada"
+## Estratégia de segurança
 
-Detecta se **todos** os itens são `action: 'edit_field'` ou `'replace_document'` em poucas etapas:
+- Nenhum hook, nenhuma query, nenhum `useEffect` novo com side-effect de dados.
+- Cada arquivo é editado isoladamente; após cada arquivo, conferir build.
+- Diff focado em `className`, `style` e tokens — sem renomear props, sem remover JSX.
 
-- Esconde o stepper completo de avanço por etapa.
-- Mostra somente as etapas envolvidas com os campos/documentos a corrigir destacados.
-- Adiciona botão fixo no topo/rodapé: **"Enviar correção"** — ao clicar:
-  - Salva os campos/documentos alterados (reaproveita `saveDraftAndProgress` parcial e o fluxo de upload existente).
-  - Marca `proposal_correction_requests.status = 'responded'` + `responded_at = now()`.
-  - Registra log `proposal_correction_responded` (já existe).
-  - Atualiza `proposal_links.status = 'enviada'`.
-  - Mostra tela de sucesso ("Correção enviada com sucesso").
-- Não obriga passar pela revisão completa.
+## Decisão pendente (mini)
 
-### 4.3 Anexar `correction_request_id` aos uploads
+Sobre o "espaço lateral reservado" do chat: posso (a) **não fazer nada agora** (mais seguro) ou (b) adicionar um trilho fino de 56px à direita do Kanban com ícone "Chat — Em breve" desabilitado. Vou assumir **(a) não fazer nada** para não introduzir layout novo que depois precise ser refeito quando o chat real existir. Se preferir (b), me avise.
 
-Para itens com `action: 'replace_document'`, ao fazer upload daquele documento específico, já gravamos `correction_request_id = pendingCorrection.id` (lógica já existe em `uploadProposalDocument`; só garantir que o caminho de upload no modo direcionado passa o id).
+## Como testar (depois da implementação)
 
-### 4.4 Highlight visual
+**Desktop (1280–1920)**:
+1. `/dashboard` — Header escuro, todos os botões clicáveis, busca/filtros/arquivados funcionando.
+2. Selecionar um board → cards padronizados, sem texto cortado, badges visíveis.
+3. Abrir um card → `CardDetailDialog` continua idêntico.
+4. Drag-and-drop entre colunas → funciona como hoje.
+5. Sincronizar, Notificações, Admin, Perfil → abrem normalmente.
 
-Helper `useCorrectionHighlight(fieldKey)` que retorna classes (`ring-2 ring-primary/60 bg-primary/5`) quando o campo está na lista de pendências.
+**Mobile (375–414)**:
+1. Header não quebra; menus colapsam como antes.
+2. Kanban rola horizontalmente; cards continuam legíveis.
 
-## 5. Card interno (`CardDetailDialog.tsx`)
+## Entregáveis
 
-No bloco "Correção solicitada":
-- Renderiza a lista estruturada (etapa, campo, pessoa, mensagem) em vez de só os nomes de seções.
-- Mantém retrocompatibilidade quando `requested_sections` for array de strings (formato antigo).
+Arquivos previstos para Fase 1:
+- `src/index.css` (adições)
+- `src/components/layout/Header.tsx` (estilos)
+- `src/components/kanban/KanbanBoard.tsx` (container)
+- `src/components/kanban/KanbanColumn.tsx` (densidade)
+- `src/components/kanban/ColumnHeader.tsx` (estilos)
+- `src/components/kanban/KanbanCard.tsx` (visual)
 
-## 6. Catálogo inicial de campos
-
-| Etapa | Campos |
-|---|---|
-| personal | nome_completo, cpf, rg, whatsapp, email, data_nascimento, profissao, renda, fonte_renda, estado_civil, regime_bens, nacionalidade |
-| documents | doc_foto, comprovante_residencia, comprovante_renda, doc_conjuge, doc_fiador, doc_conjuge_fiador, contrato_social, matricula_imovel |
-| residents | conjuge_dados, locatario_adicional, qtde_moradores, possui_pets |
-| guarantee | tipo_garantia, fiador_dados, seguro_fianca, caucao_valor, titulo_capitalizacao |
-| negotiation | valor_proposto, condicoes_proposta, observacoes_negociacao |
-| contract | data_inicio, dia_vencimento, tipo_assinatura, retirada_chaves |
-| review | outros |
-
-## 7. Como testar
-
-1. Abrir um card com proposta enviada → "Solicitar correção".
-2. Adicionar 2 itens: (a) editar WhatsApp do Locatário principal, (b) reenviar Comprovante de renda do Fiador 1.
-3. Salvar mensagem geral e enviar.
-4. Abrir o link público em janela anônima → deve aparecer banner com 2 cards clicáveis e botão "Enviar correção".
-5. Clicar no item de WhatsApp → vai para etapa Dados Pessoais com o campo destacado.
-6. Clicar no item de Comprovante → vai para Documentos com o slot do fiador destacado; fazer upload.
-7. Clicar em "Enviar correção" → tela de sucesso; no card a badge muda para "Correção recebida" e o documento novo aparece com badge azul.
-
-## 8. Notas técnicas
-
-- Tipagem: nova interface `CorrectionItem` em `useCorrectionRequests.ts`; `requested_sections` passa a ser `Array<CorrectionItem | string>` (string = formato legado).
-- Sem mudanças de schema/RLS.
-- Reaproveitar mecanismos já existentes: `correction_request_id` em `proposal_documents`, `useOpenCardRealtime`, `proposal_correction_responded` log.
-- Stepper público recebe um `targetSteps: number[]` opcional para limitar/ocultar etapas fora do escopo da correção.
+Fora desta fase (próximas, sob aprovação):
+- Fase 2: Chat lateral real (tabelas, RLS, realtime) — requer aprovação explícita de mudança de banco.
+- Fase 3: Refinar dialogs (CardDetail, Propostas) e Central de Propostas.
+- Fase 4: AdminFlow / MinhaFila com mesmo padrão.

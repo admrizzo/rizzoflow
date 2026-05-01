@@ -68,12 +68,22 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between px-2 py-2 border-b border-border/60">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/60">
         <div className="flex-1 min-w-0 pr-1">
-          <div className="flex items-start gap-1">
-            <h3 className="font-semibold text-[11.5px] text-foreground/80 uppercase tracking-wide whitespace-normal break-words leading-tight flex-1">
+          <div className="flex items-center gap-2">
+            {column.color && (
+              <span
+                className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: column.color }}
+                aria-hidden
+              />
+            )}
+            <h3 className="font-semibold text-[11.5px] text-foreground uppercase tracking-wider whitespace-normal break-words leading-tight flex-1">
               {column.name}
             </h3>
+            <span className="inline-flex items-center justify-center text-[10.5px] font-bold text-muted-foreground bg-muted border border-border rounded-full px-1.5 min-w-[22px] h-[18px]">
+              {cardCount}
+            </span>
             {column.review_deadline_days && (
               <TooltipProvider>
                 <Tooltip>
@@ -94,7 +104,7 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
             )}
           </div>
           {column.department && (
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-muted-foreground ml-4">
               ({departmentLabels[column.department]})
             </span>
           )}
@@ -103,7 +113,7 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
         {isEditor && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-500 hover:text-gray-700 hover:bg-gray-200">
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

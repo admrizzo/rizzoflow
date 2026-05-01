@@ -1377,17 +1377,26 @@ function VariationCShell({
         onSync={() => {}}
       />
 
-      {/* Layout principal: conteúdo + lateral nativa de chat (desktop) */}
+      {/* Layout principal: conteúdo + lateral nativa de chat (desktop)
+          Altura fixa baseada na viewport para que cada área tenha seu próprio scroll
+          e o composer do chat nunca fique cortado. */}
       <div className="lp-shell-grid" style={{
-        display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 96px)",
+        display: "flex", alignItems: "stretch",
+        height: "calc(100vh - 96px)",
+        minHeight: 520,
+        overflow: "hidden",
       }}>
-        <div className="lp-main-col" style={{ flex: 1, minWidth: 0 }}>
+        <div className="lp-main-col" style={{
+          flex: 1, minWidth: 0,
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}>
           {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
-          {view === "queue" && <MyQueue />}
-          {view === "metrics" && <Metrics />}
-          {view === "proposals" && <Proposals />}
-          {view === "admin" && <AdminScreen />}
-          {view === "archived" && <ArchivedScreen />}
+          {view === "queue" && <div style={{ flex: 1, overflow: "auto" }}><MyQueue /></div>}
+          {view === "metrics" && <div style={{ flex: 1, overflow: "auto" }}><Metrics /></div>}
+          {view === "proposals" && <div style={{ flex: 1, overflow: "auto" }}><Proposals /></div>}
+          {view === "admin" && <div style={{ flex: 1, overflow: "auto" }}><AdminScreen /></div>}
+          {view === "archived" && <div style={{ flex: 1, overflow: "auto" }}><ArchivedScreen /></div>}
         </div>
 
         {/* Lateral nativa de chat — desktop */}
@@ -1398,6 +1407,8 @@ function VariationCShell({
           background: P.primaryDark,
           borderLeft: "1px solid rgba(255,255,255,0.05)",
           transition: "width .18s ease",
+          height: "100%",
+          overflow: "hidden",
         }}>
           <ChatRailNative
             width={RAIL_W}

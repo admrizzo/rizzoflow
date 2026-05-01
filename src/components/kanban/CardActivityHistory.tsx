@@ -60,7 +60,7 @@ function LogItem({ log }: { log: CardActivityLog }) {
   const created = new Date(log.created_at);
 
   return (
-    <div className="flex gap-2.5 py-2">
+    <div className="flex gap-3 py-3">
       <div
         className={cn(
           'flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center',

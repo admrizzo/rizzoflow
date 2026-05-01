@@ -2096,8 +2096,8 @@ function RailItem({
   );
 }
 
-function ChatDrawer({
-  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 760, rightOffset = 0,
+function ChatPanel({
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 380, fullscreen = false,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
@@ -2105,9 +2105,10 @@ function ChatDrawer({
   activeConvId: string;
   setActiveConvId: (id: string) => void;
   width?: number;
-  rightOffset?: number;
+  fullscreen?: boolean;
 }) {
   const [query, setQuery] = useState("");
+  const [showList, setShowList] = useState(false);
   const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
   const filtered = useMemo(
     () => CHAT_CONVERSATIONS.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())),
@@ -2117,25 +2118,30 @@ function ChatDrawer({
   const dms = filtered.filter((c) => c.kind === "dm");
 
   return (
-    <aside className="lp-chat-drawer" style={{
-      position: "fixed", top: 0, right: rightOffset, bottom: 0,
-      width: width, maxWidth: "96vw",
-      display: "flex", zIndex: 60,
-      boxShadow: pinned ? "none" : "-18px 0 40px rgba(20,30,40,0.18)",
+    <aside className="lp-chat-panel" style={{
+      flex: "0 0 auto", width: fullscreen ? "100%" : width,
+      display: "flex", flexDirection: "column",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
+      position: fullscreen ? "static" : "sticky",
+      top: 96, alignSelf: "flex-start",
+      maxHeight: fullscreen ? "100vh" : "calc(100vh - 96px)",
+      height: fullscreen ? "100vh" : undefined,
+      overflow: "hidden",
     }}>
-      {/* Lista de conversas */}
-      <div className="lp-chat-drawer-list" style={{
-        width: 290, borderRight: `1px solid ${P.border}`,
+      {/* Lista de conversas (toggle) */}
+      {showList && (
+      <div className="lp-chat-panel-list" style={{
+        borderBottom: `1px solid ${P.border}`,
         display: "flex", flexDirection: "column", background: "#fafbfc",
+        maxHeight: 280, overflow: "hidden",
       }}>
         <div style={{
           padding: "12px 12px 8px", background: P.primaryDark, color: "#fff",
           display: "flex", alignItems: "center", gap: 8,
         }}>
           <MessageSquare size={15} />
-          <strong style={{ fontSize: 13 }}>Chat interno</strong>
+          <strong style={{ fontSize: 13 }}>Conversas</strong>
           <span style={{ marginLeft: "auto", fontSize: 10.5, opacity: 0.7 }}>Equipe Rizzo</span>
         </div>
         <div style={{ padding: 10, borderBottom: `1px solid ${P.border}` }}>
@@ -2156,18 +2162,19 @@ function ChatDrawer({
         <div style={{ flex: 1, overflowY: "auto" }}>
           <ChatGroupLabel label="Geral" />
           {groups.filter((g) => g.kind === "all").map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
           ))}
           <ChatGroupLabel label="Grupos" />
           {groups.filter((g) => g.kind === "group").map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
           ))}
           <ChatGroupLabel label="Mensagens diretas" />
           {dms.map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => setActiveConvId(c.id)} />
+            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
           ))}
         </div>
       </div>
+      )}
 
       {/* Conversa */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#fff" }}>
@@ -2185,9 +2192,14 @@ function ChatDrawer({
             </div>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-            <button title={pinned ? "Desafixar" : "Fixar conversa"} onClick={onTogglePin} style={chatHeaderBtn}>
-              {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+            <button title="Conversas" onClick={() => setShowList((v) => !v)} style={chatHeaderBtn}>
+              <Inbox size={15} />
             </button>
+            {!fullscreen && (
+              <button title={pinned ? "Desafixar" : "Fixar"} onClick={onTogglePin} style={chatHeaderBtn}>
+                {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+              </button>
+            )}
             <button title="Mais ações" style={chatHeaderBtn}><MoreHorizontal size={15} /></button>
             <button title="Fechar" onClick={onClose} style={chatHeaderBtn}><X size={16} /></button>
           </div>

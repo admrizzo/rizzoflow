@@ -2278,7 +2278,7 @@ function ChatPanel({
       display: "grid", gridTemplateRows: "auto 1fr auto",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
-      height: fullscreen ? "100vh" : "100%",
+      height: "100%",
       minHeight: 0,
       overflow: "hidden",
     }}>

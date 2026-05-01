@@ -27,7 +27,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   return (
-    <div className="flex-shrink-0 w-60 sm:w-64 md:w-[272px] bg-muted/60 rounded-lg shadow-sm flex flex-col max-h-[calc(100vh-10rem)]">
+    <div className="flex-shrink-0 w-60 sm:w-64 md:w-[290px] bg-card border border-border rounded-xl shadow-sm flex flex-col max-h-[calc(100vh-10rem)]">
       <ColumnHeader 
         column={column} 
         cardCount={cards.length}
@@ -39,15 +39,15 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex-1 overflow-y-auto px-1.5 pb-2 lp-thin-scroll",
+              "flex-1 overflow-y-auto px-2 pb-2 lp-thin-scroll",
               // Generous min-height for easier dropping
               "min-h-[280px]",
               // Visual feedback when dragging over
-              snapshot.isDraggingOver && "bg-blue-100 ring-2 ring-inset ring-blue-400 rounded-b-lg"
+              snapshot.isDraggingOver && "bg-primary/5 ring-2 ring-inset ring-primary/40 rounded-b-xl"
             )}
           >
             {cards.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/60 text-center px-1 py-1 italic select-none">
+              <p className="text-[10px] text-muted-foreground/60 text-center px-1 py-1.5 italic select-none">
                 Ordem de entrada e urgências · cima → baixo
               </p>
             )}
@@ -58,7 +58,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
                     ref={dragProvided.innerRef}
                     {...dragProvided.draggableProps}
                     {...dragProvided.dragHandleProps}
-                    className="mb-2"
+                    className="mb-2.5"
                     style={{
                       ...dragProvided.draggableProps.style,
                       // Ensure dragging card is always on top
@@ -90,9 +90,9 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
               className={cn(
                 "min-h-[100px] flex items-center justify-center rounded-lg mt-1",
                 snapshot.isDraggingOver 
-                  ? "bg-blue-200 border-2 border-dashed border-blue-500 text-blue-700 font-medium text-sm" 
+                  ? "bg-primary/10 border-2 border-dashed border-primary/60 text-primary font-medium text-sm" 
                   : cards.length === 0 
-                    ? "text-gray-400 text-xs border border-dashed border-gray-300" 
+                    ? "text-muted-foreground text-xs border border-dashed border-border" 
                     : "border border-dashed border-transparent"
               )}
             >
@@ -107,7 +107,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
       </Droppable>
 
       {isFirstColumn && (
-        <div className="px-1.5 pb-1.5 flex-shrink-0">
+        <div className="px-2 pb-2 flex-shrink-0">
           <AddCardButton 
             columnId={column.id}
             boardId={boardId}

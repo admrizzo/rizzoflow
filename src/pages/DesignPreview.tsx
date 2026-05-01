@@ -1912,6 +1912,161 @@ const CHAT_MESSAGES: Record<string, ChatMsg[]> = {
   ],
 };
 
+/* =========================================================================
+ * CHAT RAIL — barra lateral direita fixa (estilo Discord/Slack)
+ * ========================================================================= */
+function ChatRail({
+  width, totalUnread, activeConvId, onSelect, onToggle, chatOpen,
+}: {
+  width: number;
+  totalUnread: number;
+  activeConvId: string;
+  onSelect: (id: string) => void;
+  onToggle: () => void;
+  chatOpen: boolean;
+}) {
+  const groups = CHAT_CONVERSATIONS.filter((c) => c.kind === "group" || c.kind === "all");
+  const dms    = CHAT_CONVERSATIONS.filter((c) => c.kind === "dm");
+
+  return (
+    <aside
+      className="lp-chat-rail"
+      style={{
+        position: "fixed", top: 0, right: 0, bottom: 0,
+        width, zIndex: 55,
+        background: P.primaryDark, color: "#fff",
+        borderLeft: "1px solid rgba(255,255,255,0.05)",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
+        boxShadow: "-6px 0 18px rgba(20,30,40,0.10)",
+      }}
+    >
+      {/* Topo: ícone do chat + abrir/fechar */}
+      <button
+        onClick={onToggle}
+        title={chatOpen ? "Recolher chat" : "Abrir chat interno"}
+        style={{
+          position: "relative",
+          width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
+          background: chatOpen ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          transition: "background .15s ease",
+        }}
+      >
+        <MessageSquare size={18} />
+        {totalUnread > 0 && (
+          <span style={{
+            position: "absolute", top: -3, right: -3, minWidth: 18, height: 18,
+            padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
+            fontSize: 10.5, fontWeight: 800, display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            border: `2px solid ${P.primaryDark}`,
+          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
+        )}
+      </button>
+
+      <RailDivider />
+
+      {/* Grupos / canais */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4 }}>
+        {groups.map((c) => (
+          <RailItem
+            key={c.id}
+            active={chatOpen && c.id === activeConvId}
+            unread={c.unread}
+            title={`${c.name} · ${c.lastMsg}`}
+            onClick={() => onSelect(c.id)}
+          >
+            <span style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: c.color, color: "#fff",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 800, fontSize: 12.5, letterSpacing: 0.3,
+            }}>{c.initials}</span>
+          </RailItem>
+        ))}
+
+        <RailDivider />
+
+        {/* Mensagens diretas */}
+        {dms.map((c) => (
+          <RailItem
+            key={c.id}
+            active={chatOpen && c.id === activeConvId}
+            unread={c.unread}
+            title={`${c.name}${c.online ? " · online" : ""}`}
+            onClick={() => onSelect(c.id)}
+          >
+            <span style={{ position: "relative", display: "inline-block" }}>
+              <span style={{
+                width: 40, height: 40, borderRadius: 999,
+                background: c.color, color: "#fff",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontWeight: 800, fontSize: 12.5,
+              }}>{c.initials}</span>
+              {c.online && (
+                <span style={{
+                  position: "absolute", right: -1, bottom: -1,
+                  width: 11, height: 11, borderRadius: 999,
+                  background: P.success, border: `2px solid ${P.primaryDark}`,
+                }} />
+              )}
+            </span>
+          </RailItem>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function RailDivider() {
+  return (
+    <div style={{ width: 28, height: 1, background: "rgba(255,255,255,0.10)", margin: "4px 0" }} />
+  );
+}
+
+function RailItem({
+  active, unread, title, onClick, children,
+}: {
+  active: boolean;
+  unread: number;
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        position: "relative", border: "none", background: "transparent",
+        padding: 0, cursor: "pointer", lineHeight: 0,
+        outline: active ? `2px solid ${P.accent}` : "none",
+        outlineOffset: 2, borderRadius: 14,
+      }}
+    >
+      {/* Indicador lateral à esquerda */}
+      <span style={{
+        position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)",
+        width: 3, borderRadius: 2,
+        height: active ? 26 : (unread > 0 ? 14 : 0),
+        background: active ? "#fff" : "rgba(255,255,255,0.85)",
+        transition: "height .15s ease",
+      }} />
+      {children}
+      {unread > 0 && (
+        <span style={{
+          position: "absolute", top: -3, right: -3, minWidth: 17, height: 17,
+          padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
+          fontSize: 10, fontWeight: 800, display: "inline-flex",
+          alignItems: "center", justifyContent: "center",
+          border: `2px solid ${P.primaryDark}`,
+        }}>{unread > 99 ? "99+" : unread}</span>
+      )}
+    </button>
+  );
+}
+
 function ChatDrawer({
   pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 760, rightOffset = 0,
 }: {

@@ -13,7 +13,7 @@
  *  - aviso explicando que esta prévia não altera regras/etapas
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Bell, RefreshCw, FileText, Plus, Filter, ChevronDown, Clock,
   AlertTriangle, CheckCircle2, CircleDashed, Users, BarChart3, Inbox,

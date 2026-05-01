@@ -1378,6 +1378,10 @@ function VariationCShell({
   openCard: KCard | null; setOpenCard: (c: KCard | null) => void;
   showProposalModal: boolean; setShowProposalModal: (v: boolean) => void;
 }) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatPinned, setChatPinned] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<string>("g-geral");
+  const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1390,17 +1394,34 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
+        onOpenChat={() => setChatOpen((v) => !v)}
+        chatUnread={totalUnread}
       />
 
-      {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
+      <div style={{
+        marginRight: chatOpen && chatPinned ? 380 : 0,
+        transition: "margin-right .2s ease",
+      }}>
+        {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
       {view === "queue" && <MyQueue />}
       {view === "metrics" && <Metrics />}
       {view === "proposals" && <Proposals />}
       {view === "admin" && <AdminScreen />}
       {view === "archived" && <ArchivedScreen />}
+      </div>
 
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
+
+      {chatOpen && (
+        <ChatDrawer
+          pinned={chatPinned}
+          onTogglePin={() => setChatPinned((v) => !v)}
+          onClose={() => setChatOpen(false)}
+          activeConvId={activeConvId}
+          setActiveConvId={setActiveConvId}
+        />
+      )}
 
       {/* Mobile gallery */}
       <MobileGallery />

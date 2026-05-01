@@ -921,29 +921,28 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           </div>
         </DialogHeader>
 
-        {/* Desktop: Two-column layout. Mobile: Single scroll with everything */}
+        {/* Desktop: Two-column layout (preview Modelo C: main + 380px sidebar). Mobile: Single scroll with everything */}
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
           {/* Main content - uses native overflow for reliable mobile touch scrolling */}
           <div className={cn(
-            "flex-1 px-4 md:px-6 py-4 md:py-5 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background",
-            "md:w-[55%]"
+            "flex-1 min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background"
           )}>
-          <div className="space-y-6 pb-6">
+          <div className="space-y-5 pb-8 max-w-3xl mx-auto">
             {/* Archived Banner */}
             {card.is_archived && (
-              <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
-                <div className="flex items-center gap-2 text-amber-900">
+              <div className="rounded-lg border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 p-4">
+                <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
                   <Archive className="h-5 w-5" />
                   <span className="font-medium">Este card está arquivado</span>
                 </div>
                 {card.archived_by_profile && card.archived_at && (
-                  <p className="text-sm text-amber-800 mt-1">
+                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
                     Arquivado por {card.archived_by_profile.full_name} em{' '}
                     {format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 )}
                 {card.archive_reason && (
-                  <p className="text-sm text-amber-800 mt-1">
+                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
                     <strong>Motivo:</strong> {card.archive_reason}
                   </p>
                 )}

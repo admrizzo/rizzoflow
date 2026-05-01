@@ -2218,9 +2218,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           </div>
         </div>
 
-        {/* Desktop: Notes/Comments Sidebar - side by side */}
+        {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}
         <div
-          className="hidden md:flex md:w-[45%] border-l border-border flex-shrink-0 flex-col bg-card"
+          className="hidden md:flex md:w-[380px] lg:w-[400px] border-l border-border flex-shrink-0 flex-col bg-muted/30"
         >
           <CardNotesSidebar 
             cardId={card.id} 

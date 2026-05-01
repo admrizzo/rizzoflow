@@ -931,19 +931,19 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           <div className="space-y-6 pb-6">
             {/* Archived Banner */}
             {card.is_archived && (
-              <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+                <div className="flex items-center gap-2 text-amber-900">
                   <Archive className="h-5 w-5" />
                   <span className="font-medium">Este card está arquivado</span>
                 </div>
                 {card.archived_by_profile && card.archived_at && (
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  <p className="text-sm text-amber-800 mt-1">
                     Arquivado por {card.archived_by_profile.full_name} em{' '}
                     {format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </p>
                 )}
                 {card.archive_reason && (
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  <p className="text-sm text-amber-800 mt-1">
                     <strong>Motivo:</strong> {card.archive_reason}
                   </p>
                 )}

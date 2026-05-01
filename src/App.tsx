@@ -8,6 +8,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ForceRefreshPrompt } from "@/components/layout/ForceRefreshPrompt";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ChatProvider } from "@/components/chat/ChatProvider";
+import { ChatLauncher } from "@/components/chat/ChatLauncher";
+import { useLocation } from "react-router-dom";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PropostaLocacao from "./pages/PropostaLocacao";
@@ -134,6 +137,25 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Mostra o Chat global apenas em rotas autenticadas internas.
+function GlobalChat() {
+  const { user, profile, isLoading } = useAuth();
+  const location = useLocation();
+  if (isLoading || !user) return null;
+  if (needsPasswordReset(profile)) return null;
+  const path = location.pathname;
+  // Rotas públicas / fluxos onde o chat não deve aparecer
+  const hidden =
+    path.startsWith("/auth") ||
+    path.startsWith("/demo") ||
+    path.startsWith("/proposta/") ||
+    path.startsWith("/prestador/") ||
+    path.startsWith("/redefinir-senha") ||
+    path.startsWith("/design-preview");
+  if (hidden) return null;
+  return <ChatLauncher />;
+}
+
 // Role-gated route. `allow` is a predicate over usePermissions().
 function RoleRoute({
   children,
@@ -176,7 +198,8 @@ const App = () => (
       <ErrorBoundary label="app">
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<RouteFallback />}>
+            <ChatProvider>
+              <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<IndexRedirect />} />
               <Route
@@ -242,8 +265,10 @@ const App = () => (
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </Suspense>
-            <ForceRefreshPrompt />
+              </Suspense>
+              <ForceRefreshPrompt />
+              <GlobalChat />
+            </ChatProvider>
           </AuthProvider>
         </BrowserRouter>
       </ErrorBoundary>

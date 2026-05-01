@@ -1330,7 +1330,7 @@ export default function DesignPreview() {
   const [showProposalModal, setShowProposalModal] = useState(false);
 
   return (
-    <div style={{ background: P.bg, minHeight: "100vh", fontFamily: fontStack, color: P.text }}>
+    <div style={{ background: P.bg, minHeight: "100vh", overflowX: "hidden", fontFamily: fontStack, color: P.text }}>
       {/* Barra de prévia */}
       <PreviewBar variation={variation} onChange={setVariation} />
 
@@ -1414,12 +1414,20 @@ function VariationCShell({
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const RAIL_W = 64;
-  const PANEL_W = 380;
+  const RAIL_W = 72;
+  const PANEL_W = 420;
   const expanded = chatState === "expanded" || chatState === "pinned";
   const pinned = chatState === "pinned";
   return (
-    <div style={{ marginTop: 10 }}>
+    <section className="lp-app-shell" style={{
+      margin: "10px 16px 0",
+      height: "calc(100vh - 94px)",
+      minHeight: 0,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      background: P.bg,
+    }}>
       <HeaderC
         view={view}
         onView={setView}
@@ -1437,8 +1445,8 @@ function VariationCShell({
           e o composer do chat nunca fique cortado. */}
       <div className="lp-shell-grid" style={{
         display: "flex", alignItems: "stretch",
-        height: "calc(100vh - 96px)",
-        minHeight: 520,
+        flex: 1,
+        minHeight: 0,
         overflow: "hidden",
       }}>
         <div className="lp-main-col" style={{
@@ -1461,7 +1469,6 @@ function VariationCShell({
           display: "flex", alignItems: "stretch",
           background: P.primaryDark,
           borderLeft: "1px solid rgba(255,255,255,0.05)",
-          transition: "width .18s ease",
           height: "100%",
           overflow: "hidden",
         }}>
@@ -1541,7 +1548,7 @@ function VariationCShell({
 
       {/* Mobile gallery */}
       <MobileGallery />
-    </div>
+    </section>
   );
 }
 

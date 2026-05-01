@@ -385,33 +385,57 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
 
 /* ---------- Showcase de estados de card (em dia, recebidos, correção, pendência, vencido) ---------- */
 function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
-  const samples: { tag: string; c: KCard }[] = [
-    { tag: "Em dia", c: { id: "s1", code: "LOC-2901", title: "Apto 502 · Ed. Vista Verde", address: "R. das Palmeiras, 120 — apto 502", broker: "Marina Castro", brokerInitials: "MC", status: "inday", statusLabel: "Em dia", deadline: "3 dias", value: "R$ 3.900/mês", docsOk: 5, docsTotal: 7 } },
-    { tag: "Documentos recebidos", c: { id: "s2", code: "LOC-2902", title: "Cobertura · Ed. Mirante", address: "Av. Beira Mar, 2210 — apto 1601", broker: "Patrícia Lima", brokerInitials: "PL", status: "received", statusLabel: "Doc. recebidos", deadline: "Hoje", value: "R$ 9.800/mês", docsOk: 7, docsTotal: 7 } },
-    { tag: "Correção solicitada", c: { id: "s3", code: "LOC-2903", title: "Sala comercial · Ed. Cidade", address: "R. XV de Novembro, 890 — sala 712", broker: "Rafael Souza", brokerInitials: "RS", status: "correction", statusLabel: "Correção solicitada", deadline: "1 dia", value: "R$ 2.900/mês", docsOk: 4, docsTotal: 7, alerts: 2 } },
-    { tag: "Pendência", c: { id: "s4", code: "LOC-2904", title: "Sobrado · Vila Mariana", address: "R. Joaquim Távora, 230", broker: "André Pinto", brokerInitials: "AP", status: "pending", statusLabel: "Definir garantia", deadline: "Hoje", value: "R$ 5.200/mês", alerts: 1 } },
-    { tag: "Vencido", c: { id: "s5", code: "LOC-2905", title: "Apto 51 · Ed. Aurora", address: "R. da Praia, 220", broker: "Eduarda Nunes", brokerInitials: "EN", status: "late", statusLabel: "Aguardando assinatura", deadline: "Atrasado 3d", value: "R$ 3.100/mês", alerts: 3 } },
+function CardStatesShowcase({ onOpenCard: _onOpenCard }: { onOpenCard: (c: KCard) => void }) {
+  const legend: { key: string; status: StatusKey; label: string; code: string }[] = [
+    { key: "inday",      status: "inday",      label: "Em dia",              code: "LOC-2901" },
+    { key: "received",   status: "received",   label: "Doc. recebidos",      code: "LOC-2902" },
+    { key: "correction", status: "correction", label: "Correção solicitada", code: "LOC-2903" },
+    { key: "pending",    status: "pending",    label: "Pendência",           code: "LOC-2904" },
+    { key: "late",       status: "late",       label: "Vencido",             code: "LOC-2905" },
+    { key: "neutral",    status: "neutral",    label: "Neutro",              code: "LOC-2906" },
   ];
   return (
-    <div style={{ padding: "14px 16px 4px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 800, color: P.textMuted, textTransform: "uppercase", letterSpacing: 0.6 }}>
+    <div style={{ padding: "8px 16px 6px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: P.textMuted, textTransform: "uppercase", letterSpacing: 0.6 }}>
           Estados visuais do card
         </span>
-        <span style={{ fontSize: 11, color: P.textSubtle }}>
-          · sinais sutis: verde ok · âmbar atenção · vermelho vencido · neutro sem alerta
+        <span style={{ fontSize: 10.5, color: P.textSubtle }}>
+          · legenda rápida
         </span>
       </div>
-      <div style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 4 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10, minWidth: 1140 }}>
-        {samples.map((s) => (
-          <div key={s.c.id}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: P.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              {s.tag}
-            </div>
-            <KanbanCard c={s.c} onClick={() => onOpenCard(s.c)} />
-          </div>
-        ))}
+      <div className="lp-thin-scroll" style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 2 }}>
+        <div style={{ display: "inline-flex", gap: 6, alignItems: "stretch", minWidth: "max-content" }}>
+          {legend.map((l) => {
+            const st = STATUS[l.status];
+            return (
+              <div
+                key={l.key}
+                title={st.label}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "#fff",
+                  border: `1px solid ${P.border}`,
+                  borderLeft: `3px solid ${st.dot}`,
+                  borderRadius: 8,
+                  padding: "4px 9px 4px 8px",
+                  height: 28,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{
+                  width: 7, height: 7, borderRadius: 999,
+                  background: st.dot, flex: "0 0 auto",
+                }} />
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: P.text }}>
+                  {l.label}
+                </span>
+                <span style={{ fontSize: 9.5, color: P.textSubtle, fontWeight: 600, letterSpacing: 0.3 }}>
+                  {l.code}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

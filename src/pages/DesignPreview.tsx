@@ -13,7 +13,7 @@
  *  - aviso explicando que esta prévia não altera regras/etapas
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Search, Bell, RefreshCw, FileText, Plus, Filter, ChevronDown, Clock,
   AlertTriangle, CheckCircle2, CircleDashed, Users, BarChart3, Inbox,
@@ -177,7 +177,8 @@ function HeaderC({
       {/* Topbar */}
       <div style={{
         height: 52, display: "flex", alignItems: "center",
-        padding: "0 16px", gap: 12,
+        padding: "0 16px", gap: 12, overflowX: "auto", overflowY: "hidden",
+        scrollbarWidth: "none",
       }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 8 }}>
@@ -202,7 +203,7 @@ function HeaderC({
 
         {/* Busca global */}
         <div style={{
-          flex: 1, maxWidth: 420, marginLeft: 8, position: "relative",
+          flex: "1 1 160px", minWidth: 140, maxWidth: 420, marginLeft: 8, position: "relative",
         }}>
           <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "rgba(255,255,255,0.6)" }} />
           <input placeholder="Buscar em todos os fluxos…" style={{
@@ -214,7 +215,7 @@ function HeaderC({
         </div>
 
         {/* Ações à direita */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", flexShrink: 0 }}>
           <IconBtn title="Filtros"><Filter size={15} /></IconBtn>
           <IconBtn title="Arquivados" onClick={onOpenArchived}><Archive size={15} /></IconBtn>
 
@@ -252,7 +253,8 @@ function HeaderC({
       {/* Sub-bar: abas de fluxo + Gerar Proposta */}
       <div style={{
         height: 44, display: "flex", alignItems: "center", padding: "0 16px",
-        background: "rgba(255,255,255,0.03)", gap: 8,
+        background: "rgba(255,255,255,0.03)", gap: 8, overflowX: "auto", overflowY: "hidden",
+        scrollbarWidth: "none",
       }}>
         <FlowTab label="Locação" count={38} active />
         <FlowTab label="Vendas" count={14} />
@@ -310,6 +312,39 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
  * KANBAN
  * ========================================================================= */
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const [isBoardDragging, setIsBoardDragging] = useState(false);
+
+  const canStartBoardDrag = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    return !target.closest("button, input, textarea, select, a, [role='button'], [data-kanban-card], [data-menu], [contenteditable='true']");
+  };
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !scrollRef.current || !canStartBoardDrag(event.target)) return;
+    dragRef.current = {
+      active: true,
+      startX: event.clientX,
+      scrollLeft: scrollRef.current.scrollLeft,
+      moved: false,
+    };
+    setIsBoardDragging(true);
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active || !scrollRef.current) return;
+    const delta = event.clientX - dragRef.current.startX;
+    if (Math.abs(delta) > 3) dragRef.current.moved = true;
+    scrollRef.current.scrollLeft = dragRef.current.scrollLeft - delta;
+    event.preventDefault();
+  };
+
+  const stopBoardDrag = () => {
+    dragRef.current.active = false;
+    setIsBoardDragging(false);
+  };
+
   return (
     <div style={{
       flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
@@ -320,14 +355,23 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
         <CardStatesShowcase onOpenCard={onOpenCard} />
       </div>
       {/* Área de colunas: rolagem horizontal isolada apenas aqui */}
-      <div style={{
+      <div
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopBoardDrag}
+        onMouseLeave={stopBoardDrag}
+        style={{
         flex: 1, minHeight: 0,
         overflowX: "auto", overflowY: "auto",
         padding: "8px 16px 24px",
+        cursor: isBoardDragging ? "grabbing" : "grab",
+        userSelect: isBoardDragging ? "none" : "auto",
       }}>
         <div style={{
           display: "inline-flex", gap: 12, alignItems: "flex-start",
-          minWidth: "100%",
+          minWidth: "max-content",
+          paddingRight: 16,
         }}>
           {REAL_COLUMNS.map((col) => (
             <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
@@ -357,7 +401,8 @@ function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) 
           · sinais sutis: verde ok · âmbar atenção · vermelho vencido · neutro sem alerta
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10 }}>
+      <div style={{ overflowX: "auto", overflowY: "hidden", paddingBottom: 4 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10, minWidth: 1140 }}>
         {samples.map((s) => (
           <div key={s.c.id}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: P.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -366,6 +411,7 @@ function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) 
             <KanbanCard c={s.c} onClick={() => onOpenCard(s.c)} />
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
@@ -470,7 +516,7 @@ function KanbanCard({ c, onClick }: { c: KCard; onClick: () => void }) {
   else if (isOk) cardShadow = "0 1px 2px rgba(20,30,40,0.05)";
 
   return (
-    <div onClick={onClick} style={{
+    <div data-kanban-card="true" onClick={onClick} style={{
       background: "#fff", borderRadius: 10, padding: 10,
       border: `1px solid ${P.border}`,
       boxShadow: cardShadow, cursor: "pointer", position: "relative",
@@ -1288,7 +1334,7 @@ export default function DesignPreview() {
   const [showProposalModal, setShowProposalModal] = useState(false);
 
   return (
-    <div style={{ background: P.bg, minHeight: "100vh", fontFamily: fontStack, color: P.text }}>
+    <div style={{ background: P.bg, minHeight: "100vh", overflowX: "hidden", fontFamily: fontStack, color: P.text }}>
       {/* Barra de prévia */}
       <PreviewBar variation={variation} onChange={setVariation} />
 
@@ -1372,12 +1418,21 @@ function VariationCShell({
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const RAIL_W = 64;
-  const PANEL_W = 380;
+  const RAIL_W = 72;
+  const PANEL_W = 420;
   const expanded = chatState === "expanded" || chatState === "pinned";
   const pinned = chatState === "pinned";
   return (
-    <div style={{ marginTop: 10 }}>
+    <>
+    <section className="lp-app-shell" style={{
+      margin: "10px 16px 0",
+      height: "calc(100vh - 94px)",
+      minHeight: 0,
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      background: P.bg,
+    }}>
       <HeaderC
         view={view}
         onView={setView}
@@ -1395,8 +1450,8 @@ function VariationCShell({
           e o composer do chat nunca fique cortado. */}
       <div className="lp-shell-grid" style={{
         display: "flex", alignItems: "stretch",
-        height: "calc(100vh - 96px)",
-        minHeight: 520,
+        flex: 1,
+        minHeight: 0,
         overflow: "hidden",
       }}>
         <div className="lp-main-col" style={{
@@ -1419,7 +1474,6 @@ function VariationCShell({
           display: "flex", alignItems: "stretch",
           background: P.primaryDark,
           borderLeft: "1px solid rgba(255,255,255,0.05)",
-          transition: "width .18s ease",
           height: "100%",
           overflow: "hidden",
         }}>
@@ -1497,9 +1551,10 @@ function VariationCShell({
         </div>
       )}
 
-      {/* Mobile gallery */}
-      <MobileGallery />
-    </div>
+    </section>
+    {/* Mobile gallery */}
+    <MobileGallery />
+    </>
   );
 }
 
@@ -2143,67 +2198,18 @@ function ChatPanel({
   return (
     <aside className="lp-chat-panel" style={{
       flex: "0 0 auto", width: fullscreen ? "100%" : width,
-      display: "flex", flexDirection: "column",
+      display: "grid", gridTemplateRows: "auto 1fr auto",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
       height: fullscreen ? "100vh" : "100%",
       minHeight: 0,
       overflow: "hidden",
     }}>
-      {/* Lista de conversas (toggle) */}
-      {showList && (
-      <div className="lp-chat-panel-list" style={{
-        borderBottom: `1px solid ${P.border}`,
-        display: "flex", flexDirection: "column", background: "#fafbfc",
-        maxHeight: 280, overflow: "hidden",
+      {/* Cabeçalho da conversa */}
+      <div style={{
+        minHeight: 52, padding: "0 14px", display: "flex", alignItems: "center", gap: 10,
+        borderBottom: `1px solid ${P.border}`, background: "#fff", minWidth: 0,
       }}>
-        <div style={{
-          padding: "12px 12px 8px", background: P.primaryDark, color: "#fff",
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <MessageSquare size={15} />
-          <strong style={{ fontSize: 13 }}>Conversas</strong>
-          <span style={{ marginLeft: "auto", fontSize: 10.5, opacity: 0.7 }}>Equipe Rizzo</span>
-        </div>
-        <div style={{ padding: 10, borderBottom: `1px solid ${P.border}` }}>
-          <div style={{ position: "relative" }}>
-            <Search size={13} style={{ position: "absolute", left: 9, top: 9, color: P.textMuted }} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar conversa"
-              style={{
-                width: "100%", height: 30, borderRadius: 8,
-                border: `1px solid ${P.border}`, background: "#fff",
-                padding: "0 10px 0 28px", fontSize: 12, outline: "none", fontFamily: fontStack,
-              }}
-            />
-          </div>
-        </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <ChatGroupLabel label="Geral" />
-          {groups.filter((g) => g.kind === "all").map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
-          ))}
-          <ChatGroupLabel label="Grupos" />
-          {groups.filter((g) => g.kind === "group").map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
-          ))}
-          <ChatGroupLabel label="Mensagens diretas" />
-          {dms.map((c) => (
-            <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
-          ))}
-        </div>
-      </div>
-      )}
-
-      {/* Conversa */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#fff" }}>
-        {/* Cabeçalho da conversa */}
-        <div style={{
-          height: 52, padding: "0 14px", display: "flex", alignItems: "center", gap: 10,
-          borderBottom: `1px solid ${P.border}`, background: "#fff",
-        }}>
           <Avatar initials={active.initials} size={32} bg={active.color} />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
@@ -2226,9 +2232,55 @@ function ChatPanel({
           </div>
         </div>
 
-        {/* Mensagens */}
+      {/* Mensagens */}
+      <div style={{ position: "relative", minHeight: 0, overflow: "hidden", background: "#fff" }}>
+        {showList && (
+          <div className="lp-chat-panel-list" style={{
+            position: "absolute", inset: 0, zIndex: 2,
+            display: "grid", gridTemplateRows: "auto auto 1fr", background: "#fafbfc",
+            borderBottom: `1px solid ${P.border}`, overflow: "hidden",
+          }}>
+            <div style={{
+              padding: "12px 12px 8px", background: P.primaryDark, color: "#fff",
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <MessageSquare size={15} />
+              <strong style={{ fontSize: 13 }}>Conversas</strong>
+              <span style={{ marginLeft: "auto", fontSize: 10.5, opacity: 0.7 }}>Equipe Rizzo</span>
+            </div>
+            <div style={{ padding: 10, borderBottom: `1px solid ${P.border}` }}>
+              <div style={{ position: "relative" }}>
+                <Search size={13} style={{ position: "absolute", left: 9, top: 9, color: P.textMuted }} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar conversa"
+                  style={{
+                    width: "100%", height: 30, borderRadius: 8,
+                    border: `1px solid ${P.border}`, background: "#fff",
+                    padding: "0 10px 0 28px", fontSize: 12, outline: "none", fontFamily: fontStack,
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ minHeight: 0, overflowY: "auto" }}>
+              <ChatGroupLabel label="Geral" />
+              {groups.filter((g) => g.kind === "all").map((c) => (
+                <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
+              ))}
+              <ChatGroupLabel label="Grupos" />
+              {groups.filter((g) => g.kind === "group").map((c) => (
+                <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
+              ))}
+              <ChatGroupLabel label="Mensagens diretas" />
+              {dms.map((c) => (
+                <ChatConvRow key={c.id} c={c} active={c.id === active.id} onClick={() => { setActiveConvId(c.id); setShowList(false); }} />
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{
-          flex: 1, overflowY: "auto", padding: "16px 18px",
+          height: "100%", overflowY: "auto", padding: "16px 18px",
           background: "linear-gradient(180deg, #fafbfc 0%, #ffffff 100%)",
           display: "flex", flexDirection: "column", gap: 10,
         }}>
@@ -2238,12 +2290,14 @@ function ChatPanel({
               : <ChatBubble key={m.id} m={m} />
           ))}
         </div>
+      </div>
 
-        {/* Composer */}
-        <div style={{
-          borderTop: `1px solid ${P.border}`, padding: 10, background: "#fff",
-          display: "flex", alignItems: "flex-end", gap: 8,
-        }}>
+      {/* Composer */}
+      <div style={{
+        borderTop: `1px solid ${P.border}`, padding: 10, background: "#fff",
+        display: "flex", alignItems: "flex-end", gap: 8,
+        minHeight: 58,
+      }}>
           <button title="Anexar" style={chatComposerBtn}><Paperclip size={16} /></button>
           <button title="Emoji" style={chatComposerBtn}><Smile size={16} /></button>
           <textarea
@@ -2266,7 +2320,6 @@ function ChatPanel({
             <Send size={14} /> Enviar
           </button>
         </div>
-      </div>
     </aside>
   );
 }

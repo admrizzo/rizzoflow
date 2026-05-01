@@ -177,7 +177,8 @@ function HeaderC({
       {/* Topbar */}
       <div style={{
         height: 52, display: "flex", alignItems: "center",
-        padding: "0 16px", gap: 12,
+        padding: "0 16px", gap: 12, overflowX: "auto", overflowY: "hidden",
+        scrollbarWidth: "none",
       }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginRight: 8 }}>
@@ -202,7 +203,7 @@ function HeaderC({
 
         {/* Busca global */}
         <div style={{
-          flex: 1, maxWidth: 420, marginLeft: 8, position: "relative",
+          flex: "1 1 160px", minWidth: 140, maxWidth: 420, marginLeft: 8, position: "relative",
         }}>
           <Search size={14} style={{ position: "absolute", left: 10, top: 9, color: "rgba(255,255,255,0.6)" }} />
           <input placeholder="Buscar em todos os fluxos…" style={{
@@ -214,7 +215,7 @@ function HeaderC({
         </div>
 
         {/* Ações à direita */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", flexShrink: 0 }}>
           <IconBtn title="Filtros"><Filter size={15} /></IconBtn>
           <IconBtn title="Arquivados" onClick={onOpenArchived}><Archive size={15} /></IconBtn>
 
@@ -252,7 +253,8 @@ function HeaderC({
       {/* Sub-bar: abas de fluxo + Gerar Proposta */}
       <div style={{
         height: 44, display: "flex", alignItems: "center", padding: "0 16px",
-        background: "rgba(255,255,255,0.03)", gap: 8,
+        background: "rgba(255,255,255,0.03)", gap: 8, overflowX: "auto", overflowY: "hidden",
+        scrollbarWidth: "none",
       }}>
         <FlowTab label="Locação" count={38} active />
         <FlowTab label="Vendas" count={14} />

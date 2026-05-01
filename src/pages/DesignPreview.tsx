@@ -384,7 +384,6 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
 }
 
 /* ---------- Showcase de estados de card (em dia, recebidos, correção, pendência, vencido) ---------- */
-function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
 function CardStatesShowcase({ onOpenCard: _onOpenCard }: { onOpenCard: (c: KCard) => void }) {
   const legend: { key: string; status: StatusKey; label: string; code: string }[] = [
     { key: "inday",      status: "inday",      label: "Em dia",              code: "LOC-2901" },

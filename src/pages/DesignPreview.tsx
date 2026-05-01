@@ -156,7 +156,7 @@ function IconBtn({ children, title, onClick, active }: { children: React.ReactNo
  * ========================================================================= */
 function HeaderC({
   view, onView, onOpenProposal, onOpenQueue, onOpenMetrics, onOpenProposals,
-  onOpenAdmin, onOpenArchived, onSync, onOpenChat, chatUnread,
+  onOpenAdmin, onOpenArchived, onSync,
 }: {
   view: string;
   onView: (v: string) => void;
@@ -167,8 +167,6 @@ function HeaderC({
   onOpenAdmin: () => void;
   onOpenArchived: () => void;
   onSync: () => void;
-  onOpenChat: () => void;
-  chatUnread: number;
 }) {
   return (
     <header style={{
@@ -234,28 +232,6 @@ function HeaderC({
           </button>
 
           <IconBtn title="Notificações"><Bell size={15} /></IconBtn>
-
-          {/* Chat interno */}
-          <button
-            title="Chat interno da equipe"
-            onClick={onOpenChat}
-            style={{
-              position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer",
-              background: "rgba(255,255,255,0.06)", color: "#fff",
-            }}
-          >
-            <MessageSquare size={15} />
-            {chatUnread > 0 && (
-              <span style={{
-                position: "absolute", top: -4, right: -4, minWidth: 16, height: 16,
-                padding: "0 4px", borderRadius: 999, background: P.accent, color: "#fff",
-                fontSize: 10, fontWeight: 800, display: "inline-flex",
-                alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 0 2px ${P.primaryDark}`,
-              }}>{chatUnread > 99 ? "99+" : chatUnread}</span>
-            )}
-          </button>
 
           <IconBtn title="Administração" onClick={onOpenAdmin}><Settings size={15} /></IconBtn>
 
@@ -1382,6 +1358,8 @@ function VariationCShell({
   const [chatPinned, setChatPinned] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
+  const RAIL_W = 64;
+  const DRAWER_W = 820;
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1394,12 +1372,10 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
-        onOpenChat={() => setChatOpen((v) => !v)}
-        chatUnread={totalUnread}
       />
 
       <div style={{
-        marginRight: chatOpen && chatPinned ? 380 : 0,
+        marginRight: chatOpen && chatPinned ? DRAWER_W : RAIL_W,
         transition: "margin-right .2s ease",
       }}>
         {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
@@ -1413,6 +1389,49 @@ function VariationCShell({
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
 
+      {/* Chat — barra lateral direita fixa (desktop) */}
+      <ChatRail
+        width={RAIL_W}
+        totalUnread={totalUnread}
+        activeConvId={activeConvId}
+        onSelect={(id) => { setActiveConvId(id); setChatOpen(true); }}
+        onToggle={() => setChatOpen((v) => !v)}
+        chatOpen={chatOpen}
+      />
+
+      {/* Botão flutuante mobile (visível apenas em telas pequenas) */}
+      <button
+        onClick={() => setChatOpen((v) => !v)}
+        title="Abrir chat interno"
+        className="lp-chat-fab"
+        style={{
+          position: "fixed", right: 16, bottom: 16, zIndex: 70,
+          width: 52, height: 52, borderRadius: 999, border: "none",
+          background: P.accent, color: "#fff", cursor: "pointer",
+          boxShadow: "0 6px 18px rgba(229,0,70,0.35)",
+          display: "none", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <MessageSquare size={20} />
+        {totalUnread > 0 && (
+          <span style={{
+            position: "absolute", top: -2, right: -2, minWidth: 18, height: 18,
+            padding: "0 5px", borderRadius: 999, background: P.primaryDark, color: "#fff",
+            fontSize: 10.5, fontWeight: 800, display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            border: "2px solid #fff",
+          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
+        )}
+      </button>
+      <style>{`
+        @media (max-width: 768px) {
+          .lp-chat-rail { display: none !important; }
+          .lp-chat-fab { display: inline-flex !important; }
+          .lp-chat-drawer { width: 100vw !important; max-width: 100vw !important; }
+          .lp-chat-drawer-list { width: 100% !important; }
+        }
+      `}</style>
+
       {chatOpen && (
         <ChatDrawer
           pinned={chatPinned}
@@ -1420,6 +1439,8 @@ function VariationCShell({
           onClose={() => setChatOpen(false)}
           activeConvId={activeConvId}
           setActiveConvId={setActiveConvId}
+          width={DRAWER_W}
+          rightOffset={RAIL_W}
         />
       )}
 
@@ -1891,14 +1912,171 @@ const CHAT_MESSAGES: Record<string, ChatMsg[]> = {
   ],
 };
 
+/* =========================================================================
+ * CHAT RAIL — barra lateral direita fixa (estilo Discord/Slack)
+ * ========================================================================= */
+function ChatRail({
+  width, totalUnread, activeConvId, onSelect, onToggle, chatOpen,
+}: {
+  width: number;
+  totalUnread: number;
+  activeConvId: string;
+  onSelect: (id: string) => void;
+  onToggle: () => void;
+  chatOpen: boolean;
+}) {
+  const groups = CHAT_CONVERSATIONS.filter((c) => c.kind === "group" || c.kind === "all");
+  const dms    = CHAT_CONVERSATIONS.filter((c) => c.kind === "dm");
+
+  return (
+    <aside
+      className="lp-chat-rail"
+      style={{
+        position: "fixed", top: 0, right: 0, bottom: 0,
+        width, zIndex: 55,
+        background: P.primaryDark, color: "#fff",
+        borderLeft: "1px solid rgba(255,255,255,0.05)",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
+        boxShadow: "-6px 0 18px rgba(20,30,40,0.10)",
+      }}
+    >
+      {/* Topo: ícone do chat + abrir/fechar */}
+      <button
+        onClick={onToggle}
+        title={chatOpen ? "Recolher chat" : "Abrir chat interno"}
+        style={{
+          position: "relative",
+          width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
+          background: chatOpen ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          transition: "background .15s ease",
+        }}
+      >
+        <MessageSquare size={18} />
+        {totalUnread > 0 && (
+          <span style={{
+            position: "absolute", top: -3, right: -3, minWidth: 18, height: 18,
+            padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
+            fontSize: 10.5, fontWeight: 800, display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            border: `2px solid ${P.primaryDark}`,
+          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
+        )}
+      </button>
+
+      <RailDivider />
+
+      {/* Grupos / canais */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4 }}>
+        {groups.map((c) => (
+          <RailItem
+            key={c.id}
+            active={chatOpen && c.id === activeConvId}
+            unread={c.unread}
+            title={`${c.name} · ${c.lastMsg}`}
+            onClick={() => onSelect(c.id)}
+          >
+            <span style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: c.color, color: "#fff",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 800, fontSize: 12.5, letterSpacing: 0.3,
+            }}>{c.initials}</span>
+          </RailItem>
+        ))}
+
+        <RailDivider />
+
+        {/* Mensagens diretas */}
+        {dms.map((c) => (
+          <RailItem
+            key={c.id}
+            active={chatOpen && c.id === activeConvId}
+            unread={c.unread}
+            title={`${c.name}${c.online ? " · online" : ""}`}
+            onClick={() => onSelect(c.id)}
+          >
+            <span style={{ position: "relative", display: "inline-block" }}>
+              <span style={{
+                width: 40, height: 40, borderRadius: 999,
+                background: c.color, color: "#fff",
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                fontWeight: 800, fontSize: 12.5,
+              }}>{c.initials}</span>
+              {c.online && (
+                <span style={{
+                  position: "absolute", right: -1, bottom: -1,
+                  width: 11, height: 11, borderRadius: 999,
+                  background: P.success, border: `2px solid ${P.primaryDark}`,
+                }} />
+              )}
+            </span>
+          </RailItem>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function RailDivider() {
+  return (
+    <div style={{ width: 28, height: 1, background: "rgba(255,255,255,0.10)", margin: "4px 0" }} />
+  );
+}
+
+function RailItem({
+  active, unread, title, onClick, children,
+}: {
+  active: boolean;
+  unread: number;
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        position: "relative", border: "none", background: "transparent",
+        padding: 0, cursor: "pointer", lineHeight: 0,
+        outline: active ? `2px solid ${P.accent}` : "none",
+        outlineOffset: 2, borderRadius: 14,
+      }}
+    >
+      {/* Indicador lateral à esquerda */}
+      <span style={{
+        position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)",
+        width: 3, borderRadius: 2,
+        height: active ? 26 : (unread > 0 ? 14 : 0),
+        background: active ? "#fff" : "rgba(255,255,255,0.85)",
+        transition: "height .15s ease",
+      }} />
+      {children}
+      {unread > 0 && (
+        <span style={{
+          position: "absolute", top: -3, right: -3, minWidth: 17, height: 17,
+          padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
+          fontSize: 10, fontWeight: 800, display: "inline-flex",
+          alignItems: "center", justifyContent: "center",
+          border: `2px solid ${P.primaryDark}`,
+        }}>{unread > 99 ? "99+" : unread}</span>
+      )}
+    </button>
+  );
+}
+
 function ChatDrawer({
-  pinned, onTogglePin, onClose, activeConvId, setActiveConvId,
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 760, rightOffset = 0,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
   onClose: () => void;
   activeConvId: string;
   setActiveConvId: (id: string) => void;
+  width?: number;
+  rightOffset?: number;
 }) {
   const [query, setQuery] = useState("");
   const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
@@ -1910,16 +2088,16 @@ function ChatDrawer({
   const dms = filtered.filter((c) => c.kind === "dm");
 
   return (
-    <aside style={{
-      position: "fixed", top: 0, right: 0, bottom: 0,
-      width: 760, maxWidth: "96vw",
+    <aside className="lp-chat-drawer" style={{
+      position: "fixed", top: 0, right: rightOffset, bottom: 0,
+      width: width, maxWidth: "96vw",
       display: "flex", zIndex: 60,
       boxShadow: pinned ? "none" : "-18px 0 40px rgba(20,30,40,0.18)",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
     }}>
       {/* Lista de conversas */}
-      <div style={{
+      <div className="lp-chat-drawer-list" style={{
         width: 290, borderRight: `1px solid ${P.border}`,
         display: "flex", flexDirection: "column", background: "#fafbfc",
       }}>

@@ -2424,14 +2424,14 @@ function ChatBubble({ m }: { m: ChatMsg }) {
   const mine = !!m.mine;
   return (
     <div style={{
-      display: "flex", gap: 8, alignItems: "flex-end",
+      display: "flex", gap: 6, alignItems: "flex-end",
       flexDirection: mine ? "row-reverse" : "row",
     }}>
-      {!mine && <Avatar initials={m.initials} size={28} bg={m.color} />}
+      {!mine && <Avatar initials={m.initials} size={24} bg={m.color} />}
       <div style={{ maxWidth: "72%", position: "relative" }}>
         {!mine && (
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: P.textMuted, marginBottom: 2, paddingLeft: 2 }}>
-            {m.author} <span style={{ fontWeight: 500, marginLeft: 4 }}>{m.time}</span>
+          <div style={{ fontSize: 10, fontWeight: 700, color: P.textMuted, marginBottom: 1, paddingLeft: 2 }}>
+            {m.author} <span style={{ fontWeight: 500, marginLeft: 4, opacity: 0.75 }}>{m.time}</span>
           </div>
         )}
         <div
@@ -2441,11 +2441,11 @@ function ChatBubble({ m }: { m: ChatMsg }) {
             position: "relative",
             background: mine ? P.primary : "#f1f5f8",
             color: mine ? "#fff" : P.text,
-            padding: m.attachment ? "8px 10px" : "8px 12px",
-            borderRadius: 12,
-            borderTopRightRadius: mine ? 4 : 12,
-            borderTopLeftRadius: mine ? 12 : 4,
-            fontSize: 13, lineHeight: 1.45,
+            padding: m.attachment ? "6px 8px" : "6px 10px",
+            borderRadius: 10,
+            borderTopRightRadius: mine ? 3 : 10,
+            borderTopLeftRadius: mine ? 10 : 3,
+            fontSize: 12.5, lineHeight: 1.4,
             boxShadow: "0 1px 2px rgba(20,30,40,0.06)",
           }}
         >
@@ -2497,8 +2497,8 @@ function ChatBubble({ m }: { m: ChatMsg }) {
           )}
         </div>
         {mine && (
-          <div style={{ fontSize: 10.5, color: P.textMuted, marginTop: 2, textAlign: "right", paddingRight: 4 }}>
-            {m.time} · enviada
+          <div style={{ fontSize: 10, color: P.textMuted, marginTop: 1, textAlign: "right", paddingRight: 4, opacity: 0.75 }}>
+            {m.time}
           </div>
         )}
       </div>

@@ -46,6 +46,14 @@
     --sidebar-accent-foreground: 0 0% 96%;
     --sidebar-border: 198 20% 35%;
     --sidebar-ring: 340 100% 45%;
+
+    /* Focus semi-dark chrome (Header + painéis superiores) — Fase 1 visual */
+    --chrome-bg: 215 28% 14%;
+    --chrome-bg-elevated: 215 25% 18%;
+    --chrome-fg: 0 0% 96%;
+    --chrome-fg-muted: 215 15% 70%;
+    --chrome-border: 215 20% 24%;
+    --chrome-accent: 340 100% 55%;
   }
 
   * {
@@ -136,5 +144,29 @@
 
   .border-glow {
     box-shadow: 0 0 15px hsl(340 100% 45% / 0.15), inset 0 0 15px hsl(340 100% 45% / 0.05);
+  }
+
+  /* Scrollbar fina e discreta — usar pontualmente em áreas com muitas barras (Kanban). */
+  .lp-thin-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+  }
+  .lp-thin-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 8px;
+  }
+  .lp-thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .lp-thin-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .lp-thin-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.55);
+    background-clip: padding-box;
+    border: 2px solid transparent;
   }
 }

@@ -27,7 +27,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   return (
-    <div className="flex-shrink-0 w-56 sm:w-60 md:w-64 lg:w-68 bg-muted/60 rounded-lg shadow-sm flex flex-col max-h-[calc(100vh-10rem)]">
+    <div className="flex-shrink-0 w-60 sm:w-64 md:w-[272px] bg-muted/60 rounded-lg shadow-sm flex flex-col max-h-[calc(100vh-10rem)]">
       <ColumnHeader 
         column={column} 
         cardCount={cards.length}
@@ -39,7 +39,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex-1 overflow-y-auto px-1.5 pb-2",
+              "flex-1 overflow-y-auto px-1.5 pb-2 lp-thin-scroll",
               // Generous min-height for easier dropping
               "min-h-[280px]",
               // Visual feedback when dragging over

@@ -85,7 +85,13 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => key !== 'showArchived' && Boolean(value)).length + (filters.showArchived ? 1 : 0);
 
   return (
-    <header className="h-12 bg-black/20 backdrop-blur-sm sticky top-0 z-50">
+    <header
+      className="h-12 sticky top-0 z-50 border-b"
+      style={{
+        backgroundColor: 'hsl(var(--chrome-bg))',
+        borderColor: 'hsl(var(--chrome-border))',
+      }}
+    >
       <div className="flex items-center justify-between h-full px-4">
         {/* Logo - clickable to go home */}
         <Link 

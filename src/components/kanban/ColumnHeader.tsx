@@ -68,10 +68,10 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between px-1.5 py-1.5">
+      <div className="flex items-center justify-between px-2 py-2 border-b border-border/60">
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-start gap-1">
-            <h3 className="font-semibold text-[11px] text-gray-700 uppercase tracking-wide whitespace-normal break-words leading-tight flex-1">
+            <h3 className="font-semibold text-[11.5px] text-foreground/80 uppercase tracking-wide whitespace-normal break-words leading-tight flex-1">
               {column.name}
             </h3>
             {column.review_deadline_days && (

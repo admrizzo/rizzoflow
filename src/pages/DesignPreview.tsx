@@ -1449,6 +1449,7 @@ function MobileGallery() {
         <Phone label="Card aberto"><MobileCardDetail /></Phone>
         <Phone label="Gerar proposta"><MobileNewProposal /></Phone>
         <Phone label="Minha Fila"><MobileMyQueue /></Phone>
+        <Phone label="Chat interno"><MobileChat /></Phone>
         <Phone label="Proposta pública"><MobilePublicProposal /></Phone>
       </div>
     </div>

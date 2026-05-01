@@ -311,17 +311,30 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
  * ========================================================================= */
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
   return (
-    <>
-      <CardStatesShowcase onOpenCard={onOpenCard} />
-      <div style={{
-        display: "flex", gap: 12, overflowX: "auto", padding: "8px 16px 24px",
-        alignItems: "flex-start",
-      }}>
-        {REAL_COLUMNS.map((col) => (
-          <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
-        ))}
+    <div style={{
+      flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
+      overflow: "hidden",
+    }}>
+      {/* Estados de card — não rolam horizontalmente com o board */}
+      <div style={{ flex: "0 0 auto" }}>
+        <CardStatesShowcase onOpenCard={onOpenCard} />
       </div>
-    </>
+      {/* Área de colunas: rolagem horizontal isolada apenas aqui */}
+      <div style={{
+        flex: 1, minHeight: 0,
+        overflowX: "auto", overflowY: "auto",
+        padding: "8px 16px 24px",
+      }}>
+        <div style={{
+          display: "inline-flex", gap: 12, alignItems: "flex-start",
+          minWidth: "100%",
+        }}>
+          {REAL_COLUMNS.map((col) => (
+            <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1377,17 +1390,26 @@ function VariationCShell({
         onSync={() => {}}
       />
 
-      {/* Layout principal: conteúdo + lateral nativa de chat (desktop) */}
+      {/* Layout principal: conteúdo + lateral nativa de chat (desktop)
+          Altura fixa baseada na viewport para que cada área tenha seu próprio scroll
+          e o composer do chat nunca fique cortado. */}
       <div className="lp-shell-grid" style={{
-        display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 96px)",
+        display: "flex", alignItems: "stretch",
+        height: "calc(100vh - 96px)",
+        minHeight: 520,
+        overflow: "hidden",
       }}>
-        <div className="lp-main-col" style={{ flex: 1, minWidth: 0 }}>
+        <div className="lp-main-col" style={{
+          flex: 1, minWidth: 0,
+          display: "flex", flexDirection: "column",
+          overflow: "hidden",
+        }}>
           {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
-          {view === "queue" && <MyQueue />}
-          {view === "metrics" && <Metrics />}
-          {view === "proposals" && <Proposals />}
-          {view === "admin" && <AdminScreen />}
-          {view === "archived" && <ArchivedScreen />}
+          {view === "queue" && <div style={{ flex: 1, overflow: "auto" }}><MyQueue /></div>}
+          {view === "metrics" && <div style={{ flex: 1, overflow: "auto" }}><Metrics /></div>}
+          {view === "proposals" && <div style={{ flex: 1, overflow: "auto" }}><Proposals /></div>}
+          {view === "admin" && <div style={{ flex: 1, overflow: "auto" }}><AdminScreen /></div>}
+          {view === "archived" && <div style={{ flex: 1, overflow: "auto" }}><ArchivedScreen /></div>}
         </div>
 
         {/* Lateral nativa de chat — desktop */}
@@ -1398,6 +1420,8 @@ function VariationCShell({
           background: P.primaryDark,
           borderLeft: "1px solid rgba(255,255,255,0.05)",
           transition: "width .18s ease",
+          height: "100%",
+          overflow: "hidden",
         }}>
           <ChatRailNative
             width={RAIL_W}
@@ -1966,8 +1990,7 @@ function ChatRailNative({
         borderRight: expanded ? "1px solid rgba(255,255,255,0.06)" : "none",
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
-        position: "sticky", top: 96, alignSelf: "flex-start",
-        maxHeight: "calc(100vh - 96px)", overflow: "hidden",
+        height: "100%", overflow: "hidden",
       }}
     >
       {/* Topo: ícone do chat + abrir/fechar */}
@@ -2123,10 +2146,8 @@ function ChatPanel({
       display: "flex", flexDirection: "column",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
-      position: fullscreen ? "static" : "sticky",
-      top: 96, alignSelf: "flex-start",
-      maxHeight: fullscreen ? "100vh" : "calc(100vh - 96px)",
-      height: fullscreen ? "100vh" : undefined,
+      height: fullscreen ? "100vh" : "100%",
+      minHeight: 0,
       overflow: "hidden",
     }}>
       {/* Lista de conversas (toggle) */}

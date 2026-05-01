@@ -791,7 +791,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       >
         {/* Mobile header with back button */}
         <DialogHeader
-          className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 relative border-b border-border bg-card"
+          className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 relative border-b border-primary/30 bg-primary text-primary-foreground"
         >
           <DialogDescription className="sr-only">
             Detalhes do card {card.title}
@@ -801,7 +801,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             variant="ghost"
             size="icon"
             onClick={requestClose}
-            className="absolute right-3 top-3 z-10 h-8 w-8 rounded-full hover:bg-muted hidden md:flex"
+            className="absolute right-3 top-3 z-10 h-8 w-8 rounded-full text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 hidden md:flex"
             title="Fechar (Esc)"
           >
             <X className="h-5 w-5" />
@@ -813,7 +813,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               variant="ghost"
               size="sm"
               onClick={requestClose}
-              className="h-8 px-2 text-muted-foreground"
+              className="h-8 px-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
             >
               <X className="h-4 w-4 mr-1" />
               Voltar
@@ -821,7 +821,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           </div>
           <div className="flex items-start gap-2 pr-10">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground font-mono mt-1.5 px-1.5 py-0.5 rounded bg-muted">
+              <span className="text-xs font-mono mt-1.5 px-1.5 py-0.5 rounded bg-white/10 text-primary-foreground/90">
                 #{card.card_number}
               </span>
             </div>
@@ -832,11 +832,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 onBlur={handleTitleSave}
                 onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
                 autoFocus
-                className="text-base md:text-lg font-semibold"
+                className="text-base md:text-lg font-semibold bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60"
               />
             ) : (
               <DialogTitle
-                className="cursor-pointer hover:text-primary text-base md:text-lg break-words font-semibold leading-snug"
+                className="cursor-pointer text-primary-foreground hover:text-primary-foreground/90 text-base md:text-lg break-words font-semibold leading-snug"
                 onClick={() => {
                   if (isEditor) {
                     setEditTitle(card.title);
@@ -852,7 +852,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
             <div className="mt-2">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-400/15 text-emerald-100 border border-emerald-300/30"
                 title={`Proposta enviada em ${format(new Date(card.proposal_submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
               >
                 <Inbox className="h-3 w-3" />
@@ -864,7 +864,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           {pendingCorrection && (
             <div className="mt-2">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-400/15 text-orange-100 border border-orange-300/30"
                 title="Aguardando o cliente reenviar com as correções solicitadas"
               >
                 <Wrench className="h-3 w-3" />
@@ -876,7 +876,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           {correctionReceived && (
             <div className="mt-2">
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-400/15 text-sky-100 border border-sky-300/30"
                 title="Cliente reenviou após uma solicitação de correção"
               >
                 <CheckCheck className="h-3 w-3" />
@@ -895,7 +895,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               return (
                 <div className="mt-2">
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-400/15 text-amber-100 border border-amber-300/30"
                     title="Cliente ainda preenchendo a proposta pública"
                   >
                     <FileEdit className="h-3 w-3" />
@@ -906,11 +906,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             })()
           )}
           {/* Card creation info - hidden on mobile for space */}
-          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground mt-2">
+          <div className="hidden md:flex items-center gap-2 text-xs text-primary-foreground/70 mt-2">
             <UserCircle className="h-3 w-3" />
             <span>
               Criado por{' '}
-              <span className="font-medium">
+              <span className="font-medium text-primary-foreground/90">
                 {card.created_by_profile?.full_name || 'Usuário desconhecido'}
               </span>
             </span>

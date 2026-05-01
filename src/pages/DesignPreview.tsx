@@ -2181,7 +2181,7 @@ function RailItem({
 }
 
 function ChatPanel({
-  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 380, fullscreen = false,
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 360, fullscreen = false,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
@@ -2193,6 +2193,15 @@ function ChatPanel({
 }) {
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
+  const [draft, setDraft] = useState("");
+  const taRef = React.useRef<HTMLTextAreaElement | null>(null);
+  React.useEffect(() => {
+    const el = taRef.current; if (!el) return;
+    el.style.height = "auto";
+    const max = 4 * 18 + 16; // ~4 linhas
+    el.style.height = Math.min(el.scrollHeight, max) + "px";
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [draft]);
   const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
   const filtered = useMemo(
     () => CHAT_CONVERSATIONS.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())),
@@ -2213,18 +2222,18 @@ function ChatPanel({
     }}>
       {/* Cabeçalho da conversa */}
       <div style={{
-        minHeight: 52, padding: "0 14px", display: "flex", alignItems: "center", gap: 10,
+        minHeight: 44, padding: "0 12px", display: "flex", alignItems: "center", gap: 8,
         borderBottom: `1px solid ${P.border}`, background: "#fff", minWidth: 0,
       }}>
-          <Avatar initials={active.initials} size={32} bg={active.color} />
+          <Avatar initials={active.initials} size={26} bg={active.color} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
-            <div style={{ fontSize: 11, color: P.textMuted }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
+            <div style={{ fontSize: 10.5, color: P.textMuted }}>
               {active.kind === "dm" ? (active.online ? "Online" : "Offline") :
                active.kind === "group" ? "Grupo · 12 membros" : "Canal aberto a toda a equipe"}
             </div>
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
             <button title="Conversas" onClick={() => setShowList((v) => !v)} style={chatHeaderBtn}>
               <Inbox size={15} />
             </button>
@@ -2285,10 +2294,10 @@ function ChatPanel({
             </div>
           </div>
         )}
-        <div style={{
-          height: "100%", overflowY: "auto", padding: "16px 18px",
+        <div className="lp-thin-scroll" style={{
+          height: "100%", overflowY: "auto", padding: "12px 14px",
           background: "linear-gradient(180deg, #fafbfc 0%, #ffffff 100%)",
-          display: "flex", flexDirection: "column", gap: 10,
+          display: "flex", flexDirection: "column", gap: 6,
         }}>
           {(CHAT_MESSAGES[active.id] ?? CHAT_MESSAGES["g-geral"]).map((m) => (
             m.dateSep
@@ -2300,30 +2309,34 @@ function ChatPanel({
 
       {/* Composer */}
       <div style={{
-        borderTop: `1px solid ${P.border}`, padding: 10, background: "#fff",
-        display: "flex", alignItems: "flex-end", gap: 8,
-        minHeight: 58,
+        borderTop: `1px solid ${P.border}`, padding: "8px 10px", background: "#fff",
+        display: "flex", alignItems: "flex-end", gap: 6,
       }}>
-          <button title="Anexar" style={chatComposerBtn}><Paperclip size={16} /></button>
-          <button title="Emoji" style={chatComposerBtn}><Smile size={16} /></button>
+          <button title="Anexar" style={chatComposerBtn}><Paperclip size={14} /></button>
+          <button title="Emoji" style={chatComposerBtn}><Smile size={14} /></button>
           <textarea
+            ref={taRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             placeholder={`Mensagem para ${active.name}…`}
             rows={1}
+            className="lp-thin-scroll"
             style={{
-              flex: 1, resize: "none", minHeight: 36, maxHeight: 120,
-              border: `1px solid ${P.border}`, borderRadius: 10,
-              padding: "8px 12px", fontSize: 13, fontFamily: fontStack,
-              outline: "none", lineHeight: 1.4, color: P.text,
+              flex: 1, resize: "none", minHeight: 32, maxHeight: 88,
+              border: `1px solid ${P.border}`, borderRadius: 8,
+              padding: "7px 10px", fontSize: 12.5, fontFamily: fontStack,
+              outline: "none", lineHeight: 1.35, color: P.text,
+              background: "#fafbfc",
             }}
           />
-          <button title="Enviar" style={{
+          <button title="Enviar" aria-label="Enviar" style={{
             background: P.accent, color: "#fff", border: "none",
-            borderRadius: 10, height: 36, padding: "0 14px",
-            fontWeight: 700, fontSize: 12.5, cursor: "pointer",
-            display: "inline-flex", alignItems: "center", gap: 6,
+            borderRadius: 8, height: 32, width: 32, padding: 0,
+            cursor: "pointer", flex: "0 0 auto",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 2px 6px rgba(229,0,70,0.3)",
           }}>
-            <Send size={14} /> Enviar
+            <Send size={14} />
           </button>
         </div>
     </aside>

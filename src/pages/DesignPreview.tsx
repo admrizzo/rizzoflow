@@ -156,7 +156,7 @@ function IconBtn({ children, title, onClick, active }: { children: React.ReactNo
  * ========================================================================= */
 function HeaderC({
   view, onView, onOpenProposal, onOpenQueue, onOpenMetrics, onOpenProposals,
-  onOpenAdmin, onOpenArchived, onSync, onOpenChat, chatUnread,
+  onOpenAdmin, onOpenArchived, onSync,
 }: {
   view: string;
   onView: (v: string) => void;
@@ -167,8 +167,6 @@ function HeaderC({
   onOpenAdmin: () => void;
   onOpenArchived: () => void;
   onSync: () => void;
-  onOpenChat: () => void;
-  chatUnread: number;
 }) {
   return (
     <header style={{
@@ -234,28 +232,6 @@ function HeaderC({
           </button>
 
           <IconBtn title="Notificações"><Bell size={15} /></IconBtn>
-
-          {/* Chat interno */}
-          <button
-            title="Chat interno da equipe"
-            onClick={onOpenChat}
-            style={{
-              position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: 32, height: 32, borderRadius: 8, border: "none", cursor: "pointer",
-              background: "rgba(255,255,255,0.06)", color: "#fff",
-            }}
-          >
-            <MessageSquare size={15} />
-            {chatUnread > 0 && (
-              <span style={{
-                position: "absolute", top: -4, right: -4, minWidth: 16, height: 16,
-                padding: "0 4px", borderRadius: 999, background: P.accent, color: "#fff",
-                fontSize: 10, fontWeight: 800, display: "inline-flex",
-                alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 0 2px ${P.primaryDark}`,
-              }}>{chatUnread > 99 ? "99+" : chatUnread}</span>
-            )}
-          </button>
 
           <IconBtn title="Administração" onClick={onOpenAdmin}><Settings size={15} /></IconBtn>
 

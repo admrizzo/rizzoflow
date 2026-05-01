@@ -2206,6 +2206,7 @@ function RailItem({
 
 function ChatPanel({
   pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 360, fullscreen = false,
+  onExpandFull, onCollapseFull,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
@@ -2214,6 +2215,8 @@ function ChatPanel({
   setActiveConvId: (id: string) => void;
   width?: number;
   fullscreen?: boolean;
+  onExpandFull?: () => void;
+  onCollapseFull?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
@@ -2264,6 +2267,16 @@ function ChatPanel({
             {!fullscreen && (
               <button title={pinned ? "Desafixar" : "Fixar"} onClick={onTogglePin} style={chatHeaderBtn}>
                 {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+              </button>
+            )}
+            {!fullscreen && onExpandFull && (
+              <button title="Abrir chat completo" onClick={onExpandFull} style={chatHeaderBtn}>
+                <Maximize2 size={14} />
+              </button>
+            )}
+            {fullscreen && onCollapseFull && (
+              <button title="Voltar ao chat lateral" onClick={onCollapseFull} style={chatHeaderBtn}>
+                <Minimize2 size={14} />
               </button>
             )}
             <button title="Mais ações" style={chatHeaderBtn}><MoreHorizontal size={15} /></button>

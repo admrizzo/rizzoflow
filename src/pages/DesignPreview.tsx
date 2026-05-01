@@ -1377,30 +1377,332 @@ function VariationCShell({
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
 
-      {/* Mobile preview teaser */}
-      <div style={{ padding: "8px 16px 24px" }}>
-        <details>
-          <summary style={{ cursor: "pointer", fontSize: 12.5, color: P.textMuted, fontWeight: 700, padding: "6px 0" }}>
-            <Smartphone size={12} style={{ display: "inline", verticalAlign: -2, marginRight: 4 }} />
-            Ver prévia mobile
-          </summary>
-          <div style={{
-            marginTop: 10, width: 320, height: 560, borderRadius: 28,
-            border: `8px solid ${P.primaryDark}`, overflow: "hidden", background: P.bg,
-            boxShadow: "0 12px 30px rgba(20,30,40,0.18)",
-          }}>
-            <div style={{ background: P.primaryDark, color: "#fff", padding: "8px 10px", display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 18, height: 18, borderRadius: 5, background: P.accent, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800 }}>R</span>
-              <span style={{ fontSize: 11, fontWeight: 700 }}>Rizzo Flow</span>
-              <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.8 }}>Locação · 38</span>
-            </div>
-            <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-              {REAL_COLUMNS[1].cards.map((c) => <KanbanCard key={c.id} c={c} onClick={() => {}} />)}
-            </div>
-          </div>
-        </details>
+      {/* Mobile gallery */}
+      <MobileGallery />
+    </div>
+  );
+}
+
+/* =========================================================================
+ * GALERIA MOBILE — 5 telas reais (Dashboard, Card, Gerar proposta, Minha Fila, Proposta pública)
+ * ========================================================================= */
+function MobileGallery() {
+  return (
+    <div style={{ padding: "16px 16px 32px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <Smartphone size={14} color={P.textMuted} />
+        <strong style={{ fontSize: 13, color: P.text }}>Versão mobile — telas principais</strong>
+        <span style={{ fontSize: 11.5, color: P.textMuted }}>
+          Dashboard · Card aberto · Gerar proposta · Minha Fila · Proposta pública
+        </span>
+      </div>
+      <div style={{
+        display: "flex", gap: 18, overflowX: "auto", paddingBottom: 12, alignItems: "flex-start",
+      }}>
+        <Phone label="Dashboard"><MobileDashboard /></Phone>
+        <Phone label="Card aberto"><MobileCardDetail /></Phone>
+        <Phone label="Gerar proposta"><MobileNewProposal /></Phone>
+        <Phone label="Minha Fila"><MobileMyQueue /></Phone>
+        <Phone label="Proposta pública"><MobilePublicProposal /></Phone>
       </div>
     </div>
+  );
+}
+
+function Phone({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+      <div style={{
+        width: 320, height: 620, borderRadius: 32,
+        border: `9px solid ${P.primaryDark}`, overflow: "hidden", background: P.bg,
+        boxShadow: "0 14px 32px rgba(20,30,40,0.20)", display: "flex", flexDirection: "column",
+      }}>
+        {children}
+      </div>
+      <span style={{ fontSize: 11.5, fontWeight: 700, color: P.textMuted }}>{label}</span>
+    </div>
+  );
+}
+
+function MobileTopbar({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{
+      background: P.primaryDark, color: "#fff", padding: "10px 12px",
+      display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
+    }}>
+      <span style={{
+        width: 22, height: 22, borderRadius: 6, background: P.accent,
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        fontSize: 11, fontWeight: 800,
+      }}>R</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, lineHeight: 1.1 }}>{title}</div>
+        {sub && <div style={{ fontSize: 10, opacity: 0.75 }}>{sub}</div>}
+      </div>
+      <Bell size={14} style={{ opacity: 0.85 }} />
+      <Avatar initials="GL" size={22} bg={P.accent} />
+    </div>
+  );
+}
+
+function MobileDashboard() {
+  const cards = REAL_COLUMNS[1].cards;
+  return (
+    <>
+      <MobileTopbar title="Rizzo Flow" sub="Locação · 38 em andamento" />
+      {/* Tabs de fluxo */}
+      <div style={{ display: "flex", gap: 6, padding: "8px 10px", background: "#243036", flexShrink: 0 }}>
+        <span style={{ background: P.accent, color: "#fff", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 999 }}>Locação · 38</span>
+        <span style={{ background: "rgba(255,255,255,0.10)", color: "#fff", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 999 }}>Vendas · 14</span>
+      </div>
+      {/* Busca */}
+      <div style={{ padding: "8px 10px", background: P.bg, borderBottom: `1px solid ${P.border}`, flexShrink: 0 }}>
+        <div style={{ position: "relative" }}>
+          <Search size={12} style={{ position: "absolute", left: 8, top: 8, color: P.textMuted }} />
+          <input placeholder="Buscar imóvel, código…" style={{
+            width: "100%", height: 28, borderRadius: 7, border: `1px solid ${P.border}`,
+            background: "#fff", padding: "0 8px 0 26px", fontSize: 11.5, fontFamily: fontStack, outline: "none",
+          }} />
+        </div>
+      </div>
+      {/* Coluna selecionada */}
+      <div style={{ padding: "8px 10px", flexShrink: 0, fontSize: 11, color: P.textMuted, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+        Aguardando documentação
+        <ChevronDown size={12} />
+        <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: P.text, background: "#fff", border: `1px solid ${P.border}`, padding: "1px 6px", borderRadius: 999 }}>{cards.length}</span>
+      </div>
+      <div style={{ padding: "0 10px 10px", display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", flex: 1 }}>
+        {cards.map((c) => <KanbanCard key={c.id} c={c} onClick={() => {}} />)}
+      </div>
+      {/* FAB */}
+      <div style={{ position: "relative" }}>
+        <button style={{
+          position: "absolute", right: 12, bottom: 12,
+          width: 48, height: 48, borderRadius: 999, background: P.accent, color: "#fff",
+          border: "none", boxShadow: "0 6px 16px rgba(229,0,70,0.40)", cursor: "pointer",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+        }}><Plus size={20} /></button>
+      </div>
+    </>
+  );
+}
+
+function MobileCardDetail() {
+  return (
+    <>
+      <div style={{
+        background: P.primaryDark, color: "#fff", padding: "10px 12px", flexShrink: 0,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <ChevronRight size={14} style={{ transform: "rotate(180deg)", opacity: 0.85 }} />
+          <span style={{ fontSize: 10, fontWeight: 800, opacity: 0.8, letterSpacing: 0.4 }}>LOC-2837 · LOCAÇÃO</span>
+          <MoreVertical size={14} style={{ marginLeft: "auto", opacity: 0.85 }} />
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.25 }}>Cobertura · Ed. Mirante</div>
+        <div style={{ fontSize: 10.5, opacity: 0.78, marginTop: 2 }}>Av. Beira Mar, 2210 — apto 1601</div>
+        <div style={{ marginTop: 8 }}><StatusBadge s="received" sm /></div>
+      </div>
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${P.border}`, background: "#fff", flexShrink: 0 }}>
+        {["Resumo", "Docs", "Checklist", "Atividade"].map((t, i) => (
+          <button key={t} style={{
+            flex: 1, padding: "8px 4px", fontSize: 11, fontWeight: 700,
+            background: "transparent", border: "none",
+            color: i === 0 ? P.text : P.textMuted,
+            borderBottom: i === 0 ? `2px solid ${P.accent}` : "2px solid transparent",
+          }}>{t}</button>
+        ))}
+      </div>
+      <div style={{ padding: 10, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ ...summaryBox, padding: 10 }}>
+          <div style={{ fontSize: 10.5, color: P.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>Resumo</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
+            <Kpi label="Aluguel" value="R$ 9.800" />
+            <Kpi label="Total" value="R$ 11.420" />
+            <Kpi label="Garantia" value="Seguro" />
+            <Kpi label="Prazo" value="30 meses" />
+          </div>
+        </div>
+        <div style={{ ...summaryBox, padding: 10 }}>
+          <div style={{ fontSize: 10.5, color: P.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>Próxima ação</div>
+          <div style={{ fontSize: 12, color: P.text, fontWeight: 600, lineHeight: 1.4 }}>
+            Validar comprovante de renda enviado por João Pereira.
+          </div>
+          <button style={{ ...smallBtn, marginTop: 8, background: P.primary, color: "#fff", border: "none" }}>
+            <CheckSquare size={11} /> Validar agora
+          </button>
+        </div>
+        <div style={{ ...summaryBox, padding: 0 }}>
+          {[
+            { n: "RG locatário", s: "received" as StatusKey },
+            { n: "Comprovante renda", s: "correction" as StatusKey },
+            { n: "Comp. residência", s: "received" as StatusKey },
+          ].map((d, i) => (
+            <div key={d.n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderTop: i === 0 ? "none" : `1px solid ${P.borderSoft}` }}>
+              <FileText size={13} style={{ color: P.textMuted }} />
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: P.text, flex: 1 }}>{d.n}</span>
+              <StatusBadge s={d.s} sm />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Bottom action bar */}
+      <div style={{
+        background: "#fff", borderTop: `1px solid ${P.border}`, padding: 8, display: "flex", gap: 6, flexShrink: 0,
+      }}>
+        <button style={{ ...smallBtn, flex: 1, justifyContent: "center" }}><MessageSquare size={11} /> Comentar</button>
+        <button style={{ ...smallBtn, flex: 1, justifyContent: "center", background: P.primary, color: "#fff", border: "none" }}>
+          <ChevronRight size={11} /> Avançar etapa
+        </button>
+      </div>
+    </>
+  );
+}
+
+function MobileNewProposal() {
+  return (
+    <>
+      <MobileTopbar title="Gerar proposta" sub="Locação · etapa 1 de 3" />
+      <div style={{ padding: 12, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+        <Stepper step={1} />
+        <label style={lbl}>Imóvel</label>
+        <input placeholder="Buscar por código, endereço…" style={{ ...inp, fontSize: 12 }} />
+        <div style={{ ...summaryBox, padding: 0 }}>
+          {["IM-9281 · Apto 802 · Solar Boulevard", "IM-9277 · Cobertura · Ed. Mirante", "IM-9270 · Casa · Jd. Botânico"].map((s, i) => (
+            <div key={s} style={{
+              padding: "10px 12px", borderTop: i === 0 ? "none" : `1px solid ${P.borderSoft}`,
+              display: "flex", alignItems: "center", gap: 8, fontSize: 12,
+            }}>
+              <Building2 size={13} style={{ color: P.textMuted }} />
+              <span style={{ flex: 1, lineHeight: 1.3 }}>{s}</span>
+              <ChevronRight size={13} color={P.textSubtle} />
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: P.textMuted, lineHeight: 1.4, marginTop: 4 }}>
+          Próximas etapas: <strong>Corretor</strong> e <strong>Link público</strong>.
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderTop: `1px solid ${P.border}`, padding: 8, display: "flex", gap: 6, flexShrink: 0 }}>
+        <button style={{ ...smallBtn, flex: 1, justifyContent: "center" }}>Cancelar</button>
+        <button style={{ ...smallBtn, flex: 2, justifyContent: "center", background: P.primary, color: "#fff", border: "none" }}>
+          Continuar <ChevronRight size={11} />
+        </button>
+      </div>
+    </>
+  );
+}
+
+function MobileMyQueue() {
+  const items = [
+    { code: "LOC-2835", title: "Sala comercial · Ed. Cidade", reason: "2 documentos com correção", urg: "high" },
+    { code: "LOC-2820", title: "Sobrado · Vila Mariana", reason: "Definir tipo de garantia", urg: "high" },
+    { code: "LOC-2795", title: "Apto 51 · Ed. Aurora", reason: "Aguardando 2 assinaturas há 3d", urg: "high" },
+    { code: "LOC-2841", title: "Apto 802 · Solar Boulevard", reason: "Acompanhar comprovante", urg: "med" },
+    { code: "LOC-2829", title: "Apto 1102 · Park View", reason: "Revisar análise de crédito", urg: "med" },
+  ];
+  return (
+    <>
+      <MobileTopbar title="Minha Fila" sub="5 processos precisam de você" />
+      <div style={{ display: "flex", gap: 6, padding: "8px 10px", background: "#243036", flexShrink: 0 }}>
+        <span style={{ background: P.accent, color: "#fff", fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999 }}>Urgente · 3</span>
+        <span style={{ background: "rgba(255,255,255,0.10)", color: "#fff", fontSize: 10.5, fontWeight: 600, padding: "3px 9px", borderRadius: 999 }}>Atenção · 2</span>
+      </div>
+      <div style={{ padding: 10, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((it) => (
+          <div key={it.code} style={{
+            background: "#fff", border: `1px solid ${P.border}`, borderRadius: 10, padding: 10,
+            borderLeft: `3px solid ${it.urg === "high" ? P.accent : P.warning}`,
+            display: "flex", flexDirection: "column", gap: 4,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: P.textMuted, letterSpacing: 0.4 }}>{it.code}</span>
+              <Dot color={it.urg === "high" ? P.accent : P.warning} size={6} />
+              <span style={{ marginLeft: "auto", fontSize: 10, color: P.textMuted, fontWeight: 700 }}>
+                {it.urg === "high" ? "URGENTE" : "ATENÇÃO"}
+              </span>
+            </div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: P.text, lineHeight: 1.3 }}>{it.title}</div>
+            <div style={{ fontSize: 11, color: P.textMuted, lineHeight: 1.35 }}>{it.reason}</div>
+            <button style={{ ...smallBtn, alignSelf: "flex-start", marginTop: 4, background: P.primary, color: "#fff", border: "none" }}>
+              Abrir <ChevronRight size={11} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function MobilePublicProposal() {
+  return (
+    <>
+      <div style={{
+        background: "#fff", borderBottom: `1px solid ${P.border}`,
+        padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
+      }}>
+        <span style={{
+          width: 26, height: 26, borderRadius: 7, background: P.accent,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          color: "#fff", fontWeight: 800, fontSize: 13,
+        }}>R</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: P.text, lineHeight: 1.1 }}>Rizzo Imobiliária</div>
+          <div style={{ fontSize: 10, color: P.textMuted }}>Proposta de locação</div>
+        </div>
+        <span style={{
+          background: "#eaf5ee", color: "#2a6a48", fontSize: 10, fontWeight: 700,
+          padding: "2px 7px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
+        }}>
+          <ShieldCheck size={10} /> Seguro
+        </span>
+      </div>
+      <div style={{ padding: 12, overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 11, color: P.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>Imóvel</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: P.text, marginTop: 2 }}>Apto 802 · Solar Boulevard</div>
+          <div style={{ fontSize: 11.5, color: P.textMuted }}>R. Voluntários da Pátria, 1820 — Higienópolis</div>
+        </div>
+        <div style={{ ...summaryBox, padding: 12, background: P.borderSoft }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <Kpi label="Aluguel" value="R$ 4.200" />
+            <Kpi label="Total mensal" value="R$ 5.022" />
+            <Kpi label="Garantia" value="Seguro fiança" />
+            <Kpi label="Prazo" value="30 meses" />
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: P.textMuted, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 6 }}>
+            Documentos solicitados
+          </div>
+          <div style={{ ...summaryBox, padding: 0 }}>
+            {[
+              { n: "RG / CNH", s: "received" as StatusKey },
+              { n: "Comprovante de renda", s: "filling" as StatusKey },
+              { n: "Comprovante de residência", s: "neutral" as StatusKey },
+            ].map((d, i) => (
+              <div key={d.n} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderTop: i === 0 ? "none" : `1px solid ${P.borderSoft}` }}>
+                <Upload size={13} style={{ color: P.textMuted }} />
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: P.text, flex: 1 }}>{d.n}</span>
+                <StatusBadge s={d.s} sm />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontSize: 10.5, color: P.textSubtle, lineHeight: 1.45, textAlign: "center", marginTop: 4 }}>
+          Seus dados são protegidos. Esta proposta é exclusiva e expira em 7 dias.
+        </div>
+      </div>
+      <div style={{ background: "#fff", borderTop: `1px solid ${P.border}`, padding: 10, flexShrink: 0 }}>
+        <button style={{
+          width: "100%", padding: "11px 12px", borderRadius: 10, border: "none",
+          background: P.accent, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer",
+          boxShadow: "0 4px 12px rgba(229,0,70,0.30)",
+        }}>
+          Continuar envio de documentos
+        </button>
+      </div>
+    </>
   );
 }
 

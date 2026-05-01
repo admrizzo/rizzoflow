@@ -1990,8 +1990,7 @@ function ChatRailNative({
         borderRight: expanded ? "1px solid rgba(255,255,255,0.06)" : "none",
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
-        position: "sticky", top: 96, alignSelf: "flex-start",
-        maxHeight: "calc(100vh - 96px)", overflow: "hidden",
+        height: "100%", overflow: "hidden",
       }}
     >
       {/* Topo: ícone do chat + abrir/fechar */}

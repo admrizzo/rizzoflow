@@ -13,7 +13,7 @@
  *  - aviso explicando que esta prévia não altera regras/etapas
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, Bell, RefreshCw, FileText, Plus, Filter, ChevronDown, Clock,
   AlertTriangle, CheckCircle2, CircleDashed, Users, BarChart3, Inbox,
@@ -1418,8 +1418,8 @@ function VariationCShell({
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const RAIL_W = 72;
-  const PANEL_W = 420;
+  const RAIL_W = 56;
+  const PANEL_W = 360;
   const expanded = chatState === "expanded" || chatState === "pinned";
   const pinned = chatState === "pinned";
   return (
@@ -1507,6 +1507,12 @@ function VariationCShell({
           .lp-chat-side { display: none !important; }
           .lp-chat-fab { display: inline-flex !important; }
         }
+        /* Scrollbars discretas dentro do preview */
+        .lp-thin-scroll { scrollbar-width: thin; scrollbar-color: rgba(120,135,150,0.35) transparent; }
+        .lp-thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .lp-thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .lp-thin-scroll::-webkit-scrollbar-thumb { background: rgba(120,135,150,0.32); border-radius: 999px; border: none; }
+        .lp-thin-scroll::-webkit-scrollbar-thumb:hover { background: rgba(120,135,150,0.55); }
       `}</style>
 
       <button
@@ -2044,7 +2050,7 @@ function ChatRailNative({
         background: P.primaryDark, color: "#fff",
         borderRight: expanded ? "1px solid rgba(255,255,255,0.06)" : "none",
         display: "flex", flexDirection: "column", alignItems: "center",
-        padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
+        padding: "8px 0 10px", gap: 4, fontFamily: fontStack,
         height: "100%", overflow: "hidden",
       }}
     >
@@ -2054,13 +2060,13 @@ function ChatRailNative({
         title={expanded ? "Recolher chat" : "Abrir chat interno"}
         style={{
           position: "relative",
-          width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
+          width: 36, height: 36, borderRadius: 10, border: "none", cursor: "pointer",
           background: expanded ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           transition: "background .15s ease",
         }}
       >
-        <MessageSquare size={18} />
+        <MessageSquare size={16} />
         {totalUnread > 0 && (
           <span style={{
             position: "absolute", top: -3, right: -3, minWidth: 18, height: 18,
@@ -2075,7 +2081,7 @@ function ChatRailNative({
       <RailDivider />
 
       {/* Grupos / canais */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4 }}>
+      <div className="lp-thin-scroll" style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center", overflowY: "auto", overflowX: "hidden", paddingBottom: 4, width: "100%" }}>
         {groups.map((c) => (
           <RailItem
             key={c.id}
@@ -2085,10 +2091,10 @@ function ChatRailNative({
             onClick={() => onSelect(c.id)}
           >
             <span style={{
-              width: 40, height: 40, borderRadius: 12,
+              width: 32, height: 32, borderRadius: 9,
               background: c.color, color: "#fff",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 800, fontSize: 12.5, letterSpacing: 0.3,
+              fontWeight: 800, fontSize: 11, letterSpacing: 0.3,
             }}>{c.initials}</span>
           </RailItem>
         ))}
@@ -2106,15 +2112,15 @@ function ChatRailNative({
           >
             <span style={{ position: "relative", display: "inline-block" }}>
               <span style={{
-                width: 40, height: 40, borderRadius: 999,
+                width: 32, height: 32, borderRadius: 999,
                 background: c.color, color: "#fff",
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: 12.5,
+                fontWeight: 800, fontSize: 11,
               }}>{c.initials}</span>
               {c.online && (
                 <span style={{
                   position: "absolute", right: -1, bottom: -1,
-                  width: 11, height: 11, borderRadius: 999,
+                  width: 9, height: 9, borderRadius: 999,
                   background: P.success, border: `2px solid ${P.primaryDark}`,
                 }} />
               )}
@@ -2154,18 +2160,18 @@ function RailItem({
     >
       {/* Indicador lateral à esquerda */}
       <span style={{
-        position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)",
-        width: 3, borderRadius: 2,
-        height: active ? 26 : (unread > 0 ? 14 : 0),
+        position: "absolute", left: -8, top: "50%", transform: "translateY(-50%)",
+        width: 2, borderRadius: 2,
+        height: active ? 20 : (unread > 0 ? 12 : 0),
         background: active ? "#fff" : "rgba(255,255,255,0.85)",
         transition: "height .15s ease",
       }} />
       {children}
       {unread > 0 && (
         <span style={{
-          position: "absolute", top: -3, right: -3, minWidth: 17, height: 17,
-          padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
-          fontSize: 10, fontWeight: 800, display: "inline-flex",
+          position: "absolute", top: -3, right: -3, minWidth: 15, height: 15,
+          padding: "0 4px", borderRadius: 999, background: P.accent, color: "#fff",
+          fontSize: 9.5, fontWeight: 800, display: "inline-flex",
           alignItems: "center", justifyContent: "center",
           border: `2px solid ${P.primaryDark}`,
         }}>{unread > 99 ? "99+" : unread}</span>
@@ -2175,7 +2181,7 @@ function RailItem({
 }
 
 function ChatPanel({
-  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 380, fullscreen = false,
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 360, fullscreen = false,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
@@ -2187,6 +2193,15 @@ function ChatPanel({
 }) {
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
+  const [draft, setDraft] = useState("");
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const el = taRef.current; if (!el) return;
+    el.style.height = "auto";
+    const max = 4 * 18 + 16; // ~4 linhas
+    el.style.height = Math.min(el.scrollHeight, max) + "px";
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [draft]);
   const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
   const filtered = useMemo(
     () => CHAT_CONVERSATIONS.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())),
@@ -2207,18 +2222,18 @@ function ChatPanel({
     }}>
       {/* Cabeçalho da conversa */}
       <div style={{
-        minHeight: 52, padding: "0 14px", display: "flex", alignItems: "center", gap: 10,
+        minHeight: 44, padding: "0 12px", display: "flex", alignItems: "center", gap: 8,
         borderBottom: `1px solid ${P.border}`, background: "#fff", minWidth: 0,
       }}>
-          <Avatar initials={active.initials} size={32} bg={active.color} />
+          <Avatar initials={active.initials} size={26} bg={active.color} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
-            <div style={{ fontSize: 11, color: P.textMuted }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: P.text, lineHeight: 1.2 }}>{active.name}</div>
+            <div style={{ fontSize: 10.5, color: P.textMuted }}>
               {active.kind === "dm" ? (active.online ? "Online" : "Offline") :
                active.kind === "group" ? "Grupo · 12 membros" : "Canal aberto a toda a equipe"}
             </div>
           </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
             <button title="Conversas" onClick={() => setShowList((v) => !v)} style={chatHeaderBtn}>
               <Inbox size={15} />
             </button>
@@ -2279,10 +2294,10 @@ function ChatPanel({
             </div>
           </div>
         )}
-        <div style={{
-          height: "100%", overflowY: "auto", padding: "16px 18px",
+        <div className="lp-thin-scroll" style={{
+          height: "100%", overflowY: "auto", padding: "12px 14px",
           background: "linear-gradient(180deg, #fafbfc 0%, #ffffff 100%)",
-          display: "flex", flexDirection: "column", gap: 10,
+          display: "flex", flexDirection: "column", gap: 6,
         }}>
           {(CHAT_MESSAGES[active.id] ?? CHAT_MESSAGES["g-geral"]).map((m) => (
             m.dateSep
@@ -2294,30 +2309,34 @@ function ChatPanel({
 
       {/* Composer */}
       <div style={{
-        borderTop: `1px solid ${P.border}`, padding: 10, background: "#fff",
-        display: "flex", alignItems: "flex-end", gap: 8,
-        minHeight: 58,
+        borderTop: `1px solid ${P.border}`, padding: "8px 10px", background: "#fff",
+        display: "flex", alignItems: "flex-end", gap: 6,
       }}>
-          <button title="Anexar" style={chatComposerBtn}><Paperclip size={16} /></button>
-          <button title="Emoji" style={chatComposerBtn}><Smile size={16} /></button>
+          <button title="Anexar" style={chatComposerBtn}><Paperclip size={14} /></button>
+          <button title="Emoji" style={chatComposerBtn}><Smile size={14} /></button>
           <textarea
+            ref={taRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             placeholder={`Mensagem para ${active.name}…`}
             rows={1}
+            className="lp-thin-scroll"
             style={{
-              flex: 1, resize: "none", minHeight: 36, maxHeight: 120,
-              border: `1px solid ${P.border}`, borderRadius: 10,
-              padding: "8px 12px", fontSize: 13, fontFamily: fontStack,
-              outline: "none", lineHeight: 1.4, color: P.text,
+              flex: 1, resize: "none", minHeight: 32, maxHeight: 88,
+              border: `1px solid ${P.border}`, borderRadius: 8,
+              padding: "7px 10px", fontSize: 12.5, fontFamily: fontStack,
+              outline: "none", lineHeight: 1.35, color: P.text,
+              background: "#fafbfc",
             }}
           />
-          <button title="Enviar" style={{
+          <button title="Enviar" aria-label="Enviar" style={{
             background: P.accent, color: "#fff", border: "none",
-            borderRadius: 10, height: 36, padding: "0 14px",
-            fontWeight: 700, fontSize: 12.5, cursor: "pointer",
-            display: "inline-flex", alignItems: "center", gap: 6,
+            borderRadius: 8, height: 32, width: 32, padding: 0,
+            cursor: "pointer", flex: "0 0 auto",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 2px 6px rgba(229,0,70,0.3)",
           }}>
-            <Send size={14} /> Enviar
+            <Send size={14} />
           </button>
         </div>
     </aside>
@@ -2405,14 +2424,14 @@ function ChatBubble({ m }: { m: ChatMsg }) {
   const mine = !!m.mine;
   return (
     <div style={{
-      display: "flex", gap: 8, alignItems: "flex-end",
+      display: "flex", gap: 6, alignItems: "flex-end",
       flexDirection: mine ? "row-reverse" : "row",
     }}>
-      {!mine && <Avatar initials={m.initials} size={28} bg={m.color} />}
+      {!mine && <Avatar initials={m.initials} size={24} bg={m.color} />}
       <div style={{ maxWidth: "72%", position: "relative" }}>
         {!mine && (
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: P.textMuted, marginBottom: 2, paddingLeft: 2 }}>
-            {m.author} <span style={{ fontWeight: 500, marginLeft: 4 }}>{m.time}</span>
+          <div style={{ fontSize: 10, fontWeight: 700, color: P.textMuted, marginBottom: 1, paddingLeft: 2 }}>
+            {m.author} <span style={{ fontWeight: 500, marginLeft: 4, opacity: 0.75 }}>{m.time}</span>
           </div>
         )}
         <div
@@ -2422,11 +2441,11 @@ function ChatBubble({ m }: { m: ChatMsg }) {
             position: "relative",
             background: mine ? P.primary : "#f1f5f8",
             color: mine ? "#fff" : P.text,
-            padding: m.attachment ? "8px 10px" : "8px 12px",
-            borderRadius: 12,
-            borderTopRightRadius: mine ? 4 : 12,
-            borderTopLeftRadius: mine ? 12 : 4,
-            fontSize: 13, lineHeight: 1.45,
+            padding: m.attachment ? "6px 8px" : "6px 10px",
+            borderRadius: 10,
+            borderTopRightRadius: mine ? 3 : 10,
+            borderTopLeftRadius: mine ? 10 : 3,
+            fontSize: 12.5, lineHeight: 1.4,
             boxShadow: "0 1px 2px rgba(20,30,40,0.06)",
           }}
         >
@@ -2478,8 +2497,8 @@ function ChatBubble({ m }: { m: ChatMsg }) {
           )}
         </div>
         {mine && (
-          <div style={{ fontSize: 10.5, color: P.textMuted, marginTop: 2, textAlign: "right", paddingRight: 4 }}>
-            {m.time} · enviada
+          <div style={{ fontSize: 10, color: P.textMuted, marginTop: 1, textAlign: "right", paddingRight: 4, opacity: 0.75 }}>
+            {m.time}
           </div>
         )}
       </div>

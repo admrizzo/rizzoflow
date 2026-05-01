@@ -1354,11 +1354,15 @@ function VariationCShell({
   openCard: KCard | null; setOpenCard: (c: KCard | null) => void;
   showProposalModal: boolean; setShowProposalModal: (v: boolean) => void;
 }) {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatPinned, setChatPinned] = useState(false);
+  // 3 estados: "collapsed" (apenas rail), "expanded" (rail + painel), "pinned" (igual a expanded mas marcado)
+  const [chatState, setChatState] = useState<"collapsed" | "expanded" | "pinned">("collapsed");
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const DRAWER_W = 760;
+  const RAIL_W = 64;
+  const PANEL_W = 380;
+  const expanded = chatState === "expanded" || chatState === "pinned";
+  const pinned = chatState === "pinned";
   return (
     <div style={{ marginTop: 10 }}>
       <HeaderC
@@ -1371,54 +1375,102 @@ function VariationCShell({
         onOpenAdmin={() => setView("admin")}
         onOpenArchived={() => setView("archived")}
         onSync={() => {}}
-        onOpenChat={() => setChatOpen((v) => !v)}
-        chatUnread={totalUnread}
       />
 
-      <div style={{
-        marginRight: chatOpen && chatPinned ? DRAWER_W : 0,
-        transition: "margin-right .2s ease",
+      {/* Layout principal: conteúdo + lateral nativa de chat (desktop) */}
+      <div className="lp-shell-grid" style={{
+        display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 96px)",
       }}>
-        {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
-      {view === "queue" && <MyQueue />}
-      {view === "metrics" && <Metrics />}
-      {view === "proposals" && <Proposals />}
-      {view === "admin" && <AdminScreen />}
-      {view === "archived" && <ArchivedScreen />}
+        <div className="lp-main-col" style={{ flex: 1, minWidth: 0 }}>
+          {view === "dashboard" && <Kanban onOpenCard={setOpenCard} />}
+          {view === "queue" && <MyQueue />}
+          {view === "metrics" && <Metrics />}
+          {view === "proposals" && <Proposals />}
+          {view === "admin" && <AdminScreen />}
+          {view === "archived" && <ArchivedScreen />}
+        </div>
+
+        {/* Lateral nativa de chat — desktop */}
+        <div className="lp-chat-side" style={{
+          flex: "0 0 auto",
+          width: expanded ? RAIL_W + PANEL_W : RAIL_W,
+          display: "flex", alignItems: "stretch",
+          background: P.primaryDark,
+          borderLeft: "1px solid rgba(255,255,255,0.05)",
+          transition: "width .18s ease",
+        }}>
+          <ChatRailNative
+            width={RAIL_W}
+            totalUnread={totalUnread}
+            activeConvId={activeConvId}
+            onSelect={(id) => { setActiveConvId(id); if (chatState === "collapsed") setChatState("expanded"); }}
+            onToggle={() => setChatState((s) => s === "collapsed" ? "expanded" : "collapsed")}
+            expanded={expanded}
+          />
+          {expanded && (
+            <ChatPanel
+              width={PANEL_W}
+              pinned={pinned}
+              onTogglePin={() => setChatState((s) => s === "pinned" ? "expanded" : "pinned")}
+              onClose={() => setChatState("collapsed")}
+              activeConvId={activeConvId}
+              setActiveConvId={setActiveConvId}
+            />
+          )}
+        </div>
       </div>
 
       {openCard && <CardDialog c={openCard} onClose={() => setOpenCard(null)} />}
       {showProposalModal && <NewProposalModal onClose={() => setShowProposalModal(false)} />}
 
+      {/* Mobile: oculta lateral, mostra FAB + tela cheia */}
       <style>{`
-        @media (max-width: 768px) {
-          .lp-chat-drawer { width: 100vw !important; max-width: 100vw !important; }
-          .lp-chat-drawer-list { width: 100% !important; }
+        @media (max-width: 900px) {
+          .lp-chat-side { display: none !important; }
+          .lp-chat-fab { display: inline-flex !important; }
         }
       `}</style>
 
-      {/* Backdrop quando chat está aberto e não fixado */}
-      {chatOpen && !chatPinned && (
-        <div
-          onClick={() => setChatOpen(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 55,
-            background: "rgba(20,30,40,0.28)",
-            animation: "lpFadeIn .15s ease",
-          }}
-        />
-      )}
+      <button
+        className="lp-chat-fab"
+        onClick={() => setMobileChatOpen(true)}
+        title="Chat interno"
+        style={{
+          display: "none",
+          position: "fixed", right: 16, bottom: 16, zIndex: 70,
+          width: 52, height: 52, borderRadius: 999, border: "none", cursor: "pointer",
+          background: P.accent, color: "#fff",
+          alignItems: "center", justifyContent: "center",
+          boxShadow: "0 8px 22px rgba(229,0,70,0.45)",
+        }}
+      >
+        <MessageSquare size={20} />
+        {totalUnread > 0 && (
+          <span style={{
+            position: "absolute", top: -2, right: -2, minWidth: 20, height: 20,
+            padding: "0 5px", borderRadius: 999, background: "#fff", color: P.accent,
+            fontSize: 11, fontWeight: 800, display: "inline-flex",
+            alignItems: "center", justifyContent: "center",
+            border: `2px solid ${P.accent}`,
+          }}>{totalUnread > 99 ? "99+" : totalUnread}</span>
+        )}
+      </button>
 
-      {chatOpen && (
-        <ChatDrawer
-          pinned={chatPinned}
-          onTogglePin={() => setChatPinned((v) => !v)}
-          onClose={() => setChatOpen(false)}
-          activeConvId={activeConvId}
-          setActiveConvId={setActiveConvId}
-          width={DRAWER_W}
-          rightOffset={0}
-        />
+      {mobileChatOpen && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 90, background: "#fff",
+          display: "flex", flexDirection: "column",
+        }}>
+          <ChatPanel
+            width={typeof window !== "undefined" ? window.innerWidth : 360}
+            pinned={false}
+            onTogglePin={() => {}}
+            onClose={() => setMobileChatOpen(false)}
+            activeConvId={activeConvId}
+            setActiveConvId={setActiveConvId}
+            fullscreen
+          />
+        </div>
       )}
 
       {/* Mobile gallery */}

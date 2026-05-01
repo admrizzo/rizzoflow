@@ -145,7 +145,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         ref={ref}
         onClick={onClick}
         className={cn(
-          "cursor-pointer bg-card hover:bg-accent/30 shadow-sm hover:shadow-md border rounded-lg overflow-hidden relative will-change-transform select-none",
+          "cursor-pointer bg-card hover:bg-accent/30 shadow-sm hover:shadow-md border rounded-[10px] overflow-hidden relative will-change-transform select-none min-h-[124px]",
           isDragging && "shadow-xl ring-2 ring-blue-400 opacity-95",
           isArchived && "opacity-60 bg-muted",
           isAnyDeadlineOverdue && !isArchived && "border-2 border-red-400 bg-red-50",

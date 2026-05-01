@@ -13,7 +13,7 @@
  *  - aviso explicando que esta prévia não altera regras/etapas
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Search, Bell, RefreshCw, FileText, Plus, Filter, ChevronDown, Clock,
   AlertTriangle, CheckCircle2, CircleDashed, Users, BarChart3, Inbox,
@@ -310,6 +310,36 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
  * KANBAN
  * ========================================================================= */
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+
+  const canStartBoardDrag = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    return !target.closest("button, input, textarea, select, a, [role='button'], [data-kanban-card], [data-menu], [contenteditable='true']");
+  };
+
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !scrollRef.current || !canStartBoardDrag(event.target)) return;
+    dragRef.current = {
+      active: true,
+      startX: event.clientX,
+      scrollLeft: scrollRef.current.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active || !scrollRef.current) return;
+    const delta = event.clientX - dragRef.current.startX;
+    if (Math.abs(delta) > 3) dragRef.current.moved = true;
+    scrollRef.current.scrollLeft = dragRef.current.scrollLeft - delta;
+    event.preventDefault();
+  };
+
+  const stopBoardDrag = () => {
+    dragRef.current.active = false;
+  };
+
   return (
     <div style={{
       flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
@@ -320,14 +350,23 @@ function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
         <CardStatesShowcase onOpenCard={onOpenCard} />
       </div>
       {/* Área de colunas: rolagem horizontal isolada apenas aqui */}
-      <div style={{
+      <div
+        ref={scrollRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopBoardDrag}
+        onMouseLeave={stopBoardDrag}
+        style={{
         flex: 1, minHeight: 0,
         overflowX: "auto", overflowY: "auto",
         padding: "8px 16px 24px",
+        cursor: dragRef.current.active ? "grabbing" : "grab",
+        userSelect: dragRef.current.active ? "none" : "auto",
       }}>
         <div style={{
           display: "inline-flex", gap: 12, alignItems: "flex-start",
-          minWidth: "100%",
+          minWidth: "max-content",
+          paddingRight: 16,
         }}>
           {REAL_COLUMNS.map((col) => (
             <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />

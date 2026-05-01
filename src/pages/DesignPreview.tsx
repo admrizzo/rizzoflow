@@ -311,17 +311,30 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
  * ========================================================================= */
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
   return (
-    <>
-      <CardStatesShowcase onOpenCard={onOpenCard} />
-      <div style={{
-        display: "flex", gap: 12, overflowX: "auto", padding: "8px 16px 24px",
-        alignItems: "flex-start",
-      }}>
-        {REAL_COLUMNS.map((col) => (
-          <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
-        ))}
+    <div style={{
+      flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
+      overflow: "hidden",
+    }}>
+      {/* Estados de card — não rolam horizontalmente com o board */}
+      <div style={{ flex: "0 0 auto" }}>
+        <CardStatesShowcase onOpenCard={onOpenCard} />
       </div>
-    </>
+      {/* Área de colunas: rolagem horizontal isolada apenas aqui */}
+      <div style={{
+        flex: 1, minHeight: 0,
+        overflowX: "auto", overflowY: "auto",
+        padding: "8px 16px 24px",
+      }}>
+        <div style={{
+          display: "inline-flex", gap: 12, alignItems: "flex-start",
+          minWidth: "100%",
+        }}>
+          {REAL_COLUMNS.map((col) => (
+            <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

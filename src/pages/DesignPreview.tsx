@@ -2194,8 +2194,8 @@ function ChatPanel({
   const [query, setQuery] = useState("");
   const [showList, setShowList] = useState(false);
   const [draft, setDraft] = useState("");
-  const taRef = React.useRef<HTMLTextAreaElement | null>(null);
-  React.useEffect(() => {
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
     const el = taRef.current; if (!el) return;
     el.style.height = "auto";
     const max = 4 * 18 + 16; // ~4 linhas

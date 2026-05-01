@@ -1507,6 +1507,12 @@ function VariationCShell({
           .lp-chat-side { display: none !important; }
           .lp-chat-fab { display: inline-flex !important; }
         }
+        /* Scrollbars discretas dentro do preview */
+        .lp-thin-scroll { scrollbar-width: thin; scrollbar-color: rgba(120,135,150,0.35) transparent; }
+        .lp-thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .lp-thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .lp-thin-scroll::-webkit-scrollbar-thumb { background: rgba(120,135,150,0.32); border-radius: 999px; border: none; }
+        .lp-thin-scroll::-webkit-scrollbar-thumb:hover { background: rgba(120,135,150,0.55); }
       `}</style>
 
       <button

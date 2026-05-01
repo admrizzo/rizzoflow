@@ -2160,18 +2160,18 @@ function RailItem({
     >
       {/* Indicador lateral à esquerda */}
       <span style={{
-        position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)",
-        width: 3, borderRadius: 2,
-        height: active ? 26 : (unread > 0 ? 14 : 0),
+        position: "absolute", left: -8, top: "50%", transform: "translateY(-50%)",
+        width: 2, borderRadius: 2,
+        height: active ? 20 : (unread > 0 ? 12 : 0),
         background: active ? "#fff" : "rgba(255,255,255,0.85)",
         transition: "height .15s ease",
       }} />
       {children}
       {unread > 0 && (
         <span style={{
-          position: "absolute", top: -3, right: -3, minWidth: 17, height: 17,
-          padding: "0 5px", borderRadius: 999, background: P.accent, color: "#fff",
-          fontSize: 10, fontWeight: 800, display: "inline-flex",
+          position: "absolute", top: -3, right: -3, minWidth: 15, height: 15,
+          padding: "0 4px", borderRadius: 999, background: P.accent, color: "#fff",
+          fontSize: 9.5, fontWeight: 800, display: "inline-flex",
           alignItems: "center", justifyContent: "center",
           border: `2px solid ${P.primaryDark}`,
         }}>{unread > 99 ? "99+" : unread}</span>

@@ -1418,8 +1418,8 @@ function VariationCShell({
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState<string>("g-geral");
   const totalUnread = CHAT_CONVERSATIONS.reduce((acc, c) => acc + c.unread, 0);
-  const RAIL_W = 72;
-  const PANEL_W = 420;
+  const RAIL_W = 56;
+  const PANEL_W = 360;
   const expanded = chatState === "expanded" || chatState === "pinned";
   const pinned = chatState === "pinned";
   return (

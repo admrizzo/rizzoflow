@@ -310,13 +310,49 @@ function FlowTab({ label, count, active }: { label: string; count: number; activ
  * ========================================================================= */
 function Kanban({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
   return (
-    <div style={{
-      display: "flex", gap: 12, overflowX: "auto", padding: "16px 16px 24px",
-      alignItems: "flex-start",
-    }}>
-      {REAL_COLUMNS.map((col) => (
-        <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
-      ))}
+    <>
+      <CardStatesShowcase onOpenCard={onOpenCard} />
+      <div style={{
+        display: "flex", gap: 12, overflowX: "auto", padding: "8px 16px 24px",
+        alignItems: "flex-start",
+      }}>
+        {REAL_COLUMNS.map((col) => (
+          <KanbanColumn key={col.id} col={col} onOpenCard={onOpenCard} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ---------- Showcase de estados de card (em dia, recebidos, correção, pendência, vencido) ---------- */
+function CardStatesShowcase({ onOpenCard }: { onOpenCard: (c: KCard) => void }) {
+  const samples: { tag: string; c: KCard }[] = [
+    { tag: "Em dia", c: { id: "s1", code: "LOC-2901", title: "Apto 502 · Ed. Vista Verde", address: "R. das Palmeiras, 120 — apto 502", broker: "Marina Castro", brokerInitials: "MC", status: "inday", statusLabel: "Em dia", deadline: "3 dias", value: "R$ 3.900/mês", docsOk: 5, docsTotal: 7 } },
+    { tag: "Documentos recebidos", c: { id: "s2", code: "LOC-2902", title: "Cobertura · Ed. Mirante", address: "Av. Beira Mar, 2210 — apto 1601", broker: "Patrícia Lima", brokerInitials: "PL", status: "received", statusLabel: "Doc. recebidos", deadline: "Hoje", value: "R$ 9.800/mês", docsOk: 7, docsTotal: 7 } },
+    { tag: "Correção solicitada", c: { id: "s3", code: "LOC-2903", title: "Sala comercial · Ed. Cidade", address: "R. XV de Novembro, 890 — sala 712", broker: "Rafael Souza", brokerInitials: "RS", status: "correction", statusLabel: "Correção solicitada", deadline: "1 dia", value: "R$ 2.900/mês", docsOk: 4, docsTotal: 7, alerts: 2 } },
+    { tag: "Pendência", c: { id: "s4", code: "LOC-2904", title: "Sobrado · Vila Mariana", address: "R. Joaquim Távora, 230", broker: "André Pinto", brokerInitials: "AP", status: "pending", statusLabel: "Definir garantia", deadline: "Hoje", value: "R$ 5.200/mês", alerts: 1 } },
+    { tag: "Vencido", c: { id: "s5", code: "LOC-2905", title: "Apto 51 · Ed. Aurora", address: "R. da Praia, 220", broker: "Eduarda Nunes", brokerInitials: "EN", status: "late", statusLabel: "Aguardando assinatura", deadline: "Atrasado 3d", value: "R$ 3.100/mês", alerts: 3 } },
+  ];
+  return (
+    <div style={{ padding: "14px 16px 4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 800, color: P.textMuted, textTransform: "uppercase", letterSpacing: 0.6 }}>
+          Estados visuais do card
+        </span>
+        <span style={{ fontSize: 11, color: P.textSubtle }}>
+          · sinais sutis: verde ok · âmbar atenção · vermelho vencido · neutro sem alerta
+        </span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(220px, 1fr))", gap: 10 }}>
+        {samples.map((s) => (
+          <div key={s.c.id}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: P.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              {s.tag}
+            </div>
+            <KanbanCard c={s.c} onClick={() => onOpenCard(s.c)} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

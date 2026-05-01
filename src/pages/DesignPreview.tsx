@@ -1942,42 +1942,42 @@ const CHAT_MESSAGES: Record<string, ChatMsg[]> = {
 };
 
 /* =========================================================================
- * CHAT RAIL — barra lateral direita fixa (estilo Discord/Slack)
+ * CHAT RAIL NATIVE — coluna lateral integrada ao layout (não fixed)
  * ========================================================================= */
-function ChatRail({
-  width, totalUnread, activeConvId, onSelect, onToggle, chatOpen,
+function ChatRailNative({
+  width, totalUnread, activeConvId, onSelect, onToggle, expanded,
 }: {
   width: number;
   totalUnread: number;
   activeConvId: string;
   onSelect: (id: string) => void;
   onToggle: () => void;
-  chatOpen: boolean;
+  expanded: boolean;
 }) {
   const groups = CHAT_CONVERSATIONS.filter((c) => c.kind === "group" || c.kind === "all");
   const dms    = CHAT_CONVERSATIONS.filter((c) => c.kind === "dm");
 
   return (
     <aside
-      className="lp-chat-rail"
+      className="lp-chat-rail-native"
       style={{
-        position: "fixed", top: 0, right: 0, bottom: 0,
-        width, zIndex: 55,
+        flex: "0 0 auto", width,
         background: P.primaryDark, color: "#fff",
-        borderLeft: "1px solid rgba(255,255,255,0.05)",
+        borderRight: expanded ? "1px solid rgba(255,255,255,0.06)" : "none",
         display: "flex", flexDirection: "column", alignItems: "center",
         padding: "10px 0 14px", gap: 6, fontFamily: fontStack,
-        boxShadow: "-6px 0 18px rgba(20,30,40,0.10)",
+        position: "sticky", top: 96, alignSelf: "flex-start",
+        maxHeight: "calc(100vh - 96px)", overflow: "hidden",
       }}
     >
       {/* Topo: ícone do chat + abrir/fechar */}
       <button
         onClick={onToggle}
-        title={chatOpen ? "Recolher chat" : "Abrir chat interno"}
+        title={expanded ? "Recolher chat" : "Abrir chat interno"}
         style={{
           position: "relative",
           width: 44, height: 44, borderRadius: 12, border: "none", cursor: "pointer",
-          background: chatOpen ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
+          background: expanded ? P.accent : "rgba(255,255,255,0.10)", color: "#fff",
           display: "inline-flex", alignItems: "center", justifyContent: "center",
           transition: "background .15s ease",
         }}
@@ -2001,7 +2001,7 @@ function ChatRail({
         {groups.map((c) => (
           <RailItem
             key={c.id}
-            active={chatOpen && c.id === activeConvId}
+            active={expanded && c.id === activeConvId}
             unread={c.unread}
             title={`${c.name} · ${c.lastMsg}`}
             onClick={() => onSelect(c.id)}
@@ -2021,7 +2021,7 @@ function ChatRail({
         {dms.map((c) => (
           <RailItem
             key={c.id}
-            active={chatOpen && c.id === activeConvId}
+            active={expanded && c.id === activeConvId}
             unread={c.unread}
             title={`${c.name}${c.online ? " · online" : ""}`}
             onClick={() => onSelect(c.id)}

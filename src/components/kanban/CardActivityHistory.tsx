@@ -60,7 +60,7 @@ function LogItem({ log }: { log: CardActivityLog }) {
   const created = new Date(log.created_at);
 
   return (
-    <div className="flex gap-2.5 py-2">
+    <div className="flex gap-3 py-3">
       <div
         className={cn(
           'flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center',
@@ -110,8 +110,8 @@ export function CardActivityHistory({ cardId }: CardActivityHistoryProps) {
   );
 
   return (
-    <div className="rounded-lg border bg-card">
-      <div className="px-3 py-2 border-b flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-card">
+      <div className="px-3 py-2 border-b border-border flex items-center gap-2">
         <History className="h-3.5 w-3.5 text-muted-foreground" />
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Registro de andamento
@@ -122,8 +122,8 @@ export function CardActivityHistory({ cardId }: CardActivityHistoryProps) {
         </span>
       </div>
 
-      <ScrollArea className="max-h-[260px]">
-        <div className="px-3 divide-y">
+      <ScrollArea className="max-h-[280px] lp-thin-scroll">
+        <div className="px-3 divide-y divide-border">
           {isLoading ? (
             <div className="py-6 flex items-center justify-center text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />

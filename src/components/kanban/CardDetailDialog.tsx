@@ -763,7 +763,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       modal
     >
       <DialogContent
-        className="max-w-6xl h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden"
+        className="max-w-6xl h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden bg-background border-border"
         hideCloseButton
         onEscapeKeyDown={(e) => {
           // Nested dialogs (confirm/archive/transfer/clone) must close first.
@@ -790,7 +790,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }}
       >
         {/* Mobile header with back button */}
-        <DialogHeader className="flex-shrink-0 p-4 md:p-6 pb-2 md:pb-0 relative">
+        <DialogHeader
+          className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 relative border-b border-border bg-card"
+        >
           <DialogDescription className="sr-only">
             Detalhes do card {card.title}
           </DialogDescription>
@@ -799,7 +801,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             variant="ghost"
             size="icon"
             onClick={requestClose}
-            className="absolute right-4 top-4 z-10 h-8 w-8 rounded-full hover:bg-muted hidden md:flex"
+            className="absolute right-3 top-3 z-10 h-8 w-8 rounded-full hover:bg-muted hidden md:flex"
             title="Fechar (Esc)"
           >
             <X className="h-5 w-5" />
@@ -817,9 +819,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               Voltar
             </Button>
           </div>
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-2 pr-10">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-mono mt-1">
+              <span className="text-xs text-muted-foreground font-mono mt-1.5 px-1.5 py-0.5 rounded bg-muted">
                 #{card.card_number}
               </span>
             </div>
@@ -830,11 +832,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 onBlur={handleTitleSave}
                 onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
                 autoFocus
-                className="text-lg font-semibold"
+                className="text-base md:text-lg font-semibold"
               />
             ) : (
               <DialogTitle
-                className="cursor-pointer hover:text-primary text-base md:text-lg break-words"
+                className="cursor-pointer hover:text-primary text-base md:text-lg break-words font-semibold leading-snug"
                 onClick={() => {
                   if (isEditor) {
                     setEditTitle(card.title);
@@ -923,7 +925,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
           {/* Main content - uses native overflow for reliable mobile touch scrolling */}
           <div className={cn(
-            "flex-1 px-4 md:px-6 overflow-y-auto overscroll-contain -webkit-overflow-scrolling-touch",
+            "flex-1 px-4 md:px-6 py-4 md:py-5 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background",
             "md:w-[55%]"
           )}>
           <div className="space-y-6 pb-6">
@@ -2158,7 +2160,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         </div>
 
         {/* Desktop: Notes/Comments Sidebar - side by side */}
-        <div className="hidden md:flex md:w-[45%] border-l flex-shrink-0 flex-col">
+        <div
+          className="hidden md:flex md:w-[45%] border-l border-border flex-shrink-0 flex-col bg-card"
+        >
           <CardNotesSidebar 
             cardId={card.id} 
             showDetails={true}

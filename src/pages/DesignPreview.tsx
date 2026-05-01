@@ -1913,13 +1913,15 @@ const CHAT_MESSAGES: Record<string, ChatMsg[]> = {
 };
 
 function ChatDrawer({
-  pinned, onTogglePin, onClose, activeConvId, setActiveConvId,
+  pinned, onTogglePin, onClose, activeConvId, setActiveConvId, width = 760, rightOffset = 0,
 }: {
   pinned: boolean;
   onTogglePin: () => void;
   onClose: () => void;
   activeConvId: string;
   setActiveConvId: (id: string) => void;
+  width?: number;
+  rightOffset?: number;
 }) {
   const [query, setQuery] = useState("");
   const active = CHAT_CONVERSATIONS.find((c) => c.id === activeConvId) ?? CHAT_CONVERSATIONS[1];
@@ -1931,16 +1933,16 @@ function ChatDrawer({
   const dms = filtered.filter((c) => c.kind === "dm");
 
   return (
-    <aside style={{
-      position: "fixed", top: 0, right: 0, bottom: 0,
-      width: 760, maxWidth: "96vw",
+    <aside className="lp-chat-drawer" style={{
+      position: "fixed", top: 0, right: rightOffset, bottom: 0,
+      width: width, maxWidth: "96vw",
       display: "flex", zIndex: 60,
       boxShadow: pinned ? "none" : "-18px 0 40px rgba(20,30,40,0.18)",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
     }}>
       {/* Lista de conversas */}
-      <div style={{
+      <div className="lp-chat-drawer-list" style={{
         width: 290, borderRight: `1px solid ${P.border}`,
         display: "flex", flexDirection: "column", background: "#fafbfc",
       }}>

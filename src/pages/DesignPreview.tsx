@@ -2147,10 +2147,8 @@ function ChatPanel({
       display: "flex", flexDirection: "column",
       background: P.card, borderLeft: `1px solid ${P.border}`,
       fontFamily: fontStack,
-      position: fullscreen ? "static" : "sticky",
-      top: 96, alignSelf: "flex-start",
-      maxHeight: fullscreen ? "100vh" : "calc(100vh - 96px)",
-      height: fullscreen ? "100vh" : undefined,
+      height: fullscreen ? "100vh" : "100%",
+      minHeight: 0,
       overflow: "hidden",
     }}>
       {/* Lista de conversas (toggle) */}

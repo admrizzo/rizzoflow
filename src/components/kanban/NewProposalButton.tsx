@@ -231,8 +231,11 @@ export function NewProposalButton() {
 
   return (
     <>
-      <Button size="sm" className="h-8 gap-1.5 text-xs font-semibold" onClick={openModal}>
-        <Plus className="h-4 w-4" />
+      <Button 
+        onClick={openModal} 
+        className="h-10 px-6 gap-2 text-sm font-bold bg-accent hover:bg-accent/90 text-white rounded-xl shadow-lg shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+      >
+        <Plus className="h-5 w-5" />
         Gerar nova proposta
       </Button>
 

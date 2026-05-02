@@ -95,7 +95,7 @@ export function MessageThread({
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
 
   return (
-     <div className="flex h-full flex-col bg-background relative">
+     <div className="flex h-full flex-col bg-background relative min-h-0">
       <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-3">
          {onBack ? (
            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={onBack}>

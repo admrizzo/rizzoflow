@@ -1633,46 +1633,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </section>
             )}
 
-            {/* Labels Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Etiquetas</Label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {/* Render all labels in fixed order - only change appearance based on selection */}
-                {labels.map((label) => {
-                  const isSelected = cardLabels.some(cl => cl.id === label.id);
-                  
-                  return (
-                    <Badge
-                      key={label.id}
-                      variant={isSelected ? "default" : "outline"}
-                      style={isSelected ? { backgroundColor: label.color, color: '#fff' } : undefined}
-                      className={cn(
-                        "cursor-pointer transition-all",
-                        !isSelected && "opacity-50 hover:opacity-100"
-                      )}
-                      onClick={() => {
-                        if (!isEditor) return;
-                        if (isSelected) {
-                          removeLabelFromCard.mutate({ cardId: card.id, labelId: label.id });
-                        } else {
-                          addLabelToCard.mutate({ cardId: card.id, labelId: label.id });
-                        }
-                      }}
-                    >
-                      {!isSelected && <Plus className="h-3 w-3 mr-1" />}
-                      {label.name}
-                      {isSelected && isEditor && <X className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  );
-                })}
-                {labels.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">Nenhuma etiqueta configurada para este fluxo</p>
-                )}
-              </div>
-            </div>
 
             {/* Custom Fields Section - Display for ALL boards with custom fields */}
             {card.board_id && (

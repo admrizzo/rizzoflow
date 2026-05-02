@@ -164,7 +164,7 @@ export function GlobalSearchResults({ searchQuery, boards, onSelectBoard, onOpen
                 {cards.map(card => (
                   <Card
                     key={card.id}
-                    className={`cursor-pointer hover:shadow-lg transition-shadow bg-white/95 backdrop-blur border-0 group ${card.is_archived ? 'opacity-60' : ''}`}
+                  className={`cursor-pointer hover:shadow-lg transition-all rounded-xl bg-card border group ${card.is_archived ? 'opacity-60 grayscale-[0.5]' : ''}`}
                     onClick={() => {
                       if (onOpenCard) {
                         onOpenCard(card.id, card.board_id);

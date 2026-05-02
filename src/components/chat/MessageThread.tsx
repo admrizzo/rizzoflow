@@ -158,7 +158,7 @@ export function MessageThread({
         })}
       </div>
 
-      <div className="border-t border-border bg-background px-4 py-3 md:pb-6">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-5">
         <TooltipProvider>
           <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm">
             <textarea

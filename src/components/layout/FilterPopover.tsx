@@ -99,7 +99,7 @@ export function FilterPopover({ children, filters, onFiltersChange, archivedCoun
       <PopoverTrigger asChild>
         {children}
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto" align="end">
+      <PopoverContent className="w-80 max-h-[80vh] overflow-y-auto rounded-2xl shadow-2xl border-white/10" align="end">
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold">Filtros</h4>
           {hasActiveFilters && (

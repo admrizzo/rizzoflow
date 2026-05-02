@@ -148,11 +148,11 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           "cursor-pointer bg-card hover:bg-accent/[0.02] shadow-[0_2px_4px_rgba(0,0,0,0.02),0_1px_0_rgba(0,0,0,0.03)] hover:shadow-lg border border-border/80 rounded-xl overflow-hidden relative will-change-transform select-none min-h-[132px] transition-all duration-200 group/card",
           isDragging && "shadow-2xl ring-2 ring-accent/20 scale-[1.02] z-50",
           isArchived && "opacity-60 bg-muted/50 grayscale-[0.5]",
-          isAnyDeadlineOverdue && !isArchived && "border-red-200 bg-red-50/30",
-          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-orange-200 bg-orange-50/30",
-          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-red-500",
-          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-amber-500",
-          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-emerald-500"
+          isAnyDeadlineOverdue && !isArchived && "border-red-200 bg-red-50/10",
+          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-orange-200 bg-orange-50/10",
+          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "shadow-[inset_3px_0_0_0_#ef4444]",
+          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "shadow-[inset_3px_0_0_0_#f59e0b]",
+          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "shadow-[inset_3px_0_0_0_#10b981]"
         )}
       >
         {/* Red badge for unseen changes */}
@@ -251,42 +251,25 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           </div>
         )}
 
-        {/* Docs recebidos (proposta pública enviada pelo cliente) */}
-        {docsReceived && !isArchived && !correctionPending && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
-              title="Proposta e documentos recebidos pelo cliente"
-            >
-              <Inbox className="h-3 w-3" />
-              Doc. recebidos
-            </span>
-          </div>
-        )}
-
-        {/* Correção solicitada ao cliente */}
-        {correctionPending && !isArchived && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-800 border border-orange-200"
-              title="Correção solicitada — aguardando o cliente reenviar"
-            >
-              <Wrench className="h-3 w-3" />
-              Correção solicitada
-            </span>
-          </div>
-        )}
-
-        {/* Proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
-        {proposalInProgress && !isArchived && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"
-              title="Cliente ainda preenchendo a proposta pública"
-            >
-              <FileEdit className="h-3 w-3" />
-              Em preenchimento
-            </span>
+        {/* Status Shading — Design C - Semi Dark style */}
+        {!isArchived && (docsReceived || correctionPending || proposalInProgress) && (
+          <div className={cn(
+            "px-2.5 py-1.5 flex items-center gap-1.5 border-b border-border/40",
+            docsReceived ? "bg-emerald-500/5 text-emerald-700" :
+            correctionPending ? "bg-orange-500/5 text-orange-700" :
+            "bg-amber-500/5 text-amber-700"
+          )}>
+            {docsReceived && <CheckCheck className="h-3 w-3" />}
+            {correctionPending && <Wrench className="h-3 w-3" />}
+            {proposalInProgress && <FileEdit className="h-3 w-3" />}
+            <div className="flex-1 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                {docsReceived ? "Doc. recebidos" : correctionPending ? "Correção solicitada" : "Em preenchimento"}
+              </span>
+              <span className="text-[9px] font-bold opacity-40">
+                {docsReceived ? "LOC-2902" : correctionPending ? "LOC-2903" : "LOC-2904"}
+              </span>
+            </div>
           </div>
         )}
 

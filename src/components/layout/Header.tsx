@@ -120,8 +120,8 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           </Button>
         )}
 
-        {/* Search — ampliada conforme design C */}
-        <div className="relative flex-1 min-w-[140px] max-w-[420px] hidden sm:block ml-2">
+        {/* Search — ampliada conforme design C e pedido do usuário */}
+        <div className="relative flex-1 min-w-[140px] max-w-[520px] hidden sm:block ml-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
           <Input
             value={searchQuery}
@@ -222,6 +222,19 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
 
           <div className="flex items-center gap-1">
             <NotificationsPopover onOpenCard={onOpenCardFromNotification} />
+
+            {/* Botão Administração - ícone de engrenagem ao lado do sino */}
+            {(isAdmin || canManageUsers) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAdminPanel(true)}
+                className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white rounded-lg"
+                title="Administração"
+              >
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            )}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

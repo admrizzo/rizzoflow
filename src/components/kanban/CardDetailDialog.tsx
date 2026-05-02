@@ -873,11 +873,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             </Button>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-          {/* Main content - uses native overflow for reliable mobile touch scrolling */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0 bg-[#0F1115]">
+          {/* Main content */}
           <div className={cn(
-            "flex-1 min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background"
+            "flex-1 min-w-0 px-4 md:px-8 py-6 md:py-8 overflow-y-auto overscroll-contain lp-thin-scroll bg-transparent"
           )}>
           <div className="space-y-5 pb-8 max-w-3xl mx-auto">
             {/* Archived Banner */}

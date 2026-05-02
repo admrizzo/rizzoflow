@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit, CheckCheck } from 'lucide-react';
+import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit, CheckCheck, MapPin, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
@@ -128,7 +128,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
     // SLA status calculation
     const slaStatus = getSlaStatus(card.column_entered_at, column?.sla_hours ?? null);
-    const slaColors = getSlaColors(slaStatus);
+    const slaColors = getSlaColors(slaStatus); // For stage time colors
     const timeInStage = formatTimeElapsed(card.column_entered_at);
     const hasSla = !!column?.sla_hours;
 
@@ -145,16 +145,23 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         ref={ref}
         onClick={onClick}
         className={cn(
-          "cursor-pointer bg-card hover:bg-accent/[0.02] shadow-[0_2px_4px_rgba(0,0,0,0.02),0_1px_0_rgba(0,0,0,0.03)] hover:shadow-lg border border-border/80 rounded-xl overflow-hidden relative will-change-transform select-none min-h-[132px] transition-all duration-200 group/card",
+          "cursor-pointer bg-card hover:bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] border border-border/60 rounded-xl overflow-hidden relative will-change-transform select-none transition-all duration-300 group/card",
           isDragging && "shadow-2xl ring-2 ring-accent/20 scale-[1.02] z-50",
-          isArchived && "opacity-60 bg-muted/50 grayscale-[0.5]",
-          isAnyDeadlineOverdue && !isArchived && "border-red-200 bg-red-50/30",
-          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-orange-200 bg-orange-50/30",
-          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-red-500",
-          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-amber-500",
-          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-emerald-500"
+          isArchived && "opacity-60 bg-muted/50 grayscale-[0.5]"
         )}
       >
+        {/* Status Lateral Highlight (Shadow Inset Style from Design C) */}
+        <div 
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-[4px] z-10 transition-colors duration-300",
+            docsReceived ? "bg-emerald-500" : 
+            correctionPending ? "bg-orange-500" : 
+            proposalInProgress ? "bg-amber-500" : 
+            isAnyDeadlineOverdue ? "bg-red-500" :
+            "bg-slate-300"
+          )} 
+        />
+
         {/* Red badge for unseen changes */}
         {hasUnseenChanges && (
           <div className="absolute -top-0.5 -right-0.5 z-10">
@@ -164,316 +171,123 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             </span>
           </div>
         )}
-        {/* Financing type side stripe with tooltip */}
-        {stripeColor && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-lg cursor-help"
-                style={{ backgroundColor: stripeColor }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </TooltipTrigger>
-            <TooltipContent side="right" className="text-xs">
-              {isFinanciamento ? 'Com Financiamento' : 'Sem Financiamento'}
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {/* Overdue deadline alert */}
-        {isDeadlineOverdue && !isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-amber-700 text-xs font-medium bg-amber-200/50">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Prazo vencido!</span>
-          </div>
-        )}
-
-        {/* Overdue vacancy deadline alert */}
-        {isVacancyDeadlineOverdue && !isDeadlineOverdue && !isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-amber-700 text-xs font-medium bg-amber-200/50">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Prazo de desocupação vencido!</span>
-          </div>
-        )}
-
-        {/* Overdue completion deadline alert (Manutenção) */}
-        {isCompletionDeadlineOverdue && !isDeadlineOverdue && !isVacancyDeadlineOverdue && !isBudgetDeadlineOverdue && !isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-amber-700 text-xs font-medium bg-amber-200/50">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Prazo de término vencido!</span>
-          </div>
-        )}
-
-        {/* Overdue budget deadline alert (Manutenção) */}
-        {isBudgetDeadlineOverdue && !isDeadlineOverdue && !isVacancyDeadlineOverdue && !isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-amber-700 text-xs font-medium bg-amber-200/50">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Prazo de orçamento vencido!</span>
-          </div>
-        )}
-
-        {/* Review deadline overdue */}
-        {reviewOverdue && !isAnyDeadlineOverdue && !isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-orange-700 text-xs font-medium bg-orange-200/50">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Revisão necessária</span>
-          </div>
-        )}
-
-        {/* Pending checklist items alert */}
-        {hasPendingItems && !isArchived && !isAnyDeadlineOverdue && !reviewOverdue && (
-          <div className="flex items-center gap-1 px-2 pt-1.5 text-amber-700 text-[10px] font-medium">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Pendências nesta etapa ({completedItems}/{totalItems})</span>
-          </div>
-        )}
-
-        {/* Archived indicator */}
-        {isArchived && (
-          <div className="flex items-center gap-1 px-2 pt-2 text-muted-foreground text-xs font-medium">
-            <Archive className="h-3 w-3" />
-            <span>Arquivado</span>
-          </div>
-        )}
-
-        {/* Colored labels */}
-        {hasLabels && (
-          <div className={cn("flex flex-wrap gap-0.5 px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            {card.labels?.map((label) => (
-              <div
-                key={label.id}
-                className="px-1.5 py-0.5 rounded text-[9px] font-medium text-white truncate max-w-[80px]"
-                style={{ backgroundColor: label.color }}
-                title={label.name}
-              >
-                {label.name}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Docs recebidos (proposta pública enviada pelo cliente) */}
-        {docsReceived && !isArchived && !correctionPending && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200"
-              title="Proposta e documentos recebidos pelo cliente"
-            >
-              <Inbox className="h-3 w-3" />
-              Doc. recebidos
+        <div className="p-3 pl-4 space-y-2.5 relative z-0">
+          {/* Linha 1: Código */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+              {card.superlogica_id || `ID-${card.id.slice(0, 4)}`}
             </span>
-          </div>
-        )}
-
-        {/* Correção solicitada ao cliente */}
-        {correctionPending && !isArchived && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-orange-800 border border-orange-200"
-              title="Correção solicitada — aguardando o cliente reenviar"
-            >
-              <Wrench className="h-3 w-3" />
-              Correção solicitada
-            </span>
-          </div>
-        )}
-
-        {/* Proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
-        {proposalInProgress && !isArchived && (
-          <div className={cn("flex px-1.5 pt-1.5", stripeColor && "pl-2.5")}>
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200"
-              title="Cliente ainda preenchendo a proposta pública"
-            >
-              <FileEdit className="h-3 w-3" />
-              Em preenchimento
-            </span>
-          </div>
-        )}
-
-        <div className={cn("p-1.5", stripeColor && "pl-2.5")}>
-          {/* Title with inline superlogica code */}
-          <div className="text-xs leading-snug min-w-0 mb-1">
-            {card.superlogica_id && (
-              <span className="text-[10px] text-muted-foreground mr-1">{card.superlogica_id} ·</span>
+            {isArchived && (
+              <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded">
+                <Archive className="h-2.5 w-2.5" /> Arquivado
+              </span>
             )}
-            <span className="font-semibold text-foreground break-words whitespace-normal line-clamp-2">
-              {card.title || card.address || 'Sem identificação'}
-            </span>
           </div>
 
-          {/* Building/Address subtitle */}
-          {card.building_name && card.building_name !== card.title && (
-            <p className="text-[10px] text-muted-foreground truncate mb-1">{card.building_name}</p>
-          )}
+          {/* Linha 2 & 3: Título e Endereço */}
+          <div className="space-y-0.5">
+            <h4 className="text-[13px] font-bold text-slate-800 leading-tight line-clamp-2 group-hover/card:text-accent transition-colors">
+              {card.title || card.building_name || 'Sem título'}
+            </h4>
+            {(card.address || card.building_name) && (
+              <p className="text-[11px] text-slate-500 leading-tight line-clamp-1 flex items-center gap-1">
+                <MapPin className="h-2.5 w-2.5 shrink-0 opacity-70" />
+                {card.address || card.building_name}
+              </p>
+            )}
+          </div>
 
-          {/* Andamento: próxima ação + prazo */}
-          {!isArchived && (nextAction || nextActionDue) && (
-            <div
-              className={cn(
-                "flex items-start gap-1 mt-1 mb-1 px-1.5 py-1 rounded border text-[10px]",
-                isNextActionOverdue
-                  ? "border-red-300 bg-red-50 text-red-700"
-                  : isNextActionToday
-                  ? "border-amber-300 bg-amber-50 text-amber-800"
-                  : "border-border bg-muted/40 text-foreground"
-              )}
-            >
-              <ArrowRight className="h-3 w-3 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                {nextAction ? (
-                  <p className="leading-snug line-clamp-2 break-words">{nextAction}</p>
-                ) : (
-                  <p className="leading-snug italic opacity-70">Sem próxima ação</p>
-                )}
-                {nextActionDue && (
-                  <div className="flex items-center gap-0.5 mt-0.5 font-medium">
-                    <Calendar className="h-2.5 w-2.5" />
-                    <span>
-                      {formatDateTimeBR(nextActionDue, { compact: true })}
-                      {isNextActionOverdue && " · vencido"}
-                      {!isNextActionOverdue && isNextActionToday && " · hoje"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Linha 4: Badges/Chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {/* Status Princial */}
+            {docsReceived && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+                <CheckCheck className="h-3 w-3" /> DOCS RECEBIDOS
+              </span>
+            )}
+            {correctionPending && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 text-orange-600 border border-orange-100 shadow-sm">
+                <Wrench className="h-3 w-3" /> CORREÇÃO
+              </span>
+            )}
+            {proposalInProgress && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
+                <FileEdit className="h-3 w-3" /> EM PREENCHIMENTO
+              </span>
+            )}
+            {isAnyDeadlineOverdue && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 shadow-sm animate-pulse">
+                <AlertTriangle className="h-3 w-3" /> PENDÊNCIA CRÍTICA
+              </span>
+            )}
 
-          {/* Responsible + Time in stage row */}
-          {(!isArchived && (responsibleName || card.column_entered_at)) && (
-            <div className="flex items-center justify-between gap-1 mb-1">
-              {responsibleName && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                  <User className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate">{responsibleName}</span>
-                </div>
-              )}
-              {card.column_entered_at && (
-                <div className={cn(
-                  "flex items-center gap-0.5 text-[10px] font-medium px-1 py-0.5 rounded",
-                  hasSla ? `${slaColors.bg} ${slaColors.text}` : 'text-muted-foreground'
-                )}>
-                  <Clock className="h-3 w-3" />
-                  <span>{timeInStage}</span>
-                </div>
-              )}
-            </div>
-          )}
+            {/* Progresso Documental */}
+            {hasChecklists && (
+              <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-sm",
+                completedItems === totalItems ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-600 border-slate-100"
+              )}>
+                <CheckSquare className="h-3 w-3" /> {completedItems}/{totalItems}
+              </span>
+            )}
 
-          {/* Owner avatar */}
-          {showOwnerAvatar && card.created_by_profile && (
-            <div className="flex items-center gap-1.5 mb-1">
-              <Avatar className="h-4 w-4 flex-shrink-0">
-                <AvatarImage src={card.created_by_profile.avatar_url || undefined} />
-                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                  {card.created_by_profile.full_name?.charAt(0).toUpperCase()}
+            {/* Alertas de SLA/Tempo */}
+            {hasSla && (
+              <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-sm",
+                slaStatus === 'red' ? "bg-red-50 text-red-600 border-red-100" :
+                slaStatus === 'yellow' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                "bg-slate-50 text-slate-600 border-slate-100"
+              )}>
+                <Clock className="h-3 w-3" /> {timeInStage}
+              </span>
+            )}
+
+            {/* Financing Badge */}
+            {hasCardType && (
+              <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border shadow-sm",
+                isFinanciamento ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-yellow-50 text-yellow-600 border-yellow-100"
+              )}>
+                {isFinanciamento ? 'FINANCIADO' : 'À VISTA'}
+              </span>
+            )}
+          </div>
+
+          {/* Linha 5: Rodapé do Card */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+            {/* Responsável/Cliente */}
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="h-6 w-6 border-2 border-white shadow-sm shrink-0">
+                <AvatarImage src={card.created_by_profile?.avatar_url || undefined} />
+                <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-bold">
+                  {(responsibleName || card.created_by_profile?.full_name || 'U').charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-[10px] text-muted-foreground truncate">
-                {card.created_by_profile.full_name}
+              <span className="text-[11px] font-semibold text-slate-600 truncate">
+                {responsibleName || card.created_by_profile?.full_name?.split(' ')[0] || 'Sem resp.'}
               </span>
             </div>
-          )}
 
-          {/* Selected Provider with budget value (Manutenção) */}
-          {selectedProvider && (
-            <div className="flex items-center gap-1.5 mt-1 px-1.5 py-1 bg-teal-50 rounded border border-teal-200">
-              <Wrench className="h-3 w-3 flex-shrink-0 text-teal-600" />
-              <span className="text-[11px] text-teal-800 font-semibold truncate">{selectedProvider.name}</span>
-              {selectedProvider.value && (
-                <span className="text-[10px] text-teal-600 font-medium ml-auto whitespace-nowrap">
+            {/* Valor e Data (Alinhados à direita) */}
+            <div className="flex flex-col items-end shrink-0">
+              {/* Prazo decorrido / Data limite */}
+              {hasDeadline && (
+                <span className={cn(
+                  "text-[9px] font-bold uppercase tracking-tight",
+                  isDeadlineOverdue ? "text-red-500" : "text-slate-400"
+                )}>
+                  {format(new Date(card.document_deadline!), 'dd/MM', { locale: ptBR })}
+                </span>
+              )}
+              {/* Valor Mensal (Se houver provider ou valor customizado no futuro) */}
+              {selectedProvider?.value && (
+                <span className="text-[11px] font-bold text-slate-800">
                   {selectedProvider.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               )}
             </div>
-          )}
-
-          {/* Responsáveis internos (compacto — só aparece se houver) */}
-          {hasInternalBrokers && (
-            <div className="flex flex-col gap-0.5 mt-1">
-              {capturingBrokerName && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                  <User className="h-3 w-3 flex-shrink-0" />
-                  <span className="font-medium">Capt:</span>
-                  <span className="truncate">{capturingBrokerName}</span>
-                </div>
-              )}
-              {serviceBrokerName && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                  <User className="h-3 w-3 flex-shrink-0" />
-                  <span className="font-medium">Atend:</span>
-                  <span className="truncate">{serviceBrokerName}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Footer with icons */}
-          {(hasChecklists || hasDueDate || hasDeadline || hasVacancyDeadline || parsedBudgetDeadline || column?.review_deadline_days) && (
-            <div className="flex items-center flex-wrap gap-2 mt-1.5 text-muted-foreground">
-              {hasChecklists && (
-                <div className="flex items-center gap-0.5 text-[10px]">
-                  <CheckSquare className={cn("h-3 w-3", completedItems === totalItems && totalItems > 0 && "text-emerald-600")} />
-                  <span className={cn(completedItems === totalItems && totalItems > 0 && "text-emerald-600 font-medium")}>{completedItems}/{totalItems}</span>
-                </div>
-              )}
-
-              {hasDeadline && (
-                <div className={cn(
-                  "flex items-center gap-0.5 text-[10px]",
-                  isDeadlineOverdue && "text-red-600 font-medium",
-                  card.deadline_met && "text-emerald-600"
-                )}>
-                  <Clock className="h-3 w-3" />
-                  <span>
-                    {format(new Date(card.document_deadline!), 'd/MM', { locale: ptBR })}
-                    {card.deadline_met && ' ✓'}
-                  </span>
-                </div>
-              )}
-
-              {hasVacancyDeadline && (
-                <div className={cn(
-                  "flex items-center gap-0.5 text-[10px]",
-                  isVacancyDeadlineOverdue && "text-amber-700 font-medium",
-                  card.vacancy_deadline_met && "text-green-600"
-                )}>
-                  <Home className="h-3 w-3" />
-                  <span>
-                    {format(new Date(vacancyDeadline!), 'd/MM', { locale: ptBR })}
-                    {card.vacancy_deadline_met && ' ✓'}
-                  </span>
-                </div>
-              )}
-
-
-              {parsedBudgetDeadline && (
-                <div className={cn(
-                  "flex items-center gap-0.5 text-[10px]",
-                  isBudgetDeadlineOverdue && "text-amber-700 font-medium"
-                )}>
-                  <Clock className="h-3 w-3" />
-                  <span>{format(new Date(parsedBudgetDeadline), 'd/MM', { locale: ptBR })}</span>
-                </div>
-              )}
-
-              {column?.review_deadline_days && (
-                <ReviewDeadlineBadge 
-                  card={card} 
-                  column={column}
-                />
-              )}
-
-              {hasDueDate && (
-                <div className="flex items-center gap-0.5 text-[10px]">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {format(new Date(card.due_date!), 'd/MM', { locale: ptBR })}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
       </Card>
     );

@@ -107,8 +107,21 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           <span className="hidden md:inline">Meus Fluxos</span>
         </Button>
 
+        {/* Métricas */}
+        {hasAnyRole && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/dashboard')}
+            className="h-8 gap-2 text-[12.5px] font-semibold text-white/70 hover:bg-white/5 hover:text-white rounded-lg shrink-0"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden md:inline">Métricas</span>
+          </Button>
+        )}
+
         {/* Search — ampliada conforme design C */}
-        <div className="relative flex-1 min-w-[140px] max-w-[520px] hidden sm:block ml-2">
+        <div className="relative flex-1 min-w-[140px] max-w-[420px] hidden sm:block ml-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
           <Input
             value={searchQuery}
@@ -121,34 +134,8 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
         <div className="flex-1 min-w-0" />
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          {/* Métricas - Restaurado para posição visível */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/dashboard')}
-            className="h-8 gap-2 text-[12.5px] font-semibold text-white/70 hover:bg-white/5 hover:text-white rounded-lg shrink-0 hidden lg:flex"
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span>Métricas</span>
-          </Button>
-
-          <div className="w-px h-4 bg-white/10 mx-1 hidden lg:block" />
-
           {/* Filtros + Arquivados — ícones, igual preview C */}
           <div className="flex items-center gap-0.5 mr-1">
-            {/* Administração - Engrenagem conforme preview */}
-            {(isAdmin || canManageUsers) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowAdminPanel(true)}
-                className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white rounded-lg"
-                title="Administração"
-              >
-                <Settings2 className="h-4 w-4" />
-              </Button>
-            )}
-
             <FilterPopover
               filters={filters}
               onFiltersChange={onFiltersChange}

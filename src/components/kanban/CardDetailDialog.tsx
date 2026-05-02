@@ -56,6 +56,7 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  Target,
   MoreVertical,
   ArrowRightCircle,
   Loader2,

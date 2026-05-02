@@ -269,15 +269,11 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
             {/* Valor e Prazo */}
             <div className="flex flex-col items-end shrink-0 text-right">
-              {selectedProvider?.value ? (
+              {selectedProvider?.value && (
                 <span className="text-[11px] font-black text-slate-900 tracking-tight leading-tight">
                   {selectedProvider.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
-              ) : card.total_value ? (
-                <span className="text-[11px] font-black text-slate-900 tracking-tight leading-tight">
-                  {Number(card.total_value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              ) : null}
+              )}
               
               {hasDeadline && (
                 <span className={cn(

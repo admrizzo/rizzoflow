@@ -259,8 +259,9 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                   {responsibleName || card.created_by_profile?.full_name?.split(' ')[0] || 'Sem resp.'}
                 </span>
                 {/* Se houver cliente específico/titulo extra, pode ir aqui */}
-                {card.title && card.building_name && card.title !== card.building_name && (
-                   <span className="text-[8px] font-medium text-slate-400 truncate leading-tight">
+                {card.title && card.building_name && 
+                 card.title.toLowerCase().trim() !== card.building_name.toLowerCase().trim() && (
+                   <span className="text-[8px] font-medium text-slate-400 truncate leading-tight max-w-[120px]">
                      {card.title}
                    </span>
                 )}

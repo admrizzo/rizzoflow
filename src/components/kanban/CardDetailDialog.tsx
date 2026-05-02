@@ -2092,79 +2092,112 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               }))}
             />
 
-            {/* Histórico de Andamentos */}
-            <CardActivityHistory cardId={card.id} />
+            {/* === SEÇÃO: CHECKLISTS E DOCUMENTOS === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Checklists</h3>
+                    </div>
+                    <StageChecklistButton card={card} column={currentColumn} />
+                  </div>
+                  <ChecklistSection 
+                    checklists={filteredChecklists} 
+                    cardId={card.id} 
+                    partyNames={vendaParties.map(p => ({
+                      checklistId: p.checklist_id || '',
+                      partyType: p.party_type,
+                      partyNumber: p.party_number,
+                      name: p.name,
+                    }))}
+                  />
+                </div>
+              </div>
 
-            {/* Actions Section */}
-            {isEditor && !card.is_archived && (
-              <div className="pt-4 border-t space-y-2">
-                {/* Transfer button - only show for boards with owner_only_visibility */}
-                {canTransferCard && ownerOnlyVisibility && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setTransferDialogOpen(true)}
-                    className="w-full"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Transferir Card
-                  </Button>
+              <div className="space-y-6">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                    <FileText className="h-4 w-4 text-indigo-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Documentos</h3>
+                  </div>
+                  <ProposalDocumentsSection cardId={card.id} guaranteeType={card.guarantee_type} />
+                </div>
+              </div>
+            </div>
+
+            {/* === SEÇÃO: NEGOCIAÇÃO E PESSOAS === */}
+            {(hasStructuredNegotiation || (card.proposal_link_id && proposalParties.length > 0)) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {hasStructuredNegotiation && (
+                  <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                    <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
+                  </div>
                 )}
+                {card.proposal_link_id && proposalParties.length > 0 && (
+                  <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                      <Users className="h-4 w-4 text-blue-400" />
+                      <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Partes da Proposta</h3>
+                    </div>
+                    <ProposalPartiesView parties={proposalParties} compact />
+                  </div>
+                )}
+              </div>
+            )}
 
-                {/* Context Menu for special actions */}
-                {isRescisaoBoard && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                        <MoreVertical className="h-4 w-4 mr-2" />
-                        Mais ações
+            {/* === SEÇÃO: HISTÓRICO E AÇÕES === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                  <History className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Histórico de Atividade</h3>
+                </div>
+                <CardActivityHistory cardId={card.id} />
+              </div>
+
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                  <Wrench className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Ações do Card</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {isEditor && !card.is_archived && (
+                    <>
+                      {canTransferCard && ownerOnlyVisibility && (
+                        <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                          <UserPlus className="h-4 w-4 mr-3 text-blue-400" />
+                          Transferir Responsabilidade
+                        </Button>
+                      )}
+                      {isRescisaoBoard && (
+                        <Button variant="outline" onClick={() => setCloneDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                          <ArrowRightCircle className="h-4 w-4 mr-3 text-emerald-400" />
+                          Enviar para Captação
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => setArchiveDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                        <Archive className="h-4 w-4 mr-3 text-amber-400" />
+                        Arquivar Processo
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem 
-                        onClick={() => setCloneDialogOpen(true)}
-                        className="cursor-pointer"
-                      >
-                        <ArrowRightCircle className="h-4 w-4 mr-2" />
-                        Enviar para Captação
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setArchiveDialogOpen(true)}
-                  className="w-full"
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Arquivar Card
-                </Button>
-                {isAdmin && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => setDeleteConfirmOpen(true)}
-                    className="w-full"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Card
-                  </Button>
-                )}
+                      {isAdmin && (
+                        <Button variant="outline" onClick={() => setDeleteConfirmOpen(true)} className="justify-start h-10 bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20">
+                          <Trash2 className="h-4 w-4 mr-3" />
+                          Excluir Permanentemente
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {isAdmin && card.is_archived && (
+                    <Button variant="outline" onClick={() => setDeleteConfirmOpen(true)} className="justify-start h-10 bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20">
+                      <Trash2 className="h-4 w-4 mr-3" />
+                      Excluir Definitivamente
+                    </Button>
+                  )}
+                </div>
               </div>
-            )}
-
-            {/* Delete only for admin on archived cards */}
-            {isAdmin && card.is_archived && (
-              <div className="pt-4 border-t">
-                <Button
-                  variant="destructive"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  className="w-full"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Card Permanentemente
-                </Button>
-              </div>
-            )}
+            </div>
             {/* Mobile: Comments section inline at the bottom */}
             <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
               <CardNotesSidebar 

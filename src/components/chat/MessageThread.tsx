@@ -219,6 +219,20 @@ export function MessageThread({
                   </TooltipTrigger>
                   <TooltipContent side="top">Gravar áudio (Em breve)</TooltipContent>
                 </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
+                      onClick={() => toast.info("Seletor de emojis será ativado em breve.")}
+                    >
+                      <Smile className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Emojis (Em breve)</TooltipContent>
+                </Tooltip>
               </div>
               
               <div className="flex items-center gap-2">

@@ -905,46 +905,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 title="Cliente reenviou após uma solicitação de correção"
               >
                 <CheckCheck className="h-3 w-3" />
-                {correctionReceivedLabel}
-              </span>
+              </div>
             </div>
-          )}
-          {/* Badge: proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
-          {!card.proposal_submitted_at && card.proposal_link_id && (
-            (() => {
-              const st = (card as any).proposal_link?.status as string | undefined;
-              const pending = st == null
-                ? true
-                : st !== 'enviada' && st !== 'recebida' && st !== 'finalizada';
-              if (!pending) return null;
-              return (
-                <div className="mt-2">
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-400/15 text-amber-100 border border-amber-300/30"
-                    title="Cliente ainda preenchendo a proposta pública"
-                  >
-                    <FileEdit className="h-3 w-3" />
-                    Em preenchimento
-                  </span>
-                </div>
-              );
-            })()
-          )}
-          {/* Card creation info - hidden on mobile for space */}
-          <div className="hidden md:flex items-center gap-2 text-xs text-primary-foreground/70 mt-2">
-            <UserCircle className="h-3 w-3" />
-            <span>
-              Criado por{' '}
-              <span className="font-medium text-primary-foreground/90">
-                {card.created_by_profile?.full_name || 'Usuário desconhecido'}
-              </span>
-            </span>
-            <CalendarIcon className="h-3 w-3 ml-2" />
-            <span>
-              {format(new Date(card.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </span>
           </div>
-        </DialogHeader>
 
         {/* Desktop: Two-column layout (preview Modelo C: main + 380px sidebar). Mobile: Single scroll with everything */}
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">

@@ -49,6 +49,7 @@ import {
   X,
   UserCircle,
   Calendar as CalendarIcon,
+  History as HistoryIcon,
   Archive,
   ArchiveRestore,
    Hash,
@@ -2151,7 +2152,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
-                  <History className="h-4 w-4 text-slate-400" />
+                  <HistoryIcon className="h-4 w-4 text-slate-400" />
                   <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Histórico de Atividade</h3>
                 </div>
                 <CardActivityHistory cardId={card.id} />

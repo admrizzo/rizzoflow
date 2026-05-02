@@ -2082,13 +2082,12 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             </div>
             {/* Mobile: Comments section inline at the bottom */}
-                <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
-                  <CardNotesSidebar 
-                    cardId={card.id} 
-                    showDetails={true}
-                  />
-                </div>
-              </div>
+            <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
+              <CardNotesSidebar 
+                cardId={card.id} 
+                showDetails={true}
+              />
+            </div>
             </div>
           </div>
 

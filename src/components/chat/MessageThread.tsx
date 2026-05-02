@@ -6,7 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
- import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic } from "lucide-react";
+ import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile } from "lucide-react";
+ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,15 +38,20 @@ export function MessageThread({
   const scrollRef = useRef<HTMLDivElement>(null);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-   // Auto-resize textarea
-   useEffect(() => {
-     const textarea = textareaRef.current;
-     if (textarea) {
-       textarea.style.height = "auto";
-       const newHeight = Math.min(textarea.scrollHeight, 120);
-       textarea.style.height = `${newHeight}px`;
-     }
-   }, [text]);
+  // Auto-resize textarea logic
+  const adjustHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      // Base height 44px, max 120px (about 4-5 lines)
+      const newHeight = Math.min(textarea.scrollHeight, 140);
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, [text]);
  
    // autoscroll on message change
    useLayoutEffect(() => {
@@ -151,47 +158,89 @@ export function MessageThread({
         })}
       </div>
 
-       <div className="border-t border-border bg-background p-4 pb-6 md:pb-4">
-         <div className="flex flex-col gap-2 bg-muted/30 rounded-xl border border-border/50 focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
-           <textarea
-             ref={textareaRef}
-             value={text}
-             onChange={(e) => setText(e.target.value)}
-             onKeyDown={(e) => {
-               if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
-                 e.preventDefault();
-                 send();
-               }
-             }}
-             placeholder="Escreva uma mensagem..."
-             rows={1}
-             className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm min-h-[44px] outline-none"
-           />
-           
-           <div className="flex items-center justify-between px-2 pb-2">
-             <div className="flex items-center gap-0.5">
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Anexar arquivo">
-                 <Paperclip className="h-4 w-4" />
-               </Button>
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Anexar imagem">
-                 <ImageIcon className="h-4 w-4" />
-               </Button>
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Enviar áudio (em breve)">
-                 <Mic className="h-4 w-4" />
-               </Button>
-             </div>
-             
-             <Button 
-               onClick={send} 
-               disabled={!text.trim() || sending} 
-               size="sm" 
-               className="h-8 gap-2 px-3 rounded-lg shadow-sm"
-             >
-               <span className="hidden sm:inline">Enviar</span>
-               <Send className="h-3.5 w-3.5" />
-             </Button>
-           </div>
-         </div>
+      <div className="border-t border-border bg-background px-4 py-3 md:pb-6">
+        <TooltipProvider>
+          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm">
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder="Escreva sua mensagem..."
+              rows={1}
+              className="w-full bg-transparent border-none focus:ring-0 resize-none py-3.5 px-4 text-sm min-h-[48px] outline-none placeholder:text-muted-foreground/60"
+            />
+            
+            <div className="flex items-center justify-between px-2.5 pb-2.5">
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
+                      onClick={() => toast.info("Envio de arquivos será ativado em breve.")}
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Anexar arquivo (Em breve)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
+                      onClick={() => toast.info("Envio de imagens será ativado em breve.")}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Anexar imagem (Em breve)</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
+                      onClick={() => toast.info("Envio de áudio será ativado em breve.")}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Gravar áudio (Em breve)</TooltipContent>
+                </Tooltip>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={send} 
+                  disabled={!text.trim() || sending} 
+                  size="sm" 
+                  className={cn(
+                    "h-8 gap-2 px-4 rounded-full transition-all shadow-md active:scale-95",
+                    text.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <span className="text-xs font-semibold">Enviar</span>
+                  <Send className={cn("h-3.5 w-3.5", sending && "animate-pulse")} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </TooltipProvider>
+        <p className="text-[10px] text-muted-foreground/60 text-center mt-2 hidden md:block">
+          <strong>Enter</strong> envia • <strong>Shift + Enter</strong> quebra linha
+        </p>
       </div>
     </div>
   );

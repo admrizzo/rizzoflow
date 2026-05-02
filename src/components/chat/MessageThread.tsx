@@ -140,7 +140,7 @@ export function MessageThread({
               )}
               <div
                 className={cn(
-                  "max-w-[85%] sm:max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
+                  "max-w-[85%] sm:max-w-[70%] md:max-w-[65%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
                   mine
                     ? "bg-primary text-primary-foreground rounded-tr-none shadow-md"
                     : "bg-muted/80 text-foreground rounded-tl-none border border-border/20",
@@ -162,7 +162,7 @@ export function MessageThread({
         </div>
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex justify-center">
+      <div className="bg-background px-4 pt-0 pb-3 md:pb-6 flex flex-col items-center">
         <TooltipProvider>
           <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full max-w-4xl">
             <textarea
@@ -256,7 +256,7 @@ export function MessageThread({
             </div>
           </div>
         </TooltipProvider>
-        <p className="text-[10px] text-muted-foreground/60 text-center mt-2 hidden md:block">
+        <p className="text-[10px] text-muted-foreground/50 text-center mt-2 hidden md:block">
           <strong>Enter</strong> envia • <strong>Shift + Enter</strong> quebra linha
         </p>
       </div>

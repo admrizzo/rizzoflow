@@ -880,7 +880,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           <div className={cn(
             "flex-1 min-w-0 px-4 md:px-8 py-6 md:py-8 overflow-y-auto overscroll-contain lp-thin-scroll bg-transparent"
           )}>
-          <div className="space-y-6 pb-12 max-w-4xl mx-auto">
+            <div className="space-y-6 pb-12 max-w-4xl mx-auto">
             {/* Archived Banner */}
             {card.is_archived && (
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 backdrop-blur-sm">
@@ -2088,18 +2088,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 showDetails={true}
               />
             </div>
+            </div>
           </div>
-        </div>
 
-        {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}
-        <div
-          className="hidden md:flex md:w-[380px] lg:w-[400px] border-l border-border flex-shrink-0 flex-col bg-muted/30"
-        >
-          <CardNotesSidebar 
-            cardId={card.id} 
-            showDetails={true}
-          />
-        </div>
+          {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}
+          <div
+            className="hidden md:flex md:w-[380px] lg:w-[400px] border-l border-border flex-shrink-0 flex-col bg-muted/30"
+          >
+            <CardNotesSidebar 
+              cardId={card.id} 
+              showDetails={true}
+            />
+          </div>
         </div>
       </DialogContent>
 

@@ -1,22 +1,30 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useChat } from "./ChatProvider";
 import { ConversationList } from "./ConversationList";
 import { MessageThread } from "./MessageThread";
-import { MessageSquare } from "lucide-react";
+ import { MessageSquare, X } from "lucide-react";
+ import { Button } from "@/components/ui/button";
 
 export function ChatPanel() {
-  const { isOpen, close, activeConversationId, setActiveConversationId } = useChat();
+   const { isOpen, close, activeConversationId, setActiveConversationId } = useChat();
 
   return (
     <Sheet open={isOpen} onOpenChange={(o) => (o ? null : close())}>
       <SheetContent
         side="right"
-        className="p-0 w-full sm:max-w-[860px] flex flex-col gap-0 border-l"
+         className="p-0 w-full sm:max-w-[860px] flex flex-col gap-0 border-l shadow-2xl"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Chat interno</SheetTitle>
         </SheetHeader>
 
+         {/* Close button for mobile inside the sheet */}
+         <div className="absolute right-4 top-4 z-50 md:hidden">
+           <Button variant="ghost" size="icon" onClick={close} className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm">
+             <X className="h-4 w-4" />
+           </Button>
+         </div>
+ 
         <div className="flex flex-1 min-h-0">
           {/* Lista — esconde no mobile quando há conversa ativa */}
           <div

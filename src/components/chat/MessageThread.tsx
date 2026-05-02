@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+ import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useChatConversations } from "@/hooks/useChatConversations";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,12 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Send, ArrowLeft } from "lucide-react";
+ import { Send, ArrowLeft, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
+ import { useChat } from "./ChatProvider";
 
 function initials(name?: string | null) {
   if (!name) return "?";
@@ -26,6 +26,7 @@ export function MessageThread({
   onBack?: () => void;
 }) {
   const { user } = useAuth();
+   const { close } = useChat();
   const qc = useQueryClient();
   const { data: messages = [], isLoading } = useChatMessages(conversationId);
   const { data: conversations = [] } = useChatConversations();
@@ -33,9 +34,20 @@ export function MessageThread({
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // autoscroll
-  useEffect(() => {
+   // Auto-resize textarea
+   useEffect(() => {
+     const textarea = textareaRef.current;
+     if (textarea) {
+       textarea.style.height = "auto";
+       const newHeight = Math.min(textarea.scrollHeight, 120);
+       textarea.style.height = `${newHeight}px`;
+     }
+   }, [text]);
+ 
+   // autoscroll on message change
+   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, conversationId]);
@@ -76,26 +88,29 @@ export function MessageThread({
   const displayName = conv?.other_user_name || conv?.name || "Conversa";
 
   return (
-    <div className="flex h-full flex-col bg-background">
+     <div className="flex h-full flex-col bg-background relative">
       <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-3">
-        {onBack && (
-          <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
+         {onBack ? (
+           <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={onBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-        )}
+         ) : null}
         <Avatar className="h-8 w-8">
           {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
           <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
         </Avatar>
-        <div className="min-w-0">
+         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold truncate">{displayName}</p>
           <p className="text-[10.5px] text-muted-foreground uppercase tracking-wider">
             {conv?.type === "group" ? "Grupo" : "Mensagem direta"}
           </p>
         </div>
+         <Button variant="ghost" size="icon" className="h-8 w-8 hidden md:flex" onClick={close}>
+           <X className="h-4 w-4" />
+         </Button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
         {!isLoading && messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá 👋</p>
@@ -107,9 +122,9 @@ export function MessageThread({
           return (
             <div key={m.id} className={cn("flex items-end gap-2", mine && "flex-row-reverse")}>
               {!mine && (
-                <div className="w-7 shrink-0">
+                 <div className="w-8 shrink-0">
                   {showAvatar && (
-                    <Avatar className="h-7 w-7">
+                     <Avatar className="h-8 w-8 border border-background shadow-sm">
                       {m.sender_avatar && <AvatarImage src={m.sender_avatar} />}
                       <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
                         {initials(m.sender_name)}
@@ -120,8 +135,8 @@ export function MessageThread({
               )}
               <div
                 className={cn(
-                  "max-w-[78%] rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(20,30,40,0.04)]",
-                  mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted text-foreground rounded-bl-sm",
+                   "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
+                   mine ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted text-foreground rounded-tl-none",
                 )}
               >
                 <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
@@ -139,22 +154,23 @@ export function MessageThread({
         })}
       </div>
 
-      <div className="border-t border-border bg-card p-3">
-        <div className="flex items-end gap-2">
-          <Textarea
+       <div className="border-t border-border bg-background p-4">
+         <div className="flex items-end gap-3 bg-muted/30 rounded-xl p-1.5 border border-border/50 focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+           <textarea
+             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+               if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
                 e.preventDefault();
                 send();
               }
             }}
-            placeholder="Escreva uma mensagem... (Enter envia, Shift+Enter quebra linha)"
+             placeholder="Escreva uma mensagem..."
             rows={1}
-            className="min-h-[40px] max-h-32 resize-none"
+             className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-sm min-h-[40px] outline-none"
           />
-          <Button onClick={send} disabled={!text.trim() || sending} size="icon" className="h-10 w-10 shrink-0">
+           <Button onClick={send} disabled={!text.trim() || sending} size="icon" className="h-9 w-9 shrink-0 rounded-lg shadow-sm">
             <Send className="h-4 w-4" />
           </Button>
         </div>

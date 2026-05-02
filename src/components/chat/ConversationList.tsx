@@ -156,7 +156,7 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate flex-1">{display}</span>
+                      <span className={cn("text-sm font-medium truncate flex-1", isActive ? "text-primary" : "text-foreground")}>{display}</span>
                       {c.last_message_at && (
                         <span className="text-[10.5px] text-muted-foreground shrink-0">
                           {formatDistanceToNowStrict(new Date(c.last_message_at), { locale: ptBR, addSuffix: false })}

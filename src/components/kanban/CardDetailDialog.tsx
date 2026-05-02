@@ -820,9 +820,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             </Button>
           </div>
           <div className="flex items-start gap-2 pr-10">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
               <span className="text-xs font-mono mt-1.5 px-1.5 py-0.5 rounded bg-white/10 text-primary-foreground/90">
-                #{card.card_number}
+                {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
               </span>
             </div>
             {isEditingTitle ? (

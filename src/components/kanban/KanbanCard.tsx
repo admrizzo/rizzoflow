@@ -174,8 +174,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         <div className="p-3.5 pl-4.5 space-y-3 relative z-0 min-h-[160px] flex flex-col">
           {/* 1. Identificação (Código) */}
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] font-black text-slate-400 tracking-tighter uppercase opacity-80">
-              #{card.superlogica_id || card.id.slice(0, 4)}
+            <span className="text-[10px] font-black text-slate-400 tracking-tighter uppercase opacity-80" title={!card.robust_code ? "CRM não vinculado" : undefined}>
+              {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
             </span>
             {isArchived && (
               <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1 bg-slate-100/80 px-1.5 py-0.5 rounded-full">

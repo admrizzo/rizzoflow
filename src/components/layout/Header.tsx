@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3, Inbox, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Search, LogOut, User, Filter, Settings, Archive, RefreshCw, BarChart3, Inbox, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { useSync, formatLastSync } from '@/hooks/useSync';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
@@ -232,7 +232,7 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
                 className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white rounded-lg"
                 title="Administração"
               >
-                <Settings2 className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
               </Button>
             )}
             

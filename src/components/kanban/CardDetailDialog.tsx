@@ -973,22 +973,67 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
-            {/* === BLOCO: ANDAMENTO === */}
-            {!card.is_archived && (
-              <AndamentoSection card={card} canEdit={isEditor} />
-            )}
+            <AndamentoSection card={card} canEdit={isEditor} />
 
-            {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}
-            {!card.is_archived && (
-              <InternalBrokersSection
-                capturingBrokerId={card.capturing_broker_id ?? null}
-                serviceBrokerId={card.service_broker_id ?? null}
-                canEdit={canEditInternalBrokers}
-                onChange={(field, value) =>
-                  updateCard.mutate({ id: card.id, [field]: value })
-                }
-              />
-            )}
+            {/* === SEÇÃO: DADOS DO PROCESSO === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <InternalBrokersSection
+                  capturingBrokerId={card.capturing_broker_id ?? null}
+                  serviceBrokerId={card.service_broker_id ?? null}
+                  canEdit={canEditInternalBrokers}
+                  onChange={(field, value) =>
+                    updateCard.mutate({ id: card.id, [field]: value })
+                  }
+                />
+
+                {/* Labels Section */}
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                    <Tag className="h-4 w-4 text-blue-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Etiquetas</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {labels.map((label) => {
+                      const isSelected = cardLabels.some(cl => cl.id === label.id);
+                      return (
+                        <Badge
+                          key={label.id}
+                          variant={isSelected ? "default" : "outline"}
+                          style={isSelected ? { backgroundColor: label.color, color: '#fff' } : undefined}
+                          className={cn(
+                            "cursor-pointer transition-all px-3 py-1 text-[11px] font-medium",
+                            !isSelected && "opacity-30 hover:opacity-100 border-white/10 text-slate-400"
+                          )}
+                          onClick={() => {
+                            if (!isEditor) return;
+                            if (isSelected) {
+                              removeLabelFromCard.mutate({ cardId: card.id, labelId: label.id });
+                            } else {
+                              addLabelToCard.mutate({ cardId: card.id, labelId: label.id });
+                            }
+                          }}
+                        >
+                          {label.name}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                 {card.board_id && (
+                   <CustomFieldsSection 
+                     boardId={card.board_id} 
+                     cardId={card.id}
+                     card={card}
+                     isEditor={isEditor}
+                     isMaintenanceBoard={isManutencaoBoard}
+                   />
+                 )}
+              </div>
+            </div>
 
             {hasReviewDeadline && !card.is_archived && reviewOverdue && (
               <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-warning/40 bg-warning/10">

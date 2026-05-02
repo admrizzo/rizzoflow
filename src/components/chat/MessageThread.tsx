@@ -96,8 +96,8 @@ export function MessageThread({
 
   return (
      <div className="flex h-full flex-col bg-background relative min-h-0">
-      <header className="border-b border-border bg-muted/40 flex justify-center w-full">
-        <div className="max-w-4xl w-full px-4 py-2.5 flex items-center gap-3">
+      <header className="border-b border-border bg-muted/40 flex justify-center w-full shrink-0">
+        <div className="max-w-4xl w-full px-4 py-3 flex items-center gap-3">
           {onBack ? (
             <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function MessageThread({
         </div>
       </header>
 
-       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 flex flex-col items-center">
+       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-4 flex flex-col items-center scroll-smooth">
          <div className="w-full max-w-4xl space-y-4 flex flex-col">
         {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
         {!isLoading && messages.length === 0 && (
@@ -164,7 +164,7 @@ export function MessageThread({
         </div>
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex flex-col items-center">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex flex-col items-center shrink-0">
         <TooltipProvider>
           <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full max-w-4xl">
             <textarea

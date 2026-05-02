@@ -2087,7 +2087,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 cardId={card.id} 
                 showDetails={true}
               />
-            </div>
           </div>
         </div>
 

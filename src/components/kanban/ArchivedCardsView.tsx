@@ -82,7 +82,7 @@ export function ArchivedCardsView({ board, onClose }: ArchivedCardsViewProps) {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] bg-background/50">
       {/* Minimal Header */}
       <div className="px-6 py-5">
         <div className="flex items-center justify-between">

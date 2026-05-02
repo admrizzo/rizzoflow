@@ -68,20 +68,20 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/30">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100/40 bg-slate-50/20">
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-2">
             {column.color && (
               <span
-                className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+                className="inline-block h-2 w-2 rounded-full flex-shrink-0 shadow-sm"
                 style={{ backgroundColor: column.color }}
                 aria-hidden
               />
             )}
-            <h3 className="font-bold text-[12px] text-foreground/80 uppercase tracking-widest whitespace-normal break-words leading-tight flex-1">
+            <h3 className="font-black text-[11px] text-slate-700 uppercase tracking-tight whitespace-normal break-words leading-tight flex-1">
               {column.name}
             </h3>
-            <span className="inline-flex items-center justify-center text-[10px] font-black text-muted-foreground bg-muted/50 border border-border/40 rounded-lg px-2 h-[20px] min-w-[24px]">
+            <span className="inline-flex items-center justify-center text-[10px] font-black text-slate-400 bg-white border border-slate-100 rounded-md px-1.5 h-[18px] min-w-[20px] shadow-xs">
               {cardCount}
             </span>
             {column.review_deadline_days && (
@@ -90,7 +90,7 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
                   <TooltipTrigger asChild>
                     <Badge 
                       variant="outline" 
-                      className="shrink-0 text-[8px] px-1 py-0 gap-0.5 bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap"
+                      className="shrink-0 text-[8px] px-1 py-0 gap-0.5 bg-blue-50/50 text-blue-600 border-blue-100/60 whitespace-nowrap rounded-sm"
                     >
                       <Eye className="w-2.5 h-2.5" />
                       {column.review_deadline_days}d
@@ -104,8 +104,8 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
             )}
           </div>
           {column.department && (
-            <span className="text-[10px] text-muted-foreground ml-4">
-              ({departmentLabels[column.department]})
+            <span className="text-[9px] font-bold text-slate-400 ml-4 tracking-tight uppercase opacity-70">
+              {departmentLabels[column.department]}
             </span>
           )}
         </div>

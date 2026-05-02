@@ -80,9 +80,9 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowNew((v) => !v)} title="Nova conversa">
              {showNew ? <X className="h-4 w-4" /> : <MessageSquarePlus className="h-4 w-4" />}
            </Button>
-           <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={close}>
-             <X className="h-4 w-4" />
-           </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={close}>
+              <X className="h-4 w-4" />
+            </Button>
          </div>
       </div>
 
@@ -156,7 +156,7 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium truncate flex-1">{display}</span>
+                      <span className={cn("text-sm font-medium truncate flex-1", isActive ? "text-primary" : "text-foreground")}>{display}</span>
                       {c.last_message_at && (
                         <span className="text-[10.5px] text-muted-foreground shrink-0">
                           {formatDistanceToNowStrict(new Date(c.last_message_at), { locale: ptBR, addSuffix: false })}

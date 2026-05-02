@@ -873,43 +873,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             </Button>
           </div>
         </div>
-        {/* Badge: documentos/proposta recebidos pelo cliente */}
-          {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-400/15 text-emerald-100 border border-emerald-300/30"
-                title={`Proposta enviada em ${format(new Date(card.proposal_submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
-              >
-                <Inbox className="h-3 w-3" />
-                Doc. recebidos
-              </span>
-            </div>
-          )}
-          {/* Badge: correção solicitada (pendente) */}
-          {pendingCorrection && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-400/15 text-orange-100 border border-orange-300/30"
-                title="Aguardando o cliente reenviar com as correções solicitadas"
-              >
-                <Wrench className="h-3 w-3" />
-                Correção solicitada
-              </span>
-            </div>
-          )}
-          {/* Badge: correção/complementação recebida */}
-          {correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-400/15 text-sky-100 border border-sky-300/30"
-                title="Cliente reenviou após uma solicitação de correção"
-              >
-                <CheckCheck className="h-3 w-3" />
-              </div>
-            </div>
-          </div>
-
-        {/* Desktop: Two-column layout (preview Modelo C: main + 380px sidebar). Mobile: Single scroll with everything */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
           {/* Main content - uses native overflow for reliable mobile touch scrolling */}
           <div className={cn(

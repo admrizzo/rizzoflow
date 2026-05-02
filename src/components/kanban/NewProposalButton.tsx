@@ -34,7 +34,7 @@ function formatCurrency(v: number | null) {
 const LOCACAO_BOARD_ID = '3b619b46-85bf-487d-955b-e1255b1bf174';
 const CADASTRO_INICIADO_COLUMN_NAME = 'cadastro iniciado';
 
-export function NewProposalButton() {
+export function NewProposalButton({ compact = false }: { compact?: boolean } = {}) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const { properties } = usePropertiesLocacao();
@@ -231,12 +231,16 @@ export function NewProposalButton() {
 
   return (
     <>
-      <Button 
-        onClick={openModal} 
-        className="h-10 px-6 gap-2 text-sm font-bold bg-accent hover:bg-accent/90 text-white rounded-xl shadow-lg shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+      <Button
+        onClick={openModal}
+        className={
+          compact
+            ? "h-8 px-3 gap-1.5 text-[12.5px] font-bold bg-accent hover:bg-accent/90 text-white rounded-lg shadow-md shadow-accent/30 transition-colors"
+            : "h-10 px-6 gap-2 text-sm font-bold bg-accent hover:bg-accent/90 text-white rounded-xl shadow-lg shadow-accent/20 transition-all hover:scale-105 active:scale-95"
+        }
       >
-        <Plus className="h-5 w-5" />
-        Gerar nova proposta
+        <Plus className={compact ? "h-3.5 w-3.5" : "h-5 w-5"} />
+        {compact ? 'Gerar nova proposta' : 'Gerar nova proposta'}
       </Button>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

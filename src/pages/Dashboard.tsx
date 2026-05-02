@@ -6,6 +6,7 @@ import { BoardSelector } from '@/components/layout/BoardSelector';
 import { FlowsOverview } from '@/components/layout/FlowsOverview';
 import { GlobalSearchResults } from '@/components/layout/GlobalSearchResults';
 import { KanbanBoard, ArchivedCardsView } from '@/components/kanban';
+import { CardStatesLegend } from '@/components/kanban/CardStatesLegend';
 import { ProviderDashboard } from '@/components/kanban/maintenance/ProviderDashboard';
 import { useBoards } from '@/hooks/useBoards';
 import { useArchivedViewState } from '@/hooks/useArchivedViewState';
@@ -352,6 +353,11 @@ export default function Dashboard() {
         selectedBoard={selectedBoard} 
         onSelectBoard={handleSelectBoard}
          cardCounts={Object.keys(cardCounts).length > 0 ? cardCounts : stableCardCounts}
+         rightSlot={
+           selectedBoard?.name?.toLowerCase().includes('locação') && canCreateProposal
+             ? <NewProposalButton compact />
+             : undefined
+         }
       />
 
       {/* Fina linha de cor do board selecionado — preserva identidade visual sem poluir o chrome */}
@@ -410,11 +416,9 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* "Gerar nova proposta" button for Locação board */}
+              {/* Legenda dos estados visuais — exibida acima do Kanban (apenas Locação) */}
               {selectedBoard.name?.toLowerCase().includes('locação') && (
-                <div className="flex items-center gap-1 px-3 pt-2">
-                  <NewProposalButton />
-                </div>
+                <CardStatesLegend />
               )}
 
               {selectedBoard.name?.toLowerCase().includes('manutenção') && maintenanceView === 'prestadores' ? (

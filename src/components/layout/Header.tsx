@@ -107,19 +107,6 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           <span className="hidden md:inline">Meus Fluxos</span>
         </Button>
 
-        {/* Métricas */}
-        {hasAnyRole && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/minha-fila')}
-            className="h-8 gap-2 text-[12.5px] font-semibold text-white/70 hover:bg-white/5 hover:text-white rounded-lg shrink-0"
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden md:inline">Métricas</span>
-          </Button>
-        )}
-
         {/* Search — ampliada para acompanhar o design C */}
         <div className="relative flex-1 min-w-[180px] max-w-[520px] hidden sm:block ml-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />

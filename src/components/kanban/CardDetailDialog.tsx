@@ -49,6 +49,7 @@ import {
   X,
   UserCircle,
   Calendar as CalendarIcon,
+  History as HistoryIcon,
   Archive,
   ArchiveRestore,
    Hash,
@@ -56,6 +57,7 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  Target,
   MoreVertical,
   ArrowRightCircle,
   Loader2,
@@ -790,167 +792,119 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }}
       >
         {/* Mobile header with back button */}
-        <DialogHeader
-          className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 relative border-b border-primary/30 bg-primary text-primary-foreground"
-        >
-          <DialogDescription className="sr-only">
-            Detalhes do card {card.title}
-          </DialogDescription>
-          {/* Desktop close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={requestClose}
-            className="absolute right-3 top-3 z-10 h-8 w-8 rounded-full text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 hidden md:flex"
-            title="Fechar (Esc)"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+        <div className="flex-shrink-0 px-6 py-5 border-b border-white/5 bg-[#16191F] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold tracking-[0.2em] text-blue-500 uppercase">
+                  {currentBoard?.name || 'Processo'}
+                </span>
+                <span className="text-[10px] font-medium text-slate-500">•</span>
+                <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">
+                  {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
+                </span>
+                
+                {/* Badges de Status */}
+                {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
+                  <Badge className="ml-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    Doc. recebidos
+                  </Badge>
+                )}
+                {pendingCorrection && (
+                  <Badge className="ml-2 bg-orange-500/10 text-orange-400 border-orange-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    Correção solicitada
+                  </Badge>
+                )}
+                {correctionReceived && (
+                  <Badge className="ml-2 bg-sky-500/10 text-sky-400 border-sky-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    {correctionReceivedLabel}
+                  </Badge>
+                )}
+              </div>
+              {isEditingTitle ? (
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+                  autoFocus
+                  className="h-8 text-xl font-bold bg-transparent border-none p-0 text-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              ) : (
+                <h2 
+                  className="text-xl font-bold text-white tracking-tight cursor-pointer hover:text-blue-400 transition-colors"
+                  onClick={() => isEditor && (setEditTitle(card.title), setIsEditingTitle(true))}
+                >
+                  {card.title}
+                </h2>
+              )}
+              <div className="flex items-center gap-2 mt-1">
+                <MapPin className="h-3 w-3 text-slate-500" />
+                <span className="text-xs text-slate-400">
+                  {card.address || 'Endereço não informado'}
+                </span>
+              </div>
+            </div>
+          </div>
 
-          {/* Back button for mobile + navigation */}
-          <div className="flex items-center justify-between gap-2 mb-2 md:hidden">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex flex-col items-end mr-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Etapa Atual</span>
+              <Badge variant="outline" className="mt-1 bg-blue-500/10 text-blue-400 border-blue-500/20 px-3 py-1 text-xs font-semibold">
+                {currentColumn?.name || 'Sem etapa'}
+              </Badge>
+            </div>
+            
+            {/* Ações rápidas */}
+            <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+               {proposalPublicUrl && (
+                 <Button variant="outline" size="sm" onClick={handleOpenProposalLink} className="h-9 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10">
+                   <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                   Ver Proposta
+                 </Button>
+               )}
+            </div>
+
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={requestClose}
-              className="h-8 px-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              className="h-10 w-10 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
             >
-              <X className="h-4 w-4 mr-1" />
-              Voltar
+              <X className="h-6 w-6" />
             </Button>
           </div>
-          <div className="flex items-start gap-2 pr-10">
-            <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
-              <span className="text-xs font-mono mt-1.5 px-1.5 py-0.5 rounded bg-white/10 text-primary-foreground/90">
-                {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
-              </span>
-            </div>
-            {isEditingTitle ? (
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleTitleSave}
-                onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-                autoFocus
-                className="text-base md:text-lg font-semibold bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60"
-              />
-            ) : (
-              <DialogTitle
-                className="cursor-pointer text-primary-foreground hover:text-primary-foreground/90 text-base md:text-lg break-words font-semibold leading-snug"
-                onClick={() => {
-                  if (isEditor) {
-                    setEditTitle(card.title);
-                    setIsEditingTitle(true);
-                  }
-                }}
-              >
-                {card.title}
-              </DialogTitle>
-            )}
-          </div>
-          {/* Badge: documentos/proposta recebidos pelo cliente */}
-          {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-400/15 text-emerald-100 border border-emerald-300/30"
-                title={`Proposta enviada em ${format(new Date(card.proposal_submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
-              >
-                <Inbox className="h-3 w-3" />
-                Doc. recebidos
-              </span>
-            </div>
-          )}
-          {/* Badge: correção solicitada (pendente) */}
-          {pendingCorrection && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-400/15 text-orange-100 border border-orange-300/30"
-                title="Aguardando o cliente reenviar com as correções solicitadas"
-              >
-                <Wrench className="h-3 w-3" />
-                Correção solicitada
-              </span>
-            </div>
-          )}
-          {/* Badge: correção/complementação recebida */}
-          {correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-400/15 text-sky-100 border border-sky-300/30"
-                title="Cliente reenviou após uma solicitação de correção"
-              >
-                <CheckCheck className="h-3 w-3" />
-                {correctionReceivedLabel}
-              </span>
-            </div>
-          )}
-          {/* Badge: proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
-          {!card.proposal_submitted_at && card.proposal_link_id && (
-            (() => {
-              const st = (card as any).proposal_link?.status as string | undefined;
-              const pending = st == null
-                ? true
-                : st !== 'enviada' && st !== 'recebida' && st !== 'finalizada';
-              if (!pending) return null;
-              return (
-                <div className="mt-2">
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-400/15 text-amber-100 border border-amber-300/30"
-                    title="Cliente ainda preenchendo a proposta pública"
-                  >
-                    <FileEdit className="h-3 w-3" />
-                    Em preenchimento
-                  </span>
-                </div>
-              );
-            })()
-          )}
-          {/* Card creation info - hidden on mobile for space */}
-          <div className="hidden md:flex items-center gap-2 text-xs text-primary-foreground/70 mt-2">
-            <UserCircle className="h-3 w-3" />
-            <span>
-              Criado por{' '}
-              <span className="font-medium text-primary-foreground/90">
-                {card.created_by_profile?.full_name || 'Usuário desconhecido'}
-              </span>
-            </span>
-            <CalendarIcon className="h-3 w-3 ml-2" />
-            <span>
-              {format(new Date(card.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </span>
-          </div>
-        </DialogHeader>
-
-        {/* Desktop: Two-column layout (preview Modelo C: main + 380px sidebar). Mobile: Single scroll with everything */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-          {/* Main content - uses native overflow for reliable mobile touch scrolling */}
+        </div>
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0 bg-[#0F1115]">
+          {/* Main content */}
           <div className={cn(
-            "flex-1 min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background"
+            "flex-1 min-w-0 px-4 md:px-8 py-6 md:py-8 overflow-y-auto overscroll-contain lp-thin-scroll bg-transparent"
           )}>
-          <div className="space-y-5 pb-8 max-w-3xl mx-auto">
+          <div className="space-y-6 pb-12 max-w-4xl mx-auto">
             {/* Archived Banner */}
             {card.is_archived && (
-              <div className="rounded-lg border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 p-4">
-                <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                  <Archive className="h-5 w-5" />
-                  <span className="font-medium">Este card está arquivado</span>
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 backdrop-blur-sm">
+                <div className="flex items-center gap-3 text-amber-400">
+                  <Archive className="h-6 w-6" />
+                  <span className="text-lg font-bold tracking-tight">Card Arquivado</span>
                 </div>
                 {card.archived_by_profile && card.archived_at && (
-                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
-                    Arquivado por {card.archived_by_profile.full_name} em{' '}
-                    {format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  <p className="text-sm text-slate-300 mt-2">
+                    Arquivado por <span className="text-white font-medium">{card.archived_by_profile.full_name}</span> em{' '}
+                    <span className="text-slate-400">{format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                   </p>
                 )}
                 {card.archive_reason && (
-                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
-                    <strong>Motivo:</strong> {card.archive_reason}
-                  </p>
+                  <div className="mt-3 p-3 rounded-lg bg-black/20 border border-white/5">
+                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Motivo</p>
+                    <p className="text-sm text-slate-200">{card.archive_reason}</p>
+                  </div>
                 )}
                 {isEditor && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-3"
+                    className="mt-4 bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30"
                     onClick={handleRestore}
                   >
                     <ArchiveRestore className="h-4 w-4 mr-2" />
@@ -960,83 +914,127 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
-
-            {/* Review Deadline Section - Only show for columns with review_deadline_days */}
-            {/* === BLOCO A: STATUS === */}
+            {/* === NOVO LAYOUT: DASHBOARD DE STATUS === */}
             {!card.is_archived && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</h3>
-                </header>
-                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* Current stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Etapa atual</p>
-                    <p className="text-sm font-semibold text-foreground">{currentColumn?.name || '—'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tempo Total</span>
                   </div>
-                  {/* Time in stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Tempo na etapa</p>
-                    <p className="text-sm font-semibold text-foreground">{formatTimeElapsed(card.column_entered_at)}</p>
+                  <div className="text-2xl font-bold text-white tracking-tight">
+                    {formatTimeElapsed(card.column_entered_at)}
                   </div>
-                  {/* SLA indicator */}
-                  {currentColumn?.sla_hours && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">SLA</p>
-                      {(() => {
-                        const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
-                        const colors = getSlaColors(status);
-                        return (
-                          <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold", colors.bg, colors.text)}>
-                            <span className={cn("w-2 h-2 rounded-full", colors.dot)} />
-                            {status === 'green' ? 'No prazo' : status === 'yellow' ? 'Atenção' : 'Atrasado'}
+                  <p className="text-[10px] text-slate-500 mt-1">na etapa atual</p>
+                </div>
+
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <Target className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SLA de Etapa</span>
+                  </div>
+                  {currentColumn?.sla_hours ? (
+                    (() => {
+                      const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
+                      return (
+                        <div className="flex flex-col">
+                          <div className={cn(
+                            "text-lg font-bold uppercase tracking-wide",
+                            status === 'green' ? 'text-emerald-400' : status === 'yellow' ? 'text-amber-400' : 'text-rose-400'
+                          )}>
+                            {status === 'green' ? 'Dentro do Prazo' : status === 'yellow' ? 'Em Atenção' : 'Prazo Excedido'}
                           </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                  {/* Last moved */}
-                  {card.last_moved_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última movimentação</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                        {card.last_moved_by_profile && (
-                          <span className="text-muted-foreground"> por {card.last_moved_by_profile.full_name}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {/* Última atualização (qualquer alteração relevante: docs, status, comentário, etapa) */}
-                  {card.updated_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última atualização</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
+                          <p className="text-[10px] text-slate-500 mt-1">Meta: {currentColumn.sla_hours}h para conclusão</p>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-lg font-bold text-slate-600 italic">Não definido</div>
                   )}
                 </div>
-              </section>
+
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                      <CalendarIcon className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Iniciado em</span>
+                  </div>
+                  <div className="text-lg font-bold text-white">
+                    {format(new Date(card.created_at), "dd MMM, yyyy", { locale: ptBR })}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    por {card.created_by_profile?.full_name || 'Sistema'}
+                  </p>
+                </div>
+              </div>
             )}
 
-            {/* === BLOCO: ANDAMENTO === */}
-            {!card.is_archived && (
-              <AndamentoSection card={card} canEdit={isEditor} />
-            )}
+            <AndamentoSection card={card} canEdit={isEditor} />
 
-            {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}
-            {!card.is_archived && (
-              <InternalBrokersSection
-                capturingBrokerId={card.capturing_broker_id ?? null}
-                serviceBrokerId={card.service_broker_id ?? null}
-                canEdit={canEditInternalBrokers}
-                onChange={(field, value) =>
-                  updateCard.mutate({ id: card.id, [field]: value })
-                }
-              />
-            )}
+            {/* === SEÇÃO: DADOS DO PROCESSO === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <InternalBrokersSection
+                  capturingBrokerId={card.capturing_broker_id ?? null}
+                  serviceBrokerId={card.service_broker_id ?? null}
+                  canEdit={canEditInternalBrokers}
+                  onChange={(field, value) =>
+                    updateCard.mutate({ id: card.id, [field]: value })
+                  }
+                />
+
+                {/* Labels Section */}
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                    <Tag className="h-4 w-4 text-blue-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Etiquetas</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {labels.map((label) => {
+                      const isSelected = cardLabels.some(cl => cl.id === label.id);
+                      return (
+                        <Badge
+                          key={label.id}
+                          variant={isSelected ? "default" : "outline"}
+                          style={isSelected ? { backgroundColor: label.color, color: '#fff' } : undefined}
+                          className={cn(
+                            "cursor-pointer transition-all px-3 py-1 text-[11px] font-medium",
+                            !isSelected && "opacity-30 hover:opacity-100 border-white/10 text-slate-400"
+                          )}
+                          onClick={() => {
+                            if (!isEditor) return;
+                            if (isSelected) {
+                              removeLabelFromCard.mutate({ cardId: card.id, labelId: label.id });
+                            } else {
+                              addLabelToCard.mutate({ cardId: card.id, labelId: label.id });
+                            }
+                          }}
+                        >
+                          {label.name}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                 {card.board_id && (
+                   <CustomFieldsSection 
+                     boardId={card.board_id} 
+                     cardId={card.id}
+                     card={card}
+                     isEditor={isEditor}
+                     isMaintenanceBoard={isManutencaoBoard}
+                   />
+                 )}
+              </div>
+            </div>
 
             {hasReviewDeadline && !card.is_archived && reviewOverdue && (
               <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md border border-warning/40 bg-warning/10">
@@ -1063,131 +1061,50 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
 
-            {/* Card Identification Fields - Different for each board type */}
-            {isRescisaoBoard ? (
-              // Rescisão Board: Nome do Inquilino (title) + ID Superlógica (required)
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação do Contrato</h3>
-                </header>
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Superlógica ID - Required for Rescisão */}
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">
-                          ID do contrato no Superlógica <span className="text-destructive">*</span>
-                        </Label>
-                      </div>
-                      <Input
-                        value={localSuperlogicaId}
-                        onChange={(e) => setLocalSuperlogicaId(e.target.value)}
-                        onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
-                        placeholder="Número do contrato no ERP"
-                        disabled={!isEditor}
-                        className={!localSuperlogicaId ? 'border-amber-400' : ''}
-                      />
-                      {!localSuperlogicaId && (
-                        <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                      )}
-                    </div>
+            {/* === SEÇÃO: IDENTIFICAÇÃO DO PROCESSO === */}
+            <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                <Search className="h-4 w-4 text-indigo-400" />
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Identificação Detalhada</h3>
+              </div>
+              
+              {isRescisaoBoard ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">ID no Superlógica</Label>
+                    <Input
+                      value={localSuperlogicaId}
+                      onChange={(e) => setLocalSuperlogicaId(e.target.value)}
+                      onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
                   </div>
                 </div>
-              </section>
-            ) : isVendaBoard ? (
-              // Venda Board: Opening data
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação</h3>
-                </header>
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Hash className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">Cód do imóvel no Robust</Label>
-                        </div>
-                        <CardTypeBadge cardType={card.card_type as CardType | null} size="md" />
-                      </div>
-                      <Input
-                        value={localRobustCode}
-                        onChange={(e) => setLocalRobustCode(e.target.value)}
-                        onBlur={() => handleFieldBlur('robust_code', localRobustCode, card.robust_code)}
-                        placeholder="Ex: 12345"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">Nome do vendedor principal</Label>
-                      </div>
-                      <Input
-                        value={localSellerName}
-                        onChange={(e) => setLocalSellerName(e.target.value)}
-                        onBlur={() => {
-                          if (!isEditor) return;
-                          if (!vendedorPrincipal?.id) return;
-                          const next = localSellerName.trim();
-                          if ((vendedorPrincipal.name || '') !== next) {
-                            updatePartyName.mutate({ partyId: vendedorPrincipal.id, name: next });
-                            // Update card title with new seller name
-                            updateVendaTitle(undefined, next, undefined);
-                          }
-                        }}
-                        placeholder="Nome do vendedor"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">Nome do comprador principal</Label>
-                      </div>
-                      <Input
-                        value={localBuyerName}
-                        onChange={(e) => setLocalBuyerName(e.target.value)}
-                        onBlur={() => {
-                          if (!isEditor) return;
-                          if (!compradorPrincipal?.id) return;
-                          const next = localBuyerName.trim();
-                          if ((compradorPrincipal.name || '') !== next) {
-                            updatePartyName.mutate({ partyId: compradorPrincipal.id, name: next });
-                            // Update card title with new buyer name
-                            updateVendaTitle(undefined, undefined, next);
-                          }
-                        }}
-                        placeholder="Nome do comprador"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label className="text-sm font-medium">Com ou sem financiamento</Label>
-                      </div>
-                      <Select
-                        value={(card.card_type as string) || ''}
-                        onValueChange={(v) => handleFieldUpdate('card_type', v || null)}
-                        disabled={!isEditor}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          <SelectItem value="com_financiamento">Com financiamento</SelectItem>
-                          <SelectItem value="sem_financiamento">Sem financiamento</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+              ) : isVendaBoard ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vendedor Principal</Label>
+                    <Input
+                      value={localSellerName}
+                      onChange={(e) => setLocalSellerName(e.target.value)}
+                      onBlur={() => vendedorPrincipal?.id && updatePartyName.mutate({ partyId: vendedorPrincipal.id, name: localSellerName.trim() })}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Comprador Principal</Label>
+                    <Input
+                      value={localBuyerName}
+                      onChange={(e) => setLocalBuyerName(e.target.value)}
+                      onBlur={() => compradorPrincipal?.id && updatePartyName.mutate({ partyId: compradorPrincipal.id, name: localBuyerName.trim() })}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
                   </div>
                 </div>
-              </section>
-            ) : isDevBoard ? (
+              ) : isDevBoard ? (
               // DEV Board: Cód Robust + Empreendimento + Unidade + Comprador
               <section className="rounded-lg border border-border bg-card overflow-hidden">
                 <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
@@ -1636,46 +1553,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </section>
             )}
 
-            {/* Labels Section */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Etiquetas</Label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {/* Render all labels in fixed order - only change appearance based on selection */}
-                {labels.map((label) => {
-                  const isSelected = cardLabels.some(cl => cl.id === label.id);
-                  
-                  return (
-                    <Badge
-                      key={label.id}
-                      variant={isSelected ? "default" : "outline"}
-                      style={isSelected ? { backgroundColor: label.color, color: '#fff' } : undefined}
-                      className={cn(
-                        "cursor-pointer transition-all",
-                        !isSelected && "opacity-50 hover:opacity-100"
-                      )}
-                      onClick={() => {
-                        if (!isEditor) return;
-                        if (isSelected) {
-                          removeLabelFromCard.mutate({ cardId: card.id, labelId: label.id });
-                        } else {
-                          addLabelToCard.mutate({ cardId: card.id, labelId: label.id });
-                        }
-                      }}
-                    >
-                      {!isSelected && <Plus className="h-3 w-3 mr-1" />}
-                      {label.name}
-                      {isSelected && isEditor && <X className="h-3 w-3 ml-1" />}
-                    </Badge>
-                  );
-                })}
-                {labels.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">Nenhuma etiqueta configurada para este fluxo</p>
-                )}
-              </div>
-            </div>
 
             {/* Custom Fields Section - Display for ALL boards with custom fields */}
             {card.board_id && (
@@ -1791,99 +1668,62 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <ProposalContractSummary proposalLinkId={card.proposal_link_id} />
             )}
 
-            {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
+            {/* === SEÇÃO: SOLICITAÇÃO DE CORREÇÃO === */}
             {card.proposal_link_id && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2 min-w-0">
-                    <Wrench className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                    <div className="min-w-0">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Correção da proposta
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                        Use o mesmo link público para pedir ao cliente que corrija blocos específicos.
-                      </p>
-                    </div>
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-orange-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Correção da Proposta</h3>
                   </div>
                   {canRequestCorrection && !pendingCorrection && (
-                    <Button size="sm" variant="outline" onClick={() => setCorrectionDialogOpen(true)} className="shrink-0">
-                      <Wrench className="h-3.5 w-3.5 mr-2" />
-                      Solicitar correção
+                    <Button size="sm" variant="outline" onClick={() => setCorrectionDialogOpen(true)} className="h-8 bg-orange-500/10 border-orange-500/20 text-orange-400 hover:bg-orange-500/20 px-3">
+                      Solicitar Correção
                     </Button>
                   )}
-                </header>
-                <div className="p-4 space-y-3">
-                {proposalPublicUrl && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={handleCopyProposalLink}>
-                      <Copy className="h-3.5 w-3.5 mr-2" />
-                      Copiar link da proposta
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleOpenProposalLink}>
-                      <ExternalLink className="h-3.5 w-3.5 mr-2" />
-                      Abrir proposta
-                    </Button>
-                  </div>
-                )}
-
-                {pendingCorrection && (
-                  <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-orange-800 text-sm font-semibold">
-                      <Wrench className="h-4 w-4" /> Correção pendente
-                    </div>
-                    {pendingCorrection.requested_sections?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {pendingCorrection.requested_sections.map((s, idx) => {
-                          if (typeof s === 'string') {
-                            return (
-                              <span
-                                key={`s-${idx}`}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                              >
-                                {(SECTION_LABELS as any)[s] || s}
-                              </span>
-                            );
-                          }
-                          return (
-                            <span
-                              key={`i-${idx}`}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                              title={s.note || undefined}
-                            >
-                              {describeCorrectionItem(s)}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <p className="text-sm text-orange-900 whitespace-pre-wrap">
-                      {pendingCorrection.message}
-                    </p>
-                    <p className="text-[11px] text-orange-700">
-                      Solicitado em {format(new Date(pendingCorrection.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </p>
-                  </div>
-                )}
-
-                {!pendingCorrection && lastResponded && (
-                  <div className="rounded-md border border-sky-200 bg-sky-50 p-3 space-y-1">
-                    <div className="flex items-center gap-2 text-sky-800 text-sm font-semibold">
-                      <CheckCheck className="h-4 w-4" /> {correctionReceivedLabel || 'Correção recebida'}
-                    </div>
-                    <p className="text-xs text-sky-900">
-                      Cliente respondeu em{' '}
-                      {lastResponded.responded_at
-                        ? format(new Date(lastResponded.responded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                        : '—'}
-                    </p>
-                    <p className="text-sm text-sky-900 whitespace-pre-wrap">
-                      {lastResponded.message}
-                    </p>
-                  </div>
-                )}
                 </div>
-              </section>
+
+                <div className="space-y-4">
+                  {proposalPublicUrl && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopyProposalLink} className="h-8 bg-white/5 border-white/10 text-slate-300">
+                        <Copy className="h-3.5 w-3.5 mr-2" />
+                        Copiar Link
+                      </Button>
+                    </div>
+                  )}
+
+                  {pendingCorrection && (
+                    <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-orange-400 text-sm font-bold uppercase tracking-wider">
+                        Aguardando Correção
+                      </div>
+                      {pendingCorrection.requested_sections?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {pendingCorrection.requested_sections.map((s, idx) => (
+                            <Badge key={idx} variant="outline" className="bg-orange-500/10 border-orange-500/20 text-orange-300 text-[10px]">
+                              {typeof s === 'string' ? ((SECTION_LABELS as any)[s] || s) : describeCorrectionItem(s)}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-300 italic">"{pendingCorrection.message}"</p>
+                    </div>
+                  )}
+
+                  {!pendingCorrection && lastResponded && (
+                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-sky-400 text-sm font-bold uppercase tracking-wider">
+                        {correctionReceivedLabel || 'Correção Recebida'}
+                      </div>
+                      <p className="text-sm text-slate-300 italic">"{lastResponded.message}"</p>
+                      <p className="text-[10px] text-slate-500">
+                        Respondido em {format(new Date(lastResponded.responded_at || 0), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {card.proposal_link_id && (
@@ -2135,79 +1975,112 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               }))}
             />
 
-            {/* Histórico de Andamentos */}
-            <CardActivityHistory cardId={card.id} />
+            {/* === SEÇÃO: CHECKLISTS E DOCUMENTOS === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Checklists</h3>
+                    </div>
+                    <StageChecklistButton card={card} column={currentColumn} />
+                  </div>
+                  <ChecklistSection 
+                    checklists={filteredChecklists} 
+                    cardId={card.id} 
+                    partyNames={vendaParties.map(p => ({
+                      checklistId: p.checklist_id || '',
+                      partyType: p.party_type,
+                      partyNumber: p.party_number,
+                      name: p.name,
+                    }))}
+                  />
+                </div>
+              </div>
 
-            {/* Actions Section */}
-            {isEditor && !card.is_archived && (
-              <div className="pt-4 border-t space-y-2">
-                {/* Transfer button - only show for boards with owner_only_visibility */}
-                {canTransferCard && ownerOnlyVisibility && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setTransferDialogOpen(true)}
-                    className="w-full"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Transferir Card
-                  </Button>
+              <div className="space-y-6">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                    <FileText className="h-4 w-4 text-indigo-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Documentos</h3>
+                  </div>
+                  <ProposalDocumentsSection cardId={card.id} guaranteeType={card.guarantee_type} />
+                </div>
+              </div>
+            </div>
+
+            {/* === SEÇÃO: NEGOCIAÇÃO E PESSOAS === */}
+            {(hasStructuredNegotiation || (card.proposal_link_id && proposalParties.length > 0)) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {hasStructuredNegotiation && (
+                  <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                    <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
+                  </div>
                 )}
+                {card.proposal_link_id && proposalParties.length > 0 && (
+                  <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                      <Users className="h-4 w-4 text-blue-400" />
+                      <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Partes da Proposta</h3>
+                    </div>
+                    <ProposalPartiesView parties={proposalParties} compact />
+                  </div>
+                )}
+              </div>
+            )}
 
-                {/* Context Menu for special actions */}
-                {isRescisaoBoard && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="w-full">
-                        <MoreVertical className="h-4 w-4 mr-2" />
-                        Mais ações
+            {/* === SEÇÃO: HISTÓRICO E AÇÕES === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                  <HistoryIcon className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Histórico de Atividade</h3>
+                </div>
+                <CardActivityHistory cardId={card.id} />
+              </div>
+
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                  <Wrench className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Ações do Card</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {isEditor && !card.is_archived && (
+                    <>
+                      {canTransferCard && ownerOnlyVisibility && (
+                        <Button variant="outline" onClick={() => setTransferDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                          <UserPlus className="h-4 w-4 mr-3 text-blue-400" />
+                          Transferir Responsabilidade
+                        </Button>
+                      )}
+                      {isRescisaoBoard && (
+                        <Button variant="outline" onClick={() => setCloneDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                          <ArrowRightCircle className="h-4 w-4 mr-3 text-emerald-400" />
+                          Enviar para Captação
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => setArchiveDialogOpen(true)} className="justify-start h-10 bg-white/5 border-white/5 text-slate-300 hover:bg-white/10">
+                        <Archive className="h-4 w-4 mr-3 text-amber-400" />
+                        Arquivar Processo
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem 
-                        onClick={() => setCloneDialogOpen(true)}
-                        className="cursor-pointer"
-                      >
-                        <ArrowRightCircle className="h-4 w-4 mr-2" />
-                        Enviar para Captação
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                
-                <Button
-                  variant="outline"
-                  onClick={() => setArchiveDialogOpen(true)}
-                  className="w-full"
-                >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Arquivar Card
-                </Button>
-                {isAdmin && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => setDeleteConfirmOpen(true)}
-                    className="w-full"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir Card
-                  </Button>
-                )}
+                      {isAdmin && (
+                        <Button variant="outline" onClick={() => setDeleteConfirmOpen(true)} className="justify-start h-10 bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20">
+                          <Trash2 className="h-4 w-4 mr-3" />
+                          Excluir Permanentemente
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  {isAdmin && card.is_archived && (
+                    <Button variant="outline" onClick={() => setDeleteConfirmOpen(true)} className="justify-start h-10 bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20">
+                      <Trash2 className="h-4 w-4 mr-3" />
+                      Excluir Definitivamente
+                    </Button>
+                  )}
+                </div>
               </div>
-            )}
-
-            {/* Delete only for admin on archived cards */}
-            {isAdmin && card.is_archived && (
-              <div className="pt-4 border-t">
-                <Button
-                  variant="destructive"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                  className="w-full"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Card Permanentemente
-                </Button>
-              </div>
-            )}
+            </div>
             {/* Mobile: Comments section inline at the bottom */}
             <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
               <CardNotesSidebar 

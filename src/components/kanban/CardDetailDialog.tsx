@@ -878,30 +878,31 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           <div className={cn(
             "flex-1 min-w-0 px-4 md:px-8 py-6 md:py-8 overflow-y-auto overscroll-contain lp-thin-scroll bg-transparent"
           )}>
-          <div className="space-y-5 pb-8 max-w-3xl mx-auto">
+          <div className="space-y-6 pb-12 max-w-4xl mx-auto">
             {/* Archived Banner */}
             {card.is_archived && (
-              <div className="rounded-lg border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 p-4">
-                <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-                  <Archive className="h-5 w-5" />
-                  <span className="font-medium">Este card está arquivado</span>
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 backdrop-blur-sm">
+                <div className="flex items-center gap-3 text-amber-400">
+                  <Archive className="h-6 w-6" />
+                  <span className="text-lg font-bold tracking-tight">Card Arquivado</span>
                 </div>
                 {card.archived_by_profile && card.archived_at && (
-                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
-                    Arquivado por {card.archived_by_profile.full_name} em{' '}
-                    {format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  <p className="text-sm text-slate-300 mt-2">
+                    Arquivado por <span className="text-white font-medium">{card.archived_by_profile.full_name}</span> em{' '}
+                    <span className="text-slate-400">{format(new Date(card.archived_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                   </p>
                 )}
                 {card.archive_reason && (
-                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-1">
-                    <strong>Motivo:</strong> {card.archive_reason}
-                  </p>
+                  <div className="mt-3 p-3 rounded-lg bg-black/20 border border-white/5">
+                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Motivo</p>
+                    <p className="text-sm text-slate-200">{card.archive_reason}</p>
+                  </div>
                 )}
                 {isEditor && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="mt-3"
+                    className="mt-4 bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30"
                     onClick={handleRestore}
                   >
                     <ArchiveRestore className="h-4 w-4 mr-2" />
@@ -911,65 +912,64 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
-
-            {/* Review Deadline Section - Only show for columns with review_deadline_days */}
-            {/* === BLOCO A: STATUS === */}
+            {/* === NOVO LAYOUT: DASHBOARD DE STATUS === */}
             {!card.is_archived && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</h3>
-                </header>
-                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* Current stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Etapa atual</p>
-                    <p className="text-sm font-semibold text-foreground">{currentColumn?.name || '—'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-blue-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tempo Total</span>
                   </div>
-                  {/* Time in stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Tempo na etapa</p>
-                    <p className="text-sm font-semibold text-foreground">{formatTimeElapsed(card.column_entered_at)}</p>
+                  <div className="text-2xl font-bold text-white tracking-tight">
+                    {formatTimeElapsed(card.column_entered_at)}
                   </div>
-                  {/* SLA indicator */}
-                  {currentColumn?.sla_hours && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">SLA</p>
-                      {(() => {
-                        const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
-                        const colors = getSlaColors(status);
-                        return (
-                          <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold", colors.bg, colors.text)}>
-                            <span className={cn("w-2 h-2 rounded-full", colors.dot)} />
-                            {status === 'green' ? 'No prazo' : status === 'yellow' ? 'Atenção' : 'Atrasado'}
+                  <p className="text-[10px] text-slate-500 mt-1">na etapa atual</p>
+                </div>
+
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <Target className="h-4 w-4 text-emerald-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SLA de Etapa</span>
+                  </div>
+                  {currentColumn?.sla_hours ? (
+                    (() => {
+                      const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
+                      return (
+                        <div className="flex flex-col">
+                          <div className={cn(
+                            "text-lg font-bold uppercase tracking-wide",
+                            status === 'green' ? 'text-emerald-400' : status === 'yellow' ? 'text-amber-400' : 'text-rose-400'
+                          )}>
+                            {status === 'green' ? 'Dentro do Prazo' : status === 'yellow' ? 'Em Atenção' : 'Prazo Excedido'}
                           </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                  {/* Last moved */}
-                  {card.last_moved_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última movimentação</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                        {card.last_moved_by_profile && (
-                          <span className="text-muted-foreground"> por {card.last_moved_by_profile.full_name}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {/* Última atualização (qualquer alteração relevante: docs, status, comentário, etapa) */}
-                  {card.updated_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última atualização</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
+                          <p className="text-[10px] text-slate-500 mt-1">Meta: {currentColumn.sla_hours}h para conclusão</p>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-lg font-bold text-slate-600 italic">Não definido</div>
                   )}
                 </div>
-              </section>
+
+                <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                      <CalendarIcon className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Iniciado em</span>
+                  </div>
+                  <div className="text-lg font-bold text-white">
+                    {format(new Date(card.created_at), "dd MMM, yyyy", { locale: ptBR })}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    por {card.created_by_profile?.full_name || 'Sistema'}
+                  </p>
+                </div>
+              </div>
             )}
 
             {/* === BLOCO: ANDAMENTO === */}

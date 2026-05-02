@@ -1749,99 +1749,62 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               <ProposalContractSummary proposalLinkId={card.proposal_link_id} />
             )}
 
-            {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}
+            {/* === SEÇÃO: SOLICITAÇÃO DE CORREÇÃO === */}
             {card.proposal_link_id && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2 min-w-0">
-                    <Wrench className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
-                    <div className="min-w-0">
-                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Correção da proposta
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                        Use o mesmo link público para pedir ao cliente que corrija blocos específicos.
-                      </p>
-                    </div>
+              <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-orange-400" />
+                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Correção da Proposta</h3>
                   </div>
                   {canRequestCorrection && !pendingCorrection && (
-                    <Button size="sm" variant="outline" onClick={() => setCorrectionDialogOpen(true)} className="shrink-0">
-                      <Wrench className="h-3.5 w-3.5 mr-2" />
-                      Solicitar correção
+                    <Button size="sm" variant="outline" onClick={() => setCorrectionDialogOpen(true)} className="h-8 bg-orange-500/10 border-orange-500/20 text-orange-400 hover:bg-orange-500/20 px-3">
+                      Solicitar Correção
                     </Button>
                   )}
-                </header>
-                <div className="p-4 space-y-3">
-                {proposalPublicUrl && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={handleCopyProposalLink}>
-                      <Copy className="h-3.5 w-3.5 mr-2" />
-                      Copiar link da proposta
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleOpenProposalLink}>
-                      <ExternalLink className="h-3.5 w-3.5 mr-2" />
-                      Abrir proposta
-                    </Button>
-                  </div>
-                )}
-
-                {pendingCorrection && (
-                  <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-orange-800 text-sm font-semibold">
-                      <Wrench className="h-4 w-4" /> Correção pendente
-                    </div>
-                    {pendingCorrection.requested_sections?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {pendingCorrection.requested_sections.map((s, idx) => {
-                          if (typeof s === 'string') {
-                            return (
-                              <span
-                                key={`s-${idx}`}
-                                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                              >
-                                {(SECTION_LABELS as any)[s] || s}
-                              </span>
-                            );
-                          }
-                          return (
-                            <span
-                              key={`i-${idx}`}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white border border-orange-200 text-orange-800"
-                              title={s.note || undefined}
-                            >
-                              {describeCorrectionItem(s)}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <p className="text-sm text-orange-900 whitespace-pre-wrap">
-                      {pendingCorrection.message}
-                    </p>
-                    <p className="text-[11px] text-orange-700">
-                      Solicitado em {format(new Date(pendingCorrection.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </p>
-                  </div>
-                )}
-
-                {!pendingCorrection && lastResponded && (
-                  <div className="rounded-md border border-sky-200 bg-sky-50 p-3 space-y-1">
-                    <div className="flex items-center gap-2 text-sky-800 text-sm font-semibold">
-                      <CheckCheck className="h-4 w-4" /> {correctionReceivedLabel || 'Correção recebida'}
-                    </div>
-                    <p className="text-xs text-sky-900">
-                      Cliente respondeu em{' '}
-                      {lastResponded.responded_at
-                        ? format(new Date(lastResponded.responded_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                        : '—'}
-                    </p>
-                    <p className="text-sm text-sky-900 whitespace-pre-wrap">
-                      {lastResponded.message}
-                    </p>
-                  </div>
-                )}
                 </div>
-              </section>
+
+                <div className="space-y-4">
+                  {proposalPublicUrl && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopyProposalLink} className="h-8 bg-white/5 border-white/10 text-slate-300">
+                        <Copy className="h-3.5 w-3.5 mr-2" />
+                        Copiar Link
+                      </Button>
+                    </div>
+                  )}
+
+                  {pendingCorrection && (
+                    <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-orange-400 text-sm font-bold uppercase tracking-wider">
+                        Aguardando Correção
+                      </div>
+                      {pendingCorrection.requested_sections?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {pendingCorrection.requested_sections.map((s, idx) => (
+                            <Badge key={idx} variant="outline" className="bg-orange-500/10 border-orange-500/20 text-orange-300 text-[10px]">
+                              {typeof s === 'string' ? ((SECTION_LABELS as any)[s] || s) : describeCorrectionItem(s)}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-300 italic">"{pendingCorrection.message}"</p>
+                    </div>
+                  )}
+
+                  {!pendingCorrection && lastResponded && (
+                    <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-sky-400 text-sm font-bold uppercase tracking-wider">
+                        {correctionReceivedLabel || 'Correção Recebida'}
+                      </div>
+                      <p className="text-sm text-slate-300 italic">"{lastResponded.message}"</p>
+                      <p className="text-[10px] text-slate-500">
+                        Respondido em {format(new Date(lastResponded.responded_at || 0), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {card.proposal_link_id && (

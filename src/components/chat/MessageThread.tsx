@@ -189,8 +189,8 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
-                      onClick={() => toast.info("Envio de arquivos será ativado em breve.")}
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Paperclip className="h-4 w-4" />
                     </Button>
@@ -203,8 +203,8 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
-                      onClick={() => toast.info("Envio de imagens será ativado em breve.")}
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      onClick={() => toast.info("Recurso em preparação")}
                     >
                       <ImageIcon className="h-4 w-4" />
                     </Button>
@@ -217,8 +217,8 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
-                      onClick={() => toast.info("Envio de áudio será ativado em breve.")}
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Mic className="h-4 w-4" />
                     </Button>
@@ -231,8 +231,8 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 opacity-50 cursor-not-allowed"
-                      onClick={() => toast.info("Seletor de emojis será ativado em breve.")}
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Smile className="h-4 w-4" />
                     </Button>

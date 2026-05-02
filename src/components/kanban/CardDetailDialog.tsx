@@ -2087,7 +2087,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 cardId={card.id} 
                 showDetails={true}
               />
-            </div>
+          </div>
         </div>
 
         {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}

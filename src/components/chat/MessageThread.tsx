@@ -114,12 +114,13 @@ export function MessageThread({
         </div>
       </header>
 
-       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 flex flex-col items-center">
+         <div className="w-full max-w-4xl space-y-4 flex flex-col">
         {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
         {!isLoading && messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá 👋</p>
         )}
-        {messages.map((m, idx) => {
+          {messages.map((m, idx) => {
           const mine = m.sender_id === user?.id;
           const prev = messages[idx - 1];
           const showAvatar = !mine && (!prev || prev.sender_id !== m.sender_id);
@@ -157,7 +158,8 @@ export function MessageThread({
               </div>
             </div>
           );
-        })}
+          })}
+        </div>
       </div>
 
       <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex justify-center">

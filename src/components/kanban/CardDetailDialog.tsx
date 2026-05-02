@@ -1061,131 +1061,50 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
 
-            {/* Card Identification Fields - Different for each board type */}
-            {isRescisaoBoard ? (
-              // Rescisão Board: Nome do Inquilino (title) + ID Superlógica (required)
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação do Contrato</h3>
-                </header>
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Superlógica ID - Required for Rescisão */}
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">
-                          ID do contrato no Superlógica <span className="text-destructive">*</span>
-                        </Label>
-                      </div>
-                      <Input
-                        value={localSuperlogicaId}
-                        onChange={(e) => setLocalSuperlogicaId(e.target.value)}
-                        onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
-                        placeholder="Número do contrato no ERP"
-                        disabled={!isEditor}
-                        className={!localSuperlogicaId ? 'border-amber-400' : ''}
-                      />
-                      {!localSuperlogicaId && (
-                        <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                      )}
-                    </div>
+            {/* === SEÇÃO: IDENTIFICAÇÃO DO PROCESSO === */}
+            <div className="bg-[#16191F] border border-white/5 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                <Search className="h-4 w-4 text-indigo-400" />
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Identificação Detalhada</h3>
+              </div>
+              
+              {isRescisaoBoard ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">ID no Superlógica</Label>
+                    <Input
+                      value={localSuperlogicaId}
+                      onChange={(e) => setLocalSuperlogicaId(e.target.value)}
+                      onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
                   </div>
                 </div>
-              </section>
-            ) : isVendaBoard ? (
-              // Venda Board: Opening data
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação</h3>
-                </header>
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Hash className="h-4 w-4 text-muted-foreground" />
-                          <Label className="text-sm font-medium">Cód do imóvel no Robust</Label>
-                        </div>
-                        <CardTypeBadge cardType={card.card_type as CardType | null} size="md" />
-                      </div>
-                      <Input
-                        value={localRobustCode}
-                        onChange={(e) => setLocalRobustCode(e.target.value)}
-                        onBlur={() => handleFieldBlur('robust_code', localRobustCode, card.robust_code)}
-                        placeholder="Ex: 12345"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">Nome do vendedor principal</Label>
-                      </div>
-                      <Input
-                        value={localSellerName}
-                        onChange={(e) => setLocalSellerName(e.target.value)}
-                        onBlur={() => {
-                          if (!isEditor) return;
-                          if (!vendedorPrincipal?.id) return;
-                          const next = localSellerName.trim();
-                          if ((vendedorPrincipal.name || '') !== next) {
-                            updatePartyName.mutate({ partyId: vendedorPrincipal.id, name: next });
-                            // Update card title with new seller name
-                            updateVendaTitle(undefined, next, undefined);
-                          }
-                        }}
-                        placeholder="Nome do vendedor"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">Nome do comprador principal</Label>
-                      </div>
-                      <Input
-                        value={localBuyerName}
-                        onChange={(e) => setLocalBuyerName(e.target.value)}
-                        onBlur={() => {
-                          if (!isEditor) return;
-                          if (!compradorPrincipal?.id) return;
-                          const next = localBuyerName.trim();
-                          if ((compradorPrincipal.name || '') !== next) {
-                            updatePartyName.mutate({ partyId: compradorPrincipal.id, name: next });
-                            // Update card title with new buyer name
-                            updateVendaTitle(undefined, undefined, next);
-                          }
-                        }}
-                        placeholder="Nome do comprador"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label className="text-sm font-medium">Com ou sem financiamento</Label>
-                      </div>
-                      <Select
-                        value={(card.card_type as string) || ''}
-                        onValueChange={(v) => handleFieldUpdate('card_type', v || null)}
-                        disabled={!isEditor}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          <SelectItem value="com_financiamento">Com financiamento</SelectItem>
-                          <SelectItem value="sem_financiamento">Sem financiamento</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+              ) : isVendaBoard ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Vendedor Principal</Label>
+                    <Input
+                      value={localSellerName}
+                      onChange={(e) => setLocalSellerName(e.target.value)}
+                      onBlur={() => vendedorPrincipal?.id && updatePartyName.mutate({ partyId: vendedorPrincipal.id, name: localSellerName.trim() })}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Comprador Principal</Label>
+                    <Input
+                      value={localBuyerName}
+                      onChange={(e) => setLocalBuyerName(e.target.value)}
+                      onBlur={() => compradorPrincipal?.id && updatePartyName.mutate({ partyId: compradorPrincipal.id, name: localBuyerName.trim() })}
+                      className="bg-white/5 border-white/10 text-white"
+                      disabled={!isEditor}
+                    />
                   </div>
                 </div>
-              </section>
-            ) : isDevBoard ? (
+              ) : isDevBoard ? (
               // DEV Board: Cód Robust + Empreendimento + Unidade + Comprador
               <section className="rounded-lg border border-border bg-card overflow-hidden">
                 <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">

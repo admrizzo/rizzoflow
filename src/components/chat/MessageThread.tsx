@@ -139,8 +139,10 @@ export function MessageThread({
               )}
               <div
                 className={cn(
-                   "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
-               mine ? "bg-primary text-primary-foreground rounded-tr-none shadow-md" : "bg-muted/80 text-foreground rounded-tl-none border border-border/20",
+                  "max-w-[85%] sm:max-w-[85%] md:max-w-[80%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
+                  mine
+                    ? "bg-primary text-primary-foreground rounded-tr-none shadow-md"
+                    : "bg-muted/80 text-foreground rounded-tl-none border border-border/20",
                 )}
               >
                 <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
@@ -158,9 +160,9 @@ export function MessageThread({
         })}
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-5">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex justify-center">
         <TooltipProvider>
-          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm">
+          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full max-w-4xl">
             <textarea
               ref={textareaRef}
               value={text}

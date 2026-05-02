@@ -790,65 +790,90 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         }}
       >
         {/* Mobile header with back button */}
-        <DialogHeader
-          className="flex-shrink-0 px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4 relative border-b border-primary/30 bg-primary text-primary-foreground"
-        >
-          <DialogDescription className="sr-only">
-            Detalhes do card {card.title}
-          </DialogDescription>
-          {/* Desktop close button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={requestClose}
-            className="absolute right-3 top-3 z-10 h-8 w-8 rounded-full text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10 hidden md:flex"
-            title="Fechar (Esc)"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+        <div className="flex-shrink-0 px-6 py-5 border-b border-white/5 bg-[#16191F] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold tracking-[0.2em] text-blue-500 uppercase">
+                  {currentBoard?.name || 'Processo'}
+                </span>
+                <span className="text-[10px] font-medium text-slate-500">•</span>
+                <span className="text-[10px] font-mono text-slate-400 bg-white/5 px-1.5 py-0.5 rounded">
+                  {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
+                </span>
+                
+                {/* Badges de Status */}
+                {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
+                  <Badge className="ml-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    Doc. recebidos
+                  </Badge>
+                )}
+                {pendingCorrection && (
+                  <Badge className="ml-2 bg-orange-500/10 text-orange-400 border-orange-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    Correção solicitada
+                  </Badge>
+                )}
+                {correctionReceived && (
+                  <Badge className="ml-2 bg-sky-500/10 text-sky-400 border-sky-500/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0">
+                    {correctionReceivedLabel}
+                  </Badge>
+                )}
+              </div>
+              {isEditingTitle ? (
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+                  autoFocus
+                  className="h-8 text-xl font-bold bg-transparent border-none p-0 text-white focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              ) : (
+                <h2 
+                  className="text-xl font-bold text-white tracking-tight cursor-pointer hover:text-blue-400 transition-colors"
+                  onClick={() => isEditor && (setEditTitle(card.title), setIsEditingTitle(true))}
+                >
+                  {card.title}
+                </h2>
+              )}
+              <div className="flex items-center gap-2 mt-1">
+                <MapPin className="h-3 w-3 text-slate-500" />
+                <span className="text-xs text-slate-400">
+                  {card.address || 'Endereço não informado'}
+                </span>
+              </div>
+            </div>
+          </div>
 
-          {/* Back button for mobile + navigation */}
-          <div className="flex items-center justify-between gap-2 mb-2 md:hidden">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex flex-col items-end mr-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Etapa Atual</span>
+              <Badge variant="outline" className="mt-1 bg-blue-500/10 text-blue-400 border-blue-500/20 px-3 py-1 text-xs font-semibold">
+                {currentColumn?.name || 'Sem etapa'}
+              </Badge>
+            </div>
+            
+            {/* Ações rápidas */}
+            <div className="flex items-center gap-2 pr-4 border-r border-white/10">
+               {proposalPublicUrl && (
+                 <Button variant="outline" size="sm" onClick={handleOpenProposalLink} className="h-9 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10">
+                   <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                   Ver Proposta
+                 </Button>
+               )}
+            </div>
+
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={requestClose}
-              className="h-8 px-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+              className="h-10 w-10 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
             >
-              <X className="h-4 w-4 mr-1" />
-              Voltar
+              <X className="h-6 w-6" />
             </Button>
           </div>
-          <div className="flex items-start gap-2 pr-10">
-            <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
-              <span className="text-xs font-mono mt-1.5 px-1.5 py-0.5 rounded bg-white/10 text-primary-foreground/90">
-                {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
-              </span>
-            </div>
-            {isEditingTitle ? (
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleTitleSave}
-                onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-                autoFocus
-                className="text-base md:text-lg font-semibold bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60"
-              />
-            ) : (
-              <DialogTitle
-                className="cursor-pointer text-primary-foreground hover:text-primary-foreground/90 text-base md:text-lg break-words font-semibold leading-snug"
-                onClick={() => {
-                  if (isEditor) {
-                    setEditTitle(card.title);
-                    setIsEditingTitle(true);
-                  }
-                }}
-              >
-                {card.title}
-              </DialogTitle>
-            )}
-          </div>
-          {/* Badge: documentos/proposta recebidos pelo cliente */}
+        </div>
+        {/* Badge: documentos/proposta recebidos pelo cliente */}
           {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
             <div className="mt-2">
               <span

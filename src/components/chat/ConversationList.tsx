@@ -7,7 +7,7 @@ import { useChatConversations } from "@/hooks/useChatConversations";
  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
- import { Search, MessageSquarePlus, X, User } from "lucide-react";
+ import { Search, MessageSquarePlus, X, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNowStrict } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -74,17 +74,21 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
 
   return (
      <div className="flex h-full flex-col bg-background">
-       <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center gap-2">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex-1">Conversas</h3>
-         <div className="flex items-center gap-1">
-           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowNew((v) => !v)} title="Nova conversa">
-             {showNew ? <X className="h-4 w-4" /> : <MessageSquarePlus className="h-4 w-4" />}
-           </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={close}>
-              <X className="h-4 w-4" />
-            </Button>
-         </div>
-      </div>
+        <div className="px-4 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Chat Interno</h3>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={cn("h-8 w-8 transition-all", showNew && "bg-primary/10 text-primary")} 
+            onClick={() => setShowNew((v) => !v)} 
+            title="Nova conversa"
+          >
+            {showNew ? <X className="h-4 w-4" /> : <MessageSquarePlus className="h-4 w-4" />}
+          </Button>
+        </div>
 
        <div className="p-4 border-b border-border">
         <div className="relative">
@@ -146,8 +150,8 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                     onSelect?.(c.id);
                   }}
                   className={cn(
-                     "w-full flex items-start gap-3 px-4 py-3.5 hover:bg-accent/40 text-left transition-all border-l-2 border-transparent",
-                     isActive && "bg-accent/50 border-l-primary shadow-sm z-10",
+                    "w-full flex items-start gap-3 px-4 py-3.5 hover:bg-accent/30 text-left transition-all border-l-2 border-transparent relative",
+                    isActive ? "bg-accent/40 border-l-primary shadow-sm" : "hover:border-l-border/50",
                   )}
                 >
                    <Avatar className="h-11 w-11 shrink-0 border border-border/50">
@@ -156,7 +160,7 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={cn("text-sm font-medium truncate flex-1", isActive ? "text-primary" : "text-foreground")}>{display}</span>
+                       <span className={cn("text-sm font-semibold truncate flex-1", isActive ? "text-primary" : "text-foreground")}>{display}</span>
                       {c.last_message_at && (
                         <span className="text-[10.5px] text-muted-foreground shrink-0">
                           {formatDistanceToNowStrict(new Date(c.last_message_at), { locale: ptBR, addSuffix: false })}

@@ -68,7 +68,7 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/60">
+      <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/30">
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-2">
             {column.color && (
@@ -78,10 +78,10 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
                 aria-hidden
               />
             )}
-            <h3 className="font-semibold text-[11.5px] text-foreground uppercase tracking-wider whitespace-normal break-words leading-tight flex-1">
+            <h3 className="font-bold text-[12px] text-foreground/80 uppercase tracking-widest whitespace-normal break-words leading-tight flex-1">
               {column.name}
             </h3>
-            <span className="inline-flex items-center justify-center text-[10.5px] font-bold text-muted-foreground bg-muted border border-border rounded-full px-1.5 min-w-[22px] h-[18px]">
+            <span className="inline-flex items-center justify-center text-[10px] font-black text-muted-foreground bg-muted/50 border border-border/40 rounded-lg px-2 h-[20px] min-w-[24px]">
               {cardCount}
             </span>
             {column.review_deadline_days && (

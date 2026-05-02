@@ -93,7 +93,7 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           <span className="font-bold text-[15px] tracking-tight hidden sm:block">Rizzo Flow</span>
         </Link>
 
-        {/* Main Nav (Meus Fluxos) */}
+        {/* Meus Fluxos */}
         <Button
           variant="ghost"
           size="sm"
@@ -107,8 +107,21 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           <span className="hidden md:inline">Meus Fluxos</span>
         </Button>
 
-        {/* Search */}
-        <div className="relative flex-1 min-w-[140px] max-w-md hidden sm:block">
+        {/* Métricas */}
+        {hasAnyRole && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/minha-fila')}
+            className="h-8 gap-2 text-[12.5px] font-semibold text-white/70 hover:bg-white/5 hover:text-white rounded-lg shrink-0"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden md:inline">Métricas</span>
+          </Button>
+        )}
+
+        {/* Search — ampliada para acompanhar o design C */}
+        <div className="relative flex-1 min-w-[180px] max-w-[520px] hidden sm:block ml-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
           <Input
             value={searchQuery}
@@ -121,6 +134,51 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
         <div className="flex-1 min-w-0" />
 
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* Filtros + Arquivados — ícones, igual preview C */}
+          <div className="flex items-center gap-0.5 mr-1">
+            <FilterPopover
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              archivedCount={archivedCount}
+              boardId={selectedBoard?.id ?? null}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white rounded-lg relative"
+                title="Filtros"
+              >
+                <Filter className="h-4 w-4" />
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] px-1 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </Button>
+            </FilterPopover>
+            {onToggleArchivedView && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleArchivedView}
+                className={cn(
+                  "h-8 w-8 rounded-lg relative",
+                  showArchivedView
+                    ? "bg-white/15 text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                )}
+                title="Cards arquivados"
+              >
+                <Archive className="h-4 w-4" />
+                {archivedCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-3.5 min-w-[14px] px-1 rounded-full bg-white/20 text-white text-[9px] font-bold flex items-center justify-center">
+                    {archivedCount}
+                  </span>
+                )}
+              </Button>
+            )}
+          </div>
+
           {/* Global Actions */}
           <div className="hidden lg:flex items-center gap-1 mr-2 border-r border-white/10 pr-2">
             {hasAnyRole && (

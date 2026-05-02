@@ -140,6 +140,9 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const isNextActionOverdue = nextActionDue ? isDateOverdue(nextActionDue) : false;
     const isNextActionToday = nextActionDue ? isToday(nextActionDue) : false;
 
+    // Get primary tenant if available
+    const primaryTenant = card.parties?.find(p => p.party_type === 'locatario')?.name || "Inquilino não informado";
+
     return (
       <Card 
         ref={ref}
@@ -150,7 +153,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           isArchived && "opacity-60 bg-muted/50 grayscale-[0.5]"
         )}
       >
-        {/* Status Lateral Highlight (Shadow Inset Style from Design C) */}
+        {/* Status Lateral Highlight */}
         <div 
           className={cn(
             "absolute left-0 top-0 bottom-0 w-[4px] z-10 transition-colors duration-300",
@@ -172,10 +175,10 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
           </div>
         )}
         <div className="p-3.5 pl-4.5 space-y-3 relative z-0 min-h-[160px] flex flex-col">
-          {/* 1. Identificação (Código) */}
+          {/* 1. Cabeçalho: Código Robust */}
           <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] font-black text-slate-400 tracking-tighter uppercase opacity-80" title={!card.robust_code ? "CRM não vinculado" : undefined}>
-              {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
+            <span className="text-[10px] font-black text-slate-400 tracking-tighter uppercase opacity-80">
+              {card.robust_code ? `#${card.robust_code}` : "Sem código CRM"}
             </span>
             {isArchived && (
               <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1 bg-slate-100/80 px-1.5 py-0.5 rounded-full">
@@ -184,44 +187,47 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             )}
           </div>
 
-          {/* 2. Informação Principal (Imóvel) */}
+          {/* 2. Título: Inquilino + Unidade + Bairro */}
           <div className="flex-1 space-y-1">
             <h4 className="text-[13px] font-extrabold text-slate-900 leading-[1.3] line-clamp-2 group-hover/card:text-accent transition-colors">
-              {card.building_name || card.title || 'Imóvel sem identificação'}
+              {primaryTenant}
+              {card.building_name && ` • ${card.building_name}`}
             </h4>
-            {(card.address || card.building_name) && (
+            
+            {/* 3. Subtítulo: Endereço completo do imóvel */}
+            {card.address && (
               <p className="text-[11px] font-medium text-slate-500 leading-tight line-clamp-1 flex items-center gap-1.5">
                 <MapPin className="h-2.5 w-2.5 shrink-0 text-slate-400" />
-                {card.address || card.building_name}
+                {card.address}
               </p>
             )}
           </div>
 
-          {/* 3. Linha de Badges (Status, Progresso, Alertas) */}
+          {/* 4. Badges (Máximo 3 badges operacionais) */}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {/* Status Principal - Mais elegante e leve */}
-            {docsReceived && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100/60 shadow-sm">
-                <CheckCheck className="h-2.5 w-2.5" /> DOCS
-              </span>
-            )}
-            {correctionPending && (
+            {/* Status Secundário Operacional (Apenas um por vez para economizar espaço) */}
+            {correctionPending ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-orange-50 text-orange-600 border border-orange-100/60 shadow-sm">
                 <Wrench className="h-2.5 w-2.5" /> CORREÇÃO
               </span>
-            )}
-            {proposalInProgress && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-600 border border-amber-100/60 shadow-sm">
-                <FileEdit className="h-2.5 w-2.5" /> EM CURSO
+            ) : docsReceived ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100/60 shadow-sm">
+                <CheckCheck className="h-2.5 w-2.5" /> DOCS RECEBIDOS
               </span>
-            )}
+            ) : proposalInProgress ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-600 border border-amber-100/60 shadow-sm">
+                <FileEdit className="h-2.5 w-2.5" /> EM PREENCHIMENTO
+              </span>
+            ) : null}
+
+            {/* Alerta quando existir (Prioridade máxima) */}
             {isAnyDeadlineOverdue && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-600 border border-red-100/60 shadow-sm animate-pulse">
-                <AlertTriangle className="h-2.5 w-2.5" /> ALERTA
+                <AlertTriangle className="h-2.5 w-2.5" /> PRAZO VENCIDO
               </span>
             )}
 
-            {/* Progresso Checklist */}
+            {/* Progresso Documental / Checklist */}
             {hasChecklists && (
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border border-slate-100/80 shadow-sm",
@@ -230,45 +236,25 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                 <CheckSquare className="h-2.5 w-2.5" /> {completedItems}/{totalItems}
               </span>
             )}
-
-            {/* SLA / Tempo */}
-            {hasSla && (
-              <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-sm",
-                slaStatus === 'red' ? "bg-red-50/50 text-red-600 border-red-100/60" :
-                slaStatus === 'yellow' ? "bg-amber-50/50 text-amber-600 border-amber-100/60" :
-                "bg-slate-50/80 text-slate-500 border-slate-100/80"
-              )}>
-                <Clock className="h-2.5 w-2.5" /> {timeInStage}
-              </span>
-            )}
           </div>
 
-          {/* 4. Rodapé Reorganizado */}
+          {/* 5. Rodapé: Originador do Card */}
           <div className="pt-3 mt-auto border-t border-slate-100/60 flex items-center justify-between gap-3">
-            {/* Avatar e Nome (Responsável ou Cliente) */}
             <div className="flex items-center gap-2 min-w-0">
               <Avatar className="h-6 w-6 border border-slate-200 shadow-xs shrink-0 ring-2 ring-white">
                 <AvatarImage src={card.created_by_profile?.avatar_url || undefined} />
                 <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-black">
-                  {(responsibleName || card.created_by_profile?.full_name || 'U').charAt(0).toUpperCase()}
+                  {(card.created_by_profile?.full_name || 'U').charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-bold text-slate-700 truncate leading-tight">
-                  {responsibleName || card.created_by_profile?.full_name?.split(' ')[0] || 'Sem resp.'}
+                  {card.created_by_profile?.full_name || 'Sistema'}
                 </span>
-                {/* Se houver cliente específico/titulo extra, pode ir aqui */}
-                {card.title && card.building_name && 
-                 card.title.toLowerCase().trim() !== card.building_name.toLowerCase().trim() && (
-                   <span className="text-[8px] font-medium text-slate-400 truncate leading-tight max-w-[120px]">
-                     {card.title}
-                   </span>
-                )}
               </div>
             </div>
 
-            {/* Valor e Prazo */}
+            {/* Valor do Provedor Selecionado (Manutenção) ou Prazo */}
             <div className="flex flex-col items-end shrink-0 text-right">
               {selectedProvider?.value && (
                 <span className="text-[11px] font-black text-slate-900 tracking-tight leading-tight">
@@ -276,11 +262,8 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                 </span>
               )}
               
-              {hasDeadline && (
-                <span className={cn(
-                  "text-[9px] font-bold tracking-tight mt-0.5",
-                  isDeadlineOverdue ? "text-red-500" : "text-slate-400"
-                )}>
+              {hasDeadline && !isAnyDeadlineOverdue && (
+                <span className="text-[9px] font-bold tracking-tight mt-0.5 text-slate-400">
                   {format(new Date(card.document_deadline!), 'dd MMM', { locale: ptBR })}
                 </span>
               )}

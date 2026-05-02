@@ -103,11 +103,6 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
               </TooltipProvider>
             )}
           </div>
-          {column.department && (
-            <span className="text-[9px] font-bold text-slate-400 ml-4 tracking-tight uppercase opacity-70">
-              {departmentLabels[column.department]}
-            </span>
-          )}
         </div>
 
         {isEditor && (

@@ -44,7 +44,7 @@ export function MessageThread({
     if (textarea) {
       textarea.style.height = "auto";
       // Base height 44px, max 120px (about 4-5 lines)
-      const newHeight = Math.min(textarea.scrollHeight, 140);
+      const newHeight = Math.min(Math.max(textarea.scrollHeight, 96), 220);
       textarea.style.height = `${newHeight}px`;
     }
   };
@@ -172,8 +172,8 @@ export function MessageThread({
                 }
               }}
               placeholder="Escreva sua mensagem..."
-              rows={1}
-              className="w-full bg-transparent border-none focus:ring-0 resize-none py-3.5 px-4 text-sm min-h-[48px] outline-none placeholder:text-muted-foreground/60"
+              rows={3}
+              className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm min-h-[96px] outline-none placeholder:text-muted-foreground/60 leading-relaxed"
             />
             
             <div className="flex items-center justify-between px-2.5 pb-2.5">

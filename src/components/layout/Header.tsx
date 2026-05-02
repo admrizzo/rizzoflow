@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3, Inbox } from 'lucide-react';
+import { Search, LogOut, User, Filter, Settings2, Archive, RefreshCw, BarChart3, Inbox, ChevronDown } from 'lucide-react';
 import { useSync, formatLastSync } from '@/hooks/useSync';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';

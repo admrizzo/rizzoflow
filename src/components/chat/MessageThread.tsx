@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
- import { Send, ArrowLeft, X } from "lucide-react";
+ import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -85,7 +85,7 @@ export function MessageThread({
     }
   }
 
-  const displayName = conv?.other_user_name || conv?.name || "Conversa";
+   const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
 
   return (
      <div className="flex h-full flex-col bg-background relative">
@@ -105,9 +105,6 @@ export function MessageThread({
             {conv?.type === "group" ? "Grupo" : "Mensagem direta"}
           </p>
         </div>
-         <Button variant="ghost" size="icon" className="h-8 w-8 hidden md:flex" onClick={close}>
-           <X className="h-4 w-4" />
-         </Button>
       </header>
 
        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -154,26 +151,47 @@ export function MessageThread({
         })}
       </div>
 
-       <div className="border-t border-border bg-background p-4">
-         <div className="flex items-end gap-3 bg-muted/30 rounded-xl p-1.5 border border-border/50 focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
+       <div className="border-t border-border bg-background p-4 pb-6 md:pb-4">
+         <div className="flex flex-col gap-2 bg-muted/30 rounded-xl border border-border/50 focus-within:border-primary/30 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
            <textarea
              ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
+             value={text}
+             onChange={(e) => setText(e.target.value)}
+             onKeyDown={(e) => {
                if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
-                e.preventDefault();
-                send();
-              }
-            }}
+                 e.preventDefault();
+                 send();
+               }
+             }}
              placeholder="Escreva uma mensagem..."
-            rows={1}
-             className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-sm min-h-[40px] outline-none"
-          />
-           <Button onClick={send} disabled={!text.trim() || sending} size="icon" className="h-9 w-9 shrink-0 rounded-lg shadow-sm">
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+             rows={1}
+             className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm min-h-[44px] outline-none"
+           />
+           
+           <div className="flex items-center justify-between px-2 pb-2">
+             <div className="flex items-center gap-0.5">
+               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Anexar arquivo">
+                 <Paperclip className="h-4 w-4" />
+               </Button>
+               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Anexar imagem">
+                 <ImageIcon className="h-4 w-4" />
+               </Button>
+               <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" title="Enviar áudio (em breve)">
+                 <Mic className="h-4 w-4" />
+               </Button>
+             </div>
+             
+             <Button 
+               onClick={send} 
+               disabled={!text.trim() || sending} 
+               size="sm" 
+               className="h-8 gap-2 px-3 rounded-lg shadow-sm"
+             >
+               <span className="hidden sm:inline">Enviar</span>
+               <Send className="h-3.5 w-3.5" />
+             </Button>
+           </div>
+         </div>
       </div>
     </div>
   );

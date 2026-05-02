@@ -80,9 +80,9 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowNew((v) => !v)} title="Nova conversa">
              {showNew ? <X className="h-4 w-4" /> : <MessageSquarePlus className="h-4 w-4" />}
            </Button>
-           <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={close}>
-             <X className="h-4 w-4" />
-           </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={close}>
+              <X className="h-4 w-4" />
+            </Button>
          </div>
       </div>
 

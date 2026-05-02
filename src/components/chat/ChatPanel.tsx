@@ -11,7 +11,7 @@ export function ChatPanel() {
     <Sheet open={isOpen} onOpenChange={(o) => (o ? null : close())}>
       <SheetContent
         side="right"
-          className="p-0 w-full sm:max-w-[420px] md:max-w-[860px] flex flex-col gap-0 border-l shadow-2xl"
+          className="p-0 w-full sm:max-w-[420px] md:max-w-[1000px] lg:max-w-[1200px] flex flex-col gap-0 border-l shadow-2xl"
       >
          <SheetHeader className="sr-only">
            <SheetTitle>Chat interno</SheetTitle>

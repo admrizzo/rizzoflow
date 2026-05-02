@@ -262,9 +262,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             {docsReceived && <CheckCheck className="h-3 w-3" />}
             {correctionPending && <Wrench className="h-3 w-3" />}
             {proposalInProgress && <FileEdit className="h-3 w-3" />}
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              {docsReceived ? "Doc. recebidos" : correctionPending ? "Correção solicitada" : "Em preenchimento"}
-            </span>
+            <div className="flex-1 flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider">
+                {docsReceived ? "Doc. recebidos" : correctionPending ? "Correção solicitada" : "Em preenchimento"}
+              </span>
+              <span className="text-[9px] font-bold opacity-40">
+                {docsReceived ? "LOC-2902" : correctionPending ? "LOC-2903" : "LOC-2904"}
+              </span>
+            </div>
           </div>
         )}
 

@@ -145,15 +145,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         ref={ref}
         onClick={onClick}
         className={cn(
-          "cursor-pointer bg-card hover:bg-accent/20 shadow-[0_1px_2px_rgba(20,30,40,0.05)] hover:shadow-md border border-border rounded-[10px] overflow-hidden relative will-change-transform select-none min-h-[132px] transition-shadow",
-          isDragging && "shadow-xl ring-2 ring-primary/40 opacity-95",
-          isArchived && "opacity-60 bg-muted",
-          isAnyDeadlineOverdue && !isArchived && "border-2 border-red-400 bg-red-50",
-          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-2 border-orange-400 bg-orange-50",
-          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-red-500",
-          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-amber-500",
-          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-4 border-l-emerald-500",
-          hasPendingItems && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && !hasSla && "border-l-4 border-l-amber-400"
+          "cursor-pointer bg-card hover:bg-accent/[0.02] shadow-[0_2px_4px_rgba(0,0,0,0.02),0_1px_0_rgba(0,0,0,0.03)] hover:shadow-lg border border-border/80 rounded-xl overflow-hidden relative will-change-transform select-none min-h-[132px] transition-all duration-200 group/card",
+          isDragging && "shadow-2xl ring-2 ring-accent/20 scale-[1.02] z-50",
+          isArchived && "opacity-60 bg-muted/50 grayscale-[0.5]",
+          isAnyDeadlineOverdue && !isArchived && "border-red-200 bg-red-50/30",
+          reviewOverdue && !isAnyDeadlineOverdue && !isArchived && "border-orange-200 bg-orange-50/30",
+          hasSla && slaStatus === 'red' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-red-500",
+          hasSla && slaStatus === 'yellow' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-amber-500",
+          hasSla && slaStatus === 'green' && !isAnyDeadlineOverdue && !reviewOverdue && !isArchived && "border-l-[3px] border-l-emerald-500"
         )}
       >
         {/* Red badge for unseen changes */}

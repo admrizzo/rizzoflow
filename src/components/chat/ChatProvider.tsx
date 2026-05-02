@@ -20,7 +20,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [unreadTotal, setUnreadTotal] = useState(0);
+   const [unreadTotal, setUnreadTotal] = useState(0);
+   const [lastUpdate, setLastUpdate] = useState(Date.now());
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -57,7 +58,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshUnread();
-  }, [refreshUnread]);
+   }, [refreshUnread, lastUpdate]);
 
   // Realtime: refresh on any new message or participant update
   useEffect(() => {
@@ -65,12 +66,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const channel = supabase
       .channel("chat-global")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => {
-        refreshUnread();
+         setLastUpdate(Date.now());
         qc.invalidateQueries({ queryKey: ["chat", "messages"] });
         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, () => {
-        refreshUnread();
+         setLastUpdate(Date.now());
+         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       })
       .subscribe();
     return () => {

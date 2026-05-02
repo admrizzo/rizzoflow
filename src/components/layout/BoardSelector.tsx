@@ -27,61 +27,8 @@ export function BoardSelector({ boards, selectedBoard, onSelectBoard, cardCounts
   const isAdminFlow = location.pathname === '/admin-flow';
 
   return (
-    <div
-      className="px-4 py-2 flex items-center gap-2 overflow-x-auto lp-thin-scroll border-b"
-      style={{
-        backgroundColor: 'hsl(var(--chrome-bg-elevated))',
-        borderColor: 'hsl(var(--chrome-border))',
-      }}
-    >
-      {/* Home/All flows button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild={isAdminFlow}
-        onClick={isAdminFlow ? undefined : () => onSelectBoard(null)}
-        className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-md whitespace-nowrap",
-          !selectedBoard && !isAdminFlow
-            ? "bg-white text-foreground font-semibold shadow-sm"
-            : "bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
-        )}
-      >
-        {isAdminFlow ? (
-          <Link to="/dashboard">
-            <Home className="h-4 w-4" />
-            <span>Meus Fluxos</span>
-          </Link>
-        ) : (
-          <>
-            <Home className="h-4 w-4" />
-            <span>Meus Fluxos</span>
-          </>
-        )}
-      </Button>
-
-      <div className="w-px h-5 bg-white/15 mx-1" />
-
-      {/* Admin Flow button - using Link for proper navigation */}
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild
-        className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-md whitespace-nowrap",
-          isAdminFlow
-            ? "bg-white text-foreground font-semibold shadow-sm hover:bg-white hover:text-foreground"
-            : "bg-transparent text-white/80 hover:bg-white/10 hover:text-white"
-        )}
-      >
-        <Link to="/admin-flow">
-          {isAdminFlow && <Check className="h-4 w-4 text-green-600" />}
-          <BarChart3 className="h-4 w-4" />
-          <span>Métricas</span>
-        </Link>
-      </Button>
-
-      <div className="w-px h-5 bg-white/15 mx-1" />
+    <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto lp-thin-scroll border-b bg-sidebar/95 text-white border-white/5 scrollbar-none">
+      {/* Home button removed from here as it is now in Header */}
 
       {boards.map((board) => {
         const Icon = iconMap[board.icon] || ClipboardList;

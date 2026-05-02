@@ -27,7 +27,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   return (
-    <div className="flex-shrink-0 w-60 sm:w-64 md:w-[290px] bg-card border border-border rounded-xl shadow-sm flex flex-col max-h-[calc(100vh-10rem)]">
+    <div className="flex-shrink-0 w-[300px] bg-card/60 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col max-h-[calc(100vh-10rem)] transition-all hover:bg-card/80">
       <ColumnHeader 
         column={column} 
         cardCount={cards.length}

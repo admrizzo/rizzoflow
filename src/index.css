@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    --background: 214 32% 97%;
+    --background: 214 25% 94%;
     --foreground: 220 20% 18%;
 
     --card: 0 0% 100%;
@@ -23,8 +23,8 @@
     --secondary: 210 10% 96%;
     --secondary-foreground: 220 20% 18%;
 
-    --muted: 210 8% 96%;
-    --muted-foreground: 215 14% 34%;
+    --muted: 210 10% 92%;
+    --muted-foreground: 215 16% 40%;
 
     --accent: 340 100% 45%;
     --accent-foreground: 0 0% 100%;
@@ -48,11 +48,11 @@
     --sidebar-ring: 340 100% 45%;
 
     /* Focus semi-dark chrome (Header + painéis superiores) — Fase 1 visual */
-    --chrome-bg: 215 28% 14%;
-    --chrome-bg-elevated: 215 25% 18%;
+    --chrome-bg: 215 32% 10%;
+    --chrome-bg-elevated: 215 30% 14%;
     --chrome-fg: 0 0% 96%;
-    --chrome-fg-muted: 215 15% 70%;
-    --chrome-border: 215 20% 24%;
+    --chrome-fg-muted: 215 18% 65%;
+    --chrome-border: 215 25% 20%;
     --chrome-accent: 340 100% 55%;
   }
 

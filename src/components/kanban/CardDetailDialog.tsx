@@ -763,7 +763,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       modal
     >
       <DialogContent
-        className="max-w-[1180px] w-[96vw] h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden bg-background border-border"
+        className="max-w-[1180px] w-[96vw] h-[100dvh] md:h-[90vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden bg-background border-border md:rounded-3xl shadow-2xl"
         hideCloseButton
         onEscapeKeyDown={(e) => {
           // Nested dialogs (confirm/archive/transfer/clone) must close first.

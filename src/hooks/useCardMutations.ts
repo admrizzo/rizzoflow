@@ -77,7 +77,7 @@ export function useCardMutations(boardId?: string) {
                  action_text: after,
                  responsible_id: (updates as any).responsible_user_id || prev.responsible_user_id,
                  due_date: (updates as any).next_action_due_date || prev.next_action_due_date
-               }
+               },
               oldValue: before || null,
               newValue: after || null,
             });

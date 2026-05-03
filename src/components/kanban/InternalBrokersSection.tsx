@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { UserCheck, Handshake, Plus, X, User } from 'lucide-react';
+import * as SelectPrimitive from "@radix-ui/react-select";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -122,9 +121,9 @@ export function InternalBrokersSection({
         value={value ?? NONE}
         onValueChange={(v) => onChange(field, v === NONE ? null : v)}
       >
-        <SelectTrigger asChild className="border-none p-0 h-auto ring-0 focus:ring-0 shadow-none">
+        <SelectPrimitive.Trigger asChild>
           {trigger}
-        </SelectTrigger>
+        </SelectPrimitive.Trigger>
         <SelectContent className="max-h-60">
           <SelectItem value={NONE} className="text-muted-foreground italic">
             <div className="flex items-center gap-2">

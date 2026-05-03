@@ -7,10 +7,11 @@ import { useCommentMentions } from '@/hooks/useCommentMentions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X } from 'lucide-react';
-import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+ import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X, UserCog, ArrowRight, RefreshCcw } from 'lucide-react';
+ import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+ import { ptBR } from 'date-fns/locale';
+ import { cn } from '@/lib/utils';
 import { MentionTextarea, extractMentionedUserIds, renderMentionText } from './MentionTextarea';
 import {
   useCommentAttachments,
@@ -34,18 +35,12 @@ interface Comment {
   };
 }
 
-interface ActivityLog {
-  id: string;
-  card_id: string;
-  user_id: string;
-  from_column_id: string;
-  to_column_id: string;
-  created_at: string;
-}
+ import { useCardActivityLogs, CardActivityLog } from '@/hooks/useCardActivityLogs';
+ import { History, Target, Calendar as CalendarIcon, ListChecks, RotateCcw, Sparkles } from 'lucide-react';
 
-type TimelineItem = 
-  | { type: 'comment'; data: Comment }
-  | { type: 'activity'; data: ActivityLog; userName: string; avatarUrl?: string; fromColumnName: string; toColumnName: string };
+ type TimelineItem = 
+   | { type: 'comment'; data: Comment }
+   | { type: 'activity'; data: CardActivityLog };
 
 interface CardNotesSidebarProps {
   cardId: string;
@@ -123,78 +118,34 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
     },
   });
 
-  const { data: activityLogs = [], isLoading: activityLoading } = useQuery({
-    queryKey: ['card_activity_log', cardId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('card_activity_log')
-        .select('*')
-        .eq('card_id', cardId)
-        .order('created_at', { ascending: false });
+   const { logs: activityLogs = [], isLoading: activityLoading } = useCardActivityLogs(cardId);
+ 
+   // Merge comments and activity into unified timeline
+   const timeline: TimelineItem[] = React.useMemo(() => {
+     const items: TimelineItem[] = [];
+     
+     comments.forEach(c => items.push({ type: 'comment', data: c }));
+     activityLogs.forEach(log => items.push({ type: 'activity', data: log }));
+ 
+     items.sort((a, b) => {
+       const dateA = a.type === 'comment' ? a.data.created_at : (a.type === 'activity' ? a.data.created_at : '');
+       const dateB = b.type === 'comment' ? b.data.created_at : (b.type === 'activity' ? b.data.created_at : '');
+       return new Date(dateB).getTime() - new Date(dateA).getTime();
+     });
+ 
+     return items;
+   }, [comments, activityLogs]);
 
-      if (error) throw error;
-      return data as ActivityLog[];
-    },
-  });
-
-  // Build columns map for activity log display
-  const { data: columnsMap = {} } = useQuery({
-    queryKey: ['columns_map_for_activity', cardId],
-    queryFn: async () => {
-      const columnIds = new Set<string>();
-      activityLogs.forEach(log => {
-        if (log.from_column_id) columnIds.add(log.from_column_id);
-        if (log.to_column_id) columnIds.add(log.to_column_id);
-      });
-      if (columnIds.size === 0) return {};
-      const { data, error } = await supabase
-        .from('columns')
-        .select('id, name')
-        .in('id', Array.from(columnIds));
-      if (error) return {};
-      return (data || []).reduce((acc, col) => {
-        acc[col.id] = col.name;
-        return acc;
-      }, {} as Record<string, string>);
-    },
-    enabled: activityLogs.length > 0,
-  });
-
-  // Build profiles map for activity logs
-  const activityProfilesMap = React.useMemo(() => {
-    const map: Record<string, { full_name: string; avatar_url?: string }> = {};
-    profiles.forEach(p => {
-      map[p.user_id] = { full_name: p.full_name, avatar_url: p.avatar_url || undefined };
-    });
-    return map;
-  }, [profiles]);
-
-  // Merge comments and activity into unified timeline
-  const timeline: TimelineItem[] = React.useMemo(() => {
-    const items: TimelineItem[] = [];
-    
-    comments.forEach(c => items.push({ type: 'comment', data: c }));
-    
-    activityLogs.forEach(log => {
-      const profile = activityProfilesMap[log.user_id];
-      items.push({
-        type: 'activity',
-        data: log,
-        userName: profile?.full_name || 'Usuário',
-        avatarUrl: profile?.avatar_url,
-        fromColumnName: columnsMap[log.from_column_id] || '?',
-        toColumnName: columnsMap[log.to_column_id] || '?',
-      });
-    });
-
-    items.sort((a, b) => {
-      const dateA = a.type === 'comment' ? a.data.created_at : a.data.created_at;
-      const dateB = b.type === 'comment' ? b.data.created_at : b.data.created_at;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
-
-    return items;
-  }, [comments, activityLogs, activityProfilesMap, columnsMap]);
+   const EVENT_META: Record<string, { icon: typeof History; color: string; bg: string }> = {
+     card_created: { icon: Sparkles, color: 'text-emerald-700', bg: 'bg-emerald-100' },
+     column_changed: { icon: ArrowRight, color: 'text-blue-700', bg: 'bg-blue-100' },
+     responsible_changed: { icon: UserCog, color: 'text-violet-700', bg: 'bg-violet-100' },
+     next_action_changed: { icon: Target, color: 'text-orange-700', bg: 'bg-orange-100' },
+     due_date_changed: { icon: CalendarIcon, color: 'text-amber-700', bg: 'bg-amber-100' },
+     checklist_created: { icon: ListChecks, color: 'text-teal-700', bg: 'bg-teal-100' },
+     checklist_item_completed: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
+     checklist_item_reopened: { icon: RotateCcw, color: 'text-slate-700', bg: 'bg-slate-100' },
+   };
 
   const addComment = useMutation({
     mutationFn: async (content: string) => {
@@ -373,15 +324,24 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               <MessageCirclePlus className="h-3 w-3 mr-1" />
               Observação
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 text-[10px] px-2"
-              onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
-            >
-              <MessageCirclePlus className="h-3 w-3 mr-1" />
-              Resumo da negociação
-            </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 className="h-6 text-[10px] px-2"
+                 onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
+               >
+                 <MessageCirclePlus className="h-3 w-3 mr-1" />
+                 Resumo da negociação
+               </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 className="h-6 text-[10px] px-2"
+                 onClick={() => setNewNote(prev => prev ? prev + '\n🔄 Movimentação: ' : '🔄 Movimentação: ')}
+               >
+                 <RefreshCcw className="h-3 w-3 mr-1" />
+                 Movimentação
+               </Button>
           </div>
           <MentionTextarea
             value={newNote}
@@ -477,27 +437,48 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 return (
                   <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600">
                     <div className="flex items-start gap-2">
-                      <Avatar className="h-6 w-6 flex-shrink-0">
-                        <AvatarImage src={item.avatarUrl} alt={item.userName} />
-                        <AvatarFallback className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                          {getInitials(item.userName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <ArrowRightCircle className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                          <span>
-                            <span className="font-medium text-foreground">{item.userName}</span>
-                            {' moveu de '}
-                            <span className="font-medium text-foreground">{item.fromColumnName}</span>
-                            {' para '}
-                            <span className="font-medium text-foreground">{item.toColumnName}</span>
-                          </span>
-                        </div>
-                        <span className="text-muted-foreground mt-0.5 block">
-                          {format(new Date(item.data.created_at), "dd 'de' MMM. yyyy, HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
+                       {(() => {
+                         const log = item.data;
+                         const meta = EVENT_META[log.event_type] || {
+                           icon: History,
+                           color: 'text-muted-foreground',
+                           bg: 'bg-muted',
+                         };
+                         const Icon = meta.icon;
+                         const userName = log.actor_profile?.full_name || 'Usuário';
+                         return (
+                           <>
+                             <Avatar className="h-6 w-6 flex-shrink-0">
+                               <AvatarImage src={log.actor_profile?.avatar_url || undefined} alt={userName} />
+                               <AvatarFallback className="text-[10px] bg-primary/10">
+                                 {getInitials(userName)}
+                               </AvatarFallback>
+                             </Avatar>
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-1.5 flex-wrap">
+                                 <div className={cn("flex-shrink-0 h-4 w-4 rounded-full flex items-center justify-center", meta.bg, meta.color)}>
+                                   <Icon className="h-2.5 w-2.5" />
+                                 </div>
+                                 <p className="text-foreground leading-tight font-medium">
+                                   {log.title}
+                                 </p>
+                               </div>
+                               {log.description && (
+                                 <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words leading-relaxed opacity-90">
+                                   {log.description}
+                                 </p>
+                               )}
+                               <div className="flex items-center gap-1 mt-1.5 text-[10px] text-muted-foreground">
+                                 <span className="font-medium text-foreground/70">{userName}</span>
+                                 <span>·</span>
+                                 <time dateTime={log.created_at}>
+                                   {format(new Date(log.created_at), "dd 'de' MMM, HH:mm", { locale: ptBR })}
+                                 </time>
+                               </div>
+                             </div>
+                           </>
+                         );
+                       })()}
                     </div>
                   </div>
                 );

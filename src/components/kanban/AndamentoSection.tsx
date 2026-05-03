@@ -340,17 +340,18 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
       </header>
 
       {/* Painel Operacional - Timeline e Metadados */}
-      <div className="mb-6 space-y-4">
-
+      <div className="mb-6">
         {/* Timeline das etapas sem scrollbar */}
-        <StageStepper columns={columns} currentColumnId={card.column_id} />
+        <div className="-mx-2">
+          <StageStepper columns={columns} currentColumnId={card.column_id} />
+        </div>
 
         {/* Metadado discreto: Última movimentação */}
         {card.last_moved_at && (
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground opacity-80 pl-1">
-            <History className="h-3 w-3 opacity-60" />
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 pl-1 mt-1">
+            <History className="h-2.5 w-2.5 opacity-50" />
             <span>
-              Última movimentação: <span className="font-semibold">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+              Última movimentação: <span className="font-medium text-muted-foreground/80">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
               {card.last_moved_by_profile && (
                 <span> por {card.last_moved_by_profile.full_name.split(' ')[0]}</span>
               )}

@@ -279,7 +279,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
       {/* Cabeçalho Coeso do Bloco Andamento */}
-      <header className="mb-4 space-y-1.5">
+      <header className="mb-2 space-y-1">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
             Andamento

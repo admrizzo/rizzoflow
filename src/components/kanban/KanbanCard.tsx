@@ -8,6 +8,7 @@ import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
 import { getCardOperationalBadges, BadgeTone, OperationalBadge } from '@/lib/cardOperationalBadges';
+import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
 import { useProfiles } from '@/hooks/useProfiles';
 import {
   Tooltip,

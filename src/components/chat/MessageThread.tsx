@@ -62,15 +62,22 @@ export function MessageThread({
   // mark as read
   useEffect(() => {
     if (!user || !conversationId) return;
-    supabase
-      .from("chat_participants")
-      .update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId)
-      .eq("user_id", user.id)
-      .then(() => {
+    const markAsRead = async () => {
+      if (!user || !conversationId) return;
+      
+      const { error } = await supabase
+        .from("chat_participants")
+        .update({ last_read_at: new Date().toISOString() })
+        .eq("conversation_id", conversationId)
+        .eq("user_id", user.id);
+        
+      if (!error) {
         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-      });
-  }, [conversationId, user, messages.length, qc]);
+      }
+    };
+
+    markAsRead();
+  }, [conversationId, user, messages, qc]);
 
   async function send() {
     const content = text.trim();

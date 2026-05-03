@@ -419,14 +419,54 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
             Próxima ação
           </Label>
           <div className="flex gap-2">
-            <Input
-              value={localNextAction}
-              onChange={(e) => setLocalNextAction(e.target.value)}
-              onBlur={handleNextActionBlur}
-              placeholder='Ex: "Cobrar comprovante de renda do fiador 2"'
-              disabled={!canEdit}
-              className="flex-1"
-            />
+            <div className="flex-1 space-y-1.5">
+              <div className="relative">
+                <Input
+                  value={localNextAction}
+                  onChange={(e) => setLocalNextAction(e.target.value)}
+                  onBlur={handleNextActionBlur}
+                  placeholder='Use este campo para atribuir a próxima pendência prática do card.'
+                  disabled={!canEdit}
+                  className={cn(
+                    "flex-1 pr-10",
+                    hasPendingAction && "font-semibold text-foreground ring-1 ring-accent/20"
+                  )}
+                />
+                {hasPendingAction && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {overdue ? (
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                    ) : today ? (
+                      <Clock className="h-4 w-4 text-warning" />
+                    ) : (
+                      <CircleDashed className="h-4 w-4 text-muted-foreground/40" />
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {hasPendingAction && (
+                <div className="flex gap-2 pl-1">
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "text-[9px] uppercase tracking-tighter h-4 px-1 border-dashed",
+                      overdue ? "border-destructive/40 text-destructive bg-destructive/5" :
+                      today ? "border-warning/40 text-warning bg-warning/5" :
+                      !dueDate ? "border-slate-300 text-slate-500" :
+                      "border-accent/40 text-accent-foreground"
+                    )}
+                  >
+                    {overdue ? 'Vencida' : today ? 'Vence hoje' : !dueDate ? 'Sem prazo' : 'Pendente'}
+                  </Badge>
+                  {!card.responsible_user_id && (
+                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1 border-dashed border-destructive/40 text-destructive bg-destructive/5">
+                      Sem responsável
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
             {hasPendingAction && canEdit && (
               <Button
                 type="button"
@@ -434,11 +474,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
                 size="default"
                 onClick={handleMarkAsDone}
                 disabled={isCompleting}
-                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white"
-                title="Marcar próxima ação como realizada"
+                className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white h-9"
+                title="Concluir esta ação"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Marcar como realizada</span>
+                <span className="hidden sm:inline">Concluir ação</span>
               </Button>
             )}
           </div>
@@ -471,7 +511,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-60">
               <SelectItem value={NONE_VALUE}>
                 <span className="text-muted-foreground">Sem responsável</span>
               </SelectItem>
@@ -489,6 +529,13 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               ))}
             </SelectContent>
           </Select>
+          <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
+            {card.responsible_user_id === user?.id 
+              ? "Esta ação aparecerá na sua Minha Fila."
+              : card.responsible_user_id 
+                ? `${responsibleProfile?.full_name?.split(' ')[0] || 'O responsável'} será notificado e verá esta ação na Minha Fila.`
+                : "Defina um responsável para esta ação entrar na fila de alguém."}
+          </p>
         </div>
 
         {/* Prazo */}
@@ -519,6 +566,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               />
             </div>
           </div>
+          {!dueDate && hasPendingAction && (
+            <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
+              Adicionar prazo ajuda a priorizar a fila.
+            </p>
+          )}
         </div>
       </div>
     </div>

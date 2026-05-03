@@ -185,9 +185,18 @@
 
    /* Hide default Sheet close button in ChatPanel since we use a custom one in the header */
    .chat-panel > button.absolute.right-4.top-4 {
-     display: none;
+     display: none !important;
    }
- 
+
+   /* Ensure our custom chat close button is always visible */
+   .chat-panel .chat-close-button {
+     display: inline-flex !important;
+     visibility: visible !important;
+     opacity: 1 !important;
+     pointer-events: auto !important;
+     z-index: 9999 !important;
+   }
+
   .chat-panel [data-radix-scroll-area-viewport],
   .chat-conversation-list [data-radix-scroll-area-viewport] {
     width: 100% !important;

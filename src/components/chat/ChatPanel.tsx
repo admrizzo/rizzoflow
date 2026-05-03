@@ -11,7 +11,13 @@ export function ChatPanel() {
     <Sheet open={isOpen} onOpenChange={(o) => (o ? null : close())}>
       <SheetContent
         side="right"
-          className="p-0 w-full sm:max-w-[420px] md:max-w-[780px] lg:max-w-[840px] flex flex-col gap-0 border-l shadow-2xl chat-panel"
+        className="p-0 w-full sm:max-w-[420px] md:max-w-[780px] lg:max-w-[840px] flex flex-col gap-0 border-l shadow-2xl chat-panel"
+        onEscapeKeyDown={(event) => {
+          if (activeConversationId) {
+            event.preventDefault();
+            setActiveConversationId(null);
+          }
+        }}
       >
          <SheetHeader className="sr-only">
            <SheetTitle>Chat interno</SheetTitle>

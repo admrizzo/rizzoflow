@@ -92,63 +92,61 @@ export function CommentAttachmentList({
   };
 
   return (
-    <div className="mt-2 flex flex-col gap-1.5">
+    <div className="mt-2 flex flex-col gap-1.5 min-w-0 max-w-full overflow-hidden">
       {attachments.map((att) => {
         const Icon = isImage(att.mime_type) ? ImageIcon : FileText;
         const isLoading = loadingId === att.id;
         return (
-          <div key={att.id} className="flex items-center gap-2 px-2 py-2 rounded-md border bg-muted/40 text-xs min-w-0 w-full overflow-hidden">
-             <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-                <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-                <div className="flex-1 min-w-0 overflow-hidden">
-                 <div className="truncate font-medium text-foreground" title={att.file_name}>{att.file_name}</div>
-                 {att.file_size != null && (
-                   <div className="text-[10px] text-muted-foreground">
-                     {formatFileSize(att.file_size)}
-                   </div>
-                 )}
-               </div>
-             </div>
-               <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
-               <Button
-                 type="button"
-                 variant="ghost"
-                 size="sm"
-                 className="h-7 px-2 text-xs"
-                 onClick={() => handleView(att)}
-                 disabled={isLoading}
-                 title="Visualizar"
-               >
-                 {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
-                 <span className="hidden sm:inline ml-1">Visualizar</span>
-               </Button>
-               <Button
-                 type="button"
-                 variant="ghost"
-                 size="sm"
-                 className="h-7 px-2 text-xs"
-                 onClick={() => handleDownload(att)}
-                 disabled={isLoading}
-                 title="Baixar"
-               >
-                 <Download className="h-3 w-3" />
-                 <span className="hidden sm:inline ml-1">Baixar</span>
-               </Button>
-             </div>
-            {canDelete && onDelete && (
+          <div key={att.id} className="flex items-center gap-2 px-2 py-2 rounded-md border bg-muted/40 text-xs w-full min-w-0 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+              <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <div className="truncate font-medium text-foreground" title={att.file_name}>{att.file_name}</div>
+                {att.file_size != null && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {formatFileSize(att.file_size)}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                onClick={() => {
-                  if (confirm(`Remover anexo "${att.file_name}"?`)) onDelete(att);
-                }}
-                title="Remover anexo"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleView(att)}
+                disabled={isLoading}
+                title="Visualizar"
               >
-                <X className="h-3 w-3" />
+                {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
               </Button>
-            )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => handleDownload(att)}
+                disabled={isLoading}
+                title="Baixar"
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+              {canDelete && onDelete && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    if (confirm(`Remover anexo "${att.file_name}"?`)) onDelete(att);
+                  }}
+                  title="Remover anexo"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}

@@ -73,8 +73,8 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
   }
 
   return (
-     <div className="flex h-full flex-col bg-background">
-        <div className="px-4 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between">
+    <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden">
+      <div className="px-4 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Chat Interno</h3>

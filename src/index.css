@@ -169,4 +169,22 @@
     background-clip: padding-box;
     border: 2px solid transparent;
   }
+
+  /* Chat Panel specialized styling */
+  .chat-panel,
+  .chat-panel * {
+    box-sizing: border-box;
+  }
+
+  .chat-panel,
+  .chat-conversation-list,
+  .chat-message-thread {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .chat-panel [data-radix-scroll-area-viewport],
+  .chat-conversation-list [data-radix-scroll-area-viewport] {
+    width: 100% !important;
+  }
 }

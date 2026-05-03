@@ -95,7 +95,7 @@ export function MessageThread({
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
 
   return (
-     <div className="flex h-full flex-col bg-background relative min-h-0">
+    <div className="flex h-full flex-col bg-background relative min-h-0 chat-message-thread min-w-0 overflow-hidden">
       <header className="border-b border-border bg-muted/40 flex w-full shrink-0">
         <div className="w-full px-4 py-3 flex items-center gap-3">
           {onBack ? (
@@ -116,9 +116,9 @@ export function MessageThread({
         </div>
       </header>
 
-       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-4 flex flex-col scroll-smooth">
-          <div className="w-full space-y-4 flex flex-col">
-        {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 scroll-smooth">
+        <div className="w-full max-w-3xl mx-auto space-y-4 flex flex-col min-w-0">
+          {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
         {!isLoading && messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá 👋</p>
         )}
@@ -142,13 +142,13 @@ export function MessageThread({
               )}
               <div
                 className={cn(
-                  "max-w-[85%] sm:max-w-[70%] md:max-w-[65%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
+                  "min-w-0 max-w-[85%] sm:max-w-[72%] md:max-w-[68%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
                   mine
                     ? "bg-primary text-primary-foreground rounded-tr-none shadow-md"
                     : "bg-muted/80 text-foreground rounded-tl-none border border-border/20",
                 )}
               >
-                <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">{m.content}</p>
                 <p
                   className={cn(
                     "text-[10px] mt-1 text-right",
@@ -164,9 +164,9 @@ export function MessageThread({
         </div>
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex flex-col shrink-0">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex flex-col shrink-0 border-t">
         <TooltipProvider>
-          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full">
+          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full max-w-3xl mx-auto">
             <textarea
               ref={textareaRef}
               value={text}

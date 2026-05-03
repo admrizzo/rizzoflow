@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import { Tabs, TabsList, TabsTrigger, Tabs } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,7 +72,8 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
     queryKey: ["chat", "people", debouncedSearch],
     enabled: activeTab === "people" || isCreatingGroup,
     queryFn: async () => {
-      let q = supabase.from("profiles").select("user_id, full_name, avatar_url, email, department").neq("user_id", user!.id).limit(50);
+      if (!user?.id) return [];
+      let q = supabase.from("profiles").select("user_id, full_name, avatar_url, email, department").neq("user_id", user.id).limit(50);
       const term = debouncedSearch.trim();
       if (term) q = q.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
       const { data } = await q;

@@ -11,25 +11,25 @@ export function ChatPanel() {
     <Sheet open={isOpen} onOpenChange={(o) => (o ? null : close())}>
       <SheetContent
         side="right"
-          className="p-0 w-full sm:max-w-[420px] md:max-w-[1000px] lg:max-w-[1200px] flex flex-col gap-0 border-l shadow-2xl"
+        className="p-0 w-full sm:max-w-[420px] md:max-w-[1000px] lg:max-w-[1200px] flex flex-col gap-0 border-l shadow-2xl chat-panel"
       >
          <SheetHeader className="sr-only">
            <SheetTitle>Chat interno</SheetTitle>
            <SheetDescription>Sistema de comunicação interna para a equipe Rizzo Flow.</SheetDescription>
          </SheetHeader>
  
-        <div className="flex flex-1 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* Lista — esconde no mobile quando há conversa ativa */}
           <div
             className={`${
               activeConversationId ? "hidden md:flex" : "flex"
-            } w-full md:w-[320px] border-r border-border flex-col min-h-0`}
+            } border-r border-border flex-col min-h-0 min-w-0 overflow-hidden`}
           >
             <ConversationList />
           </div>
 
           {/* Thread */}
-          <div className={`${activeConversationId ? "flex" : "hidden md:flex"} flex-1 min-h-0`}>
+          <div className={`${activeConversationId ? "flex" : "hidden md:flex"} flex-col min-h-0 min-w-0 overflow-hidden`}>
             {activeConversationId ? (
               <MessageThread
                 conversationId={activeConversationId}

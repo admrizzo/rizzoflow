@@ -455,11 +455,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                                </AvatarFallback>
                              </Avatar>
                              <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-1.5 flex-wrap">
+                                <div className="flex items-baseline gap-x-2 gap-y-1 flex-wrap min-w-0">
                                  <div className={cn("flex-shrink-0 h-4 w-4 rounded-full flex items-center justify-center", meta.bg, meta.color)}>
                                    <Icon className="h-2.5 w-2.5" />
                                  </div>
-                                 <p className="text-foreground leading-tight font-medium">
+                                  <p className="text-foreground leading-tight font-medium min-w-0 truncate">
                                    {log.title}
                                  </p>
                                </div>
@@ -500,11 +500,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-foreground">
+                      <div className="flex items-baseline gap-x-2 gap-y-1 flex-wrap min-w-0">
+                        <span className="font-semibold text-foreground truncate min-w-0">
                           {comment.profile?.full_name || 'Usuário'}
                         </span>
-                        <a href="#" className="text-muted-foreground hover:underline" onClick={(e) => e.preventDefault()}>
+                        <a href="#" className="text-muted-foreground hover:underline shrink-0" onClick={(e) => e.preventDefault()}>
                           {format(new Date(comment.created_at), "dd 'de' MMM. yyyy, HH:mm", { locale: ptBR })}
                         </a>
                       </div>
@@ -560,7 +560,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                               </button>
                             );
                           })()}
-                          <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                          <div className="flex items-center gap-2 mt-1 text-muted-foreground flex-wrap">
                             {isOwner && (
                               <button onClick={() => handleStartEdit(comment)} className="hover:underline hover:text-foreground">
                                 Editar

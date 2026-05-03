@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { UserCheck, Handshake, Plus, X, User } from 'lucide-react';
+import * as SelectPrimitive from "@radix-ui/react-select";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -67,14 +66,17 @@ export function InternalBrokersSection({
     const profile = value ? options.find(o => o.user_id === value) : null;
     
     const trigger = (
-      <div className={cn(
-        "flex items-center gap-3 p-2 rounded-lg border transition-all duration-200 w-full text-left",
-        profile 
-          ? "bg-white border-slate-200 shadow-sm" 
-          : "bg-muted/30 border-dashed border-slate-300 hover:bg-muted/50 cursor-pointer",
-        canEdit && profile && "hover:border-slate-300 hover:shadow-md cursor-pointer",
-        !canEdit && !profile && "opacity-50 cursor-default"
-      )}>
+      <button 
+        type="button"
+        className={cn(
+          "flex items-center gap-3 p-2 rounded-lg border transition-all duration-200 w-full text-left",
+          profile 
+            ? "bg-white border-slate-200 shadow-sm" 
+            : "bg-muted/30 border-dashed border-slate-300 hover:bg-muted/50 cursor-pointer",
+          canEdit && profile && "hover:border-slate-300 hover:shadow-md cursor-pointer",
+          !canEdit && !profile && "opacity-50 cursor-default focus:outline-none"
+        )}
+      >
         <div className="flex-shrink-0">
           {profile ? (
             <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
@@ -112,7 +114,7 @@ export function InternalBrokersSection({
             <X className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         )}
-      </div>
+      </button>
     );
 
     if (!canEdit) return trigger;
@@ -122,9 +124,9 @@ export function InternalBrokersSection({
         value={value ?? NONE}
         onValueChange={(v) => onChange(field, v === NONE ? null : v)}
       >
-        <SelectTrigger asChild className="border-none p-0 h-auto ring-0 focus:ring-0 shadow-none">
+        <SelectPrimitive.Trigger asChild>
           {trigger}
-        </SelectTrigger>
+        </SelectPrimitive.Trigger>
         <SelectContent className="max-h-60">
           <SelectItem value={NONE} className="text-muted-foreground italic">
             <div className="flex items-center gap-2">

@@ -96,28 +96,25 @@ export function MessageThread({
 
   return (
     <div className="flex h-full flex-col bg-background relative min-h-0 chat-message-thread min-w-0 overflow-hidden">
-      <header className="border-b border-border bg-muted/40 flex w-full shrink-0">
-        <div className="w-full px-4 py-3 flex items-center gap-3">
+      <header className="border-b border-border bg-muted/20 flex w-full shrink-0">
+        <div className="w-full px-4 py-2 flex items-center gap-3">
           {onBack ? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={onBack}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
           ) : null}
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-7 w-7">
             {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
             <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate">{displayName}</p>
-            <p className="text-[10.5px] text-muted-foreground uppercase tracking-wider">
-              {conv?.type === "group" ? "Grupo" : "Mensagem direta"}
-            </p>
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
+            <p className="text-xs font-semibold truncate leading-none">{displayName}</p>
           </div>
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 scroll-smooth">
-        <div className="w-full max-w-3xl mx-auto space-y-4 flex flex-col min-w-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
+        <div className="w-full space-y-3 flex flex-col min-w-0">
           {isLoading && <p className="text-center text-xs text-muted-foreground py-8">Carregando...</p>}
         {!isLoading && messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá 👋</p>
@@ -142,13 +139,13 @@ export function MessageThread({
               )}
               <div
                 className={cn(
-                  "min-w-0 max-w-[85%] sm:max-w-[72%] md:max-w-[68%] rounded-2xl px-4 py-2.5 text-[14px] shadow-sm",
+                  "min-w-0 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] rounded-xl px-3 py-2 text-[13px] shadow-sm",
                   mine
-                    ? "bg-primary text-primary-foreground rounded-tr-none shadow-md"
-                    : "bg-muted/80 text-foreground rounded-tl-none border border-border/20",
+                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                    : "bg-muted/80 text-foreground rounded-tl-none border border-border/10",
                 )}
               >
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed">{m.content}</p>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug">{m.content}</p>
                 <p
                   className={cn(
                     "text-[10px] mt-1 text-right",
@@ -164,9 +161,9 @@ export function MessageThread({
         </div>
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-6 flex flex-col shrink-0 border-t">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-4 flex flex-col shrink-0 border-t">
         <TooltipProvider>
-          <div className="flex flex-col gap-1 bg-muted/40 rounded-2xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full max-w-3xl mx-auto">
+          <div className="flex flex-col gap-1 bg-muted/40 rounded-xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full">
             <textarea
               ref={textareaRef}
               value={text}
@@ -178,18 +175,18 @@ export function MessageThread({
                 }
               }}
               placeholder="Escreva sua mensagem..."
-              rows={3}
-              className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm min-h-[96px] outline-none placeholder:text-muted-foreground/60 leading-relaxed"
+              rows={1}
+              className="w-full bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-[13px] min-h-[44px] max-h-[120px] outline-none placeholder:text-muted-foreground/60 leading-normal"
             />
             
-            <div className="flex items-center justify-between px-2.5 pb-2.5">
+            <div className="flex items-center justify-between px-2 pb-2">
               <div className="flex items-center gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                       onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Paperclip className="h-4 w-4" />
@@ -203,7 +200,7 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                       onClick={() => toast.info("Recurso em preparação")}
                     >
                       <ImageIcon className="h-4 w-4" />
@@ -217,7 +214,7 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                       onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Mic className="h-4 w-4" />
@@ -231,7 +228,7 @@ export function MessageThread({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                       onClick={() => toast.info("Recurso em preparação")}
                     >
                       <Smile className="h-4 w-4" />

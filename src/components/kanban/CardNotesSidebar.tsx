@@ -324,15 +324,24 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               <MessageCirclePlus className="h-3 w-3 mr-1" />
               Observação
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-6 text-[10px] px-2"
-              onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
-            >
-              <MessageCirclePlus className="h-3 w-3 mr-1" />
-              Resumo da negociação
-            </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 className="h-6 text-[10px] px-2"
+                 onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
+               >
+                 <MessageCirclePlus className="h-3 w-3 mr-1" />
+                 Resumo da negociação
+               </Button>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 className="h-6 text-[10px] px-2"
+                 onClick={() => setNewNote(prev => prev ? prev + '\n🔄 Movimentação: ' : '🔄 Movimentação: ')}
+               >
+                 <RefreshCcw className="h-3 w-3 mr-1" />
+                 Movimentação
+               </Button>
           </div>
           <MentionTextarea
             value={newNote}

@@ -2148,12 +2148,13 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
             {/* Mobile: Comments section inline at the bottom */}
-             <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px] w-full overflow-hidden">
-              <CardNotesSidebar 
-                cardId={card.id} 
-                showDetails={true}
-              />
-            </div>
+               <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px] w-full overflow-hidden">
+                 <CardNotesSidebar 
+                   cardId={card.id} 
+                   showDetails={true}
+                 />
+               </div>
+             </div>
            </main>
  
            {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}

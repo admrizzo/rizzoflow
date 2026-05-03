@@ -102,12 +102,20 @@ export interface Column {
   default_checklist_items: any;
 }
 
+export type LabelCategory = 'prioridade' | 'risco' | 'dependencia_externa' | 'tipo_processo' | 'documento_cadastro' | 'informacao_interna';
+
 export interface Label {
   id: string;
   name: string;
   color: string;
   board_id: string | null;
   created_at: string;
+  category?: LabelCategory | null;
+  show_on_card?: boolean;
+  show_on_modal_header?: boolean;
+  counts_as_alert?: boolean;
+  criticality?: number;
+  source_type?: string;
 }
 
 export interface Card {

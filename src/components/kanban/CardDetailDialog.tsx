@@ -299,6 +299,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
       case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
       case 'red': return "bg-red-50 text-red-600 border-red-100/60";
       case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+      case 'blue': return "bg-blue-50 text-blue-600 border-blue-100/60";
+      case 'indigo': return "bg-indigo-50 text-indigo-600 border-indigo-100/60";
+      case 'rose': return "bg-rose-50 text-rose-600 border-rose-100/60";
       default: return "bg-slate-50 text-slate-500 border-slate-100/80";
     }
   };
@@ -890,21 +893,37 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 </span>
               )}
 
-              {badges.map((badge: OperationalBadge) => (
-                <span 
-                  key={badge.key}
-                  className={cn(
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
-                    badge.kind === 'alert' && badge.tone === 'red' 
-                      ? "bg-red-500 text-white border-red-400 animate-pulse" 
-                      : getToneClasses(badge.tone),
-                    badge.kind === 'secondary_status' && "ring-1 ring-white/10"
-                  )}
-                >
-                  <badge.icon className="h-3 w-3" /> 
-                  {badge.label}
-                </span>
-              ))}
+              {(() => {
+                const filteredBadges = badges.filter(b => b.kind !== 'manual_label' || b.show_on_header !== false);
+                const limit = 6;
+                const visible = filteredBadges.slice(0, limit);
+                const remaining = filteredBadges.length - limit;
+
+                return (
+                  <>
+                    {visible.map((badge: OperationalBadge) => (
+                      <span 
+                        key={badge.key}
+                        className={cn(
+                          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
+                          badge.kind === 'alert' && badge.tone === 'red' 
+                            ? "bg-red-500 text-white border-red-400 animate-pulse" 
+                            : getToneClasses(badge.tone),
+                          badge.kind === 'secondary_status' && "ring-1 ring-white/10"
+                        )}
+                      >
+                        <badge.icon className="h-3 w-3" /> 
+                        {badge.label}
+                      </span>
+                    ))}
+                    {remaining > 0 && (
+                      <span className="text-[10px] font-bold text-primary-foreground/70 px-1">
+                        +{remaining}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </DialogHeader>

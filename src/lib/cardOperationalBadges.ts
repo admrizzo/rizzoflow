@@ -11,8 +11,8 @@ import {
 import { isDateOverdue } from '@/lib/dateUtils';
 import { LucideIcon } from 'lucide-react';
 
-export type BadgeKind = 'secondary_status' | 'progress' | 'alert' | 'manual_label' | 'time';
-export type BadgeTone = 'emerald' | 'orange' | 'amber' | 'red' | 'slate' | 'blue' | 'indigo';
+export type BadgeKind = 'secondary_status' | 'progress' | 'alert' | 'manual_label' | 'time' | 'priority' | 'risk' | 'dependency';
+export type BadgeTone = 'emerald' | 'orange' | 'amber' | 'red' | 'slate' | 'blue' | 'indigo' | 'rose';
 
 export interface OperationalBadge {
   key: string;
@@ -21,6 +21,8 @@ export interface OperationalBadge {
   icon: LucideIcon;
   priority: number;
   kind: BadgeKind;
+  show_on_card?: boolean;
+  show_on_header?: boolean;
 }
 
 export function getCardOperationalBadges(
@@ -120,16 +122,45 @@ export function getCardOperationalBadges(
     });
   }
 
-  // --- 4. Etiquetas Manuais (kind: manual_label) ---
+  // --- 4. Etiquetas Manuais (kind: manual_label, priority, risk, etc.) ---
   if (card.labels && card.labels.length > 0) {
     card.labels.forEach(label => {
+      let kind: BadgeKind = 'manual_label';
+      let tone: BadgeTone = 'slate';
+      let priority = 40 + (label.criticality || 0);
+
+      // Mapping categories to visual styles
+      if (label.category === 'prioridade') {
+        kind = 'priority';
+        tone = 'indigo';
+        priority += 10;
+      } else if (label.category === 'risco') {
+        kind = 'risk';
+        tone = 'rose';
+        priority += 15;
+      } else if (label.category === 'dependencia_externa') {
+        kind = 'dependency';
+        tone = 'blue';
+        priority += 5;
+      } else if (label.category === 'tipo_processo') {
+        tone = 'amber';
+      }
+
+      if (label.counts_as_alert) {
+        kind = 'alert';
+        tone = 'red';
+        priority += 50;
+      }
+
       badges.push({
         key: `label_${label.id}`,
         label: label.name,
-        tone: 'slate', 
+        tone,
         icon: Tag,
-        priority: 40,
-        kind: 'manual_label'
+        priority,
+        kind,
+        show_on_card: label.show_on_card !== false,
+        show_on_header: label.show_on_modal_header !== false
       });
     });
   }

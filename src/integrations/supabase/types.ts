@@ -1382,24 +1382,42 @@ export type Database = {
       labels: {
         Row: {
           board_id: string | null
+          category: string | null
           color: string
+          counts_as_alert: boolean | null
           created_at: string
+          criticality: number | null
           id: string
           name: string
+          show_on_card: boolean | null
+          show_on_modal_header: boolean | null
+          source_type: string | null
         }
         Insert: {
           board_id?: string | null
+          category?: string | null
           color?: string
+          counts_as_alert?: boolean | null
           created_at?: string
+          criticality?: number | null
           id?: string
           name: string
+          show_on_card?: boolean | null
+          show_on_modal_header?: boolean | null
+          source_type?: string | null
         }
         Update: {
           board_id?: string | null
+          category?: string | null
           color?: string
+          counts_as_alert?: boolean | null
           created_at?: string
+          criticality?: number | null
           id?: string
           name?: string
+          show_on_card?: boolean | null
+          show_on_modal_header?: boolean | null
+          source_type?: string | null
         }
         Relationships: [
           {

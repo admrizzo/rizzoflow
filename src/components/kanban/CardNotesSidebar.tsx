@@ -10,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
  import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X, UserCog, ArrowRight } from 'lucide-react';
  import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+ import { ptBR } from 'date-fns/locale';
+ import { cn } from '@/lib/utils';
 import { MentionTextarea, extractMentionedUserIds, renderMentionText } from './MentionTextarea';
 import {
   useCommentAttachments,

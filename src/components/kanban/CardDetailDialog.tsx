@@ -105,6 +105,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
+import { getCardOperationalBadges, BadgeTone, OperationalBadge } from '@/lib/cardOperationalBadges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -283,6 +284,24 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Get current column for review deadline
   const currentColumn = columns.find(c => c.id === card?.column_id);
+
+  const badges = card ? getCardOperationalBadges(card, {
+    column: currentColumn,
+    vacancyDeadline: card.vacancy_deadline_met ? null : card.due_date, // Best guess for context
+    completionDeadline: card.document_deadline, // Best guess for context
+    budgetDeadline: card.negotiation_details // Best guess for context
+  }) : [];
+
+  const getToneClasses = (tone: BadgeTone) => {
+    switch (tone) {
+      case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
+      case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
+      case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
+      case 'red': return "bg-red-50 text-red-600 border-red-100/60";
+      case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+      default: return "bg-slate-50 text-slate-500 border-slate-100/80";
+    }
+  };
   const hasReviewDeadline = !!currentColumn?.review_deadline_days;
   const reviewOverdue = card && currentColumn ? isReviewOverdue(card, currentColumn) : false;
   const timeUntilReview = card && currentColumn ? getTimeUntilReview(card, currentColumn) : null;
@@ -844,67 +863,25 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   }
                 }}
               >
-                {card.title}
-              </DialogTitle>
-            )}
-          </div>
-          {/* Badge: documentos/proposta recebidos pelo cliente */}
-          {card.proposal_submitted_at && !pendingCorrection && !correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-400/15 text-emerald-100 border border-emerald-300/30"
-                title={`Proposta enviada em ${format(new Date(card.proposal_submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`}
-              >
-                <Inbox className="h-3 w-3" />
-                Doc. recebidos
-              </span>
-            </div>
-          )}
-          {/* Badge: correção solicitada (pendente) */}
-          {pendingCorrection && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-400/15 text-orange-100 border border-orange-300/30"
-                title="Aguardando o cliente reenviar com as correções solicitadas"
-              >
-                <Wrench className="h-3 w-3" />
-                Correção solicitada
-              </span>
-            </div>
-          )}
-          {/* Badge: correção/complementação recebida */}
-          {correctionReceived && (
-            <div className="mt-2">
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-sky-400/15 text-sky-100 border border-sky-300/30"
-                title="Cliente reenviou após uma solicitação de correção"
-              >
-                <CheckCheck className="h-3 w-3" />
-                {correctionReceivedLabel}
-              </span>
-            </div>
-          )}
-          {/* Badge: proposta em preenchimento pelo cliente (link gerado, ainda não enviado) */}
-          {!card.proposal_submitted_at && card.proposal_link_id && (
-            (() => {
-              const st = (card as any).proposal_link?.status as string | undefined;
-              const pending = st == null
-                ? true
-                : st !== 'enviada' && st !== 'recebida' && st !== 'finalizada';
-              if (!pending) return null;
-              return (
-                <div className="mt-2">
-                  <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-400/15 text-amber-100 border border-amber-300/30"
-                    title="Cliente ainda preenchendo a proposta pública"
-                  >
-                    <FileEdit className="h-3 w-3" />
-                    Em preenchimento
-                  </span>
-                </div>
-              );
-            })()
-          )}
+            {card.title}
+          </DialogTitle>
+        )}
+        <div className="flex flex-wrap gap-1.5 mt-1 ml-auto">
+          {badges.map((badge: OperationalBadge) => (
+            <span 
+              key={badge.key}
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
+                getToneClasses(badge.tone),
+                badge.kind === 'alert' && badge.tone === 'red' && "animate-pulse"
+              )}
+            >
+              <badge.icon className="h-3 w-3" /> 
+              {badge.label}
+            </span>
+          ))}
+        </div>
+      </div>
           {/* Card creation info - hidden on mobile for space */}
           <div className="hidden md:flex items-center gap-2 text-xs text-primary-foreground/70 mt-2">
             <UserCircle className="h-3 w-3" />

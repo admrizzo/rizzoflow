@@ -51,6 +51,9 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
         case 'red': return "bg-red-50 text-red-600 border-red-100/60";
         case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+        case 'blue': return "bg-blue-50 text-blue-600 border-blue-100/60";
+        case 'indigo': return "bg-indigo-50 text-indigo-600 border-indigo-100/60";
+        case 'rose': return "bg-rose-50 text-rose-600 border-rose-100/60";
         default: return "bg-slate-50 text-slate-500 border-slate-100/80";
       }
     };
@@ -180,21 +183,24 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             )}
           </div>
 
-          {/* 4. Badges (Máximo 3 badges operacionais) */}
+          {/* 4. Badges (Máximo 3 badges operacionais relevantes) */}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {badges.slice(0, 3).map((badge: OperationalBadge) => (
-              <span 
-                key={badge.key}
-                className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-sm transition-all duration-200",
-                  getToneClasses(badge.tone),
-                  badge.kind === 'alert' && badge.tone === 'red' && "animate-pulse"
-                )}
-              >
-                <badge.icon className="h-2.5 w-2.5" /> 
-                {badge.label}
-              </span>
-            ))}
+            {badges
+              .filter(b => b.kind !== 'manual_label' || b.show_on_card !== false)
+              .slice(0, 3)
+              .map((badge: OperationalBadge) => (
+                <span 
+                  key={badge.key}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-sm transition-all duration-200",
+                    getToneClasses(badge.tone),
+                    badge.kind === 'alert' && badge.tone === 'red' && "animate-pulse"
+                  )}
+                >
+                  <badge.icon className="h-2.5 w-2.5" /> 
+                  {badge.label}
+                </span>
+              ))}
           </div>
 
           {/* 5. Rodapé: Originador do Card */}

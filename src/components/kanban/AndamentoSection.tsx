@@ -69,6 +69,10 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
 
   const toneClassesResolver = getToneClasses || defaultGetToneClasses;
 
+  // Extrair badges de progresso
+  const progressBadges = badges.filter(b => b.kind === 'progress');
+  const secondaryStatusBadges = badges.filter(b => b.kind === 'secondary_status');
+
   const [isCompleting, setIsCompleting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
 
@@ -274,46 +278,59 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
 
   return (
     <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Andamento
-        </h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            ANDAMENTO
+          </h3>
+        </div>
         {hasPendingAction && dueDate && (overdue || today) && (
           <Badge
             variant="outline"
             className={cn(
-              'gap-1',
+              'gap-1 text-[10px] h-5',
               overdue
                 ? 'border-destructive/30 bg-destructive/10 text-destructive'
                 : 'border-warning/30 bg-warning/10 text-warning'
             )}
           >
-            <AlertTriangle className="h-3 w-3" />
+            <AlertTriangle className="h-2.5 w-2.5" />
             {overdue ? 'Prazo vencido' : 'Vence hoje'}
           </Badge>
         )}
       </div>
 
-      {/* Stage Stepper — etapas reais do board */}
-      <StageStepper columns={columns} currentColumnId={card.column_id} />
-
-      {/* Etapa Atual e Info Operacional */}
-      <div className="mb-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <h4 className="text-lg font-bold text-foreground">
+      {/* Painel Operacional Único */}
+      <div className="mb-6 flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h4 className="text-xl font-black text-foreground tracking-tight">
             {currentColumn?.name || 'Etapa não identificada'}
           </h4>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="bg-muted text-muted-foreground font-medium gap-1.5 h-6">
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+            {/* Status Secundário Principal */}
+            {secondaryStatusBadges.map((badge) => (
+              <Badge 
+                key={badge.key}
+                variant="outline"
+                className={cn("font-bold gap-1 px-2 h-6 border-2 shadow-sm", toneClassesResolver(badge.tone))}
+              >
+                <badge.icon className="h-3 w-3" />
+                {badge.label}
+              </Badge>
+            ))}
+
+            {/* Tempo na etapa */}
+            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold gap-1 px-2 h-6 border border-border/50">
               <Clock className="h-3 w-3" />
               {formatTimeElapsed(card.column_entered_at)} na etapa
             </Badge>
             
-            {badges.filter(b => b.kind === 'secondary_status').map((badge) => (
+            {/* Progresso Documental */}
+            {progressBadges.map((badge) => (
               <Badge 
                 key={badge.key}
                 variant="outline"
-                className={cn("font-bold gap-1.5 h-6", toneClassesResolver(badge.tone))}
+                className={cn("font-semibold gap-1 px-2 h-6", toneClassesResolver(badge.tone))}
               >
                 <badge.icon className="h-3 w-3" />
                 {badge.label}
@@ -322,28 +339,21 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           </div>
         </div>
 
-        {/* Metadados discretos */}
-        <div className="flex flex-wrap gap-x-6 gap-y-2 py-3 border-y border-dashed border-border/60">
-          {card.last_moved_at && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <History className="h-3.5 w-3.5 opacity-70" />
-              <span>
-                Última movimentação: <span className="font-medium text-foreground/80">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
-                {card.last_moved_by_profile && (
-                  <span className="opacity-70"> por {card.last_moved_by_profile.full_name.split(' ')[0]}</span>
-                )}
-              </span>
-            </div>
-          )}
-          {card.updated_at && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <RefreshCcw className="h-3.5 w-3.5 opacity-70" />
-              <span>
-                Última atualização: <span className="font-medium text-foreground/80">{format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
-              </span>
-            </div>
-          )}
-        </div>
+        {/* Timeline das etapas sem scrollbar */}
+        <StageStepper columns={columns} currentColumnId={card.column_id} />
+
+        {/* Metadado discreto: Última movimentação */}
+        {card.last_moved_at && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground opacity-80 pl-1">
+            <History className="h-3 w-3 opacity-60" />
+            <span>
+              Última movimentação: <span className="font-semibold">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+              {card.last_moved_by_profile && (
+                <span> por {card.last_moved_by_profile.full_name.split(' ')[0]}</span>
+              )}
+            </span>
+          </div>
+        )}
       </div>
 
       {!hasPendingAction && (
@@ -508,63 +518,56 @@ function StageStepper({
   const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
 
   return (
-    <div className="mb-4 rounded-lg border border-border bg-muted/20 px-3 py-4 overflow-x-auto lp-thin-scroll">
-      <div className="flex items-start gap-0 min-w-max md:min-w-0">
+    <div className="my-2 rounded-lg border border-border/40 bg-muted/10 px-2 py-3">
+      {/* Desktop Grid Layout (no scroll) */}
+      <div className="hidden md:grid grid-cols-6 gap-0">
         {columns.map((col, i) => {
           const state: 'done' | 'current' | 'todo' =
-            currentIndex === -1
-              ? 'todo'
-              : i < currentIndex
-              ? 'done'
-              : i === currentIndex
-              ? 'current'
-              : 'todo';
+            currentIndex === -1 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
           const isLast = i === columns.length - 1;
           return (
-            <div
-              key={col.id}
-              className="relative flex-1 min-w-[110px] flex flex-col items-center gap-2 px-1"
-            >
-              {/* Connector line (atrás do círculo) */}
+            <div key={col.id} className="relative flex flex-col items-center px-1">
               {!isLast && (
-                <div
-                  className={cn(
-                    'absolute top-[11px] left-1/2 right-[-50%] h-[2px] z-0',
-                    i < currentIndex
-                      ? 'bg-emerald-500'
-                      : 'bg-border'
-                  )}
-                />
+                <div className={cn('absolute top-[10px] left-1/2 right-[-50%] h-[1.5px] z-0', i < currentIndex ? 'bg-emerald-500' : 'bg-border/60')} />
               )}
-              {/* Bolinha do passo */}
-              <div
-                className={cn(
-                  'relative z-10 h-[22px] w-[22px] rounded-full inline-flex items-center justify-center border-2',
-                  state === 'done' &&
-                    'bg-emerald-500 border-transparent text-white',
-                  state === 'current' &&
-                    'bg-amber-500 border-transparent text-white',
-                  state === 'todo' && 'bg-background border-border text-muted-foreground'
-                )}
-                title={col.name}
-              >
-                {state === 'done' ? (
-                  <CheckCircle2 className="h-3 w-3" />
-                ) : state === 'current' ? (
-                  <Clock className="h-3 w-3" />
-                ) : (
-                  <CircleDashed className="h-3 w-3" />
-                )}
+              <div className={cn(
+                'relative z-10 h-[20px] w-[20px] rounded-full inline-flex items-center justify-center border-2 mb-2',
+                state === 'done' && 'bg-emerald-500 border-transparent text-white',
+                state === 'current' && 'bg-amber-500 border-transparent text-white shadow-sm ring-2 ring-amber-500/20',
+                state === 'todo' && 'bg-background border-border/80 text-muted-foreground'
+              )}>
+                {state === 'done' ? <CheckCircle2 className="h-2.5 w-2.5" /> : state === 'current' ? <Clock className="h-2.5 w-2.5" /> : <CircleDashed className="h-2.5 w-2.5" />}
               </div>
-              {/* Label */}
-              <span
-                className={cn(
-                  'text-[10.5px] font-semibold text-center leading-tight max-w-[100px] uppercase tracking-wider',
-                  state === 'current'
-                    ? 'text-foreground'
-                    : 'text-muted-foreground'
-                )}
-              >
+              <span className={cn(
+                'text-[9px] font-bold text-center leading-[1.1] uppercase tracking-tight max-w-[75px]',
+                state === 'current' ? 'text-foreground' : 'text-muted-foreground/80'
+              )}>
+                {col.name.split(' ').length > 2 ? col.name.split(' ').slice(0, 2).join(' ') + '\n' + col.name.split(' ').slice(2).join(' ') : col.name}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Mobile/Small Screens Compact Layout */}
+      <div className="grid md:hidden grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-2">
+        {columns.map((col, i) => {
+          const state: 'done' | 'current' | 'todo' =
+            currentIndex === -1 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
+          return (
+            <div key={col.id} className="flex items-center gap-2">
+              <div className={cn(
+                'h-[18px] w-[18px] shrink-0 rounded-full inline-flex items-center justify-center border',
+                state === 'done' && 'bg-emerald-500 border-transparent text-white',
+                state === 'current' && 'bg-amber-500 border-transparent text-white',
+                state === 'todo' && 'bg-background border-border text-muted-foreground'
+              )}>
+                {state === 'done' ? <CheckCircle2 className="h-2 w-2" /> : state === 'current' ? <Clock className="h-2 w-2" /> : <CircleDashed className="h-2 w-2" />}
+              </div>
+              <span className={cn(
+                'text-[9px] font-bold uppercase truncate',
+                state === 'current' ? 'text-foreground' : 'text-muted-foreground'
+              )}>
                 {col.name}
               </span>
             </div>

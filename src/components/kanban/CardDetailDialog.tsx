@@ -925,7 +925,28 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           <div className={cn(
             "flex-1 min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background"
           )}>
-          <div className="space-y-5 pb-8 max-w-3xl mx-auto">
+           <div className="space-y-6 pb-8 max-w-3xl mx-auto">
+             {/* === BLOCO: ANDAMENTO === */}
+             {!card.is_archived && (
+               <AndamentoSection 
+                 card={card} 
+                 canEdit={isEditor} 
+                 badges={badges}
+                 getToneClasses={getToneClasses}
+               />
+             )}
+ 
+             {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}
+             {!card.is_archived && (
+               <InternalBrokersSection
+                 capturingBrokerId={card.capturing_broker_id ?? null}
+                 serviceBrokerId={card.service_broker_id ?? null}
+                 canEdit={canEditInternalBrokers}
+                 onChange={(field, value) =>
+                   updateCard.mutate({ id: card.id, [field]: value })
+                 }
+               />
+             )}
             {/* Archived Banner */}
             {card.is_archived && (
               <div className="rounded-lg border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 p-4">

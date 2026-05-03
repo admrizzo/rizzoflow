@@ -585,7 +585,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             })
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 });

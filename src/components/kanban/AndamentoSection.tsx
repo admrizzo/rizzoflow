@@ -15,9 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowRight, User, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, RotateCcw, Inbox } from 'lucide-react';
+import { ArrowRight, User, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle2, RotateCcw, Inbox, History, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { isToday, formatDistanceToNow } from 'date-fns';
+import { isToday, formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { isDateOverdue, parseDatabaseDate } from '@/lib/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,11 +27,15 @@ import { logCardActivity } from '@/hooks/useCardActivityLogs';
 import { useQueryClient } from '@tanstack/react-query';
 import { invalidateCardQueries } from '@/lib/queryInvalidation';
 import { useColumns } from '@/hooks/useColumns';
-import { CircleDashed } from 'lucide-react';
+import { CircleDashed, LucideIcon } from 'lucide-react';
+import { OperationalBadge, BadgeTone } from '@/lib/cardOperationalBadges';
+import { formatTimeElapsed } from '@/lib/slaUtils';
 
 interface AndamentoSectionProps {
   card: CardWithRelations;
   canEdit: boolean;
+  badges?: OperationalBadge[];
+  getToneClasses?: (tone: BadgeTone) => string;
 }
 
 const NONE_VALUE = '__none__';
@@ -40,7 +44,25 @@ const NONE_VALUE = '__none__';
  * Seção "Andamento" do card: próxima ação, responsável e prazo.
  * Layout limpo e responsivo.
  */
-export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
+export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }: AndamentoSectionProps) {
+  const currentColumn = columns.find(c => c.id === card.column_id);
+
+  const defaultGetToneClasses = (tone: BadgeTone) => {
+    switch (tone) {
+      case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
+      case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
+      case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
+      case 'red': return "bg-red-50 text-red-600 border-red-100/60";
+      case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+      case 'blue': return "bg-blue-50 text-blue-600 border-blue-100/60";
+      case 'indigo': return "bg-indigo-50 text-indigo-600 border-indigo-100/60";
+      case 'rose': return "bg-rose-50 text-rose-600 border-rose-100/60";
+      default: return "bg-slate-50 text-slate-500 border-slate-100/80";
+    }
+  };
+
+  const toneClassesResolver = getToneClasses || defaultGetToneClasses;
+
   const { updateCard } = useCards(card.board_id);
   const { profiles } = useProfiles();
   const { user } = useAuth();
@@ -272,11 +294,57 @@ export function AndamentoSection({ card, canEdit }: AndamentoSectionProps) {
         )}
       </div>
 
-      {/* Stage Stepper — etapas reais do board (Modelo C / Focus Semi-Dark) */}
-      <StageStepper
-        columns={columns}
-        currentColumnId={card.column_id}
-      />
+      {/* Stage Stepper — etapas reais do board */}
+      <StageStepper columns={columns} currentColumnId={card.column_id} />
+
+      {/* Etapa Atual e Info Operacional */}
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <h4 className="text-lg font-bold text-foreground">
+            {currentColumn?.name || 'Etapa não identificada'}
+          </h4>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground font-medium gap-1.5 h-6">
+              <Clock className="h-3 w-3" />
+              {formatTimeElapsed(card.column_entered_at)} na etapa
+            </Badge>
+            
+            {badges.filter(b => b.kind === 'secondary_status').map((badge) => (
+              <Badge 
+                key={badge.key}
+                variant="outline"
+                className={cn("font-bold gap-1.5 h-6", toneClassesResolver(badge.tone))}
+              >
+                <badge.icon className="h-3 w-3" />
+                {badge.label}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        {/* Metadados discretos */}
+        <div className="flex flex-wrap gap-x-6 gap-y-2 py-3 border-y border-dashed border-border/60">
+          {card.last_moved_at && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <History className="h-3.5 w-3.5 opacity-70" />
+              <span>
+                Última movimentação: <span className="font-medium text-foreground/80">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                {card.last_moved_by_profile && (
+                  <span className="opacity-70"> por {card.last_moved_by_profile.full_name.split(' ')[0]}</span>
+                )}
+              </span>
+            </div>
+          )}
+          {card.updated_at && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <RefreshCcw className="h-3.5 w-3.5 opacity-70" />
+              <span>
+                Última atualização: <span className="font-medium text-foreground/80">{format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {!hasPendingAction && (
         <div className="mb-3 rounded-md border border-dashed bg-muted/30 px-3 py-3 flex items-center justify-between gap-3">

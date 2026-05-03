@@ -33,6 +33,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
           card_labels(label:labels(*)),
           card_members(user_id, assigned_at),
           checklists(*, items:checklist_items(*)),
+          card_parties(*),
           proposal_link:proposal_links(id, status)
         `)
         .order('position');
@@ -103,6 +104,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         last_reviewed_by_profile: card.last_reviewed_by ? profilesMap[card.last_reviewed_by] : null,
         last_moved_by_profile: card.last_moved_by ? profilesMap[card.last_moved_by] : null,
         responsible_user_profile: card.responsible_user_id ? profilesMap[card.responsible_user_id] : null,
+        parties: card.card_parties || [],
         checklists: card.checklists?.map((c: any) => ({
           ...c,
           items: (c.items || []).map((item: any) => ({

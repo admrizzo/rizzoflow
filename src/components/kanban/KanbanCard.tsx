@@ -140,8 +140,25 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const isNextActionOverdue = nextActionDue ? isDateOverdue(nextActionDue) : false;
     const isNextActionToday = nextActionDue ? isToday(nextActionDue) : false;
 
-    // Get primary tenant if available
-    const primaryTenant = card.parties?.find(p => p.party_type === 'locatario')?.name || "Inquilino não informado";
+    // 2. Título do Card: Prioriza card.title quando já possui o nome do inquilino
+    const storedTitle = card.title?.trim() || null;
+    const robustCode = card.robust_code;
+
+    // Verifica se o título atual é apenas o código legível (ex: #169 - ...)
+    const legacyPropertyOnlyTitle =
+      !!storedTitle &&
+      !!robustCode &&
+      new RegExp(`^#?${robustCode}\\s*[-–—]\\s*`, 'i').test(storedTitle);
+
+    const primaryTenantName = card.parties?.find(p => p.party_type === 'locatario')?.name || null;
+    const propertyIdentification = card.building_name;
+
+    const cardTitle =
+      storedTitle && !legacyPropertyOnlyTitle
+        ? storedTitle
+        : primaryTenantName
+          ? [primaryTenantName, propertyIdentification].filter(Boolean).join(' • ')
+          : propertyIdentification || storedTitle || 'Inquilino não informado';
 
     return (
       <Card 
@@ -189,9 +206,11 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
           {/* 2. Título: Inquilino + Unidade + Bairro */}
           <div className="flex-1 space-y-1">
-            <h4 className="text-[13px] font-extrabold text-slate-900 leading-[1.3] line-clamp-2 group-hover/card:text-accent transition-colors">
-              {primaryTenant}
-              {card.building_name && ` • ${card.building_name}`}
+            <h4 
+              className="text-[13px] font-extrabold text-slate-900 leading-[1.3] line-clamp-2 group-hover/card:text-accent transition-colors"
+              title={cardTitle}
+            >
+              {cardTitle}
             </h4>
             
             {/* 3. Subtítulo: Endereço completo do imóvel */}

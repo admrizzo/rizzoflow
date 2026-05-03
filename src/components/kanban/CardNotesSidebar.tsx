@@ -261,9 +261,9 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
   const isLoading = commentsLoading || activityLoading;
 
   return (
-    <div ref={ref} className="flex flex-col h-full bg-muted/30">
+    <div ref={ref} className="flex flex-col h-full w-full min-w-0 max-w-full overflow-hidden bg-muted/30">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-background">
+      <div className="flex items-center justify-between p-3 border-b bg-background min-w-0 max-w-full">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">Comentários e atividade</span>
@@ -281,15 +281,15 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
 
       {/* Add new note */}
       {canComment && (
-        <div className="p-3 border-b bg-background">
+        <div className="p-3 border-b bg-background min-w-0 max-w-full">
           {/* Quick action buttons */}
-          <div className="flex flex-wrap gap-1 mb-2 min-w-0">
+          <div className="flex overflow-x-auto gap-1 mb-2 min-w-0 no-scrollbar">
             {isEditor && (
               <>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 shrink-0"
                   onClick={() => setNewNote(prev => prev ? prev + '\n📋 Atualização: ' : '📋 Atualização: ')}
                 >
                   <MessageCirclePlus className="h-3 w-3 mr-1" />
@@ -298,7 +298,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 shrink-0"
                   onClick={() => setNewNote(prev => prev ? prev + '\n⚠️ Pendência: ' : '⚠️ Pendência: ')}
                 >
                   <AlertCircle className="h-3 w-3 mr-1" />
@@ -307,7 +307,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2"
+                  className="h-6 text-[10px] px-2 shrink-0"
                   onClick={() => setNewNote(prev => prev ? prev + '\n✅ Conclusão: ' : '✅ Conclusão: ')}
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -318,30 +318,30 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             <Button
               variant="outline"
               size="sm"
-              className="h-6 text-[10px] px-2"
+              className="h-6 text-[10px] px-2 shrink-0"
               onClick={() => setNewNote(prev => prev ? prev + '\n📝 Observação: ' : '📝 Observação: ')}
             >
               <MessageCirclePlus className="h-3 w-3 mr-1" />
               Observação
             </Button>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 className="h-6 text-[10px] px-2"
-                 onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
-               >
-                 <MessageCirclePlus className="h-3 w-3 mr-1" />
-                 Resumo da negociação
-               </Button>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 className="h-6 text-[10px] px-2"
-                 onClick={() => setNewNote(prev => prev ? prev + '\n🔄 Movimentação: ' : '🔄 Movimentação: ')}
-               >
-                 <RefreshCcw className="h-3 w-3 mr-1" />
-                 Movimentação
-               </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2 shrink-0"
+              onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
+            >
+              <MessageCirclePlus className="h-3 w-3 mr-1" />
+              Resumo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] px-2 shrink-0"
+              onClick={() => setNewNote(prev => prev ? prev + '\n🔄 Movimentação: ' : '🔄 Movimentação: ')}
+            >
+              <RefreshCcw className="h-3 w-3 mr-1" />
+              Movimentação
+            </Button>
           </div>
           <MentionTextarea
             value={newNote}
@@ -423,8 +423,8 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       )}
 
       {/* Unified Timeline */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-3 space-y-4">
+      <ScrollArea className="flex-1 min-h-0 min-w-0 overflow-x-hidden">
+        <div className="p-3 space-y-4 min-w-0 max-w-full overflow-x-hidden">
           {isLoading ? (
             <p className="text-xs text-muted-foreground p-2">Carregando...</p>
           ) : timeline.length === 0 ? (
@@ -435,7 +435,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             timeline.map((item) => {
               if (item.type === 'activity') {
                 return (
-                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600 min-w-0 max-w-full overflow-hidden">
+                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600 w-full min-w-0 max-w-full overflow-hidden">
                     <div className="flex items-start gap-2">
                        {(() => {
                          const log = item.data;
@@ -491,7 +491,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               const wasEdited = comment.updated_at !== comment.created_at;
 
               return (
-                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30 min-w-0 max-w-full overflow-hidden">
+                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30 w-full min-w-0 max-w-full overflow-hidden">
                   <div className="flex items-start gap-2">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={comment.profile?.avatar_url || undefined} alt={comment.profile?.full_name} />
@@ -528,7 +528,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                         </div>
                       ) : (
                         <>
-                          <p className="text-foreground/90 mt-1 whitespace-pre-wrap break-words leading-relaxed">
+                          <p className="text-foreground/90 mt-1 whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
                             {renderMentionText(comment.content, profiles).map((part, i) => 
                               part.type === 'mention' ? (
                                 <span key={i} className="text-primary font-medium">{part.content}</span>

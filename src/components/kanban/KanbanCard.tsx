@@ -2,12 +2,12 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Archive, MapPin } from 'lucide-react';
+import { Archive, MapPin, CheckSquare, AlertTriangle, Wrench, FileEdit, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
-import { getCardOperationalBadges, BadgeTone } from '@/lib/cardOperationalBadges';
+import { getCardOperationalBadges, BadgeTone, OperationalBadge } from '@/lib/cardOperationalBadges';
 import { useProfiles } from '@/hooks/useProfiles';
 import {
   Tooltip,
@@ -53,6 +53,10 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         default: return "bg-slate-50 text-slate-500 border-slate-100/80";
       }
     };
+
+    const docsReceived = badges.some(b => b.key === 'docs_received');
+    const correctionPending = badges.some(b => b.key === 'correction');
+    const proposalInProgress = badges.some(b => b.key === 'proposal_in_progress');
     // Has card type (Venda/DEV flow)
     const hasCardType = !!card.card_type;
     const isFinanciamento = card.card_type === 'com_financiamento';

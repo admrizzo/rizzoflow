@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/types/database';
+import { Card, CardWithRelations } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
@@ -32,7 +32,7 @@ export function useCardMutations(boardId?: string) {
   const { config: boardConfig } = useBoardConfig(boardId);
 
   const updateCard = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Card> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: (Partial<Card> | Partial<CardWithRelations>) & { id: string }) => {
       // Snapshot mínimo apenas dos campos rastreados — single row, sem joins.
       let prev: Pick<
         Card,

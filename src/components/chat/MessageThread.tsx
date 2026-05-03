@@ -43,8 +43,8 @@ export function MessageThread({
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      // Base height 44px, max 120px (about 4-5 lines)
-      const newHeight = Math.min(Math.max(textarea.scrollHeight, 96), 220);
+      // Base height 44px, max 120px
+      const newHeight = Math.min(Math.max(textarea.scrollHeight, 44), 120);
       textarea.style.height = `${newHeight}px`;
     }
   };

@@ -2362,6 +2362,10 @@ export type Database = {
         Args: { _proposal_link_id: string; _public_token: string }
         Returns: Json
       }
+      create_group_conversation: {
+        Args: { _name: string; _participant_ids: string[] }
+        Returns: string
+      }
       finalize_public_proposal: {
         Args: { _payload?: Json; _public_token: string }
         Returns: Json

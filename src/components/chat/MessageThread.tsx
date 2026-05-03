@@ -247,12 +247,12 @@ export function MessageThread({
                   disabled={!text.trim() || sending} 
                   size="sm" 
                   className={cn(
-                    "h-8 gap-2 px-4 rounded-full transition-all shadow-md active:scale-95",
+                    "h-7 gap-1.5 px-3 rounded-full transition-all shadow-sm active:scale-95",
                     text.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   )}
                 >
-                  <span className="text-xs font-semibold">Enviar</span>
-                  <Send className={cn("h-3.5 w-3.5", sending && "animate-pulse")} />
+                  <span className="text-[11px] font-semibold">Enviar</span>
+                  <Send className={cn("h-3 w-3", sending && "animate-pulse")} />
                 </Button>
               </div>
             </div>

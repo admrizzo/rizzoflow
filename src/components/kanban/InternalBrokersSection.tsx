@@ -83,7 +83,7 @@ export function InternalBrokersSection({
               </AvatarFallback>
             </Avatar>
           ) : (
-            <div className="h-9 w-9 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-muted-foreground">
+            <div className="h-9 w-9 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 bg-slate-50/50">
               <Plus className="h-4 w-4" />
             </div>
           )}
@@ -126,7 +126,12 @@ export function InternalBrokersSection({
           {trigger}
         </SelectTrigger>
         <SelectContent className="max-h-60">
-          <SelectItem value={NONE}>— remover —</SelectItem>
+          <SelectItem value={NONE} className="text-muted-foreground italic">
+            <div className="flex items-center gap-2">
+              <X className="h-3 w-3" />
+              <span>Remover responsável</span>
+            </div>
+          </SelectItem>
           {options.map((o) => (
             <SelectItem key={o.user_id} value={o.user_id}>
               <div className="flex items-center gap-2">

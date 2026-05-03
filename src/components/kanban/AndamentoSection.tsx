@@ -571,6 +571,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               Adicionar prazo ajuda a priorizar a fila.
             </p>
           )}
+          </div>
         </div>
       </div>
     </div>

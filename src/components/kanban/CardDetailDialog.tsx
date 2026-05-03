@@ -2078,8 +2078,6 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               }))}
             />
 
-            {/* Histórico de Andamentos */}
-            <CardActivityHistory cardId={card.id} />
 
             {/* Actions Section */}
             {isEditor && !card.is_archived && (

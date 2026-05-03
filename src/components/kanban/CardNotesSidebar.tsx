@@ -283,7 +283,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       {canComment && (
         <div className="p-3 border-b bg-background">
           {/* Quick action buttons */}
-          <div className="flex gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-2 min-w-0">
             {isEditor && (
               <>
                 <Button
@@ -435,7 +435,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             timeline.map((item) => {
               if (item.type === 'activity') {
                 return (
-                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600">
+                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600 min-w-0 max-w-full overflow-hidden">
                     <div className="flex items-start gap-2">
                        {(() => {
                          const log = item.data;
@@ -455,11 +455,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                                </AvatarFallback>
                              </Avatar>
                              <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-1.5 flex-wrap">
+                                <div className="flex items-baseline gap-x-2 gap-y-1 flex-wrap min-w-0">
                                  <div className={cn("flex-shrink-0 h-4 w-4 rounded-full flex items-center justify-center", meta.bg, meta.color)}>
                                    <Icon className="h-2.5 w-2.5" />
                                  </div>
-                                 <p className="text-foreground leading-tight font-medium">
+                                  <p className="text-foreground leading-tight font-medium min-w-0 truncate">
                                    {log.title}
                                  </p>
                                </div>
@@ -491,7 +491,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               const wasEdited = comment.updated_at !== comment.created_at;
 
               return (
-                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30">
+                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30 min-w-0 max-w-full overflow-hidden">
                   <div className="flex items-start gap-2">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={comment.profile?.avatar_url || undefined} alt={comment.profile?.full_name} />
@@ -500,11 +500,11 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-foreground">
+                      <div className="flex items-baseline gap-x-2 gap-y-1 flex-wrap min-w-0">
+                        <span className="font-semibold text-foreground truncate min-w-0">
                           {comment.profile?.full_name || 'Usuário'}
                         </span>
-                        <a href="#" className="text-muted-foreground hover:underline" onClick={(e) => e.preventDefault()}>
+                        <a href="#" className="text-muted-foreground hover:underline shrink-0" onClick={(e) => e.preventDefault()}>
                           {format(new Date(comment.created_at), "dd 'de' MMM. yyyy, HH:mm", { locale: ptBR })}
                         </a>
                       </div>
@@ -560,7 +560,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                               </button>
                             );
                           })()}
-                          <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                          <div className="flex items-center gap-2 mt-1 text-muted-foreground flex-wrap">
                             {isOwner && (
                               <button onClick={() => handleStartEdit(comment)} className="hover:underline hover:text-foreground">
                                 Editar

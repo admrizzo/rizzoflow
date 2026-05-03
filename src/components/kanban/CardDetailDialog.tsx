@@ -881,20 +881,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
-            {/* Linha 3: Badges de etapa macro, status operacional, progresso e alertas */}
-            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              {/* Etapa Macro */}
-              {currentColumn && (
-                <span 
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20 bg-white/10 text-primary-foreground"
-                  title="Etapa atual do processo"
-                >
-                  {currentColumn.name.toUpperCase()}
-                </span>
-              )}
-
+            {/* Linha 3: Badges operacionais resumidas */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1">
               {(() => {
-                const filteredBadges = badges.filter(b => b.kind !== 'manual_label' || b.show_on_header !== false);
+                const filteredBadges = badges.filter(b => (b.kind === 'alert' || b.kind === 'progress' || (b.kind === 'manual_label' && b.show_on_header !== false)));
                 const limit = 6;
                 const visible = filteredBadges.slice(0, limit);
                 const remaining = filteredBadges.length - limit;
@@ -968,69 +958,14 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
 
-            {/* Review Deadline Section - Only show for columns with review_deadline_days */}
-            {/* === BLOCO A: STATUS === */}
-            {!card.is_archived && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</h3>
-                </header>
-                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {/* Current stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Etapa atual</p>
-                    <p className="text-sm font-semibold text-foreground">{currentColumn?.name || '—'}</p>
-                  </div>
-                  {/* Time in stage */}
-                  <div>
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Tempo na etapa</p>
-                    <p className="text-sm font-semibold text-foreground">{formatTimeElapsed(card.column_entered_at)}</p>
-                  </div>
-                  {/* SLA indicator */}
-                  {currentColumn?.sla_hours && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">SLA</p>
-                      {(() => {
-                        const status = getSlaStatus(card.column_entered_at, currentColumn.sla_hours);
-                        const colors = getSlaColors(status);
-                        return (
-                          <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold", colors.bg, colors.text)}>
-                            <span className={cn("w-2 h-2 rounded-full", colors.dot)} />
-                            {status === 'green' ? 'No prazo' : status === 'yellow' ? 'Atenção' : 'Atrasado'}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                  {/* Last moved */}
-                  {card.last_moved_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última movimentação</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                        {card.last_moved_by_profile && (
-                          <span className="text-muted-foreground"> por {card.last_moved_by_profile.full_name}</span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {/* Última atualização (qualquer alteração relevante: docs, status, comentário, etapa) */}
-                  {card.updated_at && (
-                    <div>
-                      <p className="text-[10px] text-muted-foreground mb-0.5">Última atualização</p>
-                      <p className="text-xs text-foreground">
-                        {format(new Date(card.updated_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
             {/* === BLOCO: ANDAMENTO === */}
             {!card.is_archived && (
-              <AndamentoSection card={card} canEdit={isEditor} />
+              <AndamentoSection 
+                card={card} 
+                canEdit={isEditor} 
+                badges={badges}
+                getToneClasses={getToneClasses}
+              />
             )}
 
             {/* === BLOCO: RESPONSÁVEIS INTERNOS === */}

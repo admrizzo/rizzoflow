@@ -7,8 +7,8 @@ import { useCommentMentions } from '@/hooks/useCommentMentions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X } from 'lucide-react';
-import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+ import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X, UserCog, ArrowRight } from 'lucide-react';
+ import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MentionTextarea, extractMentionedUserIds, renderMentionText } from './MentionTextarea';
@@ -427,27 +427,48 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 return (
                   <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600">
                     <div className="flex items-start gap-2">
-                      <Avatar className="h-6 w-6 flex-shrink-0">
-                        <AvatarImage src={item.avatarUrl} alt={item.userName} />
-                        <AvatarFallback className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                          {getInitials(item.userName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <ArrowRightCircle className="h-3 w-3 text-blue-500 flex-shrink-0" />
-                          <span>
-                            <span className="font-medium text-foreground">{item.userName}</span>
-                            {' moveu de '}
-                            <span className="font-medium text-foreground">{item.fromColumnName}</span>
-                            {' para '}
-                            <span className="font-medium text-foreground">{item.toColumnName}</span>
-                          </span>
-                        </div>
-                        <span className="text-muted-foreground mt-0.5 block">
-                          {format(new Date(item.data.created_at), "dd 'de' MMM. yyyy, HH:mm", { locale: ptBR })}
-                        </span>
-                      </div>
+                       {(() => {
+                         const log = item.data;
+                         const meta = EVENT_META[log.event_type] || {
+                           icon: History,
+                           color: 'text-muted-foreground',
+                           bg: 'bg-muted',
+                         };
+                         const Icon = meta.icon;
+                         const userName = log.actor_profile?.full_name || 'Usuário';
+                         return (
+                           <>
+                             <Avatar className="h-6 w-6 flex-shrink-0">
+                               <AvatarImage src={log.actor_profile?.avatar_url || undefined} alt={userName} />
+                               <AvatarFallback className="text-[10px] bg-primary/10">
+                                 {getInitials(userName)}
+                               </AvatarFallback>
+                             </Avatar>
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-1.5 flex-wrap">
+                                 <div className={cn("flex-shrink-0 h-4 w-4 rounded-full flex items-center justify-center", meta.bg, meta.color)}>
+                                   <Icon className="h-2.5 w-2.5" />
+                                 </div>
+                                 <p className="text-foreground leading-tight font-medium">
+                                   {log.title}
+                                 </p>
+                               </div>
+                               {log.description && (
+                                 <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words leading-relaxed opacity-90">
+                                   {log.description}
+                                 </p>
+                               )}
+                               <div className="flex items-center gap-1 mt-1.5 text-[10px] text-muted-foreground">
+                                 <span className="font-medium text-foreground/70">{userName}</span>
+                                 <span>·</span>
+                                 <time dateTime={log.created_at}>
+                                   {format(new Date(log.created_at), "dd 'de' MMM, HH:mm", { locale: ptBR })}
+                                 </time>
+                               </div>
+                             </div>
+                           </>
+                         );
+                       })()}
                     </div>
                   </div>
                 );

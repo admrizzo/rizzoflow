@@ -838,63 +838,74 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               Voltar
             </Button>
           </div>
-          <div className="flex items-start gap-2 pr-10">
-            <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
-              <span className="text-xs font-mono mt-1.5 px-1.5 py-0.5 rounded bg-white/10 text-primary-foreground/90">
-                {card.robust_code ? `#${card.robust_code}` : "CRM não vinculado"}
-              </span>
-            </div>
-            {isEditingTitle ? (
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleTitleSave}
-                onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
-                autoFocus
-                className="text-base md:text-lg font-semibold bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60"
-              />
-            ) : (
-              <DialogTitle
-                className="cursor-pointer text-primary-foreground hover:text-primary-foreground/90 text-base md:text-lg break-words font-semibold leading-snug"
-                onClick={() => {
-                  if (isEditor) {
-                    setEditTitle(card.title);
-                    setIsEditingTitle(true);
-                  }
-                }}
-              >
-            {card.title}
-          </DialogTitle>
-        )}
-        <div className="flex flex-wrap gap-1.5 mt-1 ml-auto">
-          {badges.map((badge: OperationalBadge) => (
-            <span 
-              key={badge.key}
-              className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
-                getToneClasses(badge.tone),
-                badge.kind === 'alert' && badge.tone === 'red' && "animate-pulse"
+          <div className="flex flex-col gap-1 pr-10">
+            {/* Linha 1: Código Robust + Título (Inquilino, Unidade, Bairro) */}
+            <div className="flex items-center flex-wrap gap-2">
+              <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
+                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/15 text-primary-foreground font-bold shadow-sm">
+                  {card.robust_code ? `#${card.robust_code}` : "Sem CRM"}
+                </span>
+              </div>
+              {isEditingTitle ? (
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+                  autoFocus
+                  className="h-8 py-0 px-2 text-base md:text-lg font-semibold bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60 w-auto min-w-[300px]"
+                />
+              ) : (
+                <DialogTitle
+                  className="cursor-pointer text-primary-foreground hover:text-primary-foreground/90 text-base md:text-lg break-words font-bold leading-tight"
+                  onClick={() => {
+                    if (isEditor) {
+                      setEditTitle(card.title);
+                      setIsEditingTitle(true);
+                    }
+                  }}
+                >
+                  {card.title}
+                </DialogTitle>
               )}
-            >
-              <badge.icon className="h-3 w-3" /> 
-              {badge.label}
-            </span>
-          ))}
-        </div>
-      </div>
-          {/* Card creation info - hidden on mobile for space */}
-          <div className="hidden md:flex items-center gap-2 text-xs text-primary-foreground/70 mt-2">
-            <UserCircle className="h-3 w-3" />
-            <span>
-              Criado por{' '}
-              <span className="font-medium text-primary-foreground/90">
-                {card.created_by_profile?.full_name || 'Usuário desconhecido'}
-              </span>
-            </span>
-            <CalendarIcon className="h-3 w-3 ml-2" />
-            <span>
-              {format(new Date(card.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </span>
+            </div>
+
+            {/* Linha 2: Endereço completo do imóvel */}
+            {card.address && (
+              <div className="flex items-center gap-1.5 text-xs text-primary-foreground/80 font-medium">
+                <MapPin className="h-3 w-3 shrink-0 opacity-70" />
+                <span className="truncate">{card.address}</span>
+              </div>
+            )}
+
+            {/* Linha 3: Badges de etapa macro, status operacional, progresso e alertas */}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              {/* Etapa Macro */}
+              {currentColumn && (
+                <span 
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20 bg-white/10 text-primary-foreground"
+                  title="Etapa atual do processo"
+                >
+                  {currentColumn.name.toUpperCase()}
+                </span>
+              )}
+
+              {badges.map((badge: OperationalBadge) => (
+                <span 
+                  key={badge.key}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
+                    badge.kind === 'alert' && badge.tone === 'red' 
+                      ? "bg-red-500 text-white border-red-400 animate-pulse" 
+                      : getToneClasses(badge.tone),
+                    badge.kind === 'secondary_status' && "ring-1 ring-white/10"
+                  )}
+                >
+                  <badge.icon className="h-3 w-3" /> 
+                  {badge.label}
+                </span>
+              ))}
+            </div>
           </div>
         </DialogHeader>
 

@@ -563,7 +563,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
    const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
  
    return (
-     <div className="relative my-2">
+      <div className="relative">
        {/* Fades de continuidade */}
        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-20 pointer-events-none opacity-60" />
        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-20 pointer-events-none opacity-60" />

@@ -45,6 +45,12 @@ const NONE_VALUE = '__none__';
  * Layout limpo e responsivo.
  */
 export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }: AndamentoSectionProps) {
+  const { updateCard } = useCards(card.board_id);
+  const { profiles } = useProfiles();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { columns } = useColumns(card.board_id);
   const currentColumn = columns.find(c => c.id === card.column_id);
 
   const defaultGetToneClasses = (tone: BadgeTone) => {
@@ -63,12 +69,6 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
 
   const toneClassesResolver = getToneClasses || defaultGetToneClasses;
 
-  const { updateCard } = useCards(card.board_id);
-  const { profiles } = useProfiles();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { columns } = useColumns(card.board_id);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
 

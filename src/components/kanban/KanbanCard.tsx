@@ -182,37 +182,19 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
 
           {/* 4. Badges (Máximo 3 badges operacionais) */}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {/* Status Secundário Operacional (Apenas um por vez para economizar espaço) */}
-            {correctionPending ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-orange-50 text-orange-600 border border-orange-100/60 shadow-sm">
-                <Wrench className="h-2.5 w-2.5" /> CORREÇÃO
+            {badges.slice(0, 3).map((badge: OperationalBadge) => (
+              <span 
+                key={badge.key}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-sm transition-all duration-200",
+                  getToneClasses(badge.tone),
+                  badge.kind === 'alert' && badge.tone === 'red' && "animate-pulse"
+                )}
+              >
+                <badge.icon className="h-2.5 w-2.5" /> 
+                {badge.label}
               </span>
-            ) : docsReceived ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100/60 shadow-sm">
-                <CheckCheck className="h-2.5 w-2.5" /> DOCS RECEBIDOS
-              </span>
-            ) : proposalInProgress ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-600 border border-amber-100/60 shadow-sm">
-                <FileEdit className="h-2.5 w-2.5" /> EM PREENCHIMENTO
-              </span>
-            ) : null}
-
-            {/* Alerta quando existir (Prioridade máxima) */}
-            {isAnyDeadlineOverdue && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-600 border border-red-100/60 shadow-sm animate-pulse">
-                <AlertTriangle className="h-2.5 w-2.5" /> PRAZO VENCIDO
-              </span>
-            )}
-
-            {/* Progresso Documental / Checklist */}
-            {hasChecklists && (
-              <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black border border-slate-100/80 shadow-sm",
-                completedItems === totalItems ? "bg-emerald-50/50 text-emerald-600" : "bg-slate-50/80 text-slate-500"
-              )}>
-                <CheckSquare className="h-2.5 w-2.5" /> {completedItems}/{totalItems}
-              </span>
-            )}
+            ))}
           </div>
 
           {/* 5. Rodapé: Originador do Card */}

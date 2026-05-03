@@ -2,14 +2,12 @@ import { forwardRef } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CheckSquare, Calendar, Archive, Clock, AlertTriangle, Home, Wrench, User, ArrowRight, Inbox, FileEdit, CheckCheck, MapPin, DollarSign } from 'lucide-react';
+import { Archive, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
-import { ReviewDeadlineBadge } from './ReviewDeadlineBadge';
-import { isReviewOverdue } from '@/hooks/useColumnReview';
-import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
+import { getCardOperationalBadges, BadgeTone } from '@/lib/cardOperationalBadges';
 import { useProfiles } from '@/hooks/useProfiles';
 import {
   Tooltip,
@@ -34,72 +32,27 @@ interface KanbanCardProps {
 
 export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
   ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, hasUnseenChanges, responsibleName }, ref) => {
-    // Calculate checklist progress - exclude dismissed items
-    const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
-    const activeItems = allItems.filter(i => !i.is_dismissed);
-    const totalItems = activeItems.length;
-    const completedItems = activeItems.filter(i => i.is_completed).length;
-    const hasPendingItems = totalItems > 0 && completedItems < totalItems;
+    const badges = getCardOperationalBadges(card, {
+      column,
+      vacancyDeadline,
+      completionDeadline,
+      budgetDeadline
+    });
 
-    // Resolve nomes dos responsáveis internos (compacto, só aparece se houver)
-    const { profiles } = useProfiles();
-    const capturingBrokerName = card.capturing_broker_id
-      ? profiles.find((p) => p.user_id === card.capturing_broker_id)?.full_name
-      : null;
-    const serviceBrokerName = card.service_broker_id
-      ? profiles.find((p) => p.user_id === card.service_broker_id)?.full_name
-      : null;
-    const hasInternalBrokers = !!(capturingBrokerName || serviceBrokerName);
-
-    const hasLabels = card.labels && card.labels.length > 0;
-    const hasDueDate = card.due_date;
-    const hasChecklists = totalItems > 0;
     const isArchived = card.is_archived;
-    const docsReceived = !!card.proposal_submitted_at;
-    // Proposta gerada mas ainda não enviada pelo cliente → "Em preenchimento"
-    // Mutuamente exclusivo com "Doc. recebidos" (proposal_submitted_at).
-    // Usa proposal_link.status quando disponível; cai para presença do link como fallback.
-    const linkStatus = card.proposal_link?.status ?? null;
-    const linkPending =
-      linkStatus === null
-        ? !!card.proposal_link_id
-        : linkStatus !== 'enviada' && linkStatus !== 'recebida' && linkStatus !== 'finalizada';
-    const correctionPending = linkStatus === 'correction_requested';
-    const proposalInProgress = !docsReceived && linkPending && !correctionPending;
-    
-    // Check if document deadline is overdue
-    const hasDeadline = card.document_deadline;
-    const isDeadlineOverdue = hasDeadline && !card.deadline_met && isDateOverdue(new Date(card.document_deadline!));
+    const hasDeadline = !!card.document_deadline;
+    const isAnyDeadlineOverdue = badges.some(b => b.key === 'deadline_overdue');
 
-    // Check if vacancy deadline is overdue (for Rescisão flow)
-    const hasVacancyDeadline = !!vacancyDeadline;
-    const isVacancyDeadlineOverdue = hasVacancyDeadline && !card.vacancy_deadline_met && isDateOverdue(new Date(vacancyDeadline!));
-
-    // Check if completion deadline is overdue (for Manutenção flow)
-    const hasCompletionDeadline = !!completionDeadline;
-    const isCompletionDeadlineOverdue = hasCompletionDeadline && isDateOverdue(new Date(completionDeadline!));
-
-    // Check if budget deadline is overdue (for Manutenção flow)
-    const parsedBudgetDeadline = (() => {
-      if (!budgetDeadline) return null;
-      try {
-        const p = JSON.parse(budgetDeadline);
-        if (p && typeof p === 'object' && 'dispensed' in p) {
-          return p.dispensed ? null : p.date;
-        }
-        return budgetDeadline;
-      } catch {
-        return budgetDeadline;
+    const getToneClasses = (tone: BadgeTone) => {
+      switch (tone) {
+        case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
+        case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
+        case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
+        case 'red': return "bg-red-50 text-red-600 border-red-100/60";
+        case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+        default: return "bg-slate-50 text-slate-500 border-slate-100/80";
       }
-    })();
-    const isBudgetDeadlineOverdue = !!parsedBudgetDeadline && isDateOverdue(new Date(parsedBudgetDeadline));
-
-    // Check if column review deadline is overdue (for Venda flow)
-    const reviewOverdue = column ? isReviewOverdue(card, column) : false;
-
-    // Any deadline overdue
-    const isAnyDeadlineOverdue = isDeadlineOverdue || isVacancyDeadlineOverdue || isCompletionDeadlineOverdue || isBudgetDeadlineOverdue;
-
+    };
     // Has card type (Venda/DEV flow)
     const hasCardType = !!card.card_type;
     const isFinanciamento = card.card_type === 'com_financiamento';

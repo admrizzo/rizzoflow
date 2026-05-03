@@ -278,8 +278,8 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
 
   return (
     <div className="rounded-xl border bg-card p-5 shadow-sm">
-      {/* Cabeçalho Coeso do Bloco Andamento */}
-      <header className="mb-2 space-y-1">
+      {/* Cabeçalho Compacto do Bloco Andamento */}
+      <header className="mb-2 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
             Andamento
@@ -300,42 +300,72 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           )}
         </div>
         
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-          <h4 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">
-            {currentColumn?.name || 'Etapa não identificada'}
-          </h4>
-          
-          <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
-            {/* Status Secundário Principal */}
-            {secondaryStatusBadges.map((badge) => (
-              <Badge 
-                key={badge.key}
-                variant="outline"
-                className={cn("font-bold gap-1 px-2 h-6 border-2 shadow-sm whitespace-nowrap", toneClassesResolver(badge.tone))}
-              >
-                <badge.icon className="h-3 w-3" />
-                {badge.label}
-              </Badge>
-            ))}
-
-            {/* Tempo na etapa */}
-            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold gap-1 px-2 h-6 border border-border/50 whitespace-nowrap">
-              <Clock className="h-3 w-3" />
-              {formatTimeElapsed(card.column_entered_at)} na etapa
-            </Badge>
+        {/* Resumo Operacional por Badges */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(() => {
+            const maxVisible = 6;
+            const sortedBadges = [...badges].sort((a, b) => b.priority - a.priority);
             
-            {/* Progresso Documental */}
-            {progressBadges.map((badge) => (
+            // Always show secondary status, time and progress if they exist
+            const essentialBadges = sortedBadges.filter(b => 
+              b.kind === 'secondary_status' || b.kind === 'alert' || b.kind === 'progress'
+            );
+            
+            // Add time badge manually since it's built-in here
+            const timeBadge = (
               <Badge 
-                key={badge.key}
-                variant="outline"
-                className={cn("font-semibold gap-1 px-2 h-6 whitespace-nowrap", toneClassesResolver(badge.tone))}
+                key="time-elapsed"
+                variant="secondary" 
+                className="bg-muted text-muted-foreground font-semibold gap-1 px-2 h-6 border border-border/50 whitespace-nowrap"
               >
-                <badge.icon className="h-3 w-3" />
-                {badge.label}
+                <Clock className="h-3 w-3" />
+                {formatTimeElapsed(card.column_entered_at)} na etapa
               </Badge>
-            ))}
-          </div>
+            );
+
+            // Manual labels and others
+            const otherBadges = sortedBadges.filter(b => 
+              b.kind !== 'secondary_status' && b.kind !== 'alert' && b.kind !== 'progress'
+            );
+
+            const visibleOthers = otherBadges.slice(0, maxVisible - essentialBadges.length - 1);
+            const hiddenCount = otherBadges.length - visibleOthers.length;
+
+            return (
+              <>
+                {essentialBadges.map((badge) => (
+                  <Badge 
+                    key={badge.key}
+                    variant="outline"
+                    className={cn(
+                      "font-bold gap-1 px-2 h-6 border-2 shadow-sm whitespace-nowrap", 
+                      toneClassesResolver(badge.tone),
+                      badge.kind === 'alert' && "animate-pulse"
+                    )}
+                  >
+                    <badge.icon className="h-3 w-3" />
+                    {badge.label}
+                  </Badge>
+                ))}
+                {timeBadge}
+                {visibleOthers.map((badge) => (
+                  <Badge 
+                    key={badge.key}
+                    variant="outline"
+                    className={cn("font-medium gap-1 px-2 h-6 whitespace-nowrap", toneClassesResolver(badge.tone))}
+                  >
+                    <badge.icon className="h-3 w-3" />
+                    {badge.label}
+                  </Badge>
+                ))}
+                {hiddenCount > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-bold px-1.5 h-6 text-muted-foreground border-dashed">
+                    +{hiddenCount}
+                  </Badge>
+                )}
+              </>
+            );
+          })()}
         </div>
       </header>
 

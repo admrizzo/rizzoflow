@@ -7,7 +7,7 @@ import { useCommentMentions } from '@/hooks/useCommentMentions';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
- import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X, UserCog, ArrowRight } from 'lucide-react';
+ import { MessageSquare, Send, Check, Eye, EyeOff, ArrowRightCircle, AtSign, Paperclip, X, UserCog, ArrowRight, RefreshCcw } from 'lucide-react';
  import { MessageCirclePlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
  import { ptBR } from 'date-fns/locale';

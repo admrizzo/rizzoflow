@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { UserCheck, Handshake } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { UserCheck, Handshake, Plus, X, User } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -7,7 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+const initials = (name?: string | null) =>
+  (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase())
+    .join('');
+
 import { useBrokers } from '@/hooks/useBrokers';
 import { useProfiles } from '@/hooks/useProfiles';
 
@@ -50,77 +59,109 @@ export function InternalBrokersSection({
     );
   }, [brokers, profiles]);
 
-  const renderField = (
+  const renderBrokerChip = (
     field: 'capturing_broker_id' | 'service_broker_id',
     label: string,
     value: string | null,
-    Icon: typeof UserCheck,
   ) => {
-    if (!canEdit) {
-      const name =
-        options.find((o) => o.user_id === value)?.full_name ?? '— não definido —';
-      return (
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              {label}
-            </Label>
-          </div>
-          <p className="text-sm text-foreground">{name}</p>
+    const profile = value ? options.find(o => o.user_id === value) : null;
+    
+    const trigger = (
+      <div className={cn(
+        "flex items-center gap-3 p-2 rounded-lg border transition-all duration-200 w-full text-left",
+        profile 
+          ? "bg-white border-slate-200 shadow-sm" 
+          : "bg-muted/30 border-dashed border-slate-300 hover:bg-muted/50 cursor-pointer",
+        canEdit && profile && "hover:border-slate-300 hover:shadow-md cursor-pointer",
+        !canEdit && !profile && "opacity-50 cursor-default"
+      )}>
+        <div className="flex-shrink-0">
+          {profile ? (
+            <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                {initials(profile.full_name)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="h-9 w-9 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 bg-slate-50/50">
+              <Plus className="h-4 w-4" />
+            </div>
+          )}
         </div>
-      );
-    }
+        
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "text-sm font-semibold truncate",
+            profile ? "text-slate-900" : "text-muted-foreground"
+          )}>
+            {profile ? profile.full_name : `Definir ${label.toLowerCase()}`}
+          </p>
+          <p className="text-[10px] uppercase font-bold text-muted-foreground/70 tracking-tight">
+            {label}
+          </p>
+        </div>
+        
+        {canEdit && profile && (
+          <div 
+            className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(field, null);
+            }}
+          >
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    );
+
+    if (!canEdit) return trigger;
 
     return (
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            {label}
-          </Label>
-        </div>
-        <Select
-          value={value ?? NONE}
-          onValueChange={(v) => onChange(field, v === NONE ? null : v)}
-        >
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Selecionar..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NONE}>— não definido —</SelectItem>
-            {options.map((o) => (
-              <SelectItem key={o.user_id} value={o.user_id}>
-                {o.full_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select
+        value={value ?? NONE}
+        onValueChange={(v) => onChange(field, v === NONE ? null : v)}
+      >
+        <SelectTrigger asChild className="border-none p-0 h-auto ring-0 focus:ring-0 shadow-none">
+          {trigger}
+        </SelectTrigger>
+        <SelectContent className="max-h-60">
+          <SelectItem value={NONE} className="text-muted-foreground italic">
+            <div className="flex items-center gap-2">
+              <X className="h-3 w-3" />
+              <span>Remover responsável</span>
+            </div>
+          </SelectItem>
+          {options.map((o) => (
+            <SelectItem key={o.user_id} value={o.user_id}>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-5 w-5">
+                  <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                    {initials(o.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{o.full_name}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   };
 
   return (
-    <div className="bg-muted/30 p-4 rounded-lg border border-muted space-y-3">
-      <div className="flex items-center gap-2">
-        <UserCheck className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Responsáveis internos
-        </h3>
+    <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2">
+          <UserCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
+          <h3 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
+            Responsáveis internos
+          </h3>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {renderField(
-          'capturing_broker_id',
-          'Corretor Captador',
-          capturingBrokerId,
-          Handshake,
-        )}
-        {renderField(
-          'service_broker_id',
-          'Corretor de Atendimento',
-          serviceBrokerId,
-          UserCheck,
-        )}
+        {renderBrokerChip('capturing_broker_id', 'Captador', capturingBrokerId)}
+        {renderBrokerChip('service_broker_id', 'Atendimento', serviceBrokerId)}
       </div>
     </div>
   );

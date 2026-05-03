@@ -277,42 +277,41 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
       .join('');
 
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            ANDAMENTO
-          </h3>
+    <div className="rounded-xl border bg-card p-5 shadow-sm">
+      {/* Cabeçalho Coeso do Bloco Andamento */}
+      <header className="mb-2 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+            Andamento
+          </span>
+          {hasPendingAction && dueDate && (overdue || today) && (
+            <Badge
+              variant="outline"
+              className={cn(
+                'gap-1 text-[10px] h-5 px-1.5 font-bold uppercase tracking-tight',
+                overdue
+                  ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                  : 'border-warning/30 bg-warning/10 text-warning'
+              )}
+            >
+              <AlertTriangle className="h-2.5 w-2.5" />
+              {overdue ? 'Prazo vencido' : 'Vence hoje'}
+            </Badge>
+          )}
         </div>
-        {hasPendingAction && dueDate && (overdue || today) && (
-          <Badge
-            variant="outline"
-            className={cn(
-              'gap-1 text-[10px] h-5',
-              overdue
-                ? 'border-destructive/30 bg-destructive/10 text-destructive'
-                : 'border-warning/30 bg-warning/10 text-warning'
-            )}
-          >
-            <AlertTriangle className="h-2.5 w-2.5" />
-            {overdue ? 'Prazo vencido' : 'Vence hoje'}
-          </Badge>
-        )}
-      </div>
-
-      {/* Painel Operacional Único */}
-      <div className="mb-6 flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <h4 className="text-xl font-black text-foreground tracking-tight">
+        
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+          <h4 className="text-xl md:text-2xl font-black text-foreground tracking-tight leading-tight">
             {currentColumn?.name || 'Etapa não identificada'}
           </h4>
-          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+          
+          <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
             {/* Status Secundário Principal */}
             {secondaryStatusBadges.map((badge) => (
               <Badge 
                 key={badge.key}
                 variant="outline"
-                className={cn("font-bold gap-1 px-2 h-6 border-2 shadow-sm", toneClassesResolver(badge.tone))}
+                className={cn("font-bold gap-1 px-2 h-6 border-2 shadow-sm whitespace-nowrap", toneClassesResolver(badge.tone))}
               >
                 <badge.icon className="h-3 w-3" />
                 {badge.label}
@@ -320,7 +319,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
             ))}
 
             {/* Tempo na etapa */}
-            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold gap-1 px-2 h-6 border border-border/50">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground font-semibold gap-1 px-2 h-6 border border-border/50 whitespace-nowrap">
               <Clock className="h-3 w-3" />
               {formatTimeElapsed(card.column_entered_at)} na etapa
             </Badge>
@@ -330,7 +329,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               <Badge 
                 key={badge.key}
                 variant="outline"
-                className={cn("font-semibold gap-1 px-2 h-6", toneClassesResolver(badge.tone))}
+                className={cn("font-semibold gap-1 px-2 h-6 whitespace-nowrap", toneClassesResolver(badge.tone))}
               >
                 <badge.icon className="h-3 w-3" />
                 {badge.label}
@@ -338,16 +337,21 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
             ))}
           </div>
         </div>
+      </header>
 
+      {/* Painel Operacional - Timeline e Metadados */}
+      <div className="mb-6">
         {/* Timeline das etapas sem scrollbar */}
-        <StageStepper columns={columns} currentColumnId={card.column_id} />
+        <div className="-mx-2">
+          <StageStepper columns={columns} currentColumnId={card.column_id} />
+        </div>
 
         {/* Metadado discreto: Última movimentação */}
         {card.last_moved_at && (
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground opacity-80 pl-1">
-            <History className="h-3 w-3 opacity-60" />
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 pl-1 mt-1">
+            <History className="h-2.5 w-2.5 opacity-50" />
             <span>
-              Última movimentação: <span className="font-semibold">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+              Última movimentação: <span className="font-medium text-muted-foreground/80">{format(new Date(card.last_moved_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
               {card.last_moved_by_profile && (
                 <span> por {card.last_moved_by_profile.full_name.split(' ')[0]}</span>
               )}
@@ -559,7 +563,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
    const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
  
    return (
-     <div className="relative my-2">
+      <div className="relative">
        {/* Fades de continuidade */}
        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-20 pointer-events-none opacity-60" />
        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-20 pointer-events-none opacity-60" />

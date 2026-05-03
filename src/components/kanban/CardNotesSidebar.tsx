@@ -283,7 +283,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       {canComment && (
         <div className="p-3 border-b bg-background">
           {/* Quick action buttons */}
-          <div className="flex gap-1 mb-2">
+          <div className="flex flex-wrap gap-1 mb-2 min-w-0">
             {isEditor && (
               <>
                 <Button
@@ -435,7 +435,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             timeline.map((item) => {
               if (item.type === 'activity') {
                 return (
-                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600">
+                  <div key={`activity-${item.data.id}`} className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-xs border-l-2 border-blue-400 dark:border-blue-600 min-w-0 max-w-full overflow-hidden">
                     <div className="flex items-start gap-2">
                        {(() => {
                          const log = item.data;
@@ -491,7 +491,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
               const wasEdited = comment.updated_at !== comment.created_at;
 
               return (
-                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30">
+                <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30 min-w-0 max-w-full overflow-hidden">
                   <div className="flex items-start gap-2">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={comment.profile?.avatar_url || undefined} alt={comment.profile?.full_name} />

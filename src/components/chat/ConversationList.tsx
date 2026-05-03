@@ -1,4 +1,5 @@
- import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,30 +75,23 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
 
   return (
     <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden">
-      <div className="px-4 py-3.5 border-b border-border bg-muted/30 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Chat Interno</h3>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("h-8 w-8 transition-all", showNew && "bg-primary/10 text-primary")} 
-            onClick={() => setShowNew((v) => !v)} 
-            title="Nova conversa"
-          >
-            {showNew ? <X className="h-4 w-4" /> : <MessageSquarePlus className="h-4 w-4" />}
-          </Button>
-        </div>
+      <div className="px-4 py-3 border-b border-border bg-muted/20 shrink-0">
+        <Tabs value={showNew ? "people" : "chats"} onValueChange={(v) => setShowNew(v === "people")} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-8">
+            <TabsTrigger value="chats" className="text-xs">Conversas</TabsTrigger>
+            <TabsTrigger value="people" className="text-xs">Usuários</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-       <div className="p-4 border-b border-border">
+       <div className="p-3 border-b border-border shrink-0">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
              placeholder={showNew ? "Buscar por nome ou e-mail..." : "Buscar conversas..."}
-             className="pl-8 h-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+              className="pl-8 h-8 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary/20 text-xs"
           />
         </div>
       </div>
@@ -108,22 +102,30 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
             {people.length === 0 && (
               <p className="px-4 py-6 text-center text-xs text-muted-foreground">Nenhuma pessoa encontrada</p>
             )}
-            {people.map((p) => (
-              <button
-                key={p.user_id}
-                onClick={() => startDm(p.user_id)}
-                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/50 text-left transition-colors"
-              >
-                 <Avatar className="h-10 w-10 border border-border shadow-sm">
-                  {p.avatar_url && <AvatarImage src={p.avatar_url} alt={p.full_name} />}
-                  <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
-                </Avatar>
-                 <div className="flex-1 min-w-0">
-                   <p className="text-sm font-medium truncate">{p.full_name}</p>
-                   {p.email && <p className="text-[11px] text-muted-foreground truncate">{p.email}</p>}
-                 </div>
-              </button>
-            ))}
+             {people.map((p) => {
+               const hasConversation = conversations.some(c => c.other_user_id === p.user_id);
+               return (
+                 <button
+                   key={p.user_id}
+                   onClick={() => startDm(p.user_id)}
+                   className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 text-left transition-colors relative group"
+                 >
+                   <Avatar className="h-9 w-9 border border-border/50 shadow-sm shrink-0">
+                     {p.avatar_url && <AvatarImage src={p.avatar_url} alt={p.full_name} />}
+                     <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
+                   </Avatar>
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-center justify-between gap-1">
+                       <p className="text-xs font-semibold truncate text-foreground">{p.full_name}</p>
+                       {hasConversation && (
+                         <MessageSquare className="h-3 w-3 text-primary/40 shrink-0" />
+                       )}
+                     </div>
+                     {p.email && <p className="text-[10px] text-muted-foreground truncate opacity-80">{p.email}</p>}
+                   </div>
+                 </button>
+               );
+             })}
           </div>
         ) : isLoading ? (
           <p className="px-4 py-6 text-center text-xs text-muted-foreground">Carregando...</p>
@@ -133,8 +135,8 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                <User className="h-6 w-6 text-muted-foreground" />
              </div>
              <p className="text-xs text-muted-foreground mb-4">Selecione uma conversa ou inicie uma nova.</p>
-            <Button variant="outline" size="sm" onClick={() => setShowNew(true)}>
-               Nova conversa
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowNew(true)}>
+               Buscar usuários
             </Button>
           </div>
         ) : (
@@ -150,11 +152,11 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                     onSelect?.(c.id);
                   }}
                   className={cn(
-                    "w-full flex items-start gap-3 px-4 py-3.5 hover:bg-accent/30 text-left transition-all border-l-2 border-transparent relative",
-                    isActive ? "bg-accent/40 border-l-primary shadow-sm" : "hover:border-l-border/50",
+                    "w-full flex items-start gap-3 px-4 py-3 hover:bg-accent/20 text-left transition-all border-l-2 border-transparent relative",
+                    isActive ? "bg-accent/30 border-l-primary" : "hover:border-l-border/30",
                   )}
                 >
-                   <Avatar className="h-11 w-11 shrink-0 border border-border/50">
+                   <Avatar className="h-10 w-10 shrink-0 border border-border/50">
                     {c.other_user_avatar && <AvatarImage src={c.other_user_avatar} alt={display} />}
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(display)}</AvatarFallback>
                   </Avatar>

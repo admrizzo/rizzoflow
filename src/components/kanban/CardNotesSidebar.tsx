@@ -283,13 +283,13 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
       {canComment && (
         <div className="p-3 border-b bg-background min-w-0 max-w-full">
           {/* Quick action buttons */}
-          <div className="flex overflow-x-auto gap-1 mb-2 min-w-0 no-scrollbar">
+          <div className="flex flex-wrap gap-2 mb-2 min-w-0 no-scrollbar">
             {isEditor && (
               <>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2 shrink-0"
+                  className="h-6 text-[10px] px-2"
                   onClick={() => setNewNote(prev => prev ? prev + '\n📋 Atualização: ' : '📋 Atualização: ')}
                 >
                   <MessageCirclePlus className="h-3 w-3 mr-1" />
@@ -298,7 +298,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2 shrink-0"
+                  className="h-6 text-[10px] px-2"
                   onClick={() => setNewNote(prev => prev ? prev + '\n⚠️ Pendência: ' : '⚠️ Pendência: ')}
                 >
                   <AlertCircle className="h-3 w-3 mr-1" />
@@ -307,7 +307,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-6 text-[10px] px-2 shrink-0"
+                  className="h-6 text-[10px] px-2"
                   onClick={() => setNewNote(prev => prev ? prev + '\n✅ Conclusão: ' : '✅ Conclusão: ')}
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -318,7 +318,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             <Button
               variant="outline"
               size="sm"
-              className="h-6 text-[10px] px-2 shrink-0"
+              className="h-6 text-[10px] px-2"
               onClick={() => setNewNote(prev => prev ? prev + '\n📝 Observação: ' : '📝 Observação: ')}
             >
               <MessageCirclePlus className="h-3 w-3 mr-1" />
@@ -327,7 +327,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             <Button
               variant="outline"
               size="sm"
-              className="h-6 text-[10px] px-2 shrink-0"
+              className="h-6 text-[10px] px-2"
               onClick={() => setNewNote(prev => prev ? prev + '\n💬 Resumo da negociação: ' : '💬 Resumo da negociação: ')}
             >
               <MessageCirclePlus className="h-3 w-3 mr-1" />
@@ -336,7 +336,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
             <Button
               variant="outline"
               size="sm"
-              className="h-6 text-[10px] px-2 shrink-0"
+              className="h-6 text-[10px] px-2"
               onClick={() => setNewNote(prev => prev ? prev + '\n🔄 Movimentação: ' : '🔄 Movimentação: ')}
             >
               <RefreshCcw className="h-3 w-3 mr-1" />
@@ -422,9 +422,9 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
         </div>
       )}
 
-      {/* Unified Timeline */}
-      <ScrollArea className="flex-1 min-h-0 min-w-0 overflow-x-hidden">
-        <div className="p-3 space-y-4 min-w-0 max-w-full overflow-x-hidden">
+      {/* Unified Timeline - Usando div nativa para evitar problemas de largura do ScrollArea */}
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
+        <div className="p-3 space-y-4 min-w-0 max-w-full">
           {isLoading ? (
             <p className="text-xs text-muted-foreground p-2">Carregando...</p>
           ) : timeline.length === 0 ? (
@@ -455,16 +455,16 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                                </AvatarFallback>
                              </Avatar>
                              <div className="flex-1 min-w-0">
-                                <div className="flex items-baseline gap-x-2 gap-y-1 flex-wrap min-w-0">
+                                 <div className="flex flex-col gap-1 min-w-0">
                                  <div className={cn("flex-shrink-0 h-4 w-4 rounded-full flex items-center justify-center", meta.bg, meta.color)}>
                                    <Icon className="h-2.5 w-2.5" />
                                  </div>
-                                  <p className="text-foreground leading-tight font-medium min-w-0 truncate">
+                                   <p className="text-foreground leading-tight font-medium min-w-0 whitespace-normal break-words [overflow-wrap:anywhere]">
                                    {log.title}
                                  </p>
                                </div>
                                {log.description && (
-                                 <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words leading-relaxed opacity-90">
+                                  <p className="text-muted-foreground mt-1 whitespace-normal break-words [overflow-wrap:anywhere] leading-relaxed opacity-90">
                                    {log.description}
                                  </p>
                                )}
@@ -492,7 +492,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
 
               return (
                 <div key={comment.id} className="p-3 bg-background rounded-lg group text-sm border-l-2 border-primary/30 w-full min-w-0 max-w-full overflow-hidden">
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
                     <Avatar className="h-6 w-6 flex-shrink-0">
                       <AvatarImage src={comment.profile?.avatar_url || undefined} alt={comment.profile?.full_name} />
                       <AvatarFallback className="text-[10px] bg-primary/10">
@@ -528,7 +528,7 @@ export const CardNotesSidebar = React.forwardRef<HTMLDivElement, CardNotesSideba
                         </div>
                       ) : (
                         <>
-                          <p className="text-foreground/90 mt-1 whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">
+                          <p className="text-foreground/90 mt-1 whitespace-normal break-words [overflow-wrap:anywhere] leading-relaxed">
                             {renderMentionText(comment.content, profiles).map((part, i) => 
                               part.type === 'mention' ? (
                                 <span key={i} className="text-primary font-medium">{part.content}</span>

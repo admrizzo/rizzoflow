@@ -881,11 +881,13 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
 
-            {/* Linha 3: Badges operacionais resumidas */}
+            {/* Linha 3: Badges operacionais críticas no header */}
             <div className="flex flex-wrap items-center gap-1.5 mt-1">
               {(() => {
-                const filteredBadges = badges.filter(b => (b.kind === 'alert' || b.kind === 'progress' || (b.kind === 'manual_label' && b.show_on_header !== false)));
-                const limit = 6;
+                // No header, priorizamos alertas críticos e etiquetas manuais relevantes.
+                // Status secundários e progresso já aparecem com mais destaque no bloco ANDAMENTO abaixo.
+                const filteredBadges = badges.filter(b => (b.kind === 'alert' || (b.kind === 'manual_label' && b.show_on_header !== false)));
+                const limit = 5;
                 const visible = filteredBadges.slice(0, limit);
                 const remaining = filteredBadges.length - limit;
 
@@ -898,8 +900,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                           "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border shadow-sm",
                           badge.kind === 'alert' && badge.tone === 'red' 
                             ? "bg-red-500 text-white border-red-400 animate-pulse" 
-                            : getToneClasses(badge.tone),
-                          badge.kind === 'secondary_status' && "ring-1 ring-white/10"
+                            : getToneClasses(badge.tone)
                         )}
                       >
                         <badge.icon className="h-3 w-3" /> 

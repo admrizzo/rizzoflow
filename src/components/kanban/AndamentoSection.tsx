@@ -377,7 +377,13 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
 
       <div className={cn(
         "rounded-lg border p-4 transition-all duration-200",
-        hasPendingAction ? "bg-accent/10 border-accent/20" : "bg-muted/30 border-dashed"
+        !hasPendingAction 
+          ? "bg-muted/30 border-dashed border-muted-foreground/20" 
+          : overdue 
+            ? "bg-red-50/50 border-red-200 shadow-sm shadow-red-100/50" 
+            : today 
+              ? "bg-amber-50/50 border-amber-200 shadow-sm shadow-amber-100/50" 
+              : "bg-slate-50/30 border-slate-200 shadow-sm shadow-slate-100/20"
       )}>
         {!hasPendingAction && (
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -450,17 +456,16 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
                   <Badge 
                     variant="outline" 
                     className={cn(
-                      "text-[9px] uppercase tracking-tighter h-4 px-1 border-dashed",
-                      overdue ? "border-destructive/40 text-destructive bg-destructive/5" :
-                      today ? "border-warning/40 text-warning bg-warning/5" :
-                      !dueDate ? "border-slate-300 text-slate-500" :
-                      "border-accent/40 text-accent-foreground"
+                      "text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold",
+                      overdue ? "bg-red-100 text-red-700 border-red-200" :
+                      today ? "bg-amber-100 text-amber-800 border-amber-200" :
+                      "bg-slate-100 text-slate-700 border-slate-200"
                     )}
                   >
                     {overdue ? 'Vencida' : today ? 'Vence hoje' : !dueDate ? 'Sem prazo' : 'Pendente'}
                   </Badge>
                   {!card.responsible_user_id && (
-                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1 border-dashed border-destructive/40 text-destructive bg-destructive/5">
+                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold bg-rose-50 text-rose-700 border-rose-200">
                       Sem responsável
                     </Badge>
                   )}

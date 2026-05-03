@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+ import { useEffect, useState, useRef } from 'react';
 import { CardWithRelations } from '@/types/database';
 import { useCards } from '@/hooks/useCards';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -501,79 +501,129 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
   );
 }
 
-/**
- * Stepper horizontal mostrando as etapas reais (columns) do board do card.
- * Inspirado no preview Modelo C — Focus Semi-Dark. Visual apenas: não altera
- * column_id; movimentação continua via drag-and-drop / fluxos existentes.
- */
-function StageStepper({
-  columns,
-  currentColumnId,
-}: {
-  columns: Array<{ id: string; name: string; position: number }>;
-  currentColumnId: string | null | undefined;
-}) {
-  if (!columns || columns.length === 0) return null;
-
-  const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
-
-  return (
-    <div className="my-2 rounded-lg border border-border/40 bg-muted/10 px-2 py-3">
-      {/* Desktop Grid Layout (no scroll) */}
-      <div className="hidden md:grid grid-cols-6 gap-0">
-        {columns.map((col, i) => {
-          const state: 'done' | 'current' | 'todo' =
-            currentIndex === -1 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
-          const isLast = i === columns.length - 1;
-          return (
-            <div key={col.id} className="relative flex flex-col items-center px-1">
-              {!isLast && (
-                <div className={cn('absolute top-[10px] left-1/2 right-[-50%] h-[1.5px] z-0', i < currentIndex ? 'bg-emerald-500' : 'bg-border/60')} />
-              )}
-              <div className={cn(
-                'relative z-10 h-[20px] w-[20px] rounded-full inline-flex items-center justify-center border-2 mb-2',
-                state === 'done' && 'bg-emerald-500 border-transparent text-white',
-                state === 'current' && 'bg-amber-500 border-transparent text-white shadow-sm ring-2 ring-amber-500/20',
-                state === 'todo' && 'bg-background border-border/80 text-muted-foreground'
-              )}>
-                {state === 'done' ? <CheckCircle2 className="h-2.5 w-2.5" /> : state === 'current' ? <Clock className="h-2.5 w-2.5" /> : <CircleDashed className="h-2.5 w-2.5" />}
-              </div>
-              <span className={cn(
-                'text-[9px] font-bold text-center leading-[1.1] uppercase tracking-tight max-w-[75px]',
-                state === 'current' ? 'text-foreground' : 'text-muted-foreground/80'
-              )}>
-                {col.name.split(' ').length > 2 ? col.name.split(' ').slice(0, 2).join(' ') + '\n' + col.name.split(' ').slice(2).join(' ') : col.name}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Mobile/Small Screens Compact Layout */}
-      <div className="grid md:hidden grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-2">
-        {columns.map((col, i) => {
-          const state: 'done' | 'current' | 'todo' =
-            currentIndex === -1 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
-          return (
-            <div key={col.id} className="flex items-center gap-2">
-              <div className={cn(
-                'h-[18px] w-[18px] shrink-0 rounded-full inline-flex items-center justify-center border',
-                state === 'done' && 'bg-emerald-500 border-transparent text-white',
-                state === 'current' && 'bg-amber-500 border-transparent text-white',
-                state === 'todo' && 'bg-background border-border text-muted-foreground'
-              )}>
-                {state === 'done' ? <CheckCircle2 className="h-2 w-2" /> : state === 'current' ? <Clock className="h-2 w-2" /> : <CircleDashed className="h-2 w-2" />}
-              </div>
-              <span className={cn(
-                'text-[9px] font-bold uppercase truncate',
-                state === 'current' ? 'text-foreground' : 'text-muted-foreground'
-              )}>
-                {col.name}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+ /**
+  * Stepper horizontal único e rolável (sem scrollbar visível)
+  * com suporte a drag-to-scroll e centralização automática da etapa atual.
+  */
+ function StageStepper({
+   columns,
+   currentColumnId,
+ }: {
+   columns: Array<{ id: string; name: string; position: number }>;
+   currentColumnId: string | null | undefined;
+ }) {
+   const scrollContainerRef = useRef<HTMLDivElement>(null);
+   const currentStageRef = useRef<HTMLDivElement>(null);
+   const isDragging = useRef(false);
+   const startX = useRef(0);
+   const scrollLeft = useRef(0);
+ 
+   useEffect(() => {
+     if (currentStageRef.current) {
+       currentStageRef.current.scrollIntoView({
+         behavior: 'smooth',
+         inline: 'center',
+         block: 'nearest',
+       });
+     }
+   }, [currentColumnId]);
+ 
+   const handleMouseDown = (e: React.MouseEvent) => {
+     if (!scrollContainerRef.current) return;
+     isDragging.current = true;
+     scrollContainerRef.current.classList.add('cursor-grabbing');
+     startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+     scrollLeft.current = scrollContainerRef.current.scrollLeft;
+   };
+ 
+   const handleMouseLeave = () => {
+     isDragging.current = false;
+     scrollContainerRef.current?.classList.remove('cursor-grabbing');
+   };
+ 
+   const handleMouseUp = () => {
+     isDragging.current = false;
+     scrollContainerRef.current?.classList.remove('cursor-grabbing');
+   };
+ 
+   const handleMouseMove = (e: React.MouseEvent) => {
+     if (!isDragging.current || !scrollContainerRef.current) return;
+     e.preventDefault();
+     const x = e.pageX - scrollContainerRef.current.offsetLeft;
+     const walk = (x - startX.current) * 1.5;
+     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
+   };
+ 
+   if (!columns || columns.length === 0) return null;
+ 
+   const currentIndex = columns.findIndex((c) => c.id === currentColumnId);
+ 
+   return (
+     <div className="relative my-2">
+       {/* Fades de continuidade */}
+       <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-20 pointer-events-none opacity-60" />
+       <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-20 pointer-events-none opacity-60" />
+       
+       <div 
+         ref={scrollContainerRef}
+         onMouseDown={handleMouseDown}
+         onMouseLeave={handleMouseLeave}
+         onMouseUp={handleMouseUp}
+         onMouseMove={handleMouseMove}
+         className={cn(
+           "flex items-start gap-0 overflow-x-auto pb-4 pt-2 px-6 no-scrollbar select-none cursor-grab",
+           "scroll-smooth scrollbar-hide snap-x snap-proximity"
+         )}
+         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+       >
+         {columns.map((col, i) => {
+           const state: 'done' | 'current' | 'todo' =
+             currentIndex === -1 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
+           const isLast = i === columns.length - 1;
+           const isCurrent = state === 'current';
+ 
+           return (
+             <div 
+               key={col.id} 
+               ref={isCurrent ? currentStageRef : null}
+               className="relative flex flex-col items-center shrink-0 w-[110px] snap-center"
+             >
+               {/* Linha conectora */}
+               {!isLast && (
+                 <div className={cn(
+                   'absolute top-[10px] left-[50%] right-[-50%] h-[2px] z-0', 
+                   i < currentIndex ? 'bg-emerald-500' : 'bg-border/40'
+                 )} />
+               )}
+               
+               {/* Marcador/Ícone */}
+               <div className={cn(
+                 'relative z-10 h-5 w-5 rounded-full inline-flex items-center justify-center border-2 mb-2 transition-all duration-200',
+                 state === 'done' && 'bg-emerald-500 border-emerald-500 text-white',
+                 state === 'current' && 'bg-amber-500 border-amber-500 text-white shadow-md ring-4 ring-amber-500/20 scale-110',
+                 state === 'todo' && 'bg-background border-border/80 text-muted-foreground'
+               )}>
+                 {state === 'done' ? (
+                   <CheckCircle2 className="h-3 w-3" />
+                 ) : state === 'current' ? (
+                   <Clock className="h-3 w-3" />
+                 ) : (
+                   <CircleDashed className="h-3 w-3" />
+                 )}
+               </div>
+               
+               {/* Label (2 linhas) */}
+               <span className={cn(
+                 'text-[10px] font-bold text-center leading-[1.2] uppercase tracking-tight px-1',
+                 state === 'current' ? 'text-foreground' : 'text-muted-foreground/60',
+                 'line-clamp-2 min-h-[24px]'
+               )}>
+                 {col.name}
+               </span>
+             </div>
+           );
+         })}
+       </div>
+     </div>
+   );
+ }

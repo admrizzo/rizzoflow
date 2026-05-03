@@ -307,7 +307,25 @@ export default function MinhaFila() {
           .some((field) => (field as string).toLowerCase().includes(q)),
       );
     }
-    return list;
+    return [...list].sort((a, b) => {
+      // 1. Vencidas
+      if (a.is_overdue && !b.is_overdue) return -1;
+      if (!a.is_overdue && b.is_overdue) return 1;
+      
+      // 2. Vencem hoje
+      if (a.is_due_today && !b.is_due_today) return -1;
+      if (!a.is_due_today && b.is_due_today) return 1;
+      
+      // 3. Sem prazo (e com ação) vs Com prazo futuro
+      if (a.has_no_due_date && !b.has_no_due_date) return -1;
+      if (!a.has_no_due_date && b.has_no_due_date) return 1;
+      
+      // 4. Sem responsável
+      if (a.has_no_responsible && !b.has_no_responsible) return -1;
+      if (!a.has_no_responsible && b.has_no_responsible) return 1;
+      
+      return 0;
+    });
   }, [items, activeFilter, search, user?.id]);
 
   const scopeLabel = isAdmin

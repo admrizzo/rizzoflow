@@ -306,8 +306,13 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
               cardId: id,
               actorUserId: user?.id,
               eventType: 'next_action_changed',
-              title: after ? 'Próxima ação atualizada' : 'Próxima ação removida',
-              description: after || before,
+               title: after ? 'Próxima ação definida' : 'Próxima ação removida',
+               description: after || before,
+               metadata: {
+                 action_text: after,
+                 responsible_id: (updates as any).responsible_user_id || prev.responsible_user_id,
+                 due_date: (updates as any).next_action_due_date || prev.next_action_due_date
+               },
               oldValue: before || null,
               newValue: after || null,
             });
@@ -322,7 +327,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
               cardId: id,
               actorUserId: user?.id,
               eventType: 'due_date_changed',
-              title: after ? 'Prazo da próxima ação atualizado' : 'Prazo removido',
+               title: after ? 'Prazo da próxima ação atualizado' : 'Prazo da ação removido',
               oldValue: before,
               newValue: after,
             });
@@ -348,7 +353,7 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
               cardId: id,
               actorUserId: user?.id,
               eventType: 'responsible_changed',
-              title: after ? `Responsável alterado para ${newName || 'novo usuário'}` : 'Responsável removido',
+               title: after ? `Responsável definido: ${newName || 'Usuário'}` : 'Responsável removido',
               oldValue: { id: before, name: oldName },
               newValue: { id: after, name: newName },
             });

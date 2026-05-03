@@ -920,11 +920,9 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
         </DialogHeader>
 
         {/* Desktop: Two-column layout (preview Modelo C: main + 380px sidebar). Mobile: Single scroll with everything */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)] flex-1 overflow-hidden min-h-0 w-full max-w-[100vw]">
           {/* Main content - uses native overflow for reliable mobile touch scrolling */}
-          <div className={cn(
-            "flex-1 min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background"
-          )}>
+           <main className="min-w-0 px-4 md:px-7 py-5 md:py-6 overflow-y-auto overflow-x-hidden overscroll-contain lp-thin-scroll -webkit-overflow-scrolling-touch bg-background">
            <div className="space-y-6 pb-8 max-w-3xl mx-auto">
              {/* === BLOCO: ANDAMENTO === */}
              {!card.is_archived && (
@@ -2150,24 +2148,21 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </div>
             )}
             {/* Mobile: Comments section inline at the bottom */}
-            <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px]">
+             <div className="md:hidden mt-6 border-t pt-4 pb-8 min-h-[400px] w-full overflow-hidden">
               <CardNotesSidebar 
                 cardId={card.id} 
                 showDetails={true}
               />
             </div>
-          </div>
-        </div>
-
-        {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}
-        <div
-          className="hidden md:flex md:w-[380px] lg:w-[400px] border-l border-border flex-shrink-0 flex-col bg-muted/30"
-        >
-          <CardNotesSidebar 
-            cardId={card.id} 
-            showDetails={true}
-          />
-        </div>
+           </main>
+ 
+           {/* Desktop: Notes/Comments Sidebar - side by side (Modelo C: fixed 380px painel) */}
+           <aside className="hidden md:flex min-w-0 max-w-full border-l border-border flex-col bg-muted/30 overflow-hidden">
+             <CardNotesSidebar 
+               cardId={card.id} 
+               showDetails={true}
+             />
+           </aside>
         </div>
       </DialogContent>
 

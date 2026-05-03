@@ -18,7 +18,7 @@ export function ChatPanel() {
            <SheetDescription>Sistema de comunicação interna para a equipe Rizzo Flow.</SheetDescription>
          </SheetHeader>
  
-          <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 relative">
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 relative z-10">
            <div className="min-w-0">
              <p className="truncate text-sm font-semibold">Chat Interno</p>
              <p className="truncate text-xs text-muted-foreground">Comunicação da equipe Rizzo Flow</p>
@@ -28,7 +28,7 @@ export function ChatPanel() {
               <button
                 type="button"
                 aria-label="Fechar chat"
-                className="absolute right-4 top-2.5 z-[80] inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
+                className="chat-close-button absolute right-3 top-3 z-[9999] inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>

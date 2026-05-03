@@ -145,12 +145,14 @@ export function InternalBrokersSection({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 px-1">
-        <UserCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
-        <h3 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
-          Responsáveis internos
-        </h3>
+    <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between px-0.5">
+        <div className="flex items-center gap-2">
+          <UserCheck className="h-3.5 w-3.5 text-muted-foreground/70" />
+          <h3 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
+            Responsáveis internos
+          </h3>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {renderBrokerChip('capturing_broker_id', 'Captador', capturingBrokerId)}

@@ -99,18 +99,21 @@ export function CommentAttachmentList({
         return (
           <div
             key={att.id}
-             className="flex items-center gap-2 px-2 py-1.5 rounded-md border bg-muted/40 text-xs min-w-0"
+             className="flex flex-col sm:flex-row sm:items-center gap-2 px-2 py-2 rounded-md border bg-muted/40 text-xs min-w-0"
           >
             <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-            <div className="flex-1 min-w-0">
-               <div className="truncate font-medium text-foreground" title={att.file_name}>{att.file_name}</div>
-              {att.file_size != null && (
-                <div className="text-[10px] text-muted-foreground">
-                  {formatFileSize(att.file_size)}
-                </div>
-              )}
-            </div>
-             <div className="flex items-center gap-1 flex-shrink-0">
+             <div className="flex items-center gap-2 min-w-0 flex-1">
+               <Icon className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+               <div className="flex-1 min-w-0">
+                 <div className="truncate font-medium text-foreground" title={att.file_name}>{att.file_name}</div>
+                 {att.file_size != null && (
+                   <div className="text-[10px] text-muted-foreground">
+                     {formatFileSize(att.file_size)}
+                   </div>
+                 )}
+               </div>
+             </div>
+              <div className="flex items-center gap-1 flex-shrink-0 self-end sm:self-auto ml-auto">
                <Button
                  type="button"
                  variant="ghost"

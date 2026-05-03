@@ -1,8 +1,8 @@
- import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { useChat } from "./ChatProvider";
 import { ConversationList } from "./ConversationList";
 import { MessageThread } from "./MessageThread";
- import { MessageSquare } from "lucide-react";
+ import { MessageSquare, X } from "lucide-react";
 
 export function ChatPanel() {
    const { isOpen, close, activeConversationId, setActiveConversationId } = useChat();
@@ -18,7 +18,24 @@ export function ChatPanel() {
            <SheetDescription>Sistema de comunicação interna para a equipe Rizzo Flow.</SheetDescription>
          </SheetHeader>
  
-        <div className="grid grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
+         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4">
+           <div className="min-w-0">
+             <p className="truncate text-sm font-semibold">Chat Interno</p>
+             <p className="truncate text-xs text-muted-foreground">Comunicação da equipe Rizzo Flow</p>
+           </div>
+ 
+           <SheetClose asChild>
+             <button
+               type="button"
+               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+               aria-label="Fechar chat"
+             >
+               <X className="h-4 w-4" />
+             </button>
+           </SheetClose>
+         </header>
+ 
+          <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* Lista — esconde no mobile quando há conversa ativa */}
           <div
             className={`${

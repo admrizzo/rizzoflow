@@ -35,7 +35,7 @@ export function ChatPanel() {
            </SheetClose>
          </header>
  
-         <div className="grid grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* Lista — esconde no mobile quando há conversa ativa */}
           <div
             className={`${

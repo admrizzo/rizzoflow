@@ -18,21 +18,21 @@ export function ChatPanel() {
            <SheetDescription>Sistema de comunicação interna para a equipe Rizzo Flow.</SheetDescription>
          </SheetHeader>
  
-         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4">
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 relative">
            <div className="min-w-0">
              <p className="truncate text-sm font-semibold">Chat Interno</p>
              <p className="truncate text-xs text-muted-foreground">Comunicação da equipe Rizzo Flow</p>
            </div>
- 
-           <SheetClose asChild>
-             <button
-               type="button"
-               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-               aria-label="Fechar chat"
-             >
-               <X className="h-4 w-4" />
-             </button>
-           </SheetClose>
+
+            <SheetClose asChild>
+              <button
+                type="button"
+                aria-label="Fechar chat"
+                className="absolute right-4 top-2.5 z-[80] inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </SheetClose>
          </header>
  
           <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">

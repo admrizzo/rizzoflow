@@ -247,7 +247,12 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={cn("text-sm font-semibold truncate flex-1", isActive ? "text-primary" : "text-foreground")}>{display}</span>
+                        <span className={cn(
+                          "text-sm truncate flex-1", 
+                          isActive ? "text-primary font-bold" : (c.unread_count > 0 ? "text-foreground font-bold" : "text-foreground font-semibold")
+                        )}>
+                          {display}
+                        </span>
                         {c.last_message_at && (
                           <span className="text-[10.5px] text-muted-foreground shrink-0">
                             {formatDistanceToNowStrict(new Date(c.last_message_at), { locale: ptBR, addSuffix: false })}

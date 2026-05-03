@@ -65,9 +65,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     const channel = supabase
       .channel("chat-global")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, () => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+        const newMessage = payload.new as any;
          setLastUpdate(Date.now());
-        qc.invalidateQueries({ queryKey: ["chat", "messages"] });
+        if (newMessage && newMessage.conversation_id) {
+          qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
+        } else {
+          qc.invalidateQueries({ queryKey: ["chat", "messages"] });
+        }
         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, () => {

@@ -237,23 +237,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
   );
   // "Correção/Complementação recebida": existe uma solicitação respondida e nenhuma pendente,
   // e a resposta veio depois do último submitted_at conhecido.
-  const badges = card ? getCardOperationalBadges(card, {
-    column: currentColumn,
-    vacancyDeadline: card.vacancy_deadline_met ? null : card.due_date, // Best guess for context
-    completionDeadline: card.document_deadline, // Best guess for context
-    budgetDeadline: card.negotiation_details // Best guess for context
-  }) : [];
-
-  const getToneClasses = (tone: BadgeTone) => {
-    switch (tone) {
-      case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
-      case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
-      case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
-      case 'red': return "bg-red-50 text-red-600 border-red-100/60";
-      case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
-      default: return "bg-slate-50 text-slate-500 border-slate-100/80";
-    }
-  };
+  const correctionReceived =
+    !pendingCorrection &&
+    !!lastResponded &&
+    !!card?.proposal_submitted_at &&
+    new Date(lastResponded.responded_at || 0).getTime() >=
+      new Date(card.proposal_submitted_at).getTime() - 5000;
+  const correctionReceivedLabel = (() => {
+    if (!lastResponded) return '';
+    const sections = lastResponded.requested_sections || [];
+    const onlyDocs = sections.length > 0 && sections.every((s) => s === 'documentos');
+    return onlyDocs ? 'Complementação recebida' : 'Correção recebida';
+  })();
   const { boards } = useBoards();
   const { columns } = useColumns(card?.board_id);
   const { config: boardConfig } = useBoardConfig(card?.board_id);
@@ -289,6 +284,24 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
   // Get current column for review deadline
   const currentColumn = columns.find(c => c.id === card?.column_id);
+
+  const badges = card ? getCardOperationalBadges(card, {
+    column: currentColumn,
+    vacancyDeadline: card.vacancy_deadline_met ? null : card.due_date, // Best guess for context
+    completionDeadline: card.document_deadline, // Best guess for context
+    budgetDeadline: card.negotiation_details // Best guess for context
+  }) : [];
+
+  const getToneClasses = (tone: BadgeTone) => {
+    switch (tone) {
+      case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
+      case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
+      case 'amber': return "bg-amber-50 text-amber-600 border-amber-100/60";
+      case 'red': return "bg-red-50 text-red-600 border-red-100/60";
+      case 'slate': return "bg-slate-50 text-slate-500 border-slate-100/80";
+      default: return "bg-slate-50 text-slate-500 border-slate-100/80";
+    }
+  };
   const hasReviewDeadline = !!currentColumn?.review_deadline_days;
   const reviewOverdue = card && currentColumn ? isReviewOverdue(card, currentColumn) : false;
   const timeUntilReview = card && currentColumn ? getTimeUntilReview(card, currentColumn) : null;

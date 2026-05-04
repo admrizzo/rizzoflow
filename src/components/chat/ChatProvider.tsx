@@ -1,7 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+ import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+ import { Database } from "@/integrations/supabase/types";
+ 
+ type MessageRow = Database["public"]["Tables"]["chat_messages"]["Row"];
+ type ParticipantRow = Database["public"]["Tables"]["chat_participants"]["Row"];
 
  type OnlineUser = {
    user_id: string;
@@ -76,31 +80,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      const channel = supabase.channel("chat-global");
  
      channel
-       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
-         const newMessage = payload.new as any;
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+          const newMessage = payload.new as MessageRow;
          setLastUpdate(Date.now());
          if (newMessage && newMessage.conversation_id) {
            qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
          }
          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
        })
-       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, (payload) => {
-         const update = payload.new as any;
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, (payload) => {
+          const update = payload.new as ParticipantRow;
          if (update.user_id === user.id) {
            refreshUnread();
          }
          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
        })
-       .on("presence", { event: "sync" }, () => {
-         const state = channel.presenceState();
-         const users: Record<string, OnlineUser> = {};
-         Object.values(state).forEach((presences: any) => {
-           presences.forEach((p: OnlineUser) => {
-             if (p.user_id) users[p.user_id] = p;
-           });
-         });
-         setOnlineUsers(users);
-       })
+        .on("presence", { event: "sync" }, () => {
+          const state = channel.presenceState();
+          const users: Record<string, OnlineUser> = {};
+          Object.values(state).forEach((presences) => {
+            (presences as unknown as OnlineUser[]).forEach((p) => {
+              if (p.user_id) users[p.user_id] = p;
+            });
+          });
+          setOnlineUsers(users);
+        })
        .subscribe(async (status) => {
          if (status === "SUBSCRIBED") {
            await channel.track({

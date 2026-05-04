@@ -1459,10 +1459,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Imóvel</h3>
                 </header>
                 <div className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
+                  <div className="space-y-4">
                         <Hash className="h-4 w-4 text-muted-foreground" />
                         <Label className="text-sm font-medium">Cód no Robust</Label>
                       </div>
@@ -1475,7 +1475,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-2">
+                  <div className="space-y-4">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                         <Label className="text-sm font-medium">Nome do prédio</Label>
                       </div>
@@ -1488,7 +1488,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       />
                     </div>
                     <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
+                  <div className="space-y-4">
                         <Hash className="h-4 w-4 text-muted-foreground" />
                         <Label className="text-sm font-medium">ID no Superlógica</Label>
                       </div>
@@ -1501,7 +1501,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="space-y-4">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <Label className="text-sm font-medium">Endereço</Label>
                   </div>
@@ -1525,6 +1525,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     </Button>
                   </div>
                 </div>
+                  </div>
               </section>
             )}
 

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, LogOut, User, Filter, Settings, Archive, RefreshCw, BarChart3, Inbox, ChevronDown, LayoutDashboard } from 'lucide-react';
 import { useSync, formatLastSync } from '@/hooks/useSync';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useMyQueue } from '@/hooks/useMyQueue';
 import { toast } from 'sonner';
 import { NotificationsPopover } from './NotificationsPopover';
 import { FilterPopover } from './FilterPopover';
@@ -52,10 +53,11 @@ export interface FilterState {
 
 export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, selectedBoard, archivedCount = 0, showArchivedView, onToggleArchivedView, onOpenCardFromNotification }: HeaderProps) {
   const { user, profile, signOut, roles } = useAuth();
-  const { isAdmin, canManageUsers, canViewAllProposals, hasAnyRole } = usePermissions();
+  const { isAdmin, isGestor, canManageUsers, canViewAllProposals, hasAnyRole } = usePermissions();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const { sync, isSyncing, canSync, lastSyncedAt } = useSync();
+  const { data: queueItems = [] } = useMyQueue();
   const navigate = useNavigate();
 
   const handleSync = async () => {
@@ -108,12 +110,15 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
         </Button>
 
         {/* Métricas */}
-        {hasAnyRole && (
+        {(isAdmin || isGestor) && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/dashboard')}
-            className="h-8 gap-2 text-[12.5px] font-semibold text-white/70 hover:bg-white/5 hover:text-white rounded-lg shrink-0"
+            onClick={() => navigate('/admin-flow')}
+            className={cn(
+              "h-8 gap-2 text-[12.5px] font-semibold transition-all rounded-lg shrink-0",
+              window.location.pathname === '/admin-flow' ? "bg-white/10 text-white shadow-inner" : "text-white/70 hover:bg-white/5 hover:text-white"
+            )}
           >
             <BarChart3 className="h-4 w-4" />
             <span className="hidden md:inline">Métricas</span>
@@ -185,12 +190,19 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 text-white/70 hover:bg-white/5 hover:text-white gap-2 px-3 text-xs font-medium rounded-lg"
+                className={cn(
+                  "h-8 gap-2 px-3 text-xs font-medium rounded-lg transition-all",
+                  window.location.pathname === '/minha-fila' ? "bg-white/10 text-white shadow-inner" : "text-white/70 hover:bg-white/5 hover:text-white"
+                )}
                 onClick={() => navigate('/minha-fila')}
               >
                 <Inbox className="h-4 w-4" />
                 Minha Fila
-                <Badge className="h-4 min-w-[16px] px-1 bg-accent text-white border-none text-[9px] font-bold">5</Badge>
+                {queueItems.length > 0 && (
+                  <Badge className="h-4 min-w-[16px] px-1 bg-accent text-white border-none text-[9px] font-bold">
+                    {queueItems.length > 99 ? '99+' : queueItems.length}
+                  </Badge>
+                )}
               </Button>
             )}
 

@@ -185,7 +185,7 @@ export function AddCardButton({ columnId, boardId, boardName, isAdding, onOpen, 
     const parts: string[] = [];
     if (context.robust_code?.trim()) parts.push(context.robust_code.trim());
     if (context.building_name?.trim()) parts.push(context.building_name.trim());
-    return parts.length > 0 ? parts.join(' - ') : 'Novo negócio';
+    return parts.length > 0 ? parts.join(' — ') : 'Novo negócio';
   };
 
   // Handle creating a card from template (for Administrativo board)

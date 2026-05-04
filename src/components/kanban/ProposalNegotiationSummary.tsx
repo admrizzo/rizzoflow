@@ -74,7 +74,7 @@ export function ProposalNegotiationSummary({
 
   const hasContrato = !!(data.contratoDataInicio || data.diaVencimento);
   const hasRetirada = data.retiradaPorTerceiro || !!data.retiradaNome;
-  const docsObs = data.raw_data?.documentos_observacao || data.raw_data?.form_data?.documentos?.observacao;
+  const docsObs = data.documentosObservacao;
   const guaranteeType = cardGuaranteeType || data.tipoGarantia;
 
   return (

@@ -30,6 +30,7 @@ export interface ProposalNegotiationSummary {
   retiradaCpf: string | null;
   retiradaEmail: string | null;
   retiradaObservacao: string | null;
+  documentosObservacao: string | null;
 }
 
 function num(v: any): number | null {
@@ -78,6 +79,7 @@ export function useProposalNegotiationSummary(
         retiradaCpf: null,
         retiradaEmail: null,
         retiradaObservacao: null,
+        documentosObservacao: null,
       };
       if (!proposalLinkId) return empty;
 
@@ -170,6 +172,8 @@ export function useProposalNegotiationSummary(
 
        const tipoGarantia = fd?.garantia?.tipo_garantia || null;
 
+       const documentosObservacao = fd?.documentos?.observacao || fd?.documentos_observacao || null;
+
        return {
         hasData,
         source: fd ? 'draft' : link ? 'link' : 'none',
@@ -196,6 +200,7 @@ export function useProposalNegotiationSummary(
         retiradaCpf,
         retiradaEmail,
         retiradaObservacao,
+        documentosObservacao,
       };
     },
     enabled: !!proposalLinkId,

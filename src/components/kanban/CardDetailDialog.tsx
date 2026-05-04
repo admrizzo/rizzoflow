@@ -363,7 +363,10 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
     // Preparado para preenchimento de captador quando o campo existir no schema de properties
     // Regra: não sobrescrever se já houver um captador manual, salvo se estiver vazio.
-    const incomingCapturingBrokerId = (p as any).capturing_broker_id as string | undefined;
+    const incomingCapturingBrokerEmail = (p as any).captador_email as string | undefined;
+    const incomingCapturingBrokerId = incomingCapturingBrokerEmail 
+      ? profiles.find(pr => pr.email === incomingCapturingBrokerEmail)?.user_id 
+      : undefined;
     if (incomingCapturingBrokerId && !card?.capturing_broker_id) {
       updates.capturing_broker_id = incomingCapturingBrokerId;
     }

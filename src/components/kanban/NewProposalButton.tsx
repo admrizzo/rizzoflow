@@ -123,6 +123,9 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           rent_value: selectedProperty.valor_aluguel,
           broker_name: brokerName,
           broker_user_id: selectedBroker.user_id,
+          capturing_broker_id: selectedProperty.captador_email 
+            ? selectableUsers.find(u => u.email === selectedProperty.captador_email)?.user_id 
+            : null,
           created_by: user?.id || null,
         })
         // Selecionamos explicitamente public_token para falhar cedo se não vier
@@ -166,6 +169,9 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           proposal_responsible: brokerName,
           proposal_link_id: linkData.id,
           responsible_user_id: selectedBroker.user_id,
+          capturing_broker_id: selectedProperty.captador_email 
+            ? selectableUsers.find(u => u.email === selectedProperty.captador_email)?.user_id 
+            : null,
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: nextPosition,

@@ -1622,6 +1622,10 @@ export type Database = {
       properties: {
         Row: {
           bairro: string | null
+          captador_email: string | null
+          captador_nome: string | null
+          captador_phone: string | null
+          captador_robust_id: string | null
           cep: string | null
           cidade: string | null
           codigo_robust: number
@@ -1647,6 +1651,10 @@ export type Database = {
         }
         Insert: {
           bairro?: string | null
+          captador_email?: string | null
+          captador_nome?: string | null
+          captador_phone?: string | null
+          captador_robust_id?: string | null
           cep?: string | null
           cidade?: string | null
           codigo_robust: number
@@ -1672,6 +1680,10 @@ export type Database = {
         }
         Update: {
           bairro?: string | null
+          captador_email?: string | null
+          captador_nome?: string | null
+          captador_phone?: string | null
+          captador_robust_id?: string | null
           cep?: string | null
           cidade?: string | null
           codigo_robust?: number

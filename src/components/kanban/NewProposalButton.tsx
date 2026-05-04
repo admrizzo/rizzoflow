@@ -121,12 +121,9 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           property_name: identification,
           address_summary: addressParts.join(', ') || null,
           rent_value: selectedProperty.valor_aluguel,
-          broker_name: brokerName,
-          broker_user_id: selectedBroker.user_id,
-          capturing_broker_id: selectedProperty.captador_email 
-            ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id 
-            : null,
-          created_by: user?.id || null,
+           broker_name: brokerName,
+           broker_user_id: selectedBroker.user_id,
+           created_by: user?.id || null,
         })
         // Selecionamos explicitamente public_token para falhar cedo se não vier
          .select('id, codigo_robust, public_token, proposal_display_code')

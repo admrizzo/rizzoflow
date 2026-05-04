@@ -81,16 +81,16 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
             {provided.placeholder}
             
             {/* Always visible drop zone at the bottom */}
-            <div 
-              className={cn(
-                "min-h-[100px] flex items-center justify-center rounded-lg mt-1",
-                snapshot.isDraggingOver 
-                  ? "bg-primary/10 border-2 border-dashed border-primary/60 text-primary font-medium text-sm" 
-                  : cards.length === 0 
-                    ? "text-muted-foreground text-xs border border-dashed border-border" 
-                    : "border border-dashed border-transparent"
-              )}
-            >
+             <div
+               className={cn(
+                 "flex items-center justify-center rounded-lg mt-1 transition-all duration-200",
+                 snapshot.isDraggingOver
+                   ? "min-h-[100px] bg-primary/10 border-2 border-dashed border-primary/60 text-primary font-medium text-sm"
+                   : cards.length === 0
+                     ? "min-h-[60px] text-muted-foreground/40 text-[10px] border border-dashed border-slate-200/60"
+                     : "min-h-[40px] border border-dashed border-transparent"
+               )}
+             >
               {snapshot.isDraggingOver ? (
                 <span>Solte aqui</span>
               ) : cards.length === 0 ? (

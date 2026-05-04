@@ -138,13 +138,13 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
 
   return (
     <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden relative">
-      <div className="px-4 py-3 border-b border-border bg-muted/20 shrink-0 flex items-center gap-3">
+      <div className="px-4 py-3 border-b border-border bg-background shrink-0 flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-8 bg-background/50">
-              <TabsTrigger value="chats" className="text-[11px]">Conversas</TabsTrigger>
-              <TabsTrigger value="people" className="text-[11px]">Usuários</TabsTrigger>
-              <TabsTrigger value="groups" className="text-[11px]">Grupos</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 h-9 bg-muted/50 p-1 rounded-lg">
+              <TabsTrigger value="chats" className="text-[11px] h-7">Conversas</TabsTrigger>
+              <TabsTrigger value="people" className="text-[11px] h-7">Usuários</TabsTrigger>
+              <TabsTrigger value="groups" className="text-[11px] h-7">Grupos</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -153,7 +153,7 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
           <button
             type="button"
             aria-label="Fechar chat"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
           >
             <X className="h-4 w-4" />
           </button>

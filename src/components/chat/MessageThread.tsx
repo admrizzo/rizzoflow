@@ -13,22 +13,23 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
- import { useChat } from "./ChatProvider";
+  import { useChat } from "./ChatProvider";
+  import { isToday, isYesterday, startOfDay, isSameDay } from "date-fns";
 
 function initials(name?: string | null) {
   if (!name) return "?";
   return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("");
 }
 
-export function MessageThread({
+ export function MessageThread({
   conversationId,
   onBack,
 }: {
   conversationId: string;
   onBack?: () => void;
 }) {
-  const { user } = useAuth();
-   const { close } = useChat();
+   const { user } = useAuth();
+   const { close, onlineUsers } = useChat();
   const qc = useQueryClient();
   const { data: messages = [], isLoading } = useChatMessages(conversationId);
   const { data: conversations = [] } = useChatConversations();
@@ -100,6 +101,15 @@ export function MessageThread({
   }
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
+   const isGroup = conv?.type === "group";
+   const otherUserId = conv?.other_user_id;
+   const isOnline = otherUserId ? !!onlineUsers[otherUserId] : false;
+ 
+   const formatDateSeparator = (date: Date) => {
+     if (isToday(date)) return "Hoje";
+     if (isYesterday(date)) return "Ontem";
+     return format(date, "dd/MM/yyyy");
+   };
 
   return (
     <div className="flex h-full flex-col bg-background relative min-h-0 chat-message-thread min-w-0 overflow-hidden">
@@ -110,13 +120,26 @@ export function MessageThread({
               <ArrowLeft className="h-4 w-4" />
             </Button>
           ) : null}
-          <Avatar className="h-7 w-7">
-            {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
-            <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 flex flex-col justify-center">
-            <p className="text-xs font-semibold truncate leading-none">{displayName}</p>
-          </div>
+           <div className="relative">
+             <Avatar className="h-7 w-7">
+               {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
+               <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
+             </Avatar>
+             {!isGroup && otherUserId && (
+               <span className={cn(
+                 "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
+                 isOnline ? "bg-emerald-500" : "bg-slate-400"
+               )} />
+             )}
+           </div>
+           <div className="min-w-0 flex-1 flex flex-col">
+             <p className="text-xs font-semibold truncate leading-none">{displayName}</p>
+             {!isGroup && otherUserId && (
+               <span className="text-[9px] text-muted-foreground mt-0.5">
+                 {isOnline ? "Online" : "Offline"}
+               </span>
+             )}
+           </div>
         </div>
       </header>
 
@@ -126,45 +149,61 @@ export function MessageThread({
         {!isLoading && messages.length === 0 && (
           <p className="text-center text-xs text-muted-foreground py-8">Nenhuma mensagem ainda. Diga olá 👋</p>
         )}
-          {messages.map((m, idx) => {
-          const mine = m.sender_id === user?.id;
-          const prev = messages[idx - 1];
-          const showAvatar = !mine && (!prev || prev.sender_id !== m.sender_id);
-          return (
-            <div key={m.id} className={cn("flex items-end gap-2", mine && "flex-row-reverse")}>
-              {!mine && (
-                 <div className="w-8 shrink-0">
-                  {showAvatar && (
-                     <Avatar className="h-8 w-8 border border-background shadow-sm">
-                      {m.sender_avatar && <AvatarImage src={m.sender_avatar} />}
-                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                        {initials(m.sender_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              )}
-              <div
-                className={cn(
-                  "min-w-0 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] rounded-xl px-3 py-2 text-[13px] shadow-sm",
-                  mine
-                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                    : "bg-muted/80 text-foreground rounded-tl-none border border-border/10",
-                )}
-              >
-                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug">{m.content}</p>
-                <p
-                  className={cn(
-                    "text-[10px] mt-1 text-right",
-                    mine ? "text-primary-foreground/70" : "text-muted-foreground",
-                  )}
-                >
-                  {format(new Date(m.created_at), "HH:mm", { locale: ptBR })}
-                </p>
-              </div>
-            </div>
-          );
-          })}
+           {messages.map((m, idx) => {
+             const mine = m.sender_id === user?.id;
+             const prev = messages[idx - 1];
+             const showAvatar = !mine && (!prev || prev.sender_id !== m.sender_id);
+             
+             const currentDate = new Date(m.created_at);
+             const prevDate = prev ? new Date(prev.created_at) : null;
+             const showSeparator = !prevDate || !isSameDay(currentDate, prevDate);
+ 
+             return (
+               <div key={m.id} className="space-y-3">
+                 {showSeparator && (
+                   <div className="my-4 flex items-center gap-3">
+                     <div className="h-px flex-1 bg-border" />
+                     <span className="rounded-full bg-muted px-3 py-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                       {formatDateSeparator(currentDate)}
+                     </span>
+                     <div className="h-px flex-1 bg-border" />
+                   </div>
+                 )}
+                 <div className={cn("flex items-end gap-2", mine && "flex-row-reverse")}>
+                   {!mine && (
+                     <div className="w-8 shrink-0">
+                       {showAvatar && (
+                         <Avatar className="h-8 w-8 border border-background shadow-sm">
+                           {m.sender_avatar && <AvatarImage src={m.sender_avatar} />}
+                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                             {initials(m.sender_name)}
+                           </AvatarFallback>
+                         </Avatar>
+                       )}
+                     </div>
+                   )}
+                   <div
+                     className={cn(
+                       "min-w-0 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] rounded-xl px-3 py-2 text-[13px] shadow-sm",
+                       mine
+                         ? "bg-primary text-primary-foreground rounded-tr-none"
+                         : "bg-muted/80 text-foreground rounded-tl-none border border-border/10",
+                     )}
+                   >
+                     <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug">{m.content}</p>
+                     <p
+                       className={cn(
+                         "text-[10px] mt-1 text-right",
+                         mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                       )}
+                     >
+                       {format(new Date(m.created_at), "HH:mm", { locale: ptBR })}
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             );
+           })}
         </div>
       </div>
 

@@ -9,6 +9,7 @@ export type AdminTaskCategory = 'financeiro' | 'cadastral' | 'operacional';
 export type AdminCardStatus = 'em_andamento' | 'concluido' | 'cancelado';
 
 export interface Profile {
+  email: string | null;
   id: string;
   user_id: string;
   full_name: string;

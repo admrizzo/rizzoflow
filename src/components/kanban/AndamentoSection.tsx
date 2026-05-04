@@ -466,17 +466,16 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           <div className="flex gap-2">
             <div className="flex-1 space-y-1.5">
               <div className="relative">
-                <Input
-                  value={localNextAction}
-                  onChange={(e) => setLocalNextAction(e.target.value)}
-                  onBlur={handleNextActionBlur}
-                  placeholder='Use este campo para atribuir a próxima pendência prática do card.'
-                  disabled={!canEdit}
-                  className={cn(
-                    "flex-1 pr-10",
-                    hasPendingAction && "font-semibold text-foreground ring-1 ring-accent/20"
-                  )}
-                />
+                 <Input
+                   value={draftAction}
+                   onChange={(e) => setDraftAction(e.target.value)}
+                   placeholder='Use este campo para atribuir a próxima pendência prática do card.'
+                   disabled={!canEdit || isSaving}
+                   className={cn(
+                     "flex-1 pr-10",
+                     draftAction && "font-semibold text-foreground ring-1 ring-accent/20"
+                   )}
+                 />
                 {hasPendingAction && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     {overdue ? (
@@ -534,11 +533,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             Responsável
           </Label>
-          <Select
-            value={card.responsible_user_id || NONE_VALUE}
-            onValueChange={handleResponsibleChange}
-            disabled={!canEdit}
-          >
+           <Select
+             value={draftResponsible || NONE_VALUE}
+             onValueChange={(val) => setDraftResponsible(val === NONE_VALUE ? null : val)}
+             disabled={!canEdit || isSaving}
+           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione…">
                 {responsibleProfile ? (
@@ -590,25 +589,35 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           </Label>
           <div className="flex gap-2">
             <div className="flex-1">
-              <DatePickerInput
-                value={dueDate || undefined}
-                onChange={handleDueDateChange}
-                disabled={!canEdit || updateCard.isPending}
-                placeholder="dd/mm/aaaa"
-              />
-            </div>
-            <div className="relative w-[110px]">
-              <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                type="time"
-                value={localDueTime}
-                onChange={handleDueTimeChange}
-                onBlur={handleDueTimeBlur}
-                disabled={!canEdit || !localDueDate || updateCard.isPending}
-                className="h-9 pl-7 text-sm"
-                placeholder="--:--"
-              />
-            </div>
+               <DatePickerInput
+                 value={draftDueDate || undefined}
+                 onChange={(d) => setDraftDueDate(d ?? null)}
+                 disabled={!canEdit || isSaving}
+                 placeholder="dd/mm/aaaa"
+               />
+             </div>
+             <div className="relative w-[110px]">
+               <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+               <Input
+                 type="time"
+                 value={draftDueTime}
+                 onChange={(e) => setDraftDueTime(e.target.value)}
+                 disabled={!canEdit || !draftDueDate || isSaving}
+                 className="h-9 pl-7 text-sm"
+                 placeholder="--:--"
+               />
+             </div>
+           </div>
+           
+           <div className="md:col-span-2 flex justify-end pt-2">
+             <Button
+               onClick={handleSaveAction}
+               disabled={!hasChanged || isSaving}
+               className="w-full sm:w-auto font-bold gap-2"
+             >
+               {isSaving ? <RotateCcw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+               {card.next_action ? 'Atualizar próxima ação' : 'Salvar próxima ação'}
+             </Button>
           </div>
           {!dueDate && hasPendingAction && (
             <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">

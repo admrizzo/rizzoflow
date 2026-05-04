@@ -22,6 +22,10 @@ export interface Property {
   seguro_incendio: number | null;
   status_imovel: number | null;
   foto_principal: string | null;
+  captador_robust_id: string | null;
+  captador_nome: string | null;
+  captador_email: string | null;
+  captador_phone: string | null;
   last_synced_at: string;
   raw_data?: any;
 }
@@ -50,11 +54,15 @@ export type PropertyLight = Pick<
   | 'seguro_incendio'
   | 'status_imovel'
   | 'foto_principal'
+  | 'captador_robust_id'
+  | 'captador_nome'
+  | 'captador_email'
+  | 'captador_phone'
   | 'last_synced_at'
 >;
 
 const LIGHT_COLUMNS =
-  'id, codigo_robust, titulo, tipo_imovel, finalidade, logradouro, bairro, cidade, estado, numero, valor_aluguel, valor_venda, condominio, iptu, seguro_incendio, status_imovel, foto_principal, last_synced_at';
+  'id, codigo_robust, titulo, tipo_imovel, finalidade, logradouro, bairro, cidade, estado, numero, valor_aluguel, valor_venda, condominio, iptu, seguro_incendio, status_imovel, foto_principal, captador_robust_id, captador_nome, captador_email, captador_phone, last_synced_at';
 
 export function useProperties() {
   return usePropertiesBase();

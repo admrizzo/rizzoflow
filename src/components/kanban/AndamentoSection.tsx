@@ -119,7 +119,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
       ? profiles.find((p) => p.user_id === card.responsible_user_id)
       : null);
 
-  const dueDate = localDueDate;
+   const dueDate = draftDueDate;
   const overdue = dueDate ? isDateOverdue(dueDate) : false;
   const today = dueDate ? isToday(dueDate) : false;
 
@@ -135,61 +135,85 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
     !!lastCompletedAt &&
     Date.now() - lastCompletedAt.getTime() < 24 * 60 * 60 * 1000;
 
-  const handleNextActionBlur = () => {
-    const next = localNextAction.trim();
-    if (next === (card.next_action || '')) return;
-    updateCard.mutate({ id: card.id, next_action: next || null });
-  };
-
-  const handleResponsibleChange = (value: string) => {
-    const userId = value === NONE_VALUE ? null : value;
-    updateCard.mutate({ id: card.id, responsible_user_id: userId });
-  };
-
-  const persistDueDateTime = (date: Date | null, time: string) => {
-    let iso: string | null = null;
-    if (date) {
-      const [hh, mm] = (time && /^\d{2}:\d{2}$/.test(time))
-        ? time.split(':').map(Number)
-        : [0, 0];
-      const composed = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        hh,
-        mm,
-        0,
-        0,
-      );
-      iso = composed.toISOString();
-    }
-    const previousDate = localDueDate;
-    const previousTime = localDueTime;
-    updateCard.mutate(
-      { id: card.id, next_action_due_date: iso },
-      {
-        onError: () => {
-          setLocalDueDate(previousDate);
-          setLocalDueTime(previousTime);
-        },
-      },
-    );
-  };
-
-  const handleDueDateChange = (date: Date | undefined) => {
-    const next = date ?? null;
-    setLocalDueDate(next);
-    persistDueDateTime(next, localDueTime);
-  };
-
-  const handleDueTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalDueTime(e.target.value);
-  };
-
-  const handleDueTimeBlur = () => {
-    if (!localDueDate) return;
-    persistDueDateTime(localDueDate, localDueTime);
-  };
+   const handleSaveAction = async () => {
+     if (!hasChanged || isSaving) return;
+     setIsSaving(true);
+     const actionText = draftAction.trim();
+     
+     let iso: string | null = null;
+     if (draftDueDate) {
+       const [hh, mm] = (draftDueTime && /^\d{2}:\d{2}$/.test(draftDueTime))
+         ? draftDueTime.split(':').map(Number)
+         : [0, 0];
+       const composed = new Date(
+         draftDueDate.getFullYear(),
+         draftDueDate.getMonth(),
+         draftDueDate.getDate(),
+         hh,
+         mm,
+         0,
+         0,
+       );
+       iso = composed.toISOString();
+     }
+ 
+     try {
+       const { error } = await supabase
+         .from('cards')
+         .update({
+           next_action: actionText || null,
+           responsible_user_id: draftResponsible,
+           next_action_due_date: iso,
+         })
+         .eq('id', card.id);
+ 
+       if (error) throw error;
+ 
+       const userName = user?.id ? profiles.find(p => p.user_id === user.id)?.full_name || 'Usuário' : 'Usuário';
+       const responsibleName = draftResponsible ? profiles.find(p => p.user_id === draftResponsible)?.full_name || 'Alguém' : null;
+       
+       const isNew = !card.next_action;
+       const title = isNew ? 'Próxima ação definida' : 'Próxima ação atualizada';
+       
+       let description = `Ação: ${actionText || '(Removida)'}`;
+       if (responsibleName) description += `\nResponsável: ${responsibleName}`;
+       if (iso) description += `\nPrazo: ${format(new Date(iso), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
+ 
+       void logCardActivity({
+         cardId: card.id,
+         actorUserId: user?.id,
+         eventType: 'next_action_changed',
+         title,
+         description,
+         metadata: {
+           action_text: actionText,
+           responsible_id: draftResponsible,
+           due_date: iso
+         },
+       });
+ 
+       // Notify responsible if changed or if it's a new action
+       if (draftResponsible && draftResponsible !== user?.id && (draftResponsible !== card.responsible_user_id || isNew)) {
+         await supabase.from('notifications').insert({
+           user_id: draftResponsible,
+           card_id: card.id,
+           title: isNew ? 'Nova tarefa atribuída' : 'Tarefa atualizada',
+           message: `${userName} atribuiu a você: ${actionText || 'Próxima ação'}`
+         });
+       }
+ 
+       invalidateCardQueries(queryClient);
+       toast({ title: isNew ? 'Próxima ação definida!' : 'Próxima ação atualizada!' });
+     } catch (err: any) {
+       toast({
+         title: 'Erro ao salvar próxima ação',
+         description: err.message,
+         variant: 'destructive'
+       });
+     } finally {
+       setIsSaving(false);
+     }
+   };
 
   const handleMarkAsDone = async () => {
     if (!hasPendingAction) return;

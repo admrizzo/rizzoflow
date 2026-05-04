@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
-import { getCardOperationalBadges, BadgeTone, OperationalBadge } from '@/lib/cardOperationalBadges';
+ import { getCardOperationalBadges, OperationalBadge } from '@/lib/cardOperationalBadges';
+ import { getCardVisualState } from '@/lib/cardVisualState';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
 import { useProfiles } from '@/hooks/useProfiles';
 import {
@@ -33,18 +34,22 @@ interface KanbanCardProps {
 
 export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
   ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, hasUnseenChanges, responsibleName }, ref) => {
-    const badges = getCardOperationalBadges(card, {
-      column,
-      vacancyDeadline,
-      completionDeadline,
-      budgetDeadline
-    });
-
-    const isArchived = card.is_archived;
-    const hasDeadline = !!card.document_deadline;
-    const isAnyDeadlineOverdue = badges.some(b => b.key === 'deadline_overdue');
-
-    const getToneClasses = (tone: BadgeTone) => {
+     const operationalContext = {
+       column,
+       vacancyDeadline,
+       completionDeadline,
+       budgetDeadline,
+       hasUnseenChanges
+     };
+ 
+     const badges = getCardOperationalBadges(card, operationalContext);
+     const visualState = getCardVisualState(card, operationalContext);
+ 
+     const isArchived = card.is_archived;
+     const hasDeadline = !!card.document_deadline;
+     const isAnyDeadlineOverdue = visualState === 'overdue';
+ 
+     const getToneClasses = (tone: any) => {
       switch (tone) {
         case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
         case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
@@ -132,16 +137,16 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
         )}
       >
         {/* Status Lateral Highlight */}
-        <div 
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-[4px] z-10 transition-colors duration-300",
-            docsReceived ? "bg-emerald-500" : 
-            correctionPending ? "bg-orange-500" : 
-            proposalInProgress ? "bg-amber-500" : 
-            isAnyDeadlineOverdue ? "bg-red-500" :
-            "bg-slate-300"
-          )} 
-        />
+         <div 
+           className={cn(
+             "absolute left-0 top-0 bottom-0 w-[4px] z-10 transition-colors duration-300",
+             visualState === 'overdue' && "bg-red-500",
+             visualState === 'correction_requested' && "bg-orange-500",
+             visualState === 'pending' && "bg-amber-500",
+             visualState === 'in_day' && "bg-emerald-500",
+             visualState === 'fallback' && "bg-slate-300"
+           )} 
+         />
 
         {/* Red badge for unseen changes */}
         {hasUnseenChanges && (

@@ -381,8 +381,43 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
       });
     }
 
+    // Apply visual state filter
+    if (filters?.visualState) {
+      result = result.filter(card => {
+        const col = columns.find(c => c.id === card.column_id);
+        const state = getCardVisualState(card, {
+          column: col,
+          vacancyDeadline: vacancyDeadlineValues[card.id],
+          completionDeadline: completionDeadlineValues[card.id],
+          budgetDeadline: budgetDeadlineValues[card.id],
+          hasUnseenChanges: hasUnseenChanges(card.id, card.updated_at)
+        });
+        return state === filters.visualState;
+      });
+    }
+
+    // Apply docs received filter
+    if (filters?.docsReceived) {
+      result = result.filter(card => !!card.proposal_submitted_at);
+    }
+
+    // Apply unseen only filter
+    if (filters?.unseenOnly) {
+      result = result.filter(card => hasUnseenChanges(card.id, card.updated_at));
+    }
+
     return result;
-  }, [cards, searchQuery, filters, allProvidersMap]);
+  }, [
+    cards, 
+    searchQuery, 
+    filters, 
+    allProvidersMap, 
+    columns, 
+    vacancyDeadlineValues, 
+    completionDeadlineValues, 
+    budgetDeadlineValues, 
+    hasUnseenChanges
+  ]);
 
   // Filter cards based on archived state
   const activeCards = useMemo(() => 

@@ -183,18 +183,10 @@
     overflow-x: hidden;
   }
 
-   /* Hide default Sheet close button in ChatPanel since we use a custom one in the header */
+   /* Hide ONLY the default Radix Sheet close button (absolute top-right) in ChatPanel.
+      Our custom close button lives inside the visible top bar and must never be hidden. */
    .chat-panel > button.absolute.right-4.top-4 {
      display: none !important;
-   }
-
-   /* Ensure our custom chat close button is always visible */
-   .chat-panel .chat-close-button {
-     display: inline-flex !important;
-     visibility: visible !important;
-     opacity: 1 !important;
-     pointer-events: auto !important;
-     z-index: 9999 !important;
    }
 
   .chat-panel [data-radix-scroll-area-viewport],

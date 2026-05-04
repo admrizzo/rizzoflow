@@ -10,11 +10,11 @@ interface CardStatesLegendProps {
 /**
  * Legenda visual rápida dos estados de card — espelha o design C do preview.
  */
-const LEGEND = [
+const LEGEND: { id: 'overdue' | 'correction_requested' | 'next_action_overdue' | 'in_day' | 'fallback' | 'docs_received' | 'unseen', label: string, code: string, dot: string, barClass: string }[] = [
   { id: 'in_day', label: 'Em dia', code: 'LOC-2901', dot: 'hsl(142 45% 53%)', barClass: 'border-l-[hsl(142_45%_53%)]' },
   { id: 'docs_received', label: 'Doc. recebidos', code: 'LOC-2902', dot: 'hsl(150 40% 48%)', barClass: 'border-l-[hsl(150_40%_48%)]' },
   { id: 'correction_requested', label: 'Correção solicitada', code: 'LOC-2903', dot: 'hsl(28 70% 55%)', barClass: 'border-l-[hsl(28_70%_55%)]' },
-  { id: 'pending', label: 'Pendência', code: 'LOC-2904', dot: 'hsl(340 100% 45%)', barClass: 'border-l-[hsl(340_100%_45%)]' },
+  { id: 'next_action_overdue', label: 'Pendência', code: 'LOC-2904', dot: 'hsl(340 100% 45%)', barClass: 'border-l-[hsl(340_100%_45%)]' },
   { id: 'overdue', label: 'Vencido', code: 'LOC-2905', dot: 'hsl(350 75% 42%)', barClass: 'border-l-[hsl(350_75%_42%)]' },
   { id: 'unseen', label: 'Não visto', code: 'LOC-2907', dot: 'hsl(0 100% 50%)', barClass: 'border-l-red-500' },
 ];
@@ -32,7 +32,7 @@ export function CardStatesLegend({ className, filters, onFiltersChange }: CardSt
     } else if (item.id === 'unseen') {
       newFilters.unseenOnly = !filters.unseenOnly;
     } else {
-      newFilters.visualState = filters.visualState === item.id ? null : item.id;
+      newFilters.visualState = filters.visualState === item.id ? null : item.id as any;
     }
 
     onFiltersChange(newFilters);

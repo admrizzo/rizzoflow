@@ -1,7 +1,8 @@
- import { CardWithRelations, Column } from '@/types/database';
+import { CardWithRelations, Column, Card } from '@/types/database';
  import { isDateOverdue } from '@/lib/dateUtils';
+import { parseISO } from 'date-fns';
  
- export type CardVisualState = 'overdue' | 'correction_requested' | 'pending' | 'in_day' | 'fallback';
+export type CardVisualState = 'overdue' | 'correction_requested' | 'next_action_overdue' | 'in_day' | 'fallback';
  
  export interface VisualStateContext {
    column?: Column | null;
@@ -44,23 +45,18 @@
      return 'correction_requested';
    }
  
-   // 3. Check for PENDING (Priority 3)
-   // proposal_in_progress logic from cardOperationalBadges
-   const docsReceived = !!card.proposal_submitted_at;
-   const linkPending =
-     linkStatus === null
-       ? !!card.proposal_link_id
-       : !['enviada', 'recebida', 'finalizada'].includes(linkStatus);
-   
-   const proposalInProgress = !docsReceived && linkPending && !correctionPending;
- 
-   if (proposalInProgress) {
-     return 'pending';
+    // 3. Check for NEXT ACTION OVERDUE (Priority 3)
+    // Rule: next_action exists, next_action_due_date exists and is overdue, and not completed.
+    const hasNextAction = !!card.next_action?.trim();
+    const nextActionDueDate = card.next_action_due_date ? parseISO(card.next_action_due_date) : null;
+    const isNextActionOverdue = nextActionDueDate && isDateOverdue(nextActionDueDate) && !card.next_action_completed_at;
+
+    if (hasNextAction && isNextActionOverdue) {
+      return 'next_action_overdue';
    }
  
    // 4. IN DAY (Priority 4)
-   // If it reached here, it's not overdue, not correction requested, and not "proposal in progress".
-   // We check if we have enough information to say it's "in_day"
+    // If it reached here, it's not overdue, not correction requested, and not next action overdue.
    if (card.id && card.column_id) {
      return 'in_day';
    }

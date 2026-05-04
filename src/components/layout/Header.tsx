@@ -48,7 +48,7 @@ export interface FilterState {
   creatorId: string | null;
   deadlineStatus: string | null;
   providerName: string | null;
-  visualState: string | null;
+  visualState: 'overdue' | 'correction_requested' | 'next_action_overdue' | 'in_day' | 'fallback' | null;
   docsReceived: boolean;
   unseenOnly: boolean;
 }

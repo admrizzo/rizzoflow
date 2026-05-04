@@ -65,6 +65,8 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         if (card.last_reviewed_by) allUserIds.add(card.last_reviewed_by);
         if (card.last_moved_by) allUserIds.add(card.last_moved_by);
         if (card.responsible_user_id) allUserIds.add(card.responsible_user_id);
+        if (card.capturing_broker_id) allUserIds.add(card.capturing_broker_id);
+        if (card.service_broker_id) allUserIds.add(card.service_broker_id);
         
         card.checklists?.forEach((c: any) => {
           c.items?.forEach((item: any) => {
@@ -104,6 +106,8 @@ export function useCards(boardId?: string, options?: { includeArchived?: boolean
         last_reviewed_by_profile: card.last_reviewed_by ? profilesMap[card.last_reviewed_by] : null,
         last_moved_by_profile: card.last_moved_by ? profilesMap[card.last_moved_by] : null,
         responsible_user_profile: card.responsible_user_id ? profilesMap[card.responsible_user_id] : null,
+        capturing_broker_profile: card.capturing_broker_id ? profilesMap[card.capturing_broker_id] : null,
+        service_broker_profile: card.service_broker_id ? profilesMap[card.service_broker_id] : null,
         parties: card.card_parties || [],
         checklists: card.checklists?.map((c: any) => ({
           ...c,

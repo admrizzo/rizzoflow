@@ -299,6 +299,8 @@ export interface CardWithRelations extends Card {
   last_reviewed_by_profile?: Profile | null;
   last_moved_by_profile?: Profile | null;
   responsible_user_profile?: Profile | null;
+  capturing_broker_profile?: Profile | null;
+  service_broker_profile?: Profile | null;
   parties?: CardPartyWithChecklist[];
   proposal_link?: { id: string; status: string } | null;
 }

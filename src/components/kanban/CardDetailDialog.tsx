@@ -844,11 +844,11 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
           <div className="flex flex-col gap-1 pr-10">
             {/* Linha 1: Código Robust + Título (Inquilino, Unidade, Bairro) */}
             <div className="flex items-center flex-wrap gap-2">
-              <div className="flex items-center gap-2" title={!card.robust_code ? "CRM não vinculado" : undefined}>
-                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/15 text-primary-foreground font-bold shadow-sm">
-                  {card.robust_code ? `#${card.robust_code}` : "Sem CRM"}
-                </span>
-              </div>
+               <div className="flex items-center gap-2" title={!card.robust_code && !card.proposal_display_code ? "Identificação não vinculada" : undefined}>
+                 <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-white/15 text-primary-foreground font-bold shadow-sm">
+                   {card.proposal_display_code || (card.robust_code ? `#${card.robust_code}` : "Sem CRM")}
+                 </span>
+               </div>
               {isEditingTitle ? (
                 <Input
                   value={editTitle}

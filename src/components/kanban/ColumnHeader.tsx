@@ -98,22 +98,6 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
                  <p>Ordem de entrada e urgências: de cima para baixo</p>
                </TooltipContent>
              </Tooltip>
-             {column.review_deadline_days && (
-               <Tooltip>
-                 <TooltipTrigger asChild>
-                   <Badge 
-                     variant="outline" 
-                     className="shrink-0 text-[8px] px-1 py-0 gap-0.5 bg-blue-50/50 text-blue-600 border-blue-100/60 whitespace-nowrap rounded-sm"
-                   >
-                     <Eye className="w-2.5 h-2.5" />
-                     {column.review_deadline_days}d
-                   </Badge>
-                 </TooltipTrigger>
-                 <TooltipContent>
-                   <p>Cards desatualizam após {column.review_deadline_days} {column.review_deadline_days === 1 ? 'dia' : 'dias'}</p>
-                 </TooltipContent>
-               </Tooltip>
-             )}
            </div>
          </div>
 

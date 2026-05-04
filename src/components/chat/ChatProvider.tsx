@@ -7,13 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
  type MessageRow = Database["public"]["Tables"]["chat_messages"]["Row"];
  type ParticipantRow = Database["public"]["Tables"]["chat_participants"]["Row"];
 
- type OnlineUser = {
-   user_id: string;
-   full_name: string;
-   avatar_url: string | null;
-   online_at: string;
- };
- 
 type ChatContextValue = {
   isOpen: boolean;
   open: () => void;
@@ -22,7 +15,7 @@ type ChatContextValue = {
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
    unreadTotal: number;
-   onlineUsers: Record<string, OnlineUser>;
+   onlineUserIds: Set<string>;
    refreshUnread: () => Promise<void>;
 };
 
@@ -35,7 +28,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
    const [unreadTotal, setUnreadTotal] = useState(0);
    const [lastUpdate, setLastUpdate] = useState(Date.now());
-    const [onlineUsers, setOnlineUsers] = useState<Record<string, OnlineUser>>({});
+     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -74,52 +67,65 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     refreshUnread();
    }, [refreshUnread, lastUpdate]);
 
-   // Realtime: Presence and Postgres changes
+   // Presence tracking channel
    useEffect(() => {
      if (!user) return;
-     const channel = supabase.channel("chat-global");
+     
+     const presenceChannel = supabase.channel("online-users");
  
-     channel
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
-          const newMessage = payload.new as MessageRow;
-         setLastUpdate(Date.now());
-         if (newMessage && newMessage.conversation_id) {
-           qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
-         }
-         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+     presenceChannel
+       .on("presence", { event: "sync" }, () => {
+         const state = presenceChannel.presenceState();
+         const onlineIds = new Set<string>();
+         Object.values(state).forEach((presences: any) => {
+           presences.forEach((p: any) => {
+             if (p.user_id) onlineIds.add(p.user_id);
+           });
+         });
+         setOnlineUserIds(onlineIds);
        })
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, (payload) => {
-          const update = payload.new as ParticipantRow;
-         if (update.user_id === user.id) {
-           refreshUnread();
-         }
-         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-       })
-        .on("presence", { event: "sync" }, () => {
-          const state = channel.presenceState();
-          const users: Record<string, OnlineUser> = {};
-          Object.values(state).forEach((presences) => {
-            (presences as unknown as OnlineUser[]).forEach((p) => {
-              if (p.user_id) users[p.user_id] = p;
-            });
-          });
-          setOnlineUsers(users);
-        })
        .subscribe(async (status) => {
          if (status === "SUBSCRIBED") {
-           await channel.track({
+           await presenceChannel.track({
              user_id: user.id,
-             full_name: profile?.full_name || "Usuário",
-             avatar_url: profile?.avatar_url || null,
              online_at: new Date().toISOString(),
            });
          }
        });
  
      return () => {
-       channel.unsubscribe();
+       presenceChannel.unsubscribe();
      };
-   }, [user, profile, refreshUnread, qc]);
+   }, [user]);
+ 
+   // Messages and notifications channel
+   useEffect(() => {
+     if (!user) return;
+     
+     const msgChannel = supabase.channel("chat-messages");
+ 
+     msgChannel
+       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+         const newMessage = payload.new as MessageRow;
+         setLastUpdate(Date.now());
+         if (newMessage && newMessage.conversation_id) {
+           qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
+         }
+         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+       })
+       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, (payload) => {
+         const update = payload.new as ParticipantRow;
+         if (update.user_id === user.id) {
+           refreshUnread();
+         }
+         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+       })
+       .subscribe();
+ 
+     return () => {
+       msgChannel.unsubscribe();
+     };
+   }, [user, refreshUnread, qc]);
 
   const value = useMemo<ChatContextValue>(
     () => ({
@@ -130,10 +136,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
        activeConversationId,
        setActiveConversationId,
        unreadTotal,
-       onlineUsers,
+        onlineUserIds,
        refreshUnread,
      }),
-     [isOpen, activeConversationId, unreadTotal, onlineUsers, refreshUnread],
+      [isOpen, activeConversationId, unreadTotal, onlineUserIds, refreshUnread],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

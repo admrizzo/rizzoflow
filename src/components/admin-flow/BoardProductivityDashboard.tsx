@@ -664,16 +664,16 @@ export function BoardProductivityDashboard() {
             <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-yellow-500" />
-                Ranking de Interações
-                <Badge variant="secondary" className="ml-2">
-                  {interactionData.length} funcionários
-                </Badge>
+               Interações de Produtividade
+               <Badge variant="secondary" className="ml-2 bg-muted-foreground/10 text-muted-foreground border-none">
+                 {interactionData.length} colaboradores
+               </Badge>
               </CardTitle>
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar funcionário..."
+                   placeholder="Buscar colaborador..."
                     value={rankingSearchTerm}
                     onChange={(e) => {
                       setRankingSearchTerm(e.target.value);

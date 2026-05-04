@@ -347,7 +347,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     setLocalBuildingName(displayName);
     setLocalAddress(endereco);
 
-    const updates: any = {
+    const updates: Partial<Card> = {
       robust_code: String(p.codigo_robust),
       building_name: displayName || null,
       address: endereco || null,
@@ -355,14 +355,15 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
 
     // Preenche superlogica_id se houver no raw_data (apenas se tivermos o raw_data, que PropertyLight não tem)
     // Mas como PropertyLight é leve, vamos tentar pegar se existir na interface futura
-    if ((p as any).superlogica_id) {
-      updates.superlogica_id = String((p as any).superlogica_id);
+    const incomingSuperlogicaId = (p as any).superlogica_id;
+    if (incomingSuperlogicaId) {
+      updates.superlogica_id = String(incomingSuperlogicaId);
       setLocalSuperlogicaId(updates.superlogica_id);
     }
 
     // Preparado para preenchimento de captador quando o campo existir no schema de properties
     // Regra: não sobrescrever se já houver um captador manual, salvo se estiver vazio.
-    const incomingCapturingBrokerId = (p as any).capturing_broker_id;
+    const incomingCapturingBrokerId = (p as any).capturing_broker_id as string | undefined;
     if (incomingCapturingBrokerId && !card?.capturing_broker_id) {
       updates.capturing_broker_id = incomingCapturingBrokerId;
     }

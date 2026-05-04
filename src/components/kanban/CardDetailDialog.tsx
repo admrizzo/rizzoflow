@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
-import { CardWithRelations, GuaranteeType, ContractType, CardType } from '@/types/database';
+import { Card, CardWithRelations, GuaranteeType, ContractType, CardType } from '@/types/database';
 import { useCardMutations } from '@/hooks/useCardMutations';
 import { useLabels } from '@/hooks/useLabels';
 import { useProfiles } from '@/hooks/useProfiles';

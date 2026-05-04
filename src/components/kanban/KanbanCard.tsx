@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useMemo } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -116,12 +116,22 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const primaryTenantName = card.parties?.find(p => p.party_type === 'locatario')?.name || null;
     const propertyIdentification = card.building_name;
 
-    const cardTitle =
-      storedTitle && !legacyPropertyOnlyTitle
-        ? storedTitle
-        : primaryTenantName
-          ? [primaryTenantName, propertyIdentification].filter(Boolean).join(' • ')
-          : propertyIdentification || storedTitle || 'Inquilino não informado';
+    // Prioriza o nome do locatário principal se disponível, seguindo o formato: {Locatário} — {Imóvel}
+    const cardTitle = useMemo(() => {
+      // Se o card tem proponente vinculado, usamos o formato desejado
+      if (primaryTenantName) {
+        return propertyIdentification 
+          ? `${primaryTenantName} — ${propertyIdentification}`
+          : primaryTenantName;
+      }
+
+      // Fallback para o título gravado, removendo prefixos de código se for um título antigo do tipo "177 - ..."
+      if (storedTitle && legacyPropertyOnlyTitle) {
+        return propertyIdentification || storedTitle;
+      }
+
+      return storedTitle || propertyIdentification || 'Inquilino não informado';
+    }, [primaryTenantName, propertyIdentification, storedTitle, legacyPropertyOnlyTitle]);
 
     return (
       <Card 

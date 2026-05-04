@@ -365,7 +365,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     // Regra: não sobrescrever se já houver um captador manual, salvo se estiver vazio.
     const incomingCapturingBrokerEmail = (p as any).captador_email as string | undefined;
     const incomingCapturingBrokerId = incomingCapturingBrokerEmail 
-      ? profiles.find(pr => pr.email === incomingCapturingBrokerEmail)?.user_id 
+      ? profiles.find(pr => pr.email?.trim().toLowerCase() === incomingCapturingBrokerEmail.trim().toLowerCase())?.user_id 
       : undefined;
     if (incomingCapturingBrokerId && !card?.capturing_broker_id) {
       updates.capturing_broker_id = incomingCapturingBrokerId;

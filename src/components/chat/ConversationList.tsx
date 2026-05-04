@@ -8,7 +8,8 @@ import { useChatConversations } from "@/hooks/useChatConversations";
  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, MessageSquarePlus, X, User, MessageSquare, Users, Check, Plus } from "lucide-react";
+import { Search, MessageSquarePlus, X, User, MessageSquare, Users, Check, Plus, XCircle } from "lucide-react";
+import { SheetClose } from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -136,15 +137,27 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
   };
 
   return (
-    <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-muted/20 shrink-0">
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-8">
-            <TabsTrigger value="chats" className="text-xs">Conversas</TabsTrigger>
-            <TabsTrigger value="people" className="text-xs">Usuários</TabsTrigger>
-            <TabsTrigger value="groups" className="text-xs">Grupos</TabsTrigger>
-          </TabsList>
-        </Tabs>
+    <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden relative">
+      <div className="px-4 py-3 border-b border-border bg-muted/20 shrink-0 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 h-8 bg-background/50">
+              <TabsTrigger value="chats" className="text-[11px]">Conversas</TabsTrigger>
+              <TabsTrigger value="people" className="text-[11px]">Usuários</TabsTrigger>
+              <TabsTrigger value="groups" className="text-[11px]">Grupos</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <SheetClose asChild>
+          <button
+            type="button"
+            aria-label="Fechar chat"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </SheetClose>
       </div>
 
       <div className="p-3 border-b border-border shrink-0 space-y-2">

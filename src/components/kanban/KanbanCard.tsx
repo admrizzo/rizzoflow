@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { format, isToday, parseISO } from 'date-fns';
 import { isDateOverdue, formatDateTimeBR } from '@/lib/dateUtils';
 import { ptBR } from 'date-fns/locale';
- import { getCardOperationalBadges, OperationalBadge } from '@/lib/cardOperationalBadges';
+  import { getCardOperationalBadges, OperationalBadge, BadgeTone } from '@/lib/cardOperationalBadges';
  import { getCardVisualState } from '@/lib/cardVisualState';
 import { getSlaStatus, getSlaColors, formatTimeElapsed } from '@/lib/slaUtils';
 import { useProfiles } from '@/hooks/useProfiles';
@@ -49,7 +49,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
      const hasDeadline = !!card.document_deadline;
      const isAnyDeadlineOverdue = visualState === 'overdue';
  
-     const getToneClasses = (tone: any) => {
+      const getToneClasses = (tone: BadgeTone) => {
       switch (tone) {
         case 'emerald': return "bg-emerald-50 text-emerald-600 border-emerald-100/60";
         case 'orange': return "bg-orange-50 text-orange-600 border-orange-100/60";
@@ -63,9 +63,6 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
       }
     };
 
-    const docsReceived = badges.some(b => b.key === 'docs_received');
-    const correctionPending = badges.some(b => b.key === 'correction');
-    const proposalInProgress = badges.some(b => b.key === 'proposal_in_progress');
     // Has card type (Venda/DEV flow)
     const hasCardType = !!card.card_type;
     const isFinanciamento = card.card_type === 'com_financiamento';

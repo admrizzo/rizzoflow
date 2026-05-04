@@ -1653,85 +1653,81 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
               </section>
             )}
 
-            {/* === BLOCO: RESUMO DA PROPOSTA (responsável + negociação) === */}
-            {((!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel))) ||
-              (!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard)) && (
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resumo da proposta</h3>
-                </header>
-                <div className="p-4 space-y-4">
-
-                {/* Proposal Responsible */}
-                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <UserCircle className="h-4 w-4 text-muted-foreground" />
-                      <Label className="text-sm font-medium">
-                        {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pela proposta'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                      </Label>
-                    </div>
-                    <Input
-                      value={localProposalResponsible}
-                      onChange={(e) => setLocalProposalResponsible(e.target.value)}
-                      onBlur={() => handleFieldBlur('proposal_responsible', localProposalResponsible, card.proposal_responsible)}
-                      placeholder={isAdministrativoBoard ? "Nome do responsável pelo imóvel" : "Nome do responsável"}
-                      disabled={!isEditor}
-                      className={!isAdministrativoBoard && !localProposalResponsible ? 'border-amber-400' : ''}
-                    />
-                    {!isAdministrativoBoard && !localProposalResponsible && (
-                      <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Negotiation Details */}
-                {!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard && !hasStructuredNegotiation && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <Label className="text-sm font-medium">
-                        {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
-                          ? 'Observações'
-                          : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                      </Label>
-                    </div>
-                    <Textarea
-                      value={localNegotiationDetails}
-                      onChange={(e) => setLocalNegotiationDetails(e.target.value)}
-                      onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
-                      placeholder={
-                        isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
-                          ? ""
-                          : isAdministrativoBoard
-                            ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
-                            : "Ex: 1000,00 + taxas"
-                      }
-                      rows={8}
-                      disabled={!isEditor}
-                      className={cn(
-                        'min-h-44 resize-y',
-                        !isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''
+            {/* === BLOCO: RESUMO DA PROPOSTA (UNIFICADO) === */}
+            {(!isRescisaoBoard && !isVendaBoard && !isDevBoard && !isCaptacaoBoard && !isManutencaoBoard) && (
+              <>
+                {hasStructuredNegotiation ? (
+                  <ProposalNegotiationSummary 
+                    proposalLinkId={card.proposal_link_id} 
+                    cardGuaranteeType={card.guarantee_type}
+                    cardResponsible={card.proposal_responsible}
+                  />
+                ) : (
+                  <section className="rounded-lg border border-border bg-card overflow-hidden">
+                    <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resumo da proposta</h3>
+                    </header>
+                    <div className="p-4 space-y-4">
+                      {/* Proposal Responsible */}
+                      {!(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <UserCircle className="h-4 w-4 text-muted-foreground" />
+                            <Label className="text-sm font-medium">
+                              {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pela proposta'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                            </Label>
+                          </div>
+                          <Input
+                            value={localProposalResponsible}
+                            onChange={(e) => setLocalProposalResponsible(e.target.value)}
+                            onBlur={() => handleFieldBlur('proposal_responsible', localProposalResponsible, card.proposal_responsible)}
+                            placeholder={isAdministrativoBoard ? "Nome do responsável pelo imóvel" : "Nome do responsável"}
+                            disabled={!isEditor}
+                            className={!isAdministrativoBoard && !localProposalResponsible ? 'border-amber-400' : ''}
+                          />
+                          {!isAdministrativoBoard && !localProposalResponsible && (
+                            <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
+                          )}
+                        </div>
                       )}
-                    />
-                    {!isAdministrativoBoard && !localNegotiationDetails && (
-                      <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                    )}
-                  </div>
+
+                      {/* Negotiation Details (Textarea) */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <Label className="text-sm font-medium">
+                            {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                              ? 'Observações'
+                              : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                          </Label>
+                        </div>
+                        <Textarea
+                          value={localNegotiationDetails}
+                          onChange={(e) => setLocalNegotiationDetails(e.target.value)}
+                          onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
+                          placeholder={
+                            isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                              ? ""
+                              : isAdministrativoBoard
+                                ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
+                                : "Ex: 1000,00 + taxas"
+                          }
+                          rows={8}
+                          disabled={!isEditor}
+                          className={cn(
+                            'min-h-44 resize-y',
+                            !isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''
+                          )}
+                        />
+                        {!isAdministrativoBoard && !localNegotiationDetails && (
+                          <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
+                        )}
+                      </div>
+                    </div>
+                  </section>
                 )}
-                </div>
-              </section>
-            )}
-
-            {/* === BLOCO: RESUMO DA NEGOCIAÇÃO (estruturado) === */}
-            {hasStructuredNegotiation && (
-              <ProposalNegotiationSummary proposalLinkId={card.proposal_link_id} />
-            )}
-
-            {/* === BLOCO: CONTRATO (data início, vencimento, retirada de chaves) === */}
-            {card.proposal_link_id && (
-              <ProposalContractSummary proposalLinkId={card.proposal_link_id} />
+              </>
             )}
 
             {/* === BLOCO: SOLICITAÇÃO DE CORREÇÃO === */}

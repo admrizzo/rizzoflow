@@ -95,6 +95,45 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
     const timeInStage = formatTimeElapsed(card.column_entered_at);
     const hasSla = !!column?.sla_hours;
 
+    // Priority logic for the person to display in footer
+    const displayPerson = useMemo(() => {
+      // 1. Service Broker (Responsável pela proposta)
+      if (card.service_broker_id && card.service_broker_profile) {
+        return {
+          profile: card.service_broker_profile,
+          label: "Responsável pela proposta"
+        };
+      }
+
+      // 2. Next Action Responsible (ONLY IF next_action exists)
+      if (card.next_action?.trim() && card.responsible_user_id && card.responsible_user_profile) {
+        return {
+          profile: card.responsible_user_profile,
+          label: "Próxima ação"
+        };
+      }
+
+      // 3. Capturing Broker (Captador)
+      if (card.capturing_broker_id && card.capturing_broker_profile) {
+        return {
+          profile: card.capturing_broker_profile,
+          label: "Captador"
+        };
+      }
+
+      // 4. Fallback to creator or first member
+      const fallbackProfile = card.created_by_profile || card.members?.[0] || null;
+      return {
+        profile: fallbackProfile,
+        label: fallbackProfile ? "Criador" : "Sistema"
+      };
+    }, [
+      card.service_broker_id, card.service_broker_profile,
+      card.next_action, card.responsible_user_id, card.responsible_user_profile,
+      card.capturing_broker_id, card.capturing_broker_profile,
+      card.created_by_profile, card.members
+    ]);
+
     // Andamento: próxima ação + prazo
     const nextAction = card.next_action?.trim() || null;
     const nextActionDue = card.next_action_due_date
@@ -215,21 +254,31 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
               ))}
           </div>
 
-          {/* 5. Rodapé: Originador do Card */}
+          {/* 5. Rodapé: Pessoa de referência (Responsável, Próxima Ação ou Captador) */}
           <div className="pt-3 mt-auto border-t border-slate-100/60 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Avatar className="h-6 w-6 border border-slate-200 shadow-xs shrink-0 ring-2 ring-white">
-                <AvatarImage src={card.created_by_profile?.avatar_url || undefined} />
-                <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-black">
-                  {(card.created_by_profile?.full_name || 'U').charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] font-bold text-slate-700 truncate leading-tight">
-                  {card.created_by_profile?.full_name || 'Sistema'}
-                </span>
-              </div>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Avatar className="h-6 w-6 border border-slate-200 shadow-xs shrink-0 ring-2 ring-white">
+                    <AvatarImage src={displayPerson.profile?.avatar_url || undefined} />
+                    <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-black">
+                      {(displayPerson.profile?.full_name || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold text-slate-700 truncate leading-tight">
+                      {displayPerson.profile?.full_name || 'Sistema'}
+                    </span>
+                    <span className="text-[8px] font-medium text-slate-400 uppercase tracking-tighter truncate">
+                      {displayPerson.label}
+                    </span>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="text-[10px] px-2 py-1">
+                {displayPerson.label}: {displayPerson.profile?.full_name || 'Sistema'}
+              </TooltipContent>
+            </Tooltip>
 
             {/* Valor do Provedor Selecionado (Manutenção) ou Prazo */}
             <div className="flex flex-col items-end shrink-0 text-right">

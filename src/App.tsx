@@ -236,7 +236,14 @@ const App = () => (
                 }
               />
               <Route path="/demo" element={<Demo />} />
-              <Route path="/design-preview" element={<DesignPreview />} />
+              <Route
+                path="/design-preview"
+                element={
+                  <RoleRoute allow={(p) => p.isAdmin}>
+                    <DesignPreview />
+                  </RoleRoute>
+                }
+              />
               <Route
                 path="/redefinir-senha"
                 element={<RedefinirSenha />}

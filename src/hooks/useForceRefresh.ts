@@ -23,7 +23,8 @@ export function useForceRefresh() {
     if (!user) return;
 
     const checkForceRefresh = async () => {
-      console.log('[ForceRefresh] Checking for force refresh, pageLoadTime:', pageLoadTime.current);
+      const isDev = import.meta.env.DEV;
+      if (isDev) console.log('[ForceRefresh] Checking for force refresh, pageLoadTime:', pageLoadTime.current);
       
       const { data, error } = await supabase
         .from('app_settings')
@@ -32,21 +33,20 @@ export function useForceRefresh() {
         .single();
 
       if (error) {
-        console.error('[ForceRefresh] Error fetching app_settings:', error);
+        if (isDev) console.error('[ForceRefresh] Error fetching app_settings:', error);
         return;
       }
 
-      console.log('[ForceRefresh] Received data:', data);
+      if (isDev) console.log('[ForceRefresh] Received data:', data);
 
       if (data?.force_refresh_at) {
         const forceTime = new Date(data.force_refresh_at);
         const loadTime = new Date(pageLoadTime.current);
         
-        console.log('[ForceRefresh] Comparing:', { forceTime: forceTime.toISOString(), loadTime: loadTime.toISOString(), shouldRefresh: forceTime > loadTime });
+        if (isDev) console.log('[ForceRefresh] Comparing:', { forceTime: forceTime.toISOString(), loadTime: loadTime.toISOString(), shouldRefresh: forceTime > loadTime });
         
-        // If force_refresh_at is after page load, show prompt
         if (forceTime > loadTime) {
-          console.log('[ForceRefresh] Showing refresh prompt');
+          if (isDev) console.log('[ForceRefresh] Showing refresh prompt');
           setShowRefreshPrompt(true);
         }
       }
@@ -54,8 +54,8 @@ export function useForceRefresh() {
 
     checkForceRefresh();
 
-    // Subscribe to realtime changes
-    console.log('[ForceRefresh] Subscribing to realtime channel');
+    const isDev = import.meta.env.DEV;
+    if (isDev) console.log('[ForceRefresh] Subscribing to realtime channel');
     
     const channel = supabase
       .channel('app_settings_changes')
@@ -68,27 +68,27 @@ export function useForceRefresh() {
           filter: 'id=eq.main',
         },
         (payload) => {
-          console.log('[ForceRefresh] Realtime update received:', payload);
+          if (isDev) console.log('[ForceRefresh] Realtime update received:', payload);
           const newSettings = payload.new as AppSettings;
           if (newSettings.force_refresh_at) {
             const forceTime = new Date(newSettings.force_refresh_at);
             const loadTime = new Date(pageLoadTime.current);
             
-            console.log('[ForceRefresh] Realtime comparing:', { forceTime: forceTime.toISOString(), loadTime: loadTime.toISOString() });
+            if (isDev) console.log('[ForceRefresh] Realtime comparing:', { forceTime: forceTime.toISOString(), loadTime: loadTime.toISOString() });
             
             if (forceTime > loadTime) {
-              console.log('[ForceRefresh] Showing refresh prompt from realtime');
+              if (isDev) console.log('[ForceRefresh] Showing refresh prompt from realtime');
               setShowRefreshPrompt(true);
             }
           }
         }
       )
       .subscribe((status) => {
-        console.log('[ForceRefresh] Subscription status:', status);
+        if (isDev) console.log('[ForceRefresh] Subscription status:', status);
       });
 
     return () => {
-      console.log('[ForceRefresh] Cleaning up channel');
+      if (isDev) console.log('[ForceRefresh] Cleaning up channel');
       supabase.removeChannel(channel);
     };
   }, [user]);

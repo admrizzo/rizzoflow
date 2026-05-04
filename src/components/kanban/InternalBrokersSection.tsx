@@ -163,7 +163,7 @@ export function InternalBrokersSection({
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {renderBrokerChip('capturing_broker_id', 'Captador', capturingBrokerId)}
-        {renderBrokerChip('service_broker_id', 'Atendimento', serviceBrokerId)}
+        {renderBrokerChip('service_broker_id', 'Responsável pela proposta', serviceBrokerId)}
       </div>
     </div>
   );

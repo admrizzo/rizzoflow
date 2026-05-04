@@ -36,7 +36,7 @@ function initials(name?: string | null) {
 
  export function ConversationList({ onSelect }: { onSelect?: (id: string) => void }) {
    const { user } = useAuth();
-   const { activeConversationId, setActiveConversationId, close, onlineUsers } = useChat();
+    const { activeConversationId, setActiveConversationId, close, onlineUserIds } = useChat();
   const { data: conversations = [], isLoading, refetch: refetchConversations } = useChatConversations();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"chats" | "people" | "groups">("chats");
@@ -202,11 +202,12 @@ function initials(name?: string | null) {
                          {p.avatar_url && <AvatarImage src={p.avatar_url} alt={p.full_name} />}
                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
                        </Avatar>
-                       {onlineUsers[p.user_id] ? (
-                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
-                       ) : (
-                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-slate-400 shadow-sm" />
-                       )}
+                        <span 
+                          className={cn(
+                            "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
+                            onlineUserIds.has(p.user_id) ? "bg-emerald-500" : "bg-slate-300"
+                          )} 
+                        />
                      </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
@@ -267,11 +268,12 @@ function initials(name?: string | null) {
                          )}
                        </Avatar>
                        {!isGroup && c.other_user_id && (
-                         onlineUsers[c.other_user_id] ? (
-                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
-                         ) : (
-                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-slate-400 shadow-sm" />
-                         )
+                         <span 
+                           className={cn(
+                             "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background shadow-sm",
+                             onlineUserIds.has(c.other_user_id) ? "bg-emerald-500" : "bg-slate-300"
+                           )} 
+                         />
                        )}
                      </div>
                     <div className="flex-1 min-w-0">

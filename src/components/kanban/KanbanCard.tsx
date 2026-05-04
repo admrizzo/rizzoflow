@@ -137,11 +137,11 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
          <div 
            className={cn(
              "absolute left-0 top-0 bottom-0 w-[4px] z-10 transition-colors duration-300",
-             visualState === 'overdue' && "bg-red-500",
-             visualState === 'correction_requested' && "bg-orange-500",
-             visualState === 'pending' && "bg-amber-500",
-             visualState === 'in_day' && "bg-emerald-500",
-             visualState === 'fallback' && "bg-slate-300"
+              visualState === 'overdue' && "bg-red-600",
+              visualState === 'correction_requested' && "bg-orange-500",
+              visualState === 'pending' && "bg-rose-400",
+              visualState === 'in_day' && "bg-emerald-500",
+              visualState === 'fallback' && "bg-slate-200"
            )} 
          />
 

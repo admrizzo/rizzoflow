@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
- import { useBoardProductivityReport } from '@/hooks/useBoardProductivityReport';
- import { useInteractionRanking } from '@/hooks/useInteractionRanking';
+  import { useBoardProductivityReport, BoardProductivityReport } from '@/hooks/useBoardProductivityReport';
+  import { useInteractionRanking, InteractionRankingRow } from '@/hooks/useInteractionRanking';
  import { useBoards } from '@/hooks/useBoards';
  import { useAssignableUsers } from '@/hooks/useAssignableUsers';
 import { InteractionRankingCard } from './InteractionRankingCard';
@@ -61,7 +61,7 @@ export function BoardProductivityDashboard() {
    }, [assignableUsers]);
  
    // Merge real user list with report data to ensure everyone appears
-   const reportDataWithAllUsers = useMemo((): BoardProductivityRow[] => {
+   const reportDataWithAllUsers = useMemo((): BoardProductivityReport[] => {
      if (!assignableUsers.length) return reportData;
  
      const dataWithAll = [...reportData];

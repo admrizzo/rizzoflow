@@ -235,9 +235,10 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
         .eq('id', card.id);
       if (error) throw error;
 
-      setLocalNextAction('');
-      setLocalDueDate(null);
-      setLocalDueTime('');
+       setDraftAction('');
+       setDraftDueDate(null);
+       setDraftDueTime('');
+       setDraftResponsible(null);
 
       const completedBy = user?.id ? profiles.find(p => p.user_id === user.id)?.full_name || 'Usuário' : 'Usuário';
       void logCardActivity({
@@ -281,7 +282,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
         })
         .eq('id', card.id);
       if (error) throw error;
-      setLocalNextAction(actionText);
+       setDraftAction(actionText);
 
       void logCardActivity({
         cardId: card.id,

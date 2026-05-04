@@ -24,22 +24,6 @@ export function ChatPanel() {
            <SheetDescription>Sistema de comunicação interna para a equipe Rizzo Flow.</SheetDescription>
          </SheetHeader>
  
-          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">Chat Interno</p>
-              <p className="truncate text-xs text-muted-foreground">Comunicação da equipe</p>
-            </div>
-            <SheetClose asChild>
-              <button
-                type="button"
-                aria-label="Fechar chat"
-                className="chat-close-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </SheetClose>
-          </div>
- 
           <div className="grid grid-cols-1 md:grid-cols-[320px_minmax(0,1fr)] flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* Lista — esconde no mobile quando há conversa ativa */}
           <div

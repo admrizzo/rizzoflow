@@ -61,20 +61,18 @@ export function CardStatesLegend({ className, filters, onFiltersChange }: CardSt
               onClick={() => handleToggleFilter(l)}
               title={l.label}
               className={cn(
-                'inline-flex items-center gap-2 h-7 px-2.5 rounded-md bg-card border border-border whitespace-nowrap transition-all',
-                'border-l-[3px] hover:bg-accent/5',
-                l.barClass,
-                isSelected(l) && 'ring-2 ring-primary ring-inset bg-accent/10 border-primary shadow-sm'
+               'inline-flex items-center h-7 px-3 rounded-md bg-card border border-border whitespace-nowrap transition-all',
+               'border-l-[4px] hover:bg-accent/5',
+               l.barClass,
+               isSelected(l) && 'ring-2 ring-primary ring-inset bg-slate-100/80 border-primary shadow-sm ring-offset-1'
               )}
             >
-              <span
-                className={cn(
-                  "w-[7px] h-[7px] rounded-full shrink-0",
-                  l.id === 'unseen' && "animate-pulse"
-                )}
-                style={{ background: l.dot }}
-              />
-               <span className="text-[11.5px] font-semibold text-foreground">{l.label}</span>
+               <span className={cn(
+                 "text-[11.5px] font-bold transition-colors",
+                 isSelected(l) ? "text-primary" : "text-foreground"
+               )}>
+                 {l.label}
+               </span>
             </button>
           ))}
         </div>

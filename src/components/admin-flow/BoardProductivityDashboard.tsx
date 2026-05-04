@@ -225,13 +225,13 @@ export function BoardProductivityDashboard() {
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Usuário:</span>
+           <span className="text-sm font-medium text-muted-foreground">Colaborador:</span>
           <Select value={selectedUserId} onValueChange={setSelectedUserId}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Todos os usuários" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os usuários</SelectItem>
+               <SelectItem value="all">Todos os colaboradores</SelectItem>
               {usersInReport.map(user => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.name}
@@ -322,26 +322,26 @@ export function BoardProductivityDashboard() {
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="flex gap-2 flex-wrap">
           <TabsList className="bg-slate-800 p-1.5 h-auto gap-1 rounded-lg shadow-lg">
-            <TabsTrigger 
-              value="overview" 
-              className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span>Visão Geral</span>
-            </TabsTrigger>
+             <TabsTrigger 
+               value="overview" 
+               className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
+             >
+               <TrendingUp className="h-4 w-4" />
+               <span>Resumo</span>
+             </TabsTrigger>
             <TabsTrigger 
               value="compare" 
               className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
             >
               <ArrowLeftRight className="h-4 w-4" />
-              <span>Comparar Funcionários</span>
+               <span>Comparativo</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ranking" 
               className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
             >
               <Trophy className="h-4 w-4" />
-              <span>Ranking Detalhado</span>
+               <span>Interações</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -359,8 +359,8 @@ export function BoardProductivityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Produtividade por Funcionário
+                   <Users className="h-5 w-5" />
+                   Produtividade por Colaborador
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -425,13 +425,13 @@ export function BoardProductivityDashboard() {
           {/* Detailed Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Detalhamento por Funcionário</CardTitle>
+               <CardTitle className="text-lg">Detalhamento por Colaborador</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Funcionário</TableHead>
+                     <TableHead>Colaborador</TableHead>
                     <TableHead className="text-center">Cards Criados</TableHead>
                     <TableHead className="text-center">Concluídos</TableHead>
                     <TableHead className="text-center">Em Andamento</TableHead>
@@ -497,15 +497,15 @@ export function BoardProductivityDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <ArrowLeftRight className="h-5 w-5" />
-                Comparar Funcionários Lado a Lado
+                 <ArrowLeftRight className="h-5 w-5" />
+                 Comparativo entre Colaboradores
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* User and Period Selection */}
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-blue-600">Funcionário 1:</span>
+                   <span className="text-sm font-medium text-blue-600">Colaborador 1:</span>
                   <Select value={compareUser1} onValueChange={setCompareUser1}>
                     <SelectTrigger className="w-[200px] border-blue-200">
                       <SelectValue placeholder="Selecionar..." />
@@ -523,7 +523,7 @@ export function BoardProductivityDashboard() {
                   <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-green-600">Funcionário 2:</span>
+                   <span className="text-sm font-medium text-green-600">Colaborador 2:</span>
                   <Select value={compareUser2} onValueChange={setCompareUser2}>
                     <SelectTrigger className="w-[200px] border-green-200">
                       <SelectValue placeholder="Selecionar..." />
@@ -717,7 +717,7 @@ export function BoardProductivityDashboard() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-16 text-center">#</TableHead>
-                          <TableHead>Funcionário</TableHead>
+                           <TableHead>Colaborador</TableHead>
                           <TableHead 
                             className={`text-center cursor-pointer hover:bg-muted/50 transition-colors ${rankingSortField === 'checklist_completions' ? 'bg-blue-50' : ''}`}
                             onClick={() => { setRankingSortField('checklist_completions'); setRankingPage(1); }}

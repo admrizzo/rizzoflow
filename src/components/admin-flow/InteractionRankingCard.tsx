@@ -140,7 +140,7 @@ export function InteractionRankingCard({ data, isLoading }: InteractionRankingCa
             <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500">
               <Trophy className="h-5 w-5 text-white" />
             </div>
-            Ranking de Produtividade
+             Interações de Produtividade
             <Badge variant="secondary" className="ml-2 bg-white/10 text-white/80">
               {data.length} pessoas
             </Badge>
@@ -336,9 +336,9 @@ export function InteractionRankingCard({ data, isLoading }: InteractionRankingCa
                     {/* User info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-white font-medium text-sm truncate">
-                          {user.user_name}
-                        </span>
+                   <span className="text-white font-medium text-sm truncate">
+                     {user.user_name}
+                   </span>
                         <Badge 
                           variant="secondary" 
                           className={cn("text-[10px] px-1.5 py-0 h-4 shrink-0", level.color, "text-white")}

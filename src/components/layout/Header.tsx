@@ -116,10 +116,10 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/admin-flow')}
+             onClick={() => navigate('/metricas')}
             className={cn(
               "h-8 gap-2 text-[12.5px] font-semibold transition-all rounded-lg shrink-0",
-              window.location.pathname === '/admin-flow' ? "bg-white/10 text-white shadow-inner" : "text-white/70 hover:bg-white/5 hover:text-white"
+               window.location.pathname === '/metricas' ? "bg-white/10 text-white shadow-inner" : "text-white/70 hover:bg-white/5 hover:text-white"
             )}
           >
             <BarChart3 className="h-4 w-4" />

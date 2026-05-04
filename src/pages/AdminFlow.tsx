@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useBoards } from '@/hooks/useBoards';
 import { Board } from '@/types/database';
 
-export default function AdminFlowPage() {
+ export default function MetricasPage() {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const { boards } = useBoards();
   const navigate = useNavigate();
@@ -73,7 +73,12 @@ export default function AdminFlowPage() {
       <main className="pt-4 px-4">
         <div className="flex items-center gap-2 mb-4 text-foreground">
           <TrendingUp className="h-5 w-5" />
-          <h1 className="text-xl font-semibold">Métricas de Produtividade</h1>
+           <div className="flex flex-col gap-1">
+             <h1 className="text-xl font-semibold">Métricas</h1>
+             <p className="text-sm text-muted-foreground">
+               Visão operacional de produtividade, fluxos e interações dos colaboradores.
+             </p>
+           </div>
         </div>
         <BoardProductivityDashboard />
       </main>

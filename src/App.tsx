@@ -20,7 +20,7 @@ import PropostaLocacao from "./pages/PropostaLocacao";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const MinhaFila = lazy(() => import("./pages/MinhaFila"));
 const CentralPropostas = lazy(() => import("./pages/CentralPropostas"));
-const AdminFlow = lazy(() => import("./pages/AdminFlow"));
+ const Metricas = lazy(() => import("./pages/AdminFlow"));
 const PropostaPublica = lazy(() => import("./pages/PropostaPublica"));
 const ProviderPortal = lazy(() => import("./pages/ProviderPortal"));
 const Demo = lazy(() => import("./pages/Demo"));
@@ -218,14 +218,15 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/admin-flow"
-                element={
-                  <RoleRoute allow={(p) => p.canManageFlows}>
-                    <AdminFlow />
-                  </RoleRoute>
-                }
-              />
+               <Route path="/admin-flow" element={<Navigate to="/metricas" replace />} />
+               <Route
+                 path="/metricas"
+                 element={
+                   <RoleRoute allow={(p) => p.canManageFlows}>
+                     <Metricas />
+                   </RoleRoute>
+                 }
+               />
               <Route path="/prestador/:token" element={<ProviderPortal />} />
               <Route
                 path="/proposta-locacao"

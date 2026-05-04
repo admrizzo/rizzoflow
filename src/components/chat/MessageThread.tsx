@@ -29,7 +29,7 @@ function initials(name?: string | null) {
   onBack?: () => void;
 }) {
    const { user } = useAuth();
-   const { close, onlineUsers } = useChat();
+    const { close, onlineUserIds } = useChat();
   const qc = useQueryClient();
   const { data: messages = [], isLoading } = useChatMessages(conversationId);
   const { data: conversations = [] } = useChatConversations();
@@ -103,7 +103,7 @@ function initials(name?: string | null) {
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
    const isGroup = conv?.type === "group";
    const otherUserId = conv?.other_user_id;
-   const isOnline = otherUserId ? !!onlineUsers[otherUserId] : false;
+    const isOnline = otherUserId ? onlineUserIds.has(otherUserId) : false;
  
    const formatDateSeparator = (date: Date) => {
      if (isToday(date)) return "Hoje";
@@ -126,10 +126,12 @@ function initials(name?: string | null) {
                <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
              </Avatar>
              {!isGroup && otherUserId && (
-               <span className={cn(
-                 "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
-                 isOnline ? "bg-emerald-500" : "bg-slate-400"
-               )} />
+                <span 
+                  className={cn(
+                    "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
+                    isOnline ? "bg-emerald-500" : "bg-slate-300"
+                  )} 
+                />
              )}
            </div>
            <div className="min-w-0 flex-1 flex flex-col">

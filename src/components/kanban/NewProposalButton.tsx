@@ -124,7 +124,7 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           broker_name: brokerName,
           broker_user_id: selectedBroker.user_id,
           capturing_broker_id: selectedProperty.captador_email 
-            ? selectableUsers.find(u => u.email === selectedProperty.captador_email)?.user_id 
+            ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id 
             : null,
           created_by: user?.id || null,
         })
@@ -170,7 +170,7 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           proposal_link_id: linkData.id,
           responsible_user_id: selectedBroker.user_id,
           capturing_broker_id: selectedProperty.captador_email 
-            ? selectableUsers.find(u => u.email === selectedProperty.captador_email)?.user_id 
+            ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id 
             : null,
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,

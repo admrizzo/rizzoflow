@@ -3,6 +3,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+ type OnlineUser = {
+   user_id: string;
+   full_name: string;
+   avatar_url: string | null;
+   online_at: string;
+ };
+ 
 type ChatContextValue = {
   isOpen: boolean;
   open: () => void;
@@ -10,18 +17,21 @@ type ChatContextValue = {
   toggle: () => void;
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
-  unreadTotal: number;
+   unreadTotal: number;
+   onlineUsers: Record<string, OnlineUser>;
+   refreshUnread: () => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
    const [unreadTotal, setUnreadTotal] = useState(0);
    const [lastUpdate, setLastUpdate] = useState(Date.now());
+    const [onlineUsers, setOnlineUsers] = useState<Record<string, OnlineUser>>({});
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -60,30 +70,52 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     refreshUnread();
    }, [refreshUnread, lastUpdate]);
 
-  // Realtime: refresh on any new message or participant update
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("chat-global")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
-        const newMessage = payload.new as any;
+   // Realtime: Presence and Postgres changes
+   useEffect(() => {
+     if (!user) return;
+     const channel = supabase.channel("chat-global");
+ 
+     channel
+       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+         const newMessage = payload.new as any;
          setLastUpdate(Date.now());
-        if (newMessage && newMessage.conversation_id) {
-          qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
-        } else {
-          qc.invalidateQueries({ queryKey: ["chat", "messages"] });
-        }
-        qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, () => {
-         setLastUpdate(Date.now());
+         if (newMessage && newMessage.conversation_id) {
+           qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
+         }
          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, refreshUnread, qc]);
+       })
+       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_participants" }, (payload) => {
+         const update = payload.new as any;
+         if (update.user_id === user.id) {
+           refreshUnread();
+         }
+         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+       })
+       .on("presence", { event: "sync" }, () => {
+         const state = channel.presenceState();
+         const users: Record<string, OnlineUser> = {};
+         Object.values(state).forEach((presences: any) => {
+           presences.forEach((p: OnlineUser) => {
+             if (p.user_id) users[p.user_id] = p;
+           });
+         });
+         setOnlineUsers(users);
+       })
+       .subscribe(async (status) => {
+         if (status === "SUBSCRIBED") {
+           await channel.track({
+             user_id: user.id,
+             full_name: profile?.full_name || "Usuário",
+             avatar_url: profile?.avatar_url || null,
+             online_at: new Date().toISOString(),
+           });
+         }
+       });
+ 
+     return () => {
+       channel.unsubscribe();
+     };
+   }, [user, profile, refreshUnread, qc]);
 
   const value = useMemo<ChatContextValue>(
     () => ({
@@ -91,11 +123,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       open: () => setIsOpen(true),
       close: () => setIsOpen(false),
       toggle: () => setIsOpen((v) => !v),
-      activeConversationId,
-      setActiveConversationId,
-      unreadTotal,
-    }),
-    [isOpen, activeConversationId, unreadTotal],
+       activeConversationId,
+       setActiveConversationId,
+       unreadTotal,
+       onlineUsers,
+       refreshUnread,
+     }),
+     [isOpen, activeConversationId, unreadTotal, onlineUsers, refreshUnread],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

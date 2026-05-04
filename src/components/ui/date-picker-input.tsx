@@ -110,7 +110,7 @@ export function DatePickerInput({
         className="flex-1 h-9 text-sm"
         maxLength={10}
       />
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"

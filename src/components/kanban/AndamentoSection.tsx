@@ -76,28 +76,42 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
   const [isCompleting, setIsCompleting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
 
-  const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
-  const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
-  const [localDueTime, setLocalDueTime] = useState<string>(() => {
-    const d = parseDatabaseDate(card.next_action_due_date);
-    if (!d) return '';
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return hh === '00' && mm === '00' ? '' : `${hh}:${mm}`;
-  });
-
-  useEffect(() => {
-    setLocalNextAction(card.next_action || '');
-    const d = parseDatabaseDate(card.next_action_due_date);
-    setLocalDueDate(d);
-    if (d) {
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mm = String(d.getMinutes()).padStart(2, '0');
-      setLocalDueTime(hh === '00' && mm === '00' ? '' : `${hh}:${mm}`);
-    } else {
-      setLocalDueTime('');
-    }
-  }, [card.id, card.next_action, card.next_action_due_date]);
+   const [isSaving, setIsSaving] = useState(false);
+   const [draftAction, setDraftAction] = useState(card.next_action || '');
+   const [draftResponsible, setDraftResponsible] = useState<string | null>(card.responsible_user_id || null);
+   const [draftDueDate, setDraftDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
+   const [draftDueTime, setDraftDueTime] = useState<string>(() => {
+     const d = parseDatabaseDate(card.next_action_due_date);
+     if (!d) return '';
+     const hh = String(d.getHours()).padStart(2, '0');
+     const mm = String(d.getMinutes()).padStart(2, '0');
+     return hh === '00' && mm === '00' ? '' : `${hh}:${mm}`;
+   });
+ 
+   const hasChanged = 
+     draftAction !== (card.next_action || '') ||
+     draftResponsible !== (card.responsible_user_id || null) ||
+     (draftDueDate?.toISOString() || null) !== (parseDatabaseDate(card.next_action_due_date)?.toISOString() || null) ||
+     (() => {
+       const d = parseDatabaseDate(card.next_action_due_date);
+       const currentTime = d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '';
+       const normalizedCurrentTime = currentTime === '00:00' ? '' : currentTime;
+       return draftDueTime !== normalizedCurrentTime;
+     })();
+ 
+   useEffect(() => {
+     setDraftAction(card.next_action || '');
+     setDraftResponsible(card.responsible_user_id || null);
+     const d = parseDatabaseDate(card.next_action_due_date);
+     setDraftDueDate(d);
+     if (d) {
+       const hh = String(d.getHours()).padStart(2, '0');
+       const mm = String(d.getMinutes()).padStart(2, '0');
+       setDraftDueTime(hh === '00' && mm === '00' ? '' : `${hh}:${mm}`);
+     } else {
+       setDraftDueTime('');
+     }
+   }, [card.id, card.next_action, card.next_action_due_date, card.responsible_user_id]);
 
   const responsibleProfile =
     card.responsible_user_profile ||
@@ -105,7 +119,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
       ? profiles.find((p) => p.user_id === card.responsible_user_id)
       : null);
 
-  const dueDate = localDueDate;
+   const dueDate = draftDueDate;
   const overdue = dueDate ? isDateOverdue(dueDate) : false;
   const today = dueDate ? isToday(dueDate) : false;
 
@@ -121,61 +135,85 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
     !!lastCompletedAt &&
     Date.now() - lastCompletedAt.getTime() < 24 * 60 * 60 * 1000;
 
-  const handleNextActionBlur = () => {
-    const next = localNextAction.trim();
-    if (next === (card.next_action || '')) return;
-    updateCard.mutate({ id: card.id, next_action: next || null });
-  };
-
-  const handleResponsibleChange = (value: string) => {
-    const userId = value === NONE_VALUE ? null : value;
-    updateCard.mutate({ id: card.id, responsible_user_id: userId });
-  };
-
-  const persistDueDateTime = (date: Date | null, time: string) => {
-    let iso: string | null = null;
-    if (date) {
-      const [hh, mm] = (time && /^\d{2}:\d{2}$/.test(time))
-        ? time.split(':').map(Number)
-        : [0, 0];
-      const composed = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate(),
-        hh,
-        mm,
-        0,
-        0,
-      );
-      iso = composed.toISOString();
-    }
-    const previousDate = localDueDate;
-    const previousTime = localDueTime;
-    updateCard.mutate(
-      { id: card.id, next_action_due_date: iso },
-      {
-        onError: () => {
-          setLocalDueDate(previousDate);
-          setLocalDueTime(previousTime);
-        },
-      },
-    );
-  };
-
-  const handleDueDateChange = (date: Date | undefined) => {
-    const next = date ?? null;
-    setLocalDueDate(next);
-    persistDueDateTime(next, localDueTime);
-  };
-
-  const handleDueTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalDueTime(e.target.value);
-  };
-
-  const handleDueTimeBlur = () => {
-    if (!localDueDate) return;
-    persistDueDateTime(localDueDate, localDueTime);
-  };
+   const handleSaveAction = async () => {
+     if (!hasChanged || isSaving) return;
+     setIsSaving(true);
+     const actionText = draftAction.trim();
+     
+     let iso: string | null = null;
+     if (draftDueDate) {
+       const [hh, mm] = (draftDueTime && /^\d{2}:\d{2}$/.test(draftDueTime))
+         ? draftDueTime.split(':').map(Number)
+         : [0, 0];
+       const composed = new Date(
+         draftDueDate.getFullYear(),
+         draftDueDate.getMonth(),
+         draftDueDate.getDate(),
+         hh,
+         mm,
+         0,
+         0,
+       );
+       iso = composed.toISOString();
+     }
+ 
+     try {
+       const { error } = await supabase
+         .from('cards')
+         .update({
+           next_action: actionText || null,
+           responsible_user_id: draftResponsible,
+           next_action_due_date: iso,
+         })
+         .eq('id', card.id);
+ 
+       if (error) throw error;
+ 
+       const userName = user?.id ? profiles.find(p => p.user_id === user.id)?.full_name || 'Usuário' : 'Usuário';
+       const responsibleName = draftResponsible ? profiles.find(p => p.user_id === draftResponsible)?.full_name || 'Alguém' : null;
+       
+       const isNew = !card.next_action;
+       const title = isNew ? 'Próxima ação definida' : 'Próxima ação atualizada';
+       
+       let description = `Ação: ${actionText || '(Removida)'}`;
+       if (responsibleName) description += `\nResponsável: ${responsibleName}`;
+       if (iso) description += `\nPrazo: ${format(new Date(iso), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`;
+ 
+       void logCardActivity({
+         cardId: card.id,
+         actorUserId: user?.id,
+         eventType: 'next_action_changed',
+         title,
+         description,
+         metadata: {
+           action_text: actionText,
+           responsible_id: draftResponsible,
+           due_date: iso
+         },
+       });
+ 
+       // Notify responsible if changed or if it's a new action
+       if (draftResponsible && draftResponsible !== user?.id && (draftResponsible !== card.responsible_user_id || isNew)) {
+         await supabase.from('notifications').insert({
+           user_id: draftResponsible,
+           card_id: card.id,
+           title: isNew ? 'Nova tarefa atribuída' : 'Tarefa atualizada',
+           message: `${userName} atribuiu a você: ${actionText || 'Próxima ação'}`
+         });
+       }
+ 
+       invalidateCardQueries(queryClient);
+       toast({ title: isNew ? 'Próxima ação definida!' : 'Próxima ação atualizada!' });
+     } catch (err: any) {
+       toast({
+         title: 'Erro ao salvar próxima ação',
+         description: err.message,
+         variant: 'destructive'
+       });
+     } finally {
+       setIsSaving(false);
+     }
+   };
 
   const handleMarkAsDone = async () => {
     if (!hasPendingAction) return;
@@ -197,9 +235,10 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
         .eq('id', card.id);
       if (error) throw error;
 
-      setLocalNextAction('');
-      setLocalDueDate(null);
-      setLocalDueTime('');
+       setDraftAction('');
+       setDraftDueDate(null);
+       setDraftDueTime('');
+       setDraftResponsible(null);
 
       const completedBy = user?.id ? profiles.find(p => p.user_id === user.id)?.full_name || 'Usuário' : 'Usuário';
       void logCardActivity({
@@ -243,7 +282,7 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
         })
         .eq('id', card.id);
       if (error) throw error;
-      setLocalNextAction(actionText);
+       setDraftAction(actionText);
 
       void logCardActivity({
         cardId: card.id,
@@ -427,17 +466,16 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           <div className="flex gap-2">
             <div className="flex-1 space-y-1.5">
               <div className="relative">
-                <Input
-                  value={localNextAction}
-                  onChange={(e) => setLocalNextAction(e.target.value)}
-                  onBlur={handleNextActionBlur}
-                  placeholder='Use este campo para atribuir a próxima pendência prática do card.'
-                  disabled={!canEdit}
-                  className={cn(
-                    "flex-1 pr-10",
-                    hasPendingAction && "font-semibold text-foreground ring-1 ring-accent/20"
-                  )}
-                />
+                 <Input
+                   value={draftAction}
+                   onChange={(e) => setDraftAction(e.target.value)}
+                   placeholder='Use este campo para atribuir a próxima pendência prática do card.'
+                   disabled={!canEdit || isSaving}
+                   className={cn(
+                     "flex-1 pr-10",
+                     draftAction && "font-semibold text-foreground ring-1 ring-accent/20"
+                   )}
+                 />
                 {hasPendingAction && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     {overdue ? (
@@ -464,11 +502,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
                   >
                     {overdue ? 'Vencida' : today ? 'Vence hoje' : !dueDate ? 'Sem prazo' : 'Pendente'}
                   </Badge>
-                  {!card.responsible_user_id && (
-                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold bg-rose-50 text-rose-700 border-rose-200">
-                      Sem responsável
-                    </Badge>
-                  )}
+                   {!card.responsible_user_id && draftAction && (
+                     <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold bg-rose-50 text-rose-700 border-rose-200">
+                       Sem responsável
+                     </Badge>
+                   )}
                 </div>
               )}
             </div>
@@ -495,11 +533,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             Responsável
           </Label>
-          <Select
-            value={card.responsible_user_id || NONE_VALUE}
-            onValueChange={handleResponsibleChange}
-            disabled={!canEdit}
-          >
+           <Select
+             value={draftResponsible || NONE_VALUE}
+             onValueChange={(val) => setDraftResponsible(val === NONE_VALUE ? null : val)}
+             disabled={!canEdit || isSaving}
+           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione…">
                 {responsibleProfile ? (
@@ -534,13 +572,13 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               ))}
             </SelectContent>
           </Select>
-          <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
-            {card.responsible_user_id === user?.id 
-              ? "Esta ação aparecerá na sua Minha Fila."
-              : card.responsible_user_id 
-                ? `${responsibleProfile?.full_name?.split(' ')[0] || 'O responsável'} será notificado e verá esta ação na Minha Fila.`
-                : "Defina um responsável para esta ação entrar na fila de alguém."}
-          </p>
+           <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
+             {draftResponsible === user?.id 
+               ? "Esta ação aparecerá na sua Minha Fila após salvar."
+               : draftResponsible 
+                 ? `${profiles.find(p => p.user_id === draftResponsible)?.full_name?.split(' ')[0] || 'O responsável'} será notificado e verá esta ação na Minha Fila após salvar.`
+                 : "Defina um responsável para esta ação entrar na fila de alguém."}
+           </p>
         </div>
 
         {/* Prazo */}
@@ -551,25 +589,35 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
           </Label>
           <div className="flex gap-2">
             <div className="flex-1">
-              <DatePickerInput
-                value={dueDate || undefined}
-                onChange={handleDueDateChange}
-                disabled={!canEdit || updateCard.isPending}
-                placeholder="dd/mm/aaaa"
-              />
-            </div>
-            <div className="relative w-[110px]">
-              <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                type="time"
-                value={localDueTime}
-                onChange={handleDueTimeChange}
-                onBlur={handleDueTimeBlur}
-                disabled={!canEdit || !localDueDate || updateCard.isPending}
-                className="h-9 pl-7 text-sm"
-                placeholder="--:--"
-              />
-            </div>
+               <DatePickerInput
+                 value={draftDueDate || undefined}
+                 onChange={(d) => setDraftDueDate(d ?? null)}
+                 disabled={!canEdit || isSaving}
+                 placeholder="dd/mm/aaaa"
+               />
+             </div>
+             <div className="relative w-[110px]">
+               <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+               <Input
+                 type="time"
+                 value={draftDueTime}
+                 onChange={(e) => setDraftDueTime(e.target.value)}
+                 disabled={!canEdit || !draftDueDate || isSaving}
+                 className="h-9 pl-7 text-sm"
+                 placeholder="--:--"
+               />
+             </div>
+           </div>
+           
+           <div className="md:col-span-2 flex justify-end pt-2">
+             <Button
+               onClick={handleSaveAction}
+               disabled={!hasChanged || isSaving}
+               className="w-full sm:w-auto font-bold gap-2"
+             >
+               {isSaving ? <RotateCcw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+               {card.next_action ? 'Atualizar próxima ação' : 'Salvar próxima ação'}
+             </Button>
           </div>
           {!dueDate && hasPendingAction && (
             <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">

@@ -165,7 +165,6 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           address: addressParts.join(', ') || null,
           proposal_responsible: brokerName,
           proposal_link_id: linkData.id,
-          responsible_user_id: selectedBroker.user_id,
           capturing_broker_id: selectedProperty.captador_email 
             ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id 
             : null,

@@ -14,6 +14,7 @@ export interface ProposalNegotiationSummary {
   justificativa: string | null;
   // Assinatura
   tipoAssinatura: 'digital' | 'fisico' | null;
+  tipoGarantia: string | null;
   // Observação livre da etapa de Garantia
   observacaoGarantia: string | null;
   // Códigos
@@ -65,6 +66,7 @@ export function useProposalNegotiationSummary(
         valorProposto: null,
         justificativa: null,
         tipoAssinatura: null,
+        tipoGarantia: null,
         observacaoGarantia: null,
         codigoRobust: null,
         endereco: null,
@@ -137,7 +139,7 @@ export function useProposalNegotiationSummary(
           fd.garantia.observacao.trim()) ||
         null;
 
-      const tipoAssinaturaRaw = fd?.assinatura?.tipo_contrato_assinatura;
+       const tipoAssinaturaRaw = fd?.assinatura?.tipo_contrato_assinatura || fd?.garantia?.tipo_contrato_assinatura;
       const tipoAssinatura: 'digital' | 'fisico' | null =
         tipoAssinaturaRaw === 'digital' || tipoAssinaturaRaw === 'fisico'
           ? tipoAssinaturaRaw
@@ -166,7 +168,9 @@ export function useProposalNegotiationSummary(
       const retiradaObservacao: string | null =
         (typeof fd?.composicao?.retirada_observacao === 'string' && fd.composicao.retirada_observacao.trim()) || null;
 
-      return {
+       const tipoGarantia = fd?.garantia?.tipo_garantia || null;
+
+       return {
         hasData,
         source: fd ? 'draft' : link ? 'link' : 'none',
         aluguel,
@@ -178,6 +182,7 @@ export function useProposalNegotiationSummary(
         valorProposto,
         justificativa,
         tipoAssinatura,
+         tipoGarantia,
         observacaoGarantia,
         codigoRobust: link?.codigo_robust ?? null,
         endereco: prop

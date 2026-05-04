@@ -140,7 +140,7 @@ function initials(name?: string | null) {
     <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden relative">
       <div className="px-4 py-3 border-b border-border bg-background shrink-0 flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chats" | "people" | "groups")} className="w-full">
             <TabsList className="grid w-full grid-cols-3 h-9 bg-muted/50 p-1 rounded-lg">
               <TabsTrigger value="chats" className="text-[11px] h-7">Conversas</TabsTrigger>
               <TabsTrigger value="people" className="text-[11px] h-7">Usuários</TabsTrigger>

@@ -36,7 +36,7 @@ export const TITLE_TOKENS = [
 /**
  * Generate a card title based on a pattern and context
  * Pattern tokens: {robust_code}, {building_name}, {party:vendedor}, etc.
- * Parts are joined with " - " and empty values are skipped
+ * Parts are joined with " — " and empty values are skipped
  */
 export function generateTitleFromPattern(
   pattern: string,
@@ -48,9 +48,9 @@ export function generateTitleFromPattern(
     return defaultTitle;
   }
 
-  // Split pattern by " - " to handle each part separately
-  // This allows patterns like "{robust_code} - {party:vendedor} - {party:comprador}"
-  const patternParts = pattern.split(' - ').map(p => p.trim()).filter(Boolean);
+  // Split pattern by " — " or " - " to handle each part separately
+  // This allows patterns like "{robust_code} — {party:vendedor} — {party:comprador}"
+  const patternParts = pattern.split(/\s*[-—]\s*/).map(p => p.trim()).filter(Boolean);
   
   const resultParts: string[] = [];
   
@@ -78,7 +78,7 @@ export function generateTitleFromPattern(
     }
   }
   
-  return resultParts.length > 0 ? resultParts.join(' - ') : defaultTitle;
+  return resultParts.length > 0 ? resultParts.join(' — ') : defaultTitle;
 }
 
 /**

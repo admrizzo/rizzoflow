@@ -50,7 +50,12 @@ export function useCardViews(boardId: string | null) {
   // Check if card has unseen changes
   const hasUnseenChanges = (cardId: string, updatedAt: string): boolean => {
     const lastViewed = viewsMap.get(cardId);
-    if (!lastViewed) return true; // Never viewed = unseen
+    
+    // If never viewed by this user, we don't mark as "unseen" (new change) 
+    // unless we have a specific milestone. For now, being conservative:
+    // only mark as unseen if we HAVE a previous view and the card was updated since then.
+    if (!lastViewed) return false;
+
     return new Date(updatedAt) > lastViewed;
   };
 

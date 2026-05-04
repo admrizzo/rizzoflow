@@ -46,11 +46,6 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
               snapshot.isDraggingOver && "bg-primary/5 ring-2 ring-inset ring-primary/40 rounded-b-xl"
             )}
           >
-            {cards.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/60 text-center px-1 py-1.5 italic select-none">
-                Ordem de entrada e urgências · cima → baixo
-              </p>
-            )}
             {cards.map((card, index) => (
               <Draggable key={card.id} draggableId={card.id} index={index}>
                 {(dragProvided, dragSnapshot) => (

@@ -1,19 +1,50 @@
 import { cn } from '@/lib/utils';
+import { FilterState } from '@/components/layout';
+
+interface CardStatesLegendProps {
+  className?: string;
+  filters?: FilterState;
+  onFiltersChange?: (filters: FilterState) => void;
+}
 
 /**
  * Legenda visual rápida dos estados de card — espelha o design C do preview.
- * Apenas elemento informativo: NÃO altera lógica, dados ou regras.
  */
-const LEGEND: { label: string; code: string; dot: string; barClass: string }[] = [
-  { label: 'Em dia',              code: 'LOC-2901', dot: 'hsl(142 45% 53%)', barClass: 'border-l-[hsl(142_45%_53%)]' },
-  { label: 'Doc. recebidos',      code: 'LOC-2902', dot: 'hsl(150 40% 48%)', barClass: 'border-l-[hsl(150_40%_48%)]' },
-  { label: 'Correção solicitada', code: 'LOC-2903', dot: 'hsl(28 70% 55%)',  barClass: 'border-l-[hsl(28_70%_55%)]' },
-  { label: 'Pendência',           code: 'LOC-2904', dot: 'hsl(340 100% 45%)',barClass: 'border-l-[hsl(340_100%_45%)]' },
-  { label: 'Vencido',             code: 'LOC-2905', dot: 'hsl(350 75% 42%)', barClass: 'border-l-[hsl(350_75%_42%)]' },
-  { label: 'Neutro',              code: 'LOC-2906', dot: 'hsl(210 10% 65%)', barClass: 'border-l-[hsl(210_10%_65%)]' },
+const LEGEND = [
+  { id: 'in_day', label: 'Em dia', code: 'LOC-2901', dot: 'hsl(142 45% 53%)', barClass: 'border-l-[hsl(142_45%_53%)]' },
+  { id: 'docs_received', label: 'Doc. recebidos', code: 'LOC-2902', dot: 'hsl(150 40% 48%)', barClass: 'border-l-[hsl(150_40%_48%)]' },
+  { id: 'correction_requested', label: 'Correção solicitada', code: 'LOC-2903', dot: 'hsl(28 70% 55%)', barClass: 'border-l-[hsl(28_70%_55%)]' },
+  { id: 'pending', label: 'Pendência', code: 'LOC-2904', dot: 'hsl(340 100% 45%)', barClass: 'border-l-[hsl(340_100%_45%)]' },
+  { id: 'overdue', label: 'Vencido', code: 'LOC-2905', dot: 'hsl(350 75% 42%)', barClass: 'border-l-[hsl(350_75%_42%)]' },
+  { id: 'unseen', label: 'Não visto', code: 'LOC-2907', dot: 'hsl(0 100% 50%)', barClass: 'border-l-red-500' },
 ];
 
-export function CardStatesLegend({ className }: { className?: string }) {
+export function CardStatesLegend({ className, filters, onFiltersChange }: CardStatesLegendProps) {
+  const handleToggleFilter = (item: typeof LEGEND[0]) => {
+    if (!onFiltersChange || !filters) return;
+
+    const newFilters = { ...filters };
+
+    if (item.id === 'docs_received') {
+      newFilters.docsReceived = !filters.docsReceived;
+      // Clear other visual state related filters when toggling docs_received? 
+      // User said "coexist", so we keep others.
+    } else if (item.id === 'unseen') {
+      newFilters.unseenOnly = !filters.unseenOnly;
+    } else {
+      newFilters.visualState = filters.visualState === item.id ? null : item.id;
+    }
+
+    onFiltersChange(newFilters);
+  };
+
+  const isSelected = (item: typeof LEGEND[0]) => {
+    if (!filters) return false;
+    if (item.id === 'docs_received') return filters.docsReceived;
+    if (item.id === 'unseen') return filters.unseenOnly;
+    return filters.visualState === item.id;
+  };
+
   return (
     <div className={cn('px-4 pt-2 pb-1', className)}>
       <div className="flex items-center gap-2 mb-1.5">
@@ -25,24 +56,29 @@ export function CardStatesLegend({ className }: { className?: string }) {
       <div className="overflow-x-auto lp-thin-scroll scrollbar-none">
         <div className="inline-flex gap-1.5 items-stretch min-w-max">
           {LEGEND.map((l) => (
-            <div
-              key={l.code}
+            <button
+              key={l.id}
+              onClick={() => handleToggleFilter(l)}
               title={l.label}
               className={cn(
-                'inline-flex items-center gap-2 h-7 px-2.5 rounded-md bg-card border border-border whitespace-nowrap',
-                'border-l-[3px]',
-                l.barClass
+                'inline-flex items-center gap-2 h-7 px-2.5 rounded-md bg-card border border-border whitespace-nowrap transition-all',
+                'border-l-[3px] hover:bg-accent/5',
+                l.barClass,
+                isSelected(l) && 'ring-2 ring-primary ring-inset bg-accent/10 border-primary shadow-sm'
               )}
             >
               <span
-                className="w-[7px] h-[7px] rounded-full shrink-0"
+                className={cn(
+                  "w-[7px] h-[7px] rounded-full shrink-0",
+                  l.id === 'unseen' && "animate-pulse"
+                )}
                 style={{ background: l.dot }}
               />
               <span className="text-[11.5px] font-semibold text-foreground">{l.label}</span>
               <span className="text-[9.5px] font-semibold tracking-wide text-muted-foreground/70">
                 {l.code}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

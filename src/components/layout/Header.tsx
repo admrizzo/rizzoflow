@@ -37,7 +37,6 @@ interface HeaderProps {
   onToggleArchivedView?: () => void;
   onOpenCardFromNotification?: (cardId: string, boardId: string) => void;
 }
-
 export interface FilterState {
   guaranteeType: string | null;
   contractType: string | null;
@@ -49,6 +48,9 @@ export interface FilterState {
   creatorId: string | null;
   deadlineStatus: string | null;
   providerName: string | null;
+  visualState: string | null;
+  docsReceived: boolean;
+  unseenOnly: boolean;
 }
 
 export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, selectedBoard, archivedCount = 0, showArchivedView, onToggleArchivedView, onOpenCardFromNotification }: HeaderProps) {

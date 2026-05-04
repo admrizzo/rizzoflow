@@ -24,6 +24,9 @@ export default function AdminFlowPage() {
     creatorId: null,
     deadlineStatus: null,
     providerName: null,
+    visualState: null,
+    docsReceived: false,
+    unseenOnly: false,
   });
 
   const handleSelectBoard = (board: Board | null) => {

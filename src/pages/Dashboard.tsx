@@ -76,6 +76,9 @@ export default function Dashboard() {
     creatorId: null,
     deadlineStatus: null,
     providerName: null,
+    visualState: null,
+    docsReceived: false,
+    unseenOnly: false,
   });
 
   // Keep last known counts to avoid UI “blinking to zero” during refetches
@@ -418,7 +421,10 @@ export default function Dashboard() {
 
               {/* Legenda dos estados visuais — exibida acima do Kanban (apenas Locação) */}
               {selectedBoard.name?.toLowerCase().includes('locação') && (
-                <CardStatesLegend />
+                <CardStatesLegend 
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                />
               )}
 
               {selectedBoard.name?.toLowerCase().includes('manutenção') && maintenanceView === 'prestadores' ? (

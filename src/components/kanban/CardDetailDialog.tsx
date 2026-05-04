@@ -1460,6 +1460,48 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 </header>
                 <div className="p-4">
                   <div className="flex items-center gap-2 mb-2">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">Cód no Robust</Label>
+                      </div>
+                      <Input
+                        value={localRobustCode}
+                        onChange={(e) => setLocalRobustCode(e.target.value)}
+                        onBlur={() => handleFieldBlur('robust_code', localRobustCode, card.robust_code)}
+                        placeholder="Ex: 12345"
+                        disabled={!isEditor}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">Nome do prédio</Label>
+                      </div>
+                      <Input
+                        value={localBuildingName}
+                        onChange={(e) => setLocalBuildingName(e.target.value)}
+                        onBlur={() => handleFieldBlur('building_name', localBuildingName, card.building_name)}
+                        placeholder="Identificação do imóvel"
+                        disabled={!isEditor}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">ID no Superlógica</Label>
+                      </div>
+                      <Input
+                        value={localSuperlogicaId}
+                        onChange={(e) => setLocalSuperlogicaId(e.target.value)}
+                        onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
+                        placeholder="ID Superlógica"
+                        disabled={!isEditor}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <Label className="text-sm font-medium">Endereço</Label>
                   </div>
@@ -1470,6 +1512,18 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                     placeholder="Endereço do imóvel"
                     disabled={!isEditor}
                   />
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setPropertySearchOpen(true)}
+                      disabled={!isEditor}
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Buscar imóvel
+                    </Button>
+                  </div>
                 </div>
               </section>
             )}

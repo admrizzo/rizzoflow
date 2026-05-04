@@ -90,10 +90,24 @@ function PartyCard({
         <Row label="E-mail" value={party.email} />
         <Row label="Telefone" value={party.phone} />
         <Row label="Estado civil" value={party.marital_status} />
+        {party.metadata?.regime_bens && (
+          <Row label="Regime de bens" value={String(party.metadata.regime_bens)} />
+        )}
+        {party.metadata?.spouse_participates !== undefined && (
+          <Row label="Cônjuge participa?" value={party.metadata.spouse_participates ? 'Sim' : 'Não'} />
+        )}
         {party.role === 'primary_tenant' && party.metadata?.regime_bens && (
           <Row label="Regime de bens" value={String(party.metadata.regime_bens)} />
         )}
         <Row label="Profissão / Ocupação" value={party.profession} />
+        {party.metadata?.fonte_renda && (
+          <Row label="Fonte de renda" value={String(party.metadata.fonte_renda)} />
+        )}
+        {party.metadata?.observacao && (
+          <div className="mt-1 text-xs text-muted-foreground italic">
+            Obs: {String(party.metadata.observacao)}
+          </div>
+        )}
         {party.metadata?.fonte_renda &&
           String(party.metadata.fonte_renda).trim().toLowerCase() !== String(party.profession || '').trim().toLowerCase() && (
             <Row label="Fonte de renda" value={String(party.metadata.fonte_renda)} />

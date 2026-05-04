@@ -74,6 +74,7 @@ export function ProposalNegotiationSummary({
 
   const hasContrato = !!(data.contratoDataInicio || data.diaVencimento);
   const hasRetirada = data.retiradaPorTerceiro || !!data.retiradaNome;
+  const docsObs = data.raw_data?.documentos_observacao || data.raw_data?.form_data?.documentos?.observacao;
   const guaranteeType = cardGuaranteeType || data.tipoGarantia;
 
   return (
@@ -217,6 +218,19 @@ export function ProposalNegotiationSummary({
               {data.diaVencimento ? `Dia ${data.diaVencimento}` : 'Não informado'}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Observação sobre documentos */}
+      {docsObs && (
+        <div className="rounded-md border bg-background p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <FileSignature className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              Observação sobre documentos
+            </p>
+          </div>
+          <p className="text-sm whitespace-pre-wrap">{docsObs}</p>
         </div>
       )}
 

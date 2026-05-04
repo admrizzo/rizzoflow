@@ -17,7 +17,8 @@ interface SearchResult {
   id: string;
   card_number: number;
   title: string;
-  robust_code: string | null;
+   robust_code: string | null;
+   proposal_display_code: string | null;
   building_name: string | null;
   superlogica_id: string | null;
   is_archived: boolean;
@@ -42,10 +43,10 @@ export function GlobalSearchResults({ searchQuery, boards, onSelectBoard, onOpen
       // Dots and slashes are safe inside ilike values.
       const sanitized = query.replace(/,/g, '');
 
-      const searchFields = [
-        'robust_code', 'building_name', 'superlogica_id', 'title',
-        'address', 'description', 'proposal_responsible', 'negotiation_details'
-      ];
+       const searchFields = [
+         'robust_code', 'building_name', 'superlogica_id', 'title', 'proposal_display_code',
+         'address', 'description', 'proposal_responsible', 'negotiation_details'
+       ];
       const orFilter = searchFields.map(f => `${f}.ilike.%${sanitized}%`).join(',');
 
       let dbQuery = supabase
@@ -54,7 +55,8 @@ export function GlobalSearchResults({ searchQuery, boards, onSelectBoard, onOpen
           id,
           card_number,
           title,
-          robust_code,
+           robust_code,
+           proposal_display_code,
           building_name,
           superlogica_id,
           address,
@@ -81,7 +83,8 @@ export function GlobalSearchResults({ searchQuery, boards, onSelectBoard, onOpen
           id: card.id,
           card_number: card.card_number,
           title: card.title,
-          robust_code: card.robust_code,
+           robust_code: card.robust_code,
+           proposal_display_code: card.proposal_display_code,
           building_name: card.building_name,
           superlogica_id: card.superlogica_id,
           is_archived: card.is_archived,
@@ -183,11 +186,11 @@ export function GlobalSearchResults({ searchQuery, boards, onSelectBoard, onOpen
                               Arquivado
                             </Badge>
                           )}
-                          {card.robust_code && (
-                            <Badge variant="outline" className="text-xs">
-                              {card.robust_code}
-                            </Badge>
-                          )}
+                           {(card.proposal_display_code || card.robust_code) && (
+                             <Badge variant="outline" className="text-xs">
+                               {card.proposal_display_code || card.robust_code}
+                             </Badge>
+                           )}
                           {card.superlogica_id && (
                             <Badge variant="outline" className="text-xs">
                               SL: {card.superlogica_id}

@@ -767,6 +767,7 @@ export type Database = {
           next_action_completed_by: string | null
           next_action_due_date: string | null
           position: number
+          proposal_display_code: string | null
           proposal_link_id: string | null
           proposal_responsible: string | null
           proposal_submitted_at: string | null
@@ -822,6 +823,7 @@ export type Database = {
           next_action_completed_by?: string | null
           next_action_due_date?: string | null
           position?: number
+          proposal_display_code?: string | null
           proposal_link_id?: string | null
           proposal_responsible?: string | null
           proposal_submitted_at?: string | null
@@ -877,6 +879,7 @@ export type Database = {
           next_action_completed_by?: string | null
           next_action_due_date?: string | null
           position?: number
+          proposal_display_code?: string | null
           proposal_link_id?: string | null
           proposal_responsible?: string | null
           proposal_submitted_at?: string | null
@@ -1891,6 +1894,8 @@ export type Database = {
           created_by: string | null
           id: string
           property_name: string | null
+          proposal_display_code: string | null
+          proposal_sequence: number | null
           public_token: string
           rent_value: number | null
           status: string
@@ -1905,6 +1910,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           property_name?: string | null
+          proposal_display_code?: string | null
+          proposal_sequence?: number | null
           public_token?: string
           rent_value?: number | null
           status?: string
@@ -1919,6 +1926,8 @@ export type Database = {
           created_by?: string | null
           id?: string
           property_name?: string | null
+          proposal_display_code?: string | null
+          proposal_sequence?: number | null
           public_token?: string
           rent_value?: number | null
           status?: string

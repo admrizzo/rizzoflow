@@ -293,20 +293,21 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
     let result = cards;
 
     // Apply search filter (by any field: robust_code, building_name, superlogica_id, title, card_number, address, description, proposal_responsible, negotiation_details)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(card => 
-        (card.robust_code?.toLowerCase().includes(query)) ||
-        (card.building_name?.toLowerCase().includes(query)) ||
-        (card.superlogica_id?.toLowerCase().includes(query)) ||
-        (card.title?.toLowerCase().includes(query)) ||
-        (card.card_number?.toString().includes(query)) ||
-        (card.address?.toLowerCase().includes(query)) ||
-        (card.description?.toLowerCase().includes(query)) ||
-        (card.proposal_responsible?.toLowerCase().includes(query)) ||
-        (card.negotiation_details?.toLowerCase().includes(query))
-      );
-    }
+     if (searchQuery.trim()) {
+       const query = searchQuery.toLowerCase().trim();
+       result = result.filter(card => 
+         (card.robust_code?.toLowerCase().includes(query)) ||
+         (card.proposal_display_code?.toLowerCase().includes(query)) ||
+         (card.building_name?.toLowerCase().includes(query)) ||
+         (card.superlogica_id?.toLowerCase().includes(query)) ||
+         (card.title?.toLowerCase().includes(query)) ||
+         (card.card_number?.toString().includes(query)) ||
+         (card.address?.toLowerCase().includes(query)) ||
+         (card.description?.toLowerCase().includes(query)) ||
+         (card.proposal_responsible?.toLowerCase().includes(query)) ||
+         (card.negotiation_details?.toLowerCase().includes(query))
+       );
+     }
 
     // Apply guarantee type filter
     if (filters?.guaranteeType) {

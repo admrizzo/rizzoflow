@@ -129,8 +129,9 @@ export interface Card {
   description: string | null;
   proposal_responsible: string | null;
   negotiation_details: string | null;
-  guarantee_type: GuaranteeType | null;
-  contract_type: ContractType | null;
+   guarantee_type: GuaranteeType | null;
+   contract_type: ContractType | null;
+   proposal_display_code: string | null;
   column_id: string | null;
   board_id: string | null;
   position: number;

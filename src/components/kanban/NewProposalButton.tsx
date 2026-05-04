@@ -126,7 +126,7 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           created_by: user?.id || null,
         })
         // Selecionamos explicitamente public_token para falhar cedo se não vier
-        .select('id, codigo_robust, public_token')
+         .select('id, codigo_robust, public_token, proposal_display_code')
         .single();
       if (linkError) throw linkError;
       if (!linkData?.public_token) {
@@ -169,7 +169,8 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: nextPosition,
-          column_entered_at: new Date().toISOString(),
+           column_entered_at: new Date().toISOString(),
+           proposal_display_code: linkData.proposal_display_code,
         });
         if (cardErr) {
           // Não aborta a geração do link, mas avisa para que admin corrija depois.

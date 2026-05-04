@@ -76,28 +76,42 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
   const [isCompleting, setIsCompleting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
 
-  const [localNextAction, setLocalNextAction] = useState(card.next_action || '');
-  const [localDueDate, setLocalDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
-  const [localDueTime, setLocalDueTime] = useState<string>(() => {
-    const d = parseDatabaseDate(card.next_action_due_date);
-    if (!d) return '';
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return hh === '00' && mm === '00' ? '' : `${hh}:${mm}`;
-  });
-
-  useEffect(() => {
-    setLocalNextAction(card.next_action || '');
-    const d = parseDatabaseDate(card.next_action_due_date);
-    setLocalDueDate(d);
-    if (d) {
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mm = String(d.getMinutes()).padStart(2, '0');
-      setLocalDueTime(hh === '00' && mm === '00' ? '' : `${hh}:${mm}`);
-    } else {
-      setLocalDueTime('');
-    }
-  }, [card.id, card.next_action, card.next_action_due_date]);
+   const [isSaving, setIsSaving] = useState(false);
+   const [draftAction, setDraftAction] = useState(card.next_action || '');
+   const [draftResponsible, setDraftResponsible] = useState<string | null>(card.responsible_user_id || null);
+   const [draftDueDate, setDraftDueDate] = useState<Date | null>(parseDatabaseDate(card.next_action_due_date));
+   const [draftDueTime, setDraftDueTime] = useState<string>(() => {
+     const d = parseDatabaseDate(card.next_action_due_date);
+     if (!d) return '';
+     const hh = String(d.getHours()).padStart(2, '0');
+     const mm = String(d.getMinutes()).padStart(2, '0');
+     return hh === '00' && mm === '00' ? '' : `${hh}:${mm}`;
+   });
+ 
+   const hasChanged = 
+     draftAction !== (card.next_action || '') ||
+     draftResponsible !== (card.responsible_user_id || null) ||
+     (draftDueDate?.toISOString() || null) !== (parseDatabaseDate(card.next_action_due_date)?.toISOString() || null) ||
+     (() => {
+       const d = parseDatabaseDate(card.next_action_due_date);
+       const currentTime = d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '';
+       const normalizedCurrentTime = currentTime === '00:00' ? '' : currentTime;
+       return draftDueTime !== normalizedCurrentTime;
+     })();
+ 
+   useEffect(() => {
+     setDraftAction(card.next_action || '');
+     setDraftResponsible(card.responsible_user_id || null);
+     const d = parseDatabaseDate(card.next_action_due_date);
+     setDraftDueDate(d);
+     if (d) {
+       const hh = String(d.getHours()).padStart(2, '0');
+       const mm = String(d.getMinutes()).padStart(2, '0');
+       setDraftDueTime(hh === '00' && mm === '00' ? '' : `${hh}:${mm}`);
+     } else {
+       setDraftDueTime('');
+     }
+   }, [card.id, card.next_action, card.next_action_due_date, card.responsible_user_id]);
 
   const responsibleProfile =
     card.responsible_user_profile ||

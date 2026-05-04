@@ -34,9 +34,9 @@ function initials(name?: string | null) {
     .join("");
 }
 
-export function ConversationList({ onSelect }: { onSelect?: (id: string) => void }) {
-  const { user } = useAuth();
-  const { activeConversationId, setActiveConversationId, close } = useChat();
+ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void }) {
+   const { user } = useAuth();
+   const { activeConversationId, setActiveConversationId, close, onlineUsers } = useChat();
   const { data: conversations = [], isLoading, refetch: refetchConversations } = useChatConversations();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"chats" | "people" | "groups">("chats");
@@ -140,7 +140,7 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
     <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden relative">
       <div className="px-4 py-3 border-b border-border bg-background shrink-0 flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chats" | "people" | "groups")} className="w-full">
             <TabsList className="grid w-full grid-cols-3 h-9 bg-muted/50 p-1 rounded-lg">
               <TabsTrigger value="chats" className="text-[11px] h-7">Conversas</TabsTrigger>
               <TabsTrigger value="people" className="text-[11px] h-7">Usuários</TabsTrigger>
@@ -197,10 +197,17 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                     onClick={() => startDm(p.user_id)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 text-left transition-colors relative group"
                   >
-                    <Avatar className="h-9 w-9 border border-border/50 shadow-sm shrink-0">
-                      {p.avatar_url && <AvatarImage src={p.avatar_url} alt={p.full_name} />}
-                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
-                    </Avatar>
+                     <div className="relative shrink-0">
+                       <Avatar className="h-9 w-9 border border-border/50 shadow-sm">
+                         {p.avatar_url && <AvatarImage src={p.avatar_url} alt={p.full_name} />}
+                         <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
+                       </Avatar>
+                       {onlineUsers[p.user_id] ? (
+                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
+                       ) : (
+                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-slate-400 shadow-sm" />
+                       )}
+                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-xs font-semibold truncate text-foreground">{p.full_name}</p>
@@ -246,24 +253,30 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                       isActive ? "bg-accent/30 border-l-primary" : "hover:border-l-border/30",
                     )}
                   >
-                    <Avatar className={cn("h-10 w-10 shrink-0 border border-border/50", isGroup && "rounded-lg")}>
-                      {isGroup ? (
-                        <AvatarFallback className="text-xs bg-muted text-muted-foreground">
-                          <Users className="h-5 w-5" />
-                        </AvatarFallback>
-                      ) : (
-                        <>
-                          {c.other_user_avatar && <AvatarImage src={c.other_user_avatar} alt={display} />}
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(display)}</AvatarFallback>
-                        </>
-                      )}
-                    </Avatar>
+                     <div className="relative shrink-0">
+                       <Avatar className={cn("h-10 w-10 border border-border/50", isGroup && "rounded-lg")}>
+                         {isGroup ? (
+                           <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                             <Users className="h-5 w-5" />
+                           </AvatarFallback>
+                         ) : (
+                           <>
+                             {c.other_user_avatar && <AvatarImage src={c.other_user_avatar} alt={display} />}
+                             <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(display)}</AvatarFallback>
+                           </>
+                         )}
+                       </Avatar>
+                       {!isGroup && c.other_user_id && (
+                         onlineUsers[c.other_user_id] ? (
+                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500 shadow-sm" />
+                         ) : (
+                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-slate-400 shadow-sm" />
+                         )
+                       )}
+                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "text-sm truncate flex-1", 
-                          isActive ? "text-primary font-bold" : (c.unread_count > 0 ? "text-foreground font-bold" : "text-foreground font-semibold")
-                        )}>
+                         <span className={cn("text-sm truncate flex-1", (c.unread_count > 0 && !isActive) ? "text-foreground font-semibold" : "text-foreground")}>
                           {display}
                         </span>
                         {c.last_message_at && (
@@ -273,11 +286,11 @@ export function ConversationList({ onSelect }: { onSelect?: (id: string) => void
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-muted-foreground truncate flex-1">
-                          {c.last_message || <span className="italic">Sem mensagens</span>}
-                        </p>
-                        {c.unread_count > 0 && !isActive && (
-                          <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center shrink-0 shadow-sm">
+                         <p className={cn("text-xs truncate flex-1", (c.unread_count > 0 && !isActive) ? "text-foreground font-medium" : "text-muted-foreground")}>
+                           {c.last_message || <span className="italic">Sem mensagens</span>}
+                         </p>
+                         {c.unread_count > 0 && !isActive && (
+                           <span className="bg-[#FF4D97] text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center shrink-0 shadow-sm">
                             {c.unread_count > 99 ? "99+" : c.unread_count}
                           </span>
                         )}

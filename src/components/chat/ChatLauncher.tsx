@@ -25,11 +25,11 @@ export function ChatLauncher() {
         style={{ width: 56, height: 56 }}
       >
         <MessageCircle className="h-6 w-6" />
-        {unreadTotal > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-accent text-accent-foreground text-[10.5px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center ring-2 ring-background">
-            {unreadTotal > 99 ? "99+" : unreadTotal}
-          </span>
-        )}
+         {unreadTotal > 0 && (
+           <span className="absolute -top-0.5 -right-0.5 bg-[#FF4D97] text-white text-[10.5px] font-bold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center ring-2 ring-background shadow-md">
+             {unreadTotal > 99 ? "99+" : unreadTotal}
+           </span>
+         )}
       </button>
       <ChatPanel />
     </>

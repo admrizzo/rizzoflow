@@ -1319,236 +1319,82 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
                 </div>
               </section>
             ) : isManutencaoBoard ? (
-              // Manutenção Board: Cód. do imóvel no Superlógica + Endereço
+              // Manutenção Board: Specialized access info
               <section className="rounded-lg border border-border bg-card overflow-hidden">
                 <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação do Imóvel</h3>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acesso ao Imóvel</h3>
                 </header>
                 <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4 items-start">
-                    {/* Superlógica ID */}
-                    <div className="flex flex-col">
-                      <div className="flex items-start gap-2 mb-2 min-h-[40px]">
-                        <Hash className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <Label className="text-sm font-medium">
-                          Cód. do imóvel no Superlógica
-                        </Label>
-                      </div>
-                      <Input
-                        value={localSuperlogicaId}
-                        onChange={(e) => setLocalSuperlogicaId(e.target.value)}
-                        onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
-                        placeholder="Ex: 12345"
-                        disabled={!isEditor}
-                      />
-                    </div>
-
-                    {/* Endereço */}
-                    <div className="flex flex-col">
-                      <div className="flex items-start gap-2 mb-2 min-h-[40px]">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <Label className="text-sm font-medium">
-                          Endereço do Imóvel
-                        </Label>
-                      </div>
-                      <Input
-                        value={localAddress}
-                        onChange={(e) => setLocalAddress(e.target.value)}
-                        onBlur={() => handleFieldBlur('address', localAddress, card.address)}
-                        placeholder="Ex: Rua das Flores, 123"
-                        disabled={!isEditor}
-                      />
-                    </div>
+                  <div className="flex items-start gap-2 mb-2">
+                    <KeyRound className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <Label className="text-sm font-medium">Como acessar o imóvel</Label>
                   </div>
-
-                  {/* Como acessar o imóvel */}
-                  <div className="mt-4">
-                    <div className="flex items-start gap-2 mb-2">
-                      <KeyRound className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <Label className="text-sm font-medium">Como acessar o imóvel</Label>
-                    </div>
-                    <RadioGroup
-                      value={accessType}
-                      onValueChange={(v: string) => {
-                        const newType = v as 'chave' | 'agendar';
-                        setAccessType(newType);
-                        const accessData = JSON.stringify({
-                          access_type: newType,
-                          contact_name: newType === 'agendar' ? accessContactName : '',
-                          contact_phone: newType === 'agendar' ? accessContactPhone : '',
-                        });
-                        updateCard.mutate({ id: card.id, negotiation_details: accessData });
-                      }}
-                      className="flex gap-4 mb-2"
-                      disabled={!isEditor}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="chave" id="access-chave" />
-                        <Label htmlFor="access-chave" className="text-xs font-normal cursor-pointer">Chave na imobiliária</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="agendar" id="access-agendar" />
-                        <Label htmlFor="access-agendar" className="text-xs font-normal cursor-pointer">Agendar com inquilino</Label>
-                      </div>
-                    </RadioGroup>
-
-                    {accessType === 'agendar' && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          placeholder="Nome do contato"
-                          value={accessContactName}
-                          onChange={(e) => setAccessContactName(e.target.value)}
-                          onBlur={() => {
-                            const accessData = JSON.stringify({
-                              access_type: accessType,
-                              contact_name: accessContactName,
-                              contact_phone: accessContactPhone,
-                            });
-                            if (accessData !== (card.negotiation_details || '')) {
-                              updateCard.mutate({ id: card.id, negotiation_details: accessData });
-                            }
-                          }}
-                          disabled={!isEditor}
-                          className="h-8 text-xs"
-                        />
-                        <Input
-                          placeholder="Telefone do contato"
-                          value={accessContactPhone}
-                          onChange={(e) => setAccessContactPhone(e.target.value)}
-                          onBlur={() => {
-                            const accessData = JSON.stringify({
-                              access_type: accessType,
-                              contact_name: accessContactName,
-                              contact_phone: accessContactPhone,
-                            });
-                            if (accessData !== (card.negotiation_details || '')) {
-                              updateCard.mutate({ id: card.id, negotiation_details: accessData });
-                            }
-                          }}
-                          disabled={!isEditor}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </section>
-            ) : (
-              // Other Boards (Locação): Robust Code + Building Name + Superlógica ID
-              <section className="rounded-lg border border-border bg-card overflow-hidden">
-                <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Identificação do Imóvel</h3>
-                  </div>
-                  {isEditor && (
-                  <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPropertySearchOpen(!propertySearchOpen)}
-                  className="text-xs h-7"
+                  <RadioGroup
+                    value={accessType}
+                    onValueChange={(v: string) => {
+                      const newType = v as 'chave' | 'agendar';
+                      setAccessType(newType);
+                      const accessData = JSON.stringify({
+                        access_type: newType,
+                        contact_name: newType === 'agendar' ? accessContactName : '',
+                        contact_phone: newType === 'agendar' ? accessContactPhone : '',
+                      });
+                      updateCard.mutate({ id: card.id, negotiation_details: accessData });
+                    }}
+                    className="flex gap-4 mb-2"
+                    disabled={!isEditor}
                   >
-                  <Home className="h-3 w-3 mr-1" /> Buscar imóvel
-                  </Button>
-                  )}
-                </header>
-                <div className="p-4">
-                  {propertyUnavailable && (
-                    <div className="mb-3 p-2 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive flex items-center gap-2">
-                      <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                      Imóvel indisponível ou alterado no CRM
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="chave" id="access-chave" />
+                      <Label htmlFor="access-chave" className="text-xs font-normal cursor-pointer">Chave na imobiliária</Label>
                     </div>
-                  )}
-                  {propertySearchOpen && (
-                    <div className="mb-3 border rounded-md p-2 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <RadioGroupItem value="agendar" id="access-agendar" />
+                      <Label htmlFor="access-agendar" className="text-xs font-normal cursor-pointer">Agendar com inquilino</Label>
+                    </div>
+                  </RadioGroup>
+
+                  {accessType === 'agendar' && (
+                    <div className="grid grid-cols-2 gap-2">
                       <Input
-                        value={propertySearchQuery}
-                        onChange={(e) => setPropertySearchQuery(e.target.value)}
-                        placeholder="Buscar por código, nome, bairro, endereço..."
+                        placeholder="Nome do contato"
+                        value={accessContactName}
+                        onChange={(e) => setAccessContactName(e.target.value)}
+                        onBlur={() => {
+                          const accessData = JSON.stringify({
+                            access_type: accessType,
+                            contact_name: accessContactName,
+                            contact_phone: accessContactPhone,
+                          });
+                          if (accessData !== (card.negotiation_details || '')) {
+                            updateCard.mutate({ id: card.id, negotiation_details: accessData });
+                          }
+                        }}
+                        disabled={!isEditor}
                         className="h-8 text-xs"
-                        autoFocus
                       />
-                      <div className="max-h-[180px] overflow-y-auto divide-y">
-                        {filteredProperties.map(p => (
-                          <div
-                            key={p.id}
-                            className="flex items-center gap-2 p-2 cursor-pointer hover:bg-muted/50 text-xs"
-                            onClick={() => selectProperty(p)}
-                          >
-                            <span className="font-medium">#{p.codigo_robust}</span>
-                            <span className="truncate flex-1">{p.titulo || 'Sem título'}</span>
-                            <span className="text-muted-foreground">{p.bairro}</span>
-                          </div>
-                        ))}
-                        {filteredProperties.length === 0 && (
-                          <p className="text-xs text-muted-foreground text-center py-2">Nenhum imóvel encontrado</p>
-                        )}
-                      </div>
+                      <Input
+                        placeholder="Telefone do contato"
+                        value={accessContactPhone}
+                        onChange={(e) => setAccessContactPhone(e.target.value)}
+                        onBlur={() => {
+                          const accessData = JSON.stringify({
+                            access_type: accessType,
+                            contact_name: accessContactName,
+                            contact_phone: accessContactPhone,
+                          });
+                          if (accessData !== (card.negotiation_details || '')) {
+                            updateCard.mutate({ id: card.id, negotiation_details: accessData });
+                          }
+                        }}
+                        disabled={!isEditor}
+                        className="h-8 text-xs"
+                      />
                     </div>
                   )}
-                  <div className="grid grid-cols-2 gap-4 items-start">
-                    {/* Robust Code */}
-                    <div className="flex flex-col">
-                      <div className="flex items-start gap-2 mb-2 min-h-[40px]">
-                        <Hash className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <Label className="text-sm font-medium">
-                          Cód no Robust <span className="text-destructive">*</span>
-                        </Label>
-                      </div>
-                      <Input
-                        value={localRobustCode}
-                        onChange={(e) => setLocalRobustCode(e.target.value)}
-                        onBlur={() => handleFieldBlur('robust_code', localRobustCode, card.robust_code)}
-                        placeholder="Ex: 12345"
-                        disabled={!isEditor}
-                        className={!localRobustCode ? 'border-amber-400' : ''}
-                      />
-                      {!localRobustCode && (
-                        <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                      )}
-                    </div>
-
-                    {/* Building Name */}
-                    <div className="flex flex-col">
-                      <div className="flex items-start gap-2 mb-2 min-h-[40px]">
-                        <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                        <Label className="text-sm font-medium">
-                          Nome do prédio ou identificação <span className="text-destructive">*</span>
-                        </Label>
-                      </div>
-                      <Input
-                        value={localBuildingName}
-                        onChange={(e) => setLocalBuildingName(e.target.value)}
-                        onBlur={() => handleFieldBlur('building_name', localBuildingName, card.building_name)}
-                        placeholder="Ex: Edifício Central"
-                        disabled={!isEditor}
-                        className={!localBuildingName ? 'border-amber-400' : ''}
-                      />
-                      {!localBuildingName && (
-                        <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                      )}
-                    </div>
-
-                    {/* Superlógica ID */}
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">
-                          ID no Superlógica
-                        </Label>
-                      </div>
-                      <Input
-                        value={localSuperlogicaId}
-                        onChange={(e) => setLocalSuperlogicaId(e.target.value)}
-                        onBlur={() => handleFieldBlur('superlogica_id', localSuperlogicaId, card.superlogica_id)}
-                        placeholder="Número do contrato no ERP"
-                        disabled={!isEditor}
-                      />
-                    </div>
-                  </div>
                 </div>
               </section>
-            )}
+            ) : null}
 
             {/* Labels Section */}
             <div>

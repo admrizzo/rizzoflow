@@ -61,7 +61,7 @@ export function BoardProductivityDashboard() {
    }, [assignableUsers]);
  
    // Merge real user list with report data to ensure everyone appears
-   const reportDataWithAllUsers = useMemo(() => {
+   const reportDataWithAllUsers = useMemo((): BoardProductivityRow[] => {
      if (!assignableUsers.length) return reportData;
  
      const dataWithAll = [...reportData];
@@ -74,6 +74,7 @@ export function BoardProductivityDashboard() {
            user_name: user.full_name,
            board_id: 'none',
            board_name: '-',
+           month: '',
            cards_created: 0,
            cards_completed: 0,
            cards_in_progress: 0,
@@ -553,7 +554,7 @@ export function BoardProductivityDashboard() {
                       <SelectValue placeholder="Selecionar..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersInReport.map(user => (
+                       {allUsers.map(user => (
                         <SelectItem key={user.id} value={user.id} disabled={user.id === compareUser2}>
                           {user.name}
                         </SelectItem>
@@ -571,7 +572,7 @@ export function BoardProductivityDashboard() {
                       <SelectValue placeholder="Selecionar..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersInReport.map(user => (
+                       {allUsers.map(user => (
                         <SelectItem key={user.id} value={user.id} disabled={user.id === compareUser1}>
                           {user.name}
                         </SelectItem>

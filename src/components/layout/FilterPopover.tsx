@@ -92,7 +92,10 @@ export function FilterPopover({ children, filters, onFiltersChange, archivedCoun
     filters.ownerId ||
     filters.creatorId ||
     filters.deadlineStatus ||
-    filters.providerName;
+    filters.providerName ||
+    filters.visualState ||
+    filters.docsReceived ||
+    filters.unseenOnly;
 
   // Show owner filter only for boards with owner_only_visibility and only for admins
   const showOwnerFilter = boardConfig?.owner_only_visibility && isAdmin;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useBoardProductivityReport } from '@/hooks/useBoardProductivityReport';
-import { useInteractionRanking } from '@/hooks/useInteractionRanking';
-import { useBoards } from '@/hooks/useBoards';
+  import { useBoardProductivityReport, BoardProductivityReport } from '@/hooks/useBoardProductivityReport';
+  import { useInteractionRanking, InteractionRankingRow } from '@/hooks/useInteractionRanking';
+ import { useBoards } from '@/hooks/useBoards';
+ import { useAssignableUsers } from '@/hooks/useAssignableUsers';
 import { InteractionRankingCard } from './InteractionRankingCard';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -31,8 +32,9 @@ export function BoardProductivityDashboard() {
   const [rankingPage, setRankingPage] = useState<number>(1);
   const [chartShowAll, setChartShowAll] = useState<boolean>(false);
   
-  const { boards } = useBoards();
-  
+   const { boards } = useBoards();
+   const { users: assignableUsers, isLoading: assignableLoading } = useAssignableUsers();
+ 
   const startDate = useMemo(() => {
     const months = parseInt(selectedPeriod);
     return startOfMonth(subMonths(new Date(), months - 1));
@@ -51,24 +53,67 @@ export function BoardProductivityDashboard() {
     endDate,
   });
 
-  // Filter by user if selected
-  const filteredReportData = useMemo(() => {
-    if (selectedUserId === 'all') return reportData;
-    return reportData.filter(row => row.user_id === selectedUserId);
-  }, [reportData, selectedUserId]);
-
-  // Get unique users from report data for the filter
-  const usersInReport = useMemo(() => {
-    const uniqueUsers = new Map<string, string>();
-    reportData.forEach(row => {
-      if (!uniqueUsers.has(row.user_id)) {
-        uniqueUsers.set(row.user_id, row.user_name);
-      }
-    });
-    return Array.from(uniqueUsers.entries())
-      .map(([id, name]) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [reportData]);
+   // Use all assignable users for the filter
+   const allUsers = useMemo(() => {
+     return assignableUsers
+       .map(u => ({ id: u.user_id, name: u.full_name }))
+       .sort((a, b) => a.name.localeCompare(b.name));
+   }, [assignableUsers]);
+ 
+   // Merge real user list with report data to ensure everyone appears
+   const reportDataWithAllUsers = useMemo((): BoardProductivityReport[] => {
+     if (!assignableUsers.length) return reportData;
+ 
+     const dataWithAll = [...reportData];
+     const usersInData = new Set(reportData.map(r => r.user_id));
+ 
+     assignableUsers.forEach(user => {
+       if (!usersInData.has(user.user_id)) {
+         dataWithAll.push({
+           user_id: user.user_id,
+           user_name: user.full_name,
+           board_id: 'none',
+           board_name: '-',
+           month: '',
+           cards_created: 0,
+           cards_completed: 0,
+           cards_in_progress: 0,
+           avg_completion_hours: null
+         });
+       }
+     });
+ 
+     return dataWithAll;
+   }, [reportData, assignableUsers]);
+ 
+   // Merge real user list with interaction data
+   const interactionDataWithAllUsers = useMemo(() => {
+     if (!assignableUsers.length) return interactionData;
+ 
+     const dataWithAll = [...interactionData];
+     const usersInData = new Set(interactionData.map(r => r.user_id));
+ 
+     assignableUsers.forEach(user => {
+       if (!usersInData.has(user.user_id)) {
+         dataWithAll.push({
+           user_id: user.user_id,
+           user_name: user.full_name,
+           checklist_completions: 0,
+           comments_count: 0,
+           card_moves: 0,
+           total_interactions: 0
+         });
+       }
+     });
+ 
+     return dataWithAll;
+   }, [interactionData, assignableUsers]);
+ 
+   // Filter by user if selected
+   const filteredReportData = useMemo(() => {
+     if (selectedUserId === 'all') return reportDataWithAllUsers;
+     return reportDataWithAllUsers.filter(row => row.user_id === selectedUserId);
+   }, [reportDataWithAllUsers, selectedUserId]);
 
   // Aggregate data by user
   const userStats = useMemo(() => {
@@ -172,9 +217,8 @@ export function BoardProductivityDashboard() {
     
     const user1Stats = userStats.find(u => u.user_id === compareUser1);
     const user2Stats = userStats.find(u => u.user_id === compareUser2);
-    const user1Interactions = interactionData.find(u => u.user_id === compareUser1);
-    const user2Interactions = interactionData.find(u => u.user_id === compareUser2);
-    
+     const user1Interactions = interactionDataWithAllUsers.find(u => u.user_id === compareUser1);
+     const user2Interactions = interactionDataWithAllUsers.find(u => u.user_id === compareUser2);
     if (!user1Stats || !user2Stats) return null;
     
     return {
@@ -193,9 +237,9 @@ export function BoardProductivityDashboard() {
         total_interactions: user2Interactions?.total_interactions || 0,
       },
     };
-  }, [compareUser1, compareUser2, userStats, interactionData]);
+   }, [compareUser1, compareUser2, userStats, interactionDataWithAllUsers]);
 
-  if (isLoading) {
+   if (isLoading || assignableLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -233,7 +277,7 @@ export function BoardProductivityDashboard() {
                </SelectTrigger>
                <SelectContent>
                  <SelectItem value="all">Todos os colaboradores</SelectItem>
-                 {usersInReport.map(user => (
+                  {allUsers.map(user => (
                    <SelectItem key={user.id} value={user.id}>
                      {user.name}
                    </SelectItem>
@@ -348,7 +392,7 @@ export function BoardProductivityDashboard() {
         <TabsContent value="overview" className="space-y-6">
           {/* New Gamified Ranking - Main Feature */}
           <InteractionRankingCard 
-            data={interactionData} 
+            data={interactionDataWithAllUsers} 
             isLoading={interactionLoading} 
           />
 
@@ -510,7 +554,7 @@ export function BoardProductivityDashboard() {
                       <SelectValue placeholder="Selecionar..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersInReport.map(user => (
+                       {allUsers.map(user => (
                         <SelectItem key={user.id} value={user.id} disabled={user.id === compareUser2}>
                           {user.name}
                         </SelectItem>
@@ -528,7 +572,7 @@ export function BoardProductivityDashboard() {
                       <SelectValue placeholder="Selecionar..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {usersInReport.map(user => (
+                       {allUsers.map(user => (
                         <SelectItem key={user.id} value={user.id} disabled={user.id === compareUser1}>
                           {user.name}
                         </SelectItem>

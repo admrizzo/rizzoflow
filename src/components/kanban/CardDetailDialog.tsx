@@ -80,7 +80,6 @@ import { ProposalDocumentsSection } from './ProposalDocumentsSection';
 import { ProposalPartiesView } from '@/components/proposta/ProposalPartiesView';
 import { useProposalParties } from '@/hooks/useProposalParties';
 import { ProposalNegotiationSummary } from './ProposalNegotiationSummary';
-import { ProposalContractSummary } from './ProposalContractSummary';
 import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { CardTypeBadge } from './CardTypeBadge';
 import { CloneToCaptacaoDialog } from './CloneToCaptacaoDialog';

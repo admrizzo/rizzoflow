@@ -76,6 +76,9 @@ export function FilterPopover({ children, filters, onFiltersChange, archivedCoun
       creatorId: null,
       deadlineStatus: null,
       providerName: null,
+      visualState: null,
+      docsReceived: false,
+      unseenOnly: false,
     });
   };
 

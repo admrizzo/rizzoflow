@@ -165,9 +165,10 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
           address: addressParts.join(', ') || null,
           proposal_responsible: brokerName,
           proposal_link_id: linkData.id,
-          capturing_broker_id: selectedProperty.captador_email 
-            ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id 
+          capturing_broker_id: selectedProperty.captador_email
+            ? selectableUsers.find(u => u.email?.trim().toLowerCase() === selectedProperty.captador_email.trim().toLowerCase())?.user_id
             : null,
+          service_broker_id: selectedBroker.user_id,
           description: `Proposta de locação gerada — aguardando preenchimento pelo cliente.\nCorretor: ${brokerName}\nGerado em: ${new Date().toLocaleString('pt-BR')}`,
           created_by: user?.id || null,
           position: nextPosition,

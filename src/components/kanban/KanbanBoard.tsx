@@ -100,9 +100,10 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
   useEffect(() => {
     if (initialCardId) {
       setSelectedCardId(initialCardId);
+      markAsViewed(initialCardId); // Ensure card is marked as viewed when opened via notification
       onCardOpened?.();
     }
-  }, [initialCardId, onCardOpened]);
+  }, [initialCardId, onCardOpened, markAsViewed]);
 
   // Find the vacancy deadline field ID
   const vacancyDeadlineFieldId = useMemo(() => {

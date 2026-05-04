@@ -7,13 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
  type MessageRow = Database["public"]["Tables"]["chat_messages"]["Row"];
  type ParticipantRow = Database["public"]["Tables"]["chat_participants"]["Row"];
 
- type OnlineUser = {
-   user_id: string;
-   full_name: string;
-   avatar_url: string | null;
-   online_at: string;
- };
- 
 type ChatContextValue = {
   isOpen: boolean;
   open: () => void;

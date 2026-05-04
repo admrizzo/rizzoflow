@@ -421,7 +421,10 @@ export default function Dashboard() {
 
               {/* Legenda dos estados visuais — exibida acima do Kanban (apenas Locação) */}
               {selectedBoard.name?.toLowerCase().includes('locação') && (
-                <CardStatesLegend />
+                <CardStatesLegend 
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                />
               )}
 
               {selectedBoard.name?.toLowerCase().includes('manutenção') && maintenanceView === 'prestadores' ? (

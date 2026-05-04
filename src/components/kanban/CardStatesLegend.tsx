@@ -10,7 +10,7 @@ interface CardStatesLegendProps {
 /**
  * Legenda visual rápida dos estados de card — espelha o design C do preview.
  */
-const LEGEND = [
+const LEGEND: { id: 'overdue' | 'correction_requested' | 'next_action_overdue' | 'in_day' | 'fallback' | 'docs_received' | 'unseen', label: string, code: string, dot: string, barClass: string }[] = [
   { id: 'in_day', label: 'Em dia', code: 'LOC-2901', dot: 'hsl(142 45% 53%)', barClass: 'border-l-[hsl(142_45%_53%)]' },
   { id: 'docs_received', label: 'Doc. recebidos', code: 'LOC-2902', dot: 'hsl(150 40% 48%)', barClass: 'border-l-[hsl(150_40%_48%)]' },
   { id: 'correction_requested', label: 'Correção solicitada', code: 'LOC-2903', dot: 'hsl(28 70% 55%)', barClass: 'border-l-[hsl(28_70%_55%)]' },

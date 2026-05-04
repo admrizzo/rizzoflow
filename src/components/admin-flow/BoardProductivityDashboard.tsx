@@ -205,57 +205,59 @@ export function BoardProductivityDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Fluxo:</span>
-          <Select value={selectedBoardId} onValueChange={setSelectedBoardId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Todos os fluxos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os fluxos</SelectItem>
-              {boards.map(board => (
-                <SelectItem key={board.id} value={board.id}>
-                  {board.name.replace(/^Fluxo (de )?/i, '')}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center gap-2">
-           <span className="text-sm font-medium text-muted-foreground">Colaborador:</span>
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Todos os usuários" />
-            </SelectTrigger>
-            <SelectContent>
-               <SelectItem value="all">Todos os colaboradores</SelectItem>
-              {usersInReport.map(user => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Período:</span>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1">Último mês</SelectItem>
-              <SelectItem value="3">Últimos 3 meses</SelectItem>
-              <SelectItem value="6">Últimos 6 meses</SelectItem>
-              <SelectItem value="12">Último ano</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+       {/* Filters Bar */}
+       <Card className="border-none shadow-sm bg-muted/30">
+         <CardContent className="p-3 flex flex-wrap items-center gap-4">
+           <div className="flex items-center gap-2">
+             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fluxo</span>
+             <Select value={selectedBoardId} onValueChange={setSelectedBoardId}>
+               <SelectTrigger className="w-[180px] h-8 text-xs bg-background border-muted-foreground/20">
+                 <SelectValue placeholder="Todos os fluxos" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Todos os fluxos</SelectItem>
+                 {boards.map(board => (
+                   <SelectItem key={board.id} value={board.id}>
+                     {board.name.replace(/^Fluxo (de )?/i, '')}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+           
+           <div className="flex items-center gap-2">
+             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Colaborador</span>
+             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+               <SelectTrigger className="w-[180px] h-8 text-xs bg-background border-muted-foreground/20">
+                 <SelectValue placeholder="Todos os colaboradores" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="all">Todos os colaboradores</SelectItem>
+                 {usersInReport.map(user => (
+                   <SelectItem key={user.id} value={user.id}>
+                     {user.name}
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+           
+           <div className="flex items-center gap-2">
+             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Período</span>
+             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+               <SelectTrigger className="w-[140px] h-8 text-xs bg-background border-muted-foreground/20">
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="1">Último mês</SelectItem>
+                 <SelectItem value="3">Últimos 3 meses</SelectItem>
+                 <SelectItem value="6">Últimos 6 meses</SelectItem>
+                 <SelectItem value="12">Último ano</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
+         </CardContent>
+       </Card>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -321,29 +323,26 @@ export function BoardProductivityDashboard() {
       {/* Tabs for different views */}
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="flex gap-2 flex-wrap">
-          <TabsList className="bg-slate-800 p-1.5 h-auto gap-1 rounded-lg shadow-lg">
+           <TabsList className="bg-muted p-1 h-10">
              <TabsTrigger 
                value="overview" 
-               className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
+               className="px-4 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm"
              >
-               <TrendingUp className="h-4 w-4" />
-               <span>Resumo</span>
+               Resumo
              </TabsTrigger>
-            <TabsTrigger 
-              value="compare" 
-              className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
-            >
-              <ArrowLeftRight className="h-4 w-4" />
-               <span>Comparativo</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ranking" 
-              className="flex items-center gap-2 px-5 py-3 text-white/70 font-semibold rounded-md data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-md hover:text-white transition-all"
-            >
-              <Trophy className="h-4 w-4" />
-               <span>Interações</span>
-            </TabsTrigger>
-          </TabsList>
+             <TabsTrigger 
+               value="compare" 
+               className="px-4 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm"
+             >
+               Comparativo
+             </TabsTrigger>
+             <TabsTrigger 
+               value="ranking" 
+               className="px-4 text-xs font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm"
+             >
+               Interações
+             </TabsTrigger>
+           </TabsList>
         </div>
 
         <TabsContent value="overview" className="space-y-6">
@@ -442,9 +441,9 @@ export function BoardProductivityDashboard() {
                 <TableBody>
                   {userStats.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        Nenhum dado encontrado para o período selecionado
-                      </TableCell>
+                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                         Nenhum dado encontrado para o período selecionado.
+                       </TableCell>
                     </TableRow>
                   ) : (
                     userStats
@@ -650,9 +649,10 @@ export function BoardProductivityDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  Selecione dois funcionários para comparar suas métricas lado a lado
-                </div>
+                 <div className="text-center py-12 bg-muted/10 border border-dashed rounded-lg">
+                   <p className="text-muted-foreground font-medium">Selecione dois colaboradores para comparar suas métricas lado a lado</p>
+                   <p className="text-xs text-muted-foreground/60 mt-1">Use os filtros acima para escolher os perfis.</p>
+                 </div>
               )}
             </CardContent>
           </Card>

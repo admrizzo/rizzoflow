@@ -169,11 +169,13 @@ const REDUNDANT_DESCRIPTION_LABELS = new Set([
   'endereço', 'endereco', 'valor aluguel', 'condomínio', 'condominio', 'iptu',
   'seguro incêndio', 'seguro incendio', 'valor proposto', 'valor proposto pelo cliente',
   'renda mensal', 'comprometimento', 'garantia', 'score', 'corretor',
-  'total mensal aproximado', 'aceitou o valor anunciado',
+  'total mensal aproximado', 'aceitou o valor anunciado', 'proposta de locação gerada',
 ]);
 
 function getVisibleAdditionalDescription(description: string | null | undefined): string {
   if (!description) return '';
+  if (description.includes('Proposta de locação gerada — aguardando preenchimento pelo cliente')) return '';
+
   return description
     .split('\n')
     .filter((line) => {

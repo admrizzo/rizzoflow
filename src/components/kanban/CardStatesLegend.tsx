@@ -31,7 +31,7 @@ export function CardStatesLegend({ className, filters, onFiltersChange }: CardSt
       // User said "coexist", so we keep others.
     } else if (item.id === 'unseen') {
       newFilters.unseenOnly = !filters.unseenOnly;
-    } else {
+    } else if (item.id !== 'docs_received' && item.id !== 'unseen') {
       newFilters.visualState = filters.visualState === item.id ? null : item.id;
     }
 

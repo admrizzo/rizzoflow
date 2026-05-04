@@ -1966,7 +1966,7 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             )}
 
             {/* === BLOCO: GARANTIA E TIPO DE CONTRATO === */}
-            {(showGuaranteeType || showContractType) && (
+            {!hasStructuredNegotiation && (showGuaranteeType || showContractType) && (
               <section className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="p-4">
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">

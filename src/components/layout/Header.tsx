@@ -36,6 +36,9 @@ interface HeaderProps {
   showArchivedView?: boolean;
   onToggleArchivedView?: () => void;
   onOpenCardFromNotification?: (cardId: string, boardId: string) => void;
+  visualState: string | null;
+  docsReceived: boolean;
+  unseenOnly: boolean;
 }
 
 export interface FilterState {

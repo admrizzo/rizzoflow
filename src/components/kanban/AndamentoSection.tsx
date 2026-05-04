@@ -502,11 +502,11 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
                   >
                     {overdue ? 'Vencida' : today ? 'Vence hoje' : !dueDate ? 'Sem prazo' : 'Pendente'}
                   </Badge>
-                  {!card.responsible_user_id && (
-                    <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold bg-rose-50 text-rose-700 border-rose-200">
-                      Sem responsável
-                    </Badge>
-                  )}
+                   {!card.responsible_user_id && draftAction && (
+                     <Badge variant="outline" className="text-[9px] uppercase tracking-tighter h-4 px-1.5 font-bold bg-rose-50 text-rose-700 border-rose-200">
+                       Sem responsável
+                     </Badge>
+                   )}
                 </div>
               )}
             </div>
@@ -572,13 +572,13 @@ export function AndamentoSection({ card, canEdit, badges = [], getToneClasses }:
               ))}
             </SelectContent>
           </Select>
-          <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
-            {card.responsible_user_id === user?.id 
-              ? "Esta ação aparecerá na sua Minha Fila."
-              : card.responsible_user_id 
-                ? `${responsibleProfile?.full_name?.split(' ')[0] || 'O responsável'} será notificado e verá esta ação na Minha Fila.`
-                : "Defina um responsável para esta ação entrar na fila de alguém."}
-          </p>
+           <p className="mt-1.5 text-[10px] text-muted-foreground pl-1">
+             {draftResponsible === user?.id 
+               ? "Esta ação aparecerá na sua Minha Fila após salvar."
+               : draftResponsible 
+                 ? `${profiles.find(p => p.user_id === draftResponsible)?.full_name?.split(' ')[0] || 'O responsável'} será notificado e verá esta ação na Minha Fila após salvar.`
+                 : "Defina um responsável para esta ação entrar na fila de alguém."}
+           </p>
         </div>
 
         {/* Prazo */}

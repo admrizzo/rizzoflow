@@ -132,72 +132,72 @@ export function ColumnHeader({ column, cardCount }: ColumnHeaderProps) {
               {isAdmin && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleDelete}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir coluna
-                  </DropdownMenuItem>
+                   <DropdownMenuItem 
+                     onClick={handleDelete}
+                     className="text-destructive focus:text-destructive"
+                   >
+                     <Trash2 className="h-4 w-4 mr-2" />
+                     Excluir coluna
+                   </DropdownMenuItem>
+                 </>
+               )}
+             </DropdownMenuContent>
+           </DropdownMenu>
+         )}
+       </div>
+ 
+       <Dialog open={isEditing} onOpenChange={setIsEditing}>
+         <DialogContent>
+           <DialogHeader>
+             <DialogTitle>Editar Coluna</DialogTitle>
+           </DialogHeader>
+           <div className="space-y-4 py-4">
+             <div className="space-y-2">
+               <Label>Nome da Coluna</Label>
+               <Input
+                 value={editName}
+                 onChange={(e) => setEditName(e.target.value)}
+                 placeholder="Nome da coluna"
+               />
+             </div>
+             <div className="space-y-2">
+               <Label>Departamento Responsável</Label>
+               <Select value={editDepartment} onValueChange={(v) => setEditDepartment(v as Department)}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="Selecione um departamento" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="comercial">Comercial</SelectItem>
+                   <SelectItem value="juridico">Jurídico</SelectItem>
+                   <SelectItem value="vistoriadores">Vistoriadores</SelectItem>
+                   <SelectItem value="administrativo">Administrativo</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>Cor</Label>
+               <div className="flex gap-2">
+                 {['#f97316', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#eab308'].map((color) => (
+                   <button
+                     key={color}
+                     onClick={() => setEditColor(color)}
+                     className={`w-8 h-8 rounded-full border-2 ${
+                       editColor === color ? 'border-foreground' : 'border-transparent'
+                     }`}
+                     style={{ backgroundColor: color }}
+                   />
+                 ))}
+               </div>
+             </div>
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setIsEditing(false)}>
+               Cancelar
+             </Button>
+             <Button onClick={handleSave}>Salvar</Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
      </TooltipProvider>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Coluna</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nome da Coluna</Label>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Nome da coluna"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Departamento Responsável</Label>
-              <Select value={editDepartment} onValueChange={(v) => setEditDepartment(v as Department)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="comercial">Comercial</SelectItem>
-                  <SelectItem value="juridico">Jurídico</SelectItem>
-                  <SelectItem value="vistoriadores">Vistoriadores</SelectItem>
-                  <SelectItem value="administrativo">Administrativo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Cor</Label>
-              <div className="flex gap-2">
-                {['#f97316', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#eab308'].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setEditColor(color)}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      editColor === color ? 'border-foreground' : 'border-transparent'
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+   );
+ }

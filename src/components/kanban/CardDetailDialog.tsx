@@ -339,21 +339,42 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
     );
   }).slice(0, 15);
 
-  const selectProperty = (p: PropertyLight) => {
+  const selectProperty = useCallback(async (p: PropertyLight) => {
     const endereco = [p.logradouro, p.numero, p.bairro, p.cidade, p.estado].filter(Boolean).join(', ');
     const displayName = getPropertyDisplayName(p);
+    
     setLocalRobustCode(String(p.codigo_robust));
     setLocalBuildingName(displayName);
     setLocalAddress(endereco);
-    updateCard.mutate({
-      id: card!.id,
+
+    const updates: any = {
       robust_code: String(p.codigo_robust),
       building_name: displayName || null,
       address: endereco || null,
+    };
+
+    // Preenche superlogica_id se houver no raw_data (apenas se tivermos o raw_data, que PropertyLight não tem)
+    // Mas como PropertyLight é leve, vamos tentar pegar se existir na interface futura
+    if ((p as any).superlogica_id) {
+      updates.superlogica_id = String((p as any).superlogica_id);
+      setLocalSuperlogicaId(updates.superlogica_id);
+    }
+
+    // Preparado para preenchimento de captador quando o campo existir no schema de properties
+    // Regra: não sobrescrever se já houver um captador manual, salvo se estiver vazio.
+    const incomingCapturingBrokerId = (p as any).capturing_broker_id;
+    if (incomingCapturingBrokerId && !card?.capturing_broker_id) {
+      updates.capturing_broker_id = incomingCapturingBrokerId;
+    }
+
+    updateCard.mutate({
+      id: card!.id,
+      ...updates
     });
+    
     setPropertySearchOpen(false);
     setPropertySearchQuery('');
-  };
+  }, [card, updateCard]);
 
   const resetLocalDialogs = useCallback(() => {
     setArchiveDialogOpen(false);

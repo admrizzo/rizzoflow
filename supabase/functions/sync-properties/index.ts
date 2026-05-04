@@ -105,6 +105,11 @@ Deno.serve(async (req) => {
         const taxas = item.taxas || {};
         const imgs = item.media?.imagens || [];
         const foto = imgs.length > 0 ? (imgs[0]?.url?.small || imgs[0]?.url?.full || null) : null;
+        const captador = item.captador || {};
+        const captador_email = Array.isArray(captador.emails) ? captador.emails[0] : (captador.email || null);
+        const telefones = Array.isArray(captador.telefones) ? captador.telefones : [];
+        const wpp = telefones.find((t: any) => t.whatsapp || t.tipo === 'whatsapp');
+        const captador_phone = wpp ? wpp.numero : (telefones[0]?.numero || null);
 
         return {
           codigo_robust: item.id,
@@ -125,6 +130,10 @@ Deno.serve(async (req) => {
           seguro_incendio: taxas.seguro_incendio || null,
           status_imovel: item.status ?? 1,
           foto_principal: foto,
+          captador_robust_id: captador.id ? String(captador.id) : null,
+          captador_nome: captador.nome || null,
+          captador_email: captador_email,
+          captador_phone: captador_phone,
           raw_data: item,
           last_synced_at: new Date().toISOString(),
         };

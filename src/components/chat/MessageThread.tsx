@@ -195,6 +195,8 @@ function initials(name?: string | null) {
      refetchInterval: 10000, // Fallback
    });
  
+   const conv = conversations.find((c) => c.id === conversationId);
+
    const isGroup = conv?.type === "group";
  
    const otherParticipantReadAt = useMemo(() => {
@@ -208,7 +210,6 @@ function initials(name?: string | null) {
      if (!otherParticipantReadAt) return 'sent';
      return new Date(otherParticipantReadAt) >= new Date(messageCreatedAt) ? 'read' : 'sent';
    };
-  const conv = conversations.find((c) => c.id === conversationId);
     const [text, setText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -446,7 +447,6 @@ function initials(name?: string | null) {
    };
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
-   const isGroup = conv?.type === "group";
    const otherUserId = conv?.other_user_id;
     const isOnline = otherUserId ? onlineUserIds.has(otherUserId) : false;
  

@@ -534,7 +534,7 @@ export function ProposalNegotiationSummary({
               <div className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-slate-300" />
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  Responsável: <span className="text-slate-700">{cardResponsible || 'Imobiliária'}</span>
+                   Responsável pelo fechamento: <span className="text-slate-700">{cardResponsible || 'Imobiliária'}</span>
                 </p>
               </div>
               <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">

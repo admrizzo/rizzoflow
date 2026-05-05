@@ -196,22 +196,25 @@ const getStatusColor = (status: string): string => {
    const allItems = checklists.flatMap(c => c.items || []);
    const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
-   // Natureza operacional: obrigatorio, condicional, conferencia, evidencia, informativo
-    // Filtrar pendências apenas da etapa atual ou globais (is_ready_to_advance context)
-    const currentColumnId = checklists[0]?.column_id || null; // Simplified, ideally passed as prop
-    
-    const stageBlockingPending = activeItemsGlobal.filter(i => {
-      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-      if (!isBlockingNature || i.is_completed) return false;
-      
-      const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
-      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-      
-      return isGlobal || isCurrentStage;
-    });
+   const stageBlockingPending = activeItemsGlobal.filter(i => {
+     const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+     if (!isBlockingNature || i.is_completed) return false;
+     
+     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+     
+     return isGlobal || isCurrentStage;
+   });
 
-    const isReadyToAdvance = stageBlockingPending.length === 0 && activeItemsGlobal.length > 0;
+   const stageTotalItems = activeItemsGlobal.filter(i => {
+     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+     return isGlobal || isCurrentStage;
+   });
+
+   const isReadyToAdvance = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
  
   const { 
     deleteChecklist, 
@@ -231,11 +234,14 @@ const getStatusColor = (status: string): string => {
   const { isEditor, isAdmin, user } = useAuth();
 
   const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
+  const currentColumnId = checklists[0]?.column_id || null;
+  
   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
-    // Start all checklists open
+    // Only open current stage checklists by default
     const initial: Record<string, boolean> = {};
     checklists.forEach(c => {
-      initial[c.id] = true;
+      const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
+      initial[c.id] = isCurrentStage;
     });
     return initial;
   });
@@ -536,9 +542,10 @@ const getStatusColor = (status: string): string => {
      }
    };
 
-   const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
-     const items = checklist.items || [];
-     const activeItems = items.filter(i => !i.is_dismissed);
+     const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
+      const items = checklist.items || [];
+      const activeItems = items.filter(i => !i.is_dismissed);
+      const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
      const completedCount = activeItems.filter((i) => i.is_completed).length;
      const totalActive = activeItems.length;
      const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
@@ -730,21 +737,24 @@ const getStatusColor = (status: string): string => {
                                 </div>
                               ) : (
                                 <>
-                                   <div className="flex flex-wrap items-center gap-1.5">
-                                     {getNatureIcon(item.operational_nature)}
-                                     <span
-                                       className={cn(
-                                         "text-sm",
-                                         isCompleted && "text-green-600",
-                                         isAdmin && "cursor-pointer hover:underline hover:text-primary"
-                                       )}
-                                       onClick={() => isAdmin && handleEditClick(item)}
-                                       title={isAdmin ? "Clique para editar" : undefined}
-                                     >
-                                       {item.content}
-                                     </span>
-                                     {getNatureBadge(item.operational_nature)}
-                                   </div>
+                                     <div className="flex flex-wrap items-center gap-1.5">
+                                       {getNatureIcon(item.operational_nature)}
+                                       <span
+                                         className={cn(
+                                           "text-sm",
+                                           isCompleted && "text-green-600",
+                                           isAdmin && "cursor-pointer hover:underline hover:text-primary"
+                                         )}
+                                         onClick={() => isAdmin && handleEditClick(item)}
+                                         title={isAdmin ? "Clique para editar" : undefined}
+                                       >
+                                         {item.content}
+                                       </span>
+                                       {(isCurrentStageChecklist || item.column_id === currentColumnId || item.is_global_blocker) 
+                                         ? getNatureBadge(item.operational_nature)
+                                         : item.operational_nature !== 'obrigatorio' && getNatureBadge(item.operational_nature)
+                                       }
+                                     </div>
                                   {isCompleted && item.completed_by_profile && item.completed_at && (
                                     <TooltipProvider>
                                       <Tooltip>
@@ -1140,17 +1150,19 @@ const getStatusColor = (status: string): string => {
                 "text-sm font-semibold",
                 isReadyToAdvance ? "text-emerald-900" : "text-amber-900"
               )}>
-                {isReadyToAdvance ? "Pronto para avançar" : "Pendências impeditivas"}
+                {isReadyToAdvance ? "Etapa pronta" : stageBlockingPending.length > 0 ? `Faltam ${stageBlockingPending.length} itens da etapa` : "Etapa em andamento"}
               </h4>
               <p className="text-xs text-muted-foreground">
                 {isReadyToAdvance 
-                  ? "Todos os itens obrigatórios foram concluídos." 
-                   : `Faltam ${stageBlockingPending.length} itens obrigatórios desta etapa para poder mover o card.`}
+                   ? "Todos os itens obrigatórios desta etapa foram concluídos." 
+                   : stageBlockingPending.length > 0 
+                     ? "Conclua os itens obrigatórios para poder mover o card."
+                     : "Inicie o preenchimento dos itens desta etapa."}
               </p>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-xs font-medium text-muted-foreground block">Progresso total</span>
+            <span className="text-xs font-medium text-muted-foreground block">Total do processo</span>
             <span className="text-sm font-bold">
               {activeItemsGlobal.filter(i => i.is_completed).length}/{activeItemsGlobal.length}
             </span>
@@ -1158,8 +1170,42 @@ const getStatusColor = (status: string): string => {
         </div>
       )}
 
-      <div className="space-y-4">
-        {activeChecklists.map((checklist) => renderChecklist(checklist, false))}
+      <div className="space-y-6">
+        {/* current stage checklists */}
+        {activeChecklists.some(c => c.column_id === currentColumnId || c.is_global_blocker) && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
+            <div className="space-y-3">
+              {activeChecklists
+                .filter(c => c.column_id === currentColumnId || c.is_global_blocker)
+                .map((checklist) => renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
+
+        {/* next stage checklists */}
+        {activeChecklists.some(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
+            <div className="space-y-3">
+              {activeChecklists
+                .filter(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker)
+                .map((checklist) => renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
+
+        {/* checklists without column_id (unassigned) */}
+        {activeChecklists.some(c => c.column_id === null && !c.is_global_blocker) && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
+            <div className="space-y-3">
+              {activeChecklists
+                .filter(c => c.column_id === null && !c.is_global_blocker)
+                .map((checklist) => renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
         
         {/* Dismissed Checklists Section */}
         {dismissedChecklistsList.length > 0 && (

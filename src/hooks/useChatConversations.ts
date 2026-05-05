@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+ import { useMemo } from "react";
+ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,12 +19,12 @@ export type ChatConversationListItem = {
   unread_count: number;
 };
 
-export function useChatConversations() {
-  const { user } = useAuth();
-  return useQuery({
-    queryKey: ["chat", "conversations", user?.id],
-    enabled: !!user,
-    queryFn: async (): Promise<ChatConversationListItem[]> => {
+ export function useChatConversations() {
+   const { user } = useAuth();
+   const query = useQuery({
+     queryKey: ["chat", "conversations", user?.id],
+     enabled: !!user,
+     queryFn: async (): Promise<ChatConversationListItem[]> => {
       if (!user) return [];
 
       // 1) participações do usuário

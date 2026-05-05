@@ -1,22 +1,10 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
- import { useAuth } from '@/contexts/AuthContext';
- import { useToast } from '@/hooks/use-toast';
- import { useEffect } from 'react';
+ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+ import { supabase } from "@/integrations/supabase/client";
+ import { useToast } from "@/hooks/use-toast";
+ import { useEffect } from "react";
+ import { Database } from "@/integrations/supabase/types";
  
- export interface ChatAttachment {
-   id: string;
-   message_id: string;
-   conversation_id: string;
-   uploaded_by: string;
-   file_name: string;
-   file_size: number | null;
-   mime_type: string | null;
-   storage_path: string;
-   attachment_type: 'image' | 'file' | 'audio';
-   duration_seconds: number | null;
-   created_at: string;
- }
+ export type ChatAttachment = Database["public"]["Tables"]["chat_message_attachments"]["Row"];
  
  export function useChatAttachments(conversationId?: string) {
    const { user } = useAuth();
@@ -86,14 +74,14 @@
  
        for (const file of files) {
          const attachmentType = getAttachmentType(file.type);
-         const safeName = file.name.replace(/[^\w.\-]+/g, '_');
+         const safeName = file.name.replace(/[^\w.\-]+/g, "_");
          const storagePath = `${convId}/${messageId}/${Date.now()}-${safeName}`;
  
          // 1. Upload to storage
          const { error: uploadError } = await supabase.storage
-           .from('chat-attachments')
+           .from("chat-attachments")
            .upload(storagePath, file, {
-             contentType: file.type || 'application/octet-stream',
+             contentType: file.type || "application/octet-stream",
              upsert: false,
            });
  
@@ -102,7 +90,7 @@
          try {
            // 2. Insert metadata
            const { data: metadata, error: insertError } = await supabase
-             .from('chat_message_attachments')
+             .from("chat_message_attachments")
              .insert({
                message_id: messageId,
                conversation_id: convId,
@@ -113,23 +101,23 @@
                storage_path: storagePath,
                attachment_type: attachmentType,
              })
-             .select('*')
+             .select("*")
              .single();
  
            if (insertError) throw insertError;
            results.push(metadata as ChatAttachment);
          } catch (err) {
            // Rollback storage if metadata fails
-           await supabase.storage.from('chat-attachments').remove([storagePath]);
+           await supabase.storage.from("chat-attachments").remove([storagePath]);
            throw err;
          }
        }
        return results;
      },
      onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['chat-attachments', conversationId] });
-       // Also invalidate chat messages to reflect the new state if needed
-       queryClient.invalidateQueries({ queryKey: ['chat-messages', conversationId] });
+       queryClient.invalidateQueries({ queryKey: ["chat-attachments", conversationId] });
+       // Also invalidate chat query key from useChatMessages if needed
+       queryClient.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
      },
      onError: (err: any) => {
        toast({

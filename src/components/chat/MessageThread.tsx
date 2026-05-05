@@ -467,82 +467,80 @@ function initials(name?: string | null) {
                     </Button>
                   </div>
                 </div>
-               ) : (
-                 <>
-                   <div className="flex items-center gap-1">
-                     <input
-                       type="file"
-                       ref={fileInputRef}
-                       className="hidden"
-                       multiple
-                       onChange={handleFileSelect}
-                     />
-                     <input
-                       type="file"
-                       ref={imageInputRef}
-                       className="hidden"
-                       multiple
-                       accept="image/*"
-                       onChange={handleFileSelect}
-                     />
-     
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <Button 
-                           variant="ghost" 
-                           size="icon" 
-                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                           onClick={() => fileInputRef.current?.click()}
-                         >
-                           <Paperclip className="h-4 w-4" />
-                         </Button>
-                       </TooltipTrigger>
-                       <TooltipContent side="top">Anexar arquivo</TooltipContent>
-                     </Tooltip>
-     
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <Button 
-                           variant="ghost" 
-                           size="icon" 
-                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                           onClick={() => imageInputRef.current?.click()}
-                         >
-                           <ImageIcon className="h-4 w-4" />
-                         </Button>
-                       </TooltipTrigger>
-                       <TooltipContent side="top">Anexar imagem</TooltipContent>
-                     </Tooltip>
-     
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <Button 
-                           variant="ghost" 
-                           size="icon" 
-                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                           onClick={startRecording}
-                         >
-                           <Mic className="h-4 w-4" />
-                         </Button>
-                       </TooltipTrigger>
-                       <TooltipContent side="top">Gravar áudio</TooltipContent>
-                     </Tooltip>
-   
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <Button 
-                           variant="ghost" 
-                           size="icon" 
-                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                           onClick={() => toast.info("Recurso em preparação")}
-                         >
-                           <Smile className="h-4 w-4" />
-                         </Button>
-                       </TooltipTrigger>
-                       <TooltipContent side="top">Emojis (Em breve)</TooltipContent>
-                     </Tooltip>
-                   </div>
-                 </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      multiple
+                      onChange={handleFileSelect}
+                    />
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                    />
+    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Anexar arquivo</TooltipContent>
+                    </Tooltip>
+    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Anexar imagem</TooltipContent>
+                    </Tooltip>
+    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                          onClick={startRecording}
+                        >
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Gravar áudio</TooltipContent>
+                    </Tooltip>
+  
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                          onClick={() => toast.info("Recurso em preparação")}
+                        >
+                          <Smile className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Emojis (Em breve)</TooltipContent>
+                    </Tooltip>
+                  </div>
               
               <div className="flex items-center gap-2">
                 <Button 

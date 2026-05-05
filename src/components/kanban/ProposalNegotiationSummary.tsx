@@ -1,4 +1,4 @@
-import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Download, Loader2 } from 'lucide-react';
+ import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Download, Loader2, CheckCheck } from 'lucide-react';
 import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ interface Props {
   cardGuaranteeType?: string | null;
   cardResponsible?: string | null;
   showResponsible?: boolean;
+  negotiationDetails?: string | null;
 }
 
 function fmtBRL(v: number | null) {
@@ -65,7 +66,8 @@ export function ProposalNegotiationSummary({
   proposalLinkId, 
   cardGuaranteeType, 
   cardResponsible,
-  showResponsible = true 
+  showResponsible = true,
+  negotiationDetails
 }: Props) {
   const { data, isLoading } = useProposalNegotiationSummary(proposalLinkId);
   const [isExporting, setIsExporting] = useState(false);
@@ -337,6 +339,21 @@ export function ProposalNegotiationSummary({
         </div>
       )}
 
+      {/* Acordo Interno / Observações Finais */}
+      {negotiationDetails && (
+        <div className="rounded-md border-2 border-primary/20 bg-primary/5 p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCheck className="h-4 w-4 text-primary" />
+            <p className="text-xs font-bold text-primary uppercase tracking-wider">
+              Acordo final / observações internas
+            </p>
+          </div>
+          <p className="text-sm font-medium text-slate-700 whitespace-pre-wrap leading-relaxed">
+            {negotiationDetails}
+          </p>
+        </div>
+      )}
+
       {/* Hidden container for export only - THE OWNER REPORT LAYOUT */}
       <div className="hidden">
         <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal">
@@ -493,6 +510,23 @@ export function ProposalNegotiationSummary({
                   </p>
                 </div>
               )}
+
+            {/* BLOCO 3: ACORDO REGISTRADO PELA EQUIPE */}
+            {negotiationDetails && (
+              <section className="space-y-4 pt-6 border-t-2 border-slate-50">
+                <div className="flex items-center gap-2">
+                  <CheckCheck className="h-5 w-5 text-emerald-600" />
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                    Acordo registrado pela equipe
+                  </h3>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 shadow-sm">
+                  <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                    {negotiationDetails}
+                  </p>
+                </div>
+              </section>
+            )}
             </section>
 
             {/* RODAPÉ DO RESUMO */}

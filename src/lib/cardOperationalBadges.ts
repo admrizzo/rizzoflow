@@ -104,23 +104,49 @@ export function getCardOperationalBadges(
     });
   }
 
-  // --- 3. Progresso Documental / Checklist (kind: progress) ---
-  const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
-  const activeItems = allItems.filter(i => !i.is_dismissed);
-  const totalItems = activeItems.length;
-  const completedItems = activeItems.filter(i => i.is_completed).length;
-
-  if (totalItems > 0) {
-    const isCompleted = completedItems === totalItems;
-    badges.push({
-      key: 'checklist_progress',
-      label: `${completedItems}/${totalItems}`,
-      tone: isCompleted ? 'emerald' : 'slate',
-      icon: CheckSquare,
-      priority: 60,
-      kind: 'progress'
-    });
-  }
+   // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
+   const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
+   const activeItems = allItems.filter(i => !i.is_dismissed);
+   
+   if (activeItems.length > 0) {
+     const blockingPendingItems = activeItems.filter(i => 
+       (i.operational_nature === 'obrigatorio' || !i.operational_nature) && !i.is_completed
+     );
+     const totalBlocking = activeItems.filter(i => (i.operational_nature === 'obrigatorio' || !i.operational_nature)).length;
+     const completedBlocking = totalBlocking - blockingPendingItems.length;
+     const isReady = blockingPendingItems.length === 0;
+ 
+     if (isReady) {
+       badges.push({
+         key: 'checklist_ready',
+         label: 'PRONTO',
+         tone: 'emerald',
+         icon: CheckCheck,
+         priority: 65,
+         kind: 'progress'
+       });
+     } else {
+       badges.push({
+         key: 'checklist_pending',
+         label: `${blockingPendingItems.length} PENDENTE(S)`,
+         tone: 'amber',
+         icon: AlertTriangle,
+         priority: 65,
+         kind: 'progress'
+       });
+     }
+ 
+     // Progresso detalhado (opcional, pode ser mantido em segundo plano ou removido se poluir)
+     const completedTotal = activeItems.filter(i => i.is_completed).length;
+     badges.push({
+       key: 'checklist_total_progress',
+       label: `${completedTotal}/${activeItems.length}`,
+       tone: 'slate',
+       icon: CheckSquare,
+       priority: 60,
+       kind: 'progress'
+     });
+   }
 
   // --- 4. Etiquetas Manuais (kind: manual_label, priority, risk, etc.) ---
   if (card.labels && card.labels.length > 0) {

@@ -615,18 +615,21 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
       return;
     }
 
-    // BLOCKING RULE: To move to "Ativo" column, ALL checklists must be complete
+     // BLOCKING RULE: To move to "Ativo" column, all MANDATORY checklist items must be complete
     const destColumn = columns.find(c => c.id === destination.droppableId);
     if (destColumn?.name === 'Ativo') {
       const card = cards.find(c => c.id === draggableId);
       if (card) {
         const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
         const activeItems = allItems.filter(i => !i.is_dismissed);
-        const pendingItems = activeItems.filter(i => !i.is_completed);
-        if (pendingItems.length > 0) {
+         const blockingPendingItems = activeItems.filter(i => 
+           (i.operational_nature === 'obrigatorio' || !i.operational_nature) && !i.is_completed
+         );
+ 
+         if (blockingPendingItems.length > 0) {
           toast({
             title: 'Existem pendências no processo',
-            description: `Regularize ${pendingItems.length} item(ns) pendente(s) antes de concluir.`,
+             description: `Regularize ${blockingPendingItems.length} item(ns) obrigatório(s) antes de concluir.`,
             variant: 'destructive',
           });
           return;

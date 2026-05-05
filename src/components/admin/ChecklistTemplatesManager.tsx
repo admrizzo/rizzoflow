@@ -22,9 +22,11 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+   DialogHeader,
+   DialogTitle,
+ } from '@/components/ui/dialog';
+ import { Label } from '@/components/ui/label';
+ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -39,9 +41,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { 
-  ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
-  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save
-} from 'lucide-react';
+   ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
+   ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save,
+   AlertCircle
+ } from 'lucide-react';
 import { Board } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 
@@ -84,7 +87,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   const [configuringItem, setConfiguringItem] = useState<ChecklistItemTemplate | null>(null);
   const [configRequiresDate, setConfigRequiresDate] = useState(false);
   const [configRequiresStatus, setConfigRequiresStatus] = useState(false);
-  const [configRequiresObservation, setConfigRequiresObservation] = useState(false);
+   const [configRequiresObservation, setConfigRequiresObservation] = useState(false);
+   const [configOperationalNature, setConfigOperationalNature] = useState<'obrigatorio' | 'condicional' | 'conferencia' | 'evidencia' | 'informativo'>('obrigatorio');
   const [configStatusOptions, setConfigStatusOptions] = useState<string[]>([]);
   const [newStatusOption, setNewStatusOption] = useState('');
 
@@ -209,7 +213,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     setConfiguringItem(item);
     setConfigRequiresDate(item.requires_date || false);
     setConfigRequiresStatus(item.requires_status || false);
-    setConfigRequiresObservation(item.requires_observation || false);
+     setConfigRequiresObservation(item.requires_observation || false);
+     setConfigOperationalNature(item.operational_nature || 'obrigatorio');
     setConfigStatusOptions(item.status_options || []);
     setNewStatusOption('');
     setConfigDialogOpen(true);
@@ -223,7 +228,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       id: configuringItem.id,
       requires_date: configRequiresDate,
       requires_status: configRequiresStatus,
-      requires_observation: configRequiresObservation,
+       requires_observation: configRequiresObservation,
+       operational_nature: configOperationalNature,
       status_options: configStatusOptions,
     });
     
@@ -250,7 +256,23 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     const badges = [];
     if (item.requires_date) badges.push({ icon: CalendarDays, label: 'Data', color: 'bg-blue-100 text-blue-700' });
     if (item.requires_status) badges.push({ icon: ListCheck, label: 'Status', color: 'bg-green-100 text-green-700' });
-    if (item.requires_observation) badges.push({ icon: FileText, label: 'Obs', color: 'bg-amber-100 text-amber-700' });
+     if (item.requires_observation) badges.push({ icon: FileText, label: 'Obs', color: 'bg-amber-100 text-amber-700' });
+     
+     const natureMap = {
+       obrigatorio: { label: 'Obrigatório', color: 'bg-red-100 text-red-700' },
+       condicional: { label: 'Condicional', color: 'bg-amber-100 text-amber-700' },
+       conferencia: { label: 'Conferência', color: 'bg-blue-100 text-blue-700' },
+       evidencia: { label: 'Evidência', color: 'bg-emerald-100 text-emerald-700' },
+       informativo: { label: 'Informativo', color: 'bg-slate-100 text-slate-700' },
+     };
+     
+     const nature = item.operational_nature || 'obrigatorio';
+     badges.push({ 
+       icon: AlertCircle, 
+       label: natureMap[nature as keyof typeof natureMap].label, 
+       color: natureMap[nature as keyof typeof natureMap].color 
+     });
+ 
     return badges;
   };
 
@@ -298,7 +320,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
               position: item.position,
               requires_date: item.requires_date || false,
               requires_status: item.requires_status || false,
-              requires_observation: item.requires_observation || false,
+               requires_observation: item.requires_observation || false,
+               operational_nature: item.operational_nature || 'obrigatorio',
               status_options: item.status_options || [],
             }));
 
@@ -887,20 +910,68 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
               )}
             </div>
 
-            {/* Requires Observation */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-amber-500" />
-                <div>
-                  <p className="text-sm font-medium">Exigir Observação</p>
-                  <p className="text-xs text-muted-foreground">Campo de texto para anotações</p>
-                </div>
-              </div>
-              <Switch 
-                checked={configRequiresObservation}
-                onCheckedChange={setConfigRequiresObservation}
-              />
-            </div>
+             {/* Requires Observation */}
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2">
+                 <FileText className="h-4 w-4 text-amber-500" />
+                 <div>
+                   <p className="text-sm font-medium">Exigir Observação</p>
+                   <p className="text-xs text-muted-foreground">Campo de texto para anotações</p>
+                 </div>
+               </div>
+               <Switch 
+                 checked={configRequiresObservation}
+                 onCheckedChange={setConfigRequiresObservation}
+               />
+             </div>
+ 
+             {/* Operational Nature */}
+             <div className="pt-2 border-t space-y-3">
+               <div className="flex items-center gap-2">
+                 <AlertCircle className="h-4 w-4 text-red-500" />
+                 <div>
+                   <p className="text-sm font-medium">Natureza Operacional</p>
+                   <p className="text-xs text-muted-foreground">Como este item afeta o fluxo do card</p>
+                 </div>
+               </div>
+               
+               <RadioGroup 
+                 value={configOperationalNature} 
+                 onValueChange={(val: any) => setConfigOperationalNature(val)}
+                 className="grid grid-cols-1 gap-2"
+               >
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="obrigatorio" id="nature-obrigatorio" />
+                   <Label htmlFor="nature-obrigatorio" className="text-xs cursor-pointer">
+                     <strong>Obrigatório:</strong> Bloqueia avanço se pendente
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="condicional" id="nature-condicional" />
+                   <Label htmlFor="nature-condicional" className="text-xs cursor-pointer">
+                     <strong>Condicional:</strong> Pendência apenas se aplicável
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="conferencia" id="nature-conferencia" />
+                   <Label htmlFor="nature-conferencia" className="text-xs cursor-pointer">
+                     <strong>Conferência:</strong> Revisão, não bloqueia avanço
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="evidencia" id="nature-evidencia" />
+                   <Label htmlFor="nature-evidencia" className="text-xs cursor-pointer">
+                     <strong>Evidência:</strong> Documento/registro importante
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="informativo" id="nature-informativo" />
+                   <Label htmlFor="nature-informativo" className="text-xs cursor-pointer">
+                     <strong>Informativo:</strong> Orientação ou lembrete
+                   </Label>
+                 </div>
+               </RadioGroup>
+             </div>
           </div>
 
           <DialogFooter>

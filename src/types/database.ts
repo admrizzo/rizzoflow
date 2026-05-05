@@ -213,6 +213,8 @@ export interface Checklist {
   created_at: string;
 }
 
+ export type OperationalNature = 'obrigatorio' | 'condicional' | 'conferencia' | 'evidencia' | 'informativo';
+ 
 export interface ChecklistItem {
   id: string;
   checklist_id: string;
@@ -245,6 +247,7 @@ export interface ChecklistItem {
   requires_observation?: boolean;
   status_options?: string[];
   observation_text?: string | null;
+   operational_nature: OperationalNature;
 }
 
 export interface Comment {
@@ -280,6 +283,7 @@ export interface ChecklistItemTemplate {
   content: string;
   position: number | null;
   created_at: string;
+   operational_nature: OperationalNature;
 }
 
 // Extended types with relations

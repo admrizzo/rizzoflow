@@ -720,17 +720,21 @@ const getStatusColor = (status: string): string => {
                                 </div>
                               ) : (
                                 <>
-                                  <span
-                                    className={cn(
-                                      "text-sm",
-                                      isCompleted && "text-green-600",
-                                      isAdmin && "cursor-pointer hover:underline hover:text-primary"
-                                    )}
-                                    onClick={() => isAdmin && handleEditClick(item)}
-                                    title={isAdmin ? "Clique para editar" : undefined}
-                                  >
-                                    {item.content}
-                                  </span>
+                                   <div className="flex flex-wrap items-center gap-1.5">
+                                     {getNatureIcon(item.operational_nature)}
+                                     <span
+                                       className={cn(
+                                         "text-sm",
+                                         isCompleted && "text-green-600",
+                                         isAdmin && "cursor-pointer hover:underline hover:text-primary"
+                                       )}
+                                       onClick={() => isAdmin && handleEditClick(item)}
+                                       title={isAdmin ? "Clique para editar" : undefined}
+                                     >
+                                       {item.content}
+                                     </span>
+                                     {getNatureBadge(item.operational_nature)}
+                                   </div>
                                   {isCompleted && item.completed_by_profile && item.completed_at && (
                                     <TooltipProvider>
                                       <Tooltip>

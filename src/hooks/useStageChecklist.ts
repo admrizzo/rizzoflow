@@ -56,7 +56,11 @@ export function useStageChecklist() {
 
       const { data: checklist, error: clErr } = await supabase
         .from('checklists')
-        .insert({ card_id: cardId, name: checklistName })
+        .insert({ 
+          card_id: cardId, 
+          name: checklistName,
+          column_id: column.id
+        })
         .select('id')
         .single();
 

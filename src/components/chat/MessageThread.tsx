@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-  import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2 } from "lucide-react";
+   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -132,6 +132,13 @@ function initials(name?: string | null) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("");
 }
 
+ function normalizeText(text: string) {
+   return text
+     .toLowerCase()
+     .normalize("NFD")
+     .replace(/[\u0300-\u036f]/g, "");
+ }
+ 
  export function MessageThread({
   conversationId,
   onBack,
@@ -147,18 +154,71 @@ function initials(name?: string | null) {
    const isLoading = messagesLoading;
   const { data: conversations = [] } = useChatConversations();
   const conv = conversations.find((c) => c.id === conversationId);
-   const [text, setText] = useState("");
+    const [text, setText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
-   const [sending, setSending] = useState(false);
-   const [isRecording, setIsRecording] = useState(false);
-   const [recordingDuration, setRecordingDuration] = useState(0);
-   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-   const recordingChunksRef = useRef<Blob[]>([]);
-   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-   const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [sending, setSending] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const recordingChunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchIndex, setSearchIndex] = useState(-1);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+   const searchResults = useMemo(() => {
+     if (!searchQuery.trim() || !isSearchOpen) return [];
+     const normalizedQuery = normalizeText(searchQuery);
+     return messages.filter(m => {
+       const contentMatch = m.content && normalizeText(m.content).includes(normalizedQuery);
+       const attachments = byMessage[m.id] || [];
+       const attachmentMatch = attachments.some(a => normalizeText(a.file_name).includes(normalizedQuery));
+       return contentMatch || attachmentMatch;
+     }).map(m => m.id);
+   }, [searchQuery, messages, byMessage, isSearchOpen]);
+ 
+   useEffect(() => {
+     if (searchResults.length > 0) {
+       setSearchIndex(searchResults.length - 1);
+     } else {
+       setSearchIndex(-1);
+     }
+   }, [searchResults.length]);
+ 
+   useEffect(() => {
+     if (searchIndex >= 0 && searchResults[searchIndex]) {
+       const msgId = searchResults[searchIndex];
+       const el = messageRefs.current[msgId];
+       if (el) {
+         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+       }
+     }
+   }, [searchIndex, searchResults]);
+ 
+   useEffect(() => {
+     if (isSearchOpen && searchInputRef.current) {
+       searchInputRef.current.focus();
+     } else if (!isSearchOpen) {
+       setSearchQuery("");
+       setSearchIndex(-1);
+     }
+   }, [isSearchOpen]);
+ 
+   const nextSearchResult = () => {
+     if (searchResults.length === 0) return;
+     setSearchIndex(prev => (prev + 1) % searchResults.length);
+   };
+ 
+   const prevSearchResult = () => {
+     if (searchResults.length === 0) return;
+     setSearchIndex(prev => (prev - 1 + searchResults.length) % searchResults.length);
+   };
 
   // Auto-resize textarea logic
   const adjustHeight = () => {
@@ -195,11 +255,12 @@ function initials(name?: string | null) {
      };
    }, [isRecording]);
  
-   // autoscroll on message change
-   useLayoutEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, conversationId]);
+    // autoscroll on message change
+    useLayoutEffect(() => {
+      if (isSearchOpen && searchQuery.trim()) return;
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, [messages.length, conversationId, isSearchOpen, searchQuery]);
 
   // mark as read
   useEffect(() => {

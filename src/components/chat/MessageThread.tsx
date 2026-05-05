@@ -17,23 +17,61 @@ import { useQueryClient } from "@tanstack/react-query";
    import { isToday, isYesterday, isSameDay } from "date-fns";
    import { useChatAttachments, getChatAttachmentSignedUrl } from "@/hooks/useChatAttachments";
  function AttachmentPreview({ attachment }: { attachment: any }) {
-   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+   const [localUrl, setLocalUrl] = useState<string | null>(null);
+   const [isDownloading, setIsDownloading] = useState(false);
  
    useEffect(() => {
-     getChatAttachmentSignedUrl(attachment.storage_path).then(setSignedUrl);
+     // For images and audio, we still use signed URLs for direct rendering if possible
+     // but we'll fetch them as blobs for download to avoid blockages
+     getChatAttachmentSignedUrl(attachment.storage_path).then(setLocalUrl);
+     
+     return () => {
+       if (localUrl && localUrl.startsWith('blob:')) {
+         URL.revokeObjectURL(localUrl);
+       }
+     };
    }, [attachment.storage_path]);
+ 
+   const handleDownload = async (e: React.MouseEvent) => {
+     e.preventDefault();
+     if (isDownloading) return;
+     
+     setIsDownloading(true);
+     try {
+       const { data, error } = await supabase.storage
+         .from('chat-attachments')
+         .download(attachment.storage_path);
+ 
+       if (error) throw error;
+ 
+       const blobUrl = URL.createObjectURL(data);
+       const link = document.createElement('a');
+       link.href = blobUrl;
+       link.download = attachment.file_name;
+       link.rel = "noopener noreferrer";
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+       setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+     } catch (err) {
+       console.error('Download error:', err);
+       toast.error("Não foi possível baixar o anexo");
+     } finally {
+       setIsDownloading(false);
+     }
+   };
  
    if (attachment.attachment_type === 'image') {
      return (
        <div className="mt-2 group relative max-w-sm overflow-hidden rounded-lg border border-border/20 bg-muted/30 transition-all hover:border-border/40">
-         {signedUrl ? (
-           <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block">
+         {localUrl ? (
+           <button onClick={handleDownload} className="block w-full text-left">
              <img 
-               src={signedUrl} 
+               src={localUrl} 
                alt={attachment.file_name} 
                className="max-h-60 w-full object-cover transition-transform hover:scale-[1.02]"
              />
-           </a>
+           </button>
          ) : (
            <div className="flex h-32 items-center justify-center">
              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
@@ -46,8 +84,8 @@ import { useQueryClient } from "@tanstack/react-query";
    if (attachment.attachment_type === 'audio') {
      return (
        <div className="mt-2 w-full max-w-xs">
-         {signedUrl ? (
-           <audio controls className="h-10 w-full" src={signedUrl}>
+         {localUrl ? (
+           <audio controls className="h-10 w-full" src={localUrl}>
              Seu navegador não suporta o elemento de áudio.
            </audio>
          ) : (
@@ -71,13 +109,19 @@ import { useQueryClient } from "@tanstack/react-query";
            {attachment.file_size ? `${(attachment.file_size / 1024 / 1024).toFixed(2)} MB` : ''}
          </p>
        </div>
-       {signedUrl && (
-         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" asChild>
-           <a href={signedUrl} target="_blank" rel="noopener noreferrer" download={attachment.file_name}>
-             <Download className="h-4 w-4" />
-           </a>
-         </Button>
-       )}
+       <Button 
+         variant="ghost" 
+         size="icon" 
+         className="h-7 w-7 shrink-0" 
+         onClick={handleDownload}
+         disabled={isDownloading}
+       >
+         {isDownloading ? (
+           <Loader2 className="h-4 w-4 animate-spin" />
+         ) : (
+           <Download className="h-4 w-4" />
+         )}
+       </Button>
      </div>
    );
  }

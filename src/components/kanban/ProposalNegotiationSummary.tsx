@@ -388,22 +388,28 @@ export function ProposalNegotiationSummary({
       <div className="hidden">
         <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal">
           <div className="space-y-8">
-            {/* HEADER PRINCIPAL */}
-            <div className="flex items-center gap-3 border-b-2 border-slate-100 pb-6">
-              <Handshake className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-800 uppercase">
-                  Resumo da Proposta
-                </h1>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                  Para Aprovação do Proprietário
-                </p>
-              </div>
-              <div className="ml-auto text-right">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Gerado em</p>
-                <p className="text-xs font-bold">{new Date().toLocaleDateString('pt-BR')}</p>
-              </div>
-            </div>
+             {/* HEADER RIZZO */}
+             <div className="flex items-start justify-between border-b-[3px] border-primary pb-6">
+               <div className="flex items-center gap-4">
+                 <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-12 w-auto object-contain" />
+                 <div className="h-10 w-[1px] bg-slate-200 mx-2" />
+                 <div>
+                   <h1 className="text-2xl font-black tracking-tighter text-slate-800 uppercase leading-none">
+                     Resumo da Proposta
+                   </h1>
+                   <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
+                     Para Aprovação do Proprietário
+                   </p>
+                 </div>
+               </div>
+               <div className="text-right">
+                 <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Documento Oficial</p>
+                 <div className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg shadow-sm">
+                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Gerado em</p>
+                   <p className="text-sm font-black text-slate-800 tabular-nums">{new Date().toLocaleDateString('pt-BR')}</p>
+                 </div>
+               </div>
+             </div>
 
             {/* BLOCO 1: DADOS DO IMÓVEL E VALORES ANUNCIADOS */}
             <section className="space-y-4">
@@ -450,19 +456,15 @@ export function ProposalNegotiationSummary({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between bg-slate-800 rounded-xl p-4 text-white shadow-md">
-                <span className="text-xs font-bold uppercase tracking-widest opacity-70">Pacote Total Anunciado</span>
-                <span className="text-xl font-black">{fmtBRL(data.totalMensal)}</span>
-              </div>
-
-              {data.observacoesComerciais && (
-                <div className="bg-slate-50 border-l-4 border-slate-200 p-4 rounded-r-xl">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wide">Observações do Anúncio</p>
-                  <p className="text-sm text-slate-600 italic leading-relaxed">
-                    "{data.observacoesComerciais}"
-                  </p>
-                </div>
-              )}
+               <div className="flex items-center justify-between bg-[#1e293b] rounded-xl p-4 text-white shadow-lg border-b-4 border-primary">
+                 <div className="flex items-center gap-3">
+                   <div className="bg-primary/20 p-1.5 rounded-lg">
+                     <Calculator className="h-4 w-4 text-primary" />
+                   </div>
+                   <span className="text-[11px] font-black uppercase tracking-[0.15em] opacity-90">Pacote Total Anunciado</span>
+                 </div>
+                 <span className="text-2xl font-black tabular-nums">{fmtBRL(announcedPackage)}</span>
+               </div>
             </section>
 
             {/* BLOCO 2: CONDIÇÕES PROPOSTAS */}
@@ -474,33 +476,57 @@ export function ProposalNegotiationSummary({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className={cn(
-                  "rounded-xl border-2 p-5 flex flex-col justify-center gap-2 shadow-sm",
-                  data.aceitouValor === 'sim' ? "bg-emerald-50 border-emerald-100" : "bg-primary/5 border-primary/10"
-                )}>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Aluguel Proposto</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-black text-primary">
-                      {data.aceitouValor === 'sim' ? fmtBRL(data.aluguel) : fmtBRL(data.valorProposto)}
-                    </p>
-                    {data.aceitouValor === 'sim' && (
-                      <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Igual Anúncio</span>
-                    )}
-                  </div>
-                  
-                  {data.aceitouValor === 'nao' && diffAmount !== null && (
-                    <div className="flex items-center gap-2 text-xs font-bold">
-                      <span className={cn(diffAmount > 0 ? "text-emerald-600" : "text-amber-600")}>
-                        {diffAmount > 0 ? '+' : ''}{fmtBRL(diffAmount)}
-                      </span>
-                      <span className="text-slate-200">|</span>
-                      <span className={cn(diffAmount > 0 ? "text-emerald-600" : "text-amber-600")}>
-                        {diffAmount > 0 ? '+' : ''}{fmtPercent(diffPercent)}
-                      </span>
-                    </div>
-                  )}
-                </div>
+               <div className="grid grid-cols-1 gap-6">
+                 <div className="grid grid-cols-2 gap-6">
+                   <div className={cn(
+                     "rounded-xl border-2 p-5 flex flex-col justify-center gap-3 shadow-md",
+                     data.aceitouValor === 'sim' ? "bg-emerald-50 border-emerald-100" : "bg-primary/5 border-primary/10"
+                   )}>
+                     <div className="flex items-center justify-between">
+                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aluguel Proposto</p>
+                       {data.aceitouValor === 'sim' && (
+                         <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Igual Anúncio</span>
+                       )}
+                     </div>
+                     
+                     <p className="text-3xl font-black text-slate-900 tabular-nums leading-none">
+                       {fmtBRL(proposedRent)}
+                     </p>
+                     
+                     {data.aceitouValor === 'nao' && diffRentAmount !== null && (
+                       <div className="flex items-center gap-2 text-xs font-bold pt-1 border-t border-slate-200/50">
+                         <span className={cn(diffRentAmount >= 0 ? "text-emerald-600" : "text-amber-600")}>
+                           {diffRentAmount > 0 ? '+' : ''}{fmtBRL(diffRentAmount)}
+                         </span>
+                         <span className="text-slate-300">|</span>
+                         <span className={cn(diffRentAmount >= 0 ? "text-emerald-600" : "text-amber-600")}>
+                           {diffRentAmount > 0 ? '+' : ''}{fmtPercent(diffRentPercent)}
+                         </span>
+                         <span className="text-[9px] text-slate-400 font-medium uppercase ml-auto">vs anunciado</span>
+                       </div>
+                     )}
+                   </div>
+ 
+                   <div className={cn(
+                     "rounded-xl border-2 p-5 flex flex-col justify-center gap-3 shadow-md",
+                     diffPackageAmount >= 0 ? "bg-slate-50 border-slate-200" : "bg-amber-50/50 border-amber-100"
+                   )}>
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pacote Proposto Estimado</p>
+                     <p className="text-3xl font-black text-slate-900 tabular-nums leading-none">
+                       {fmtBRL(proposedPackage)}
+                     </p>
+                     <div className="flex items-center gap-2 text-xs font-bold pt-1 border-t border-slate-200/50">
+                       <span className={cn(diffPackageAmount >= 0 ? "text-slate-600" : "text-amber-600")}>
+                         {diffPackageAmount > 0 ? '+' : ''}{fmtBRL(diffPackageAmount)}
+                       </span>
+                       <span className="text-slate-300">|</span>
+                       <span className={cn(diffPackageAmount >= 0 ? "text-slate-600" : "text-amber-600")}>
+                         {diffPackageAmount > 0 ? '+' : ''}{fmtPercent(diffPackagePercent)}
+                       </span>
+                       <span className="text-[9px] text-slate-400 font-medium uppercase ml-auto">vs anunciado</span>
+                     </div>
+                   </div>
+                 </div>
 
                 <div className="space-y-4">
                   <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm flex items-start gap-3">
@@ -559,18 +585,76 @@ export function ProposalNegotiationSummary({
             )}
             </section>
 
-            {/* RODAPÉ DO RESUMO */}
-            <div className="pt-8 flex items-center justify-between border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <UserCircle className="h-5 w-5 text-slate-300" />
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                   Responsável pelo fechamento: <span className="text-slate-700">{cardResponsible || 'Imobiliária'}</span>
-                </p>
-              </div>
-              <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">
-                RIZZO FLOW · OPERACIONAL
-              </p>
-            </div>
+             {/* SEÇÃO DE APROVAÇÃO DO PROPRIETÁRIO */}
+             <section className="pt-8 space-y-6 border-t-[3px] border-slate-100">
+               <div className="flex items-center gap-2">
+                 <FileSignature className="h-5 w-5 text-slate-400" />
+                 <h3 className="text-sm font-black text-slate-500 uppercase tracking-wider">
+                   Retorno do Proprietário
+                 </h3>
+               </div>
+               
+               <div className="grid grid-cols-3 gap-8">
+                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                   <Square className="h-6 w-6 text-slate-300" />
+                   <span className="text-sm font-bold text-slate-700 uppercase">Aprovado</span>
+                 </div>
+                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                   <Square className="h-6 w-6 text-slate-300" />
+                   <span className="text-sm font-bold text-slate-700 uppercase">Reprovado</span>
+                 </div>
+                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                   <Square className="h-6 w-6 text-slate-300" />
+                   <span className="text-sm font-bold text-slate-700 uppercase">Contraproposta</span>
+                 </div>
+               </div>
+ 
+               <div className="space-y-4">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Observações do proprietário:</p>
+                 <div className="space-y-6">
+                   <div className="border-b border-slate-200 w-full h-2" />
+                   <div className="border-b border-slate-200 w-full h-2" />
+                   <div className="border-b border-slate-200 w-full h-2" />
+                 </div>
+               </div>
+ 
+               <div className="grid grid-cols-2 gap-12 pt-12">
+                 <div className="space-y-2">
+                   <div className="border-b-2 border-slate-800 w-full pt-8" />
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Assinatura do Proprietário</p>
+                 </div>
+                 <div className="space-y-2">
+                   <div className="border-b-2 border-slate-800 w-full pt-8 flex justify-around">
+                     <span className="text-slate-300">____</span>
+                     <span className="text-slate-800">/</span>
+                     <span className="text-slate-300">____</span>
+                     <span className="text-slate-800">/</span>
+                     <span className="text-slate-300">______</span>
+                   </div>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Data</p>
+                 </div>
+               </div>
+             </section>
+ 
+             {/* RODAPÉ DO RESUMO */}
+             <div className="pt-10 flex items-end justify-between border-t border-slate-100">
+               <div className="space-y-1">
+                 <div className="flex items-center gap-2">
+                   <UserCircle className="h-4 w-4 text-slate-400" />
+                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                      Responsável pelo fechamento: <span className="text-slate-900 font-black">{cardResponsible || 'Imobiliária'}</span>
+                   </p>
+                 </div>
+                 <p className="text-[9px] text-slate-300 font-medium ml-6 italic">Documento gerado eletronicamente pelo sistema Rizzo Flow</p>
+               </div>
+               <div className="flex items-center gap-3">
+                 <div className="text-right">
+                   <p className="text-[10px] font-black text-primary leading-none">RIZZO IMOBILIÁRIA</p>
+                   <p className="text-[9px] font-bold text-slate-400 tracking-tighter leading-none mt-1">RIZZO FLOW · OPERACIONAL</p>
+                 </div>
+                 <img src="/smile-rizzo.png" alt="Rizzo" className="h-8 w-auto grayscale opacity-20" />
+               </div>
+             </div>
           </div>
         </div>
       </div>

@@ -212,66 +212,17 @@ const getStatusColor = (status: string): string => {
    const allItems = checklists.flatMap(c => (c && c.items) || []);
    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
  
-   // Helper to check if a checklist belongs to the current stage
-   const isChecklistInCurrentStage = (checklist: ChecklistWithItemsExtended) => {
-     if (!checklist) return false;
-     
-     // 1. Direct match by column_id
-     if (currentColumnId && checklist.column_id === currentColumnId) {
-       return true;
-     }
- 
-     // 2. Fallback by name comparison if we have currentColumnName
-     if (currentColumnName && checklist.name) {
-       const colName = currentColumnName.toLowerCase().trim();
-       const clName = checklist.name.toLowerCase().trim();
-       if (clName.includes(colName) || colName.includes(clName)) {
-         return true;
-       }
-     }
- 
-     return false;
-   };
- 
-   // Helper to check if an item belongs to the current stage
-   const isItemInCurrentStage = (item: ChecklistItemExtended) => {
-     if (!item) return false;
-     
-     // 1. Direct match by column_id
-     if (currentColumnId && item.column_id === currentColumnId) {
-       return true;
-     }
- 
-     // 2. Fallback to parent checklist's stage
-     const parentChecklist = checklists?.find(cl => cl && cl.id === item.checklist_id);
-     if (parentChecklist) {
-       return isChecklistInCurrentStage(parentChecklist);
-     }
- 
-     return false;
-   };
- 
-    // Required items for current stage (including global blockers)
-    const stageRequiredItems = activeItemsGlobal.filter(i => {
-      if (!i) return false;
-      const isMandatory = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-      if (!isMandatory) return false;
-      
-      const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-      return isGlobal || isItemInCurrentStage(i);
-    });
+   // Use shared helper for stage status calculation
+   const stageInfo = calculateStageStatus(
+     { checklists } as any, 
+     { id: currentColumnId, name: currentColumnName } as any
+   );
 
-    const stageRequiredPending = stageRequiredItems.filter(i => !i.is_completed);
-    const hasStageItems = activeItemsGlobal.some(i => isItemInCurrentStage(i));
-    
-    // Final operational status for the current stage
-    const stageStatus = (() => {
-      if (stageRequiredItems.length === 0) {
-        return hasStageItems ? 'ready' : 'no_items';
-      }
-      return stageRequiredPending.length === 0 ? 'ready' : 'pending';
-    })();
+   const isChecklistInCurrentStage = (checklist: ChecklistWithItemsExtended) => 
+     isChecklistInStage(checklist, { id: currentColumnId, name: currentColumnName } as any);
+
+   const isItemInCurrentStage = (item: ChecklistItemExtended) => 
+     isItemInStage(item, { id: currentColumnId, name: currentColumnName } as any, checklists);
  
   const { 
     deleteChecklist, 

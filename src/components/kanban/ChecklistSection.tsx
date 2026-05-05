@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChecklistWithItems, ChecklistItem, Profile } from '@/types/database';
+ import { ChecklistWithItems, ChecklistItem, Profile, Column } from '@/types/database';
 import { useChecklists } from '@/hooks/useChecklists';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -96,6 +96,7 @@ interface PartyNameInfo {
    partyNames?: PartyNameInfo[];
    currentColumnId?: string | null;
    currentColumnName?: string | null;
+  columns?: Column[];
  }
 
 // Helper function to format checklist names (convert from UPPERCASE to Title Case)
@@ -204,7 +205,8 @@ const getStatusColor = (status: string): string => {
    cardId, 
    partyNames = [],
    currentColumnId: propColumnId,
-   currentColumnName
+  currentColumnName,
+  columns = []
  }: ChecklistSectionProps) {
    // Use provided columnId
    const currentColumnId = propColumnId || null;
@@ -531,6 +533,48 @@ const getStatusColor = (status: string): string => {
   // Separate active and dismissed checklists
   const activeChecklists = checklists.filter(c => !isChecklistDismissed(c));
   const dismissedChecklistsList = checklists.filter(c => isChecklistDismissed(c));
+
+  // Get current column position for stage grouping
+  const currentColumn = columns.find(col => col.id === currentColumnId);
+  const currentColumnPosition = currentColumn?.position ?? 0;
+
+  // Group checklists into mutually exclusive groups
+  const groupedChecklistIds = new Set<string>();
+
+  const currentStageChecklists = activeChecklists.filter(c => {
+    if (c && (isChecklistInCurrentStage(c) || c.is_global_blocker)) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  const nextStageChecklists = activeChecklists.filter(c => {
+    if (!c || groupedChecklistIds.has(c.id)) return false;
+    const col = columns.find(col => col.id === c.column_id);
+    if (c.column_id && col && col.position > currentColumnPosition) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  const previousStageChecklists = activeChecklists.filter(c => {
+    if (!c || groupedChecklistIds.has(c.id)) return false;
+    const col = columns.find(col => col.id === c.column_id);
+    if (c.column_id && col && col.position < currentColumnPosition) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  // Note: any remaining active checklist with a column_id that wasn't grouped 
+  // will fall into additionalChecklists.
+
+  const additionalChecklists = activeChecklists.filter(c => {
+    return c && !groupedChecklistIds.has(c.id);
+  });
 
    const getNatureBadge = (nature: string) => {
      switch (nature) {
@@ -1208,37 +1252,41 @@ const getStatusColor = (status: string): string => {
 
       <div className="space-y-6">
         {/* current stage checklists */}
-         {activeChecklists.some(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker)) && (
+        {currentStageChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
-                {activeChecklists
-                  .filter(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker))
-                  .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {currentStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
 
         {/* next stage checklists */}
-         {activeChecklists.some(c => c && c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker) && (
+        {nextStageChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
-                {activeChecklists
-                  .filter(c => c && (c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker))
-                  .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {nextStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
+
+        {/* previous stage checklists */}
+        {previousStageChecklists.length > 0 && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapas Anteriores</h5>
+            <div className="space-y-3">
+              {previousStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
 
         {/* checklists without column_id (unassigned) */}
-         {activeChecklists.some(c => c && c.column_id === null && !c.is_global_blocker) && (
+        {additionalChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">
-               {activeChecklists
-                 .filter(c => c && (c.column_id === null && !c.is_global_blocker))
-                 .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {additionalChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
- import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2 } from "lucide-react";
+  import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2 } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,23 @@ import { useQueryClient } from "@tanstack/react-query";
          ) : (
            <div className="flex h-32 items-center justify-center">
              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+           </div>
+         )}
+       </div>
+     );
+   }
+ 
+   if (attachment.attachment_type === 'audio') {
+     return (
+       <div className="mt-2 w-full max-w-xs">
+         {signedUrl ? (
+           <audio controls className="h-10 w-full" src={signedUrl}>
+             Seu navegador não suporta o elemento de áudio.
+           </audio>
+         ) : (
+           <div className="flex items-center gap-2 rounded-lg border border-border/20 bg-background/50 p-2">
+             <Loader2 className="h-4 w-4 animate-spin" />
+             <span className="text-[10px]">Carregando áudio...</span>
            </div>
          )}
        </div>
@@ -87,10 +104,15 @@ function initials(name?: string | null) {
   const { data: conversations = [] } = useChatConversations();
   const conv = conversations.find((c) => c.id === conversationId);
    const [text, setText] = useState("");
-   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-   const fileInputRef = useRef<HTMLInputElement>(null);
-   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [sending, setSending] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+   const [sending, setSending] = useState(false);
+   const [isRecording, setIsRecording] = useState(false);
+   const [recordingDuration, setRecordingDuration] = useState(0);
+   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+   const recordingChunksRef = useRef<Blob[]>([]);
+   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,9 +127,29 @@ function initials(name?: string | null) {
     }
   };
 
-  useEffect(() => {
-    adjustHeight();
-  }, [text]);
+   useEffect(() => {
+     adjustHeight();
+   }, [text]);
+ 
+   useEffect(() => {
+     if (isRecording) {
+       timerRef.current = setInterval(() => {
+         setRecordingDuration(prev => {
+           if (prev >= 300) { // 5 minutes limit
+             stopRecording();
+             return prev;
+           }
+           return prev + 1;
+         });
+       }, 1000);
+     } else {
+       if (timerRef.current) clearInterval(timerRef.current);
+       setRecordingDuration(0);
+     }
+     return () => {
+       if (timerRef.current) clearInterval(timerRef.current);
+     };
+   }, [isRecording]);
  
    // autoscroll on message change
    useLayoutEffect(() => {
@@ -189,6 +231,57 @@ function initials(name?: string | null) {
        return;
      }
      setSelectedFiles(prev => [...prev, ...files]);
+   };
+ 
+   const startRecording = async () => {
+     try {
+       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+       const mediaRecorder = new MediaRecorder(stream);
+       mediaRecorderRef.current = mediaRecorder;
+       recordingChunksRef.current = [];
+ 
+       mediaRecorder.ondataavailable = (e) => {
+         if (e.data.size > 0) {
+           recordingChunksRef.current.push(e.data);
+         }
+       };
+ 
+       mediaRecorder.onstop = async () => {
+         const audioBlob = new Blob(recordingChunksRef.current, { type: 'audio/webm' });
+         if (audioBlob.size > 0) {
+           const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+           setSelectedFiles(prev => [...prev, audioFile]);
+         }
+         stream.getTracks().forEach(track => track.stop());
+       };
+ 
+       mediaRecorder.start();
+       setIsRecording(true);
+     } catch (err) {
+       console.error("Microphone permission denied:", err);
+       toast.error("Permissão do microfone negada ou não disponível.");
+     }
+   };
+ 
+   const stopRecording = () => {
+     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+       mediaRecorderRef.current.stop();
+     }
+     setIsRecording(false);
+   };
+ 
+   const cancelRecording = () => {
+     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+       mediaRecorderRef.current.stop();
+       recordingChunksRef.current = []; // Discard chunks
+     }
+     setIsRecording(false);
+   };
+ 
+   const formatDuration = (seconds: number) => {
+     const mins = Math.floor(seconds / 60);
+     const secs = seconds % 60;
+     return `${mins}:${secs.toString().padStart(2, '0')}`;
    };
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");

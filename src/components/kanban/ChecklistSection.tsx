@@ -813,7 +813,7 @@ const getStatusColor = (status: string): string => {
                                        >
                                          {item.content}
                                        </span>
-                                       {(isCurrentStageChecklist || item.column_id === currentColumnId || item.is_global_blocker) 
+                                        {(isItemInCurrentStage(item) || item.is_global_blocker) 
                                          ? getNatureBadge(item.operational_nature)
                                          : item.operational_nature !== 'obrigatorio' && getNatureBadge(item.operational_nature)
                                        }

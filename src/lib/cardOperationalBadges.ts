@@ -105,9 +105,9 @@ export function getCardOperationalBadges(
   }
 
    // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
-   const allChecklists = card.checklists || [];
-   const allItems = allChecklists.flatMap(cl => cl.items || []) || [];
-   const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
+    const allChecklists = (card.checklists || []).filter(cl => cl !== null && cl !== undefined);
+    const allItems = allChecklists.flatMap(cl => (cl.items || []).filter(i => i !== null && i !== undefined)) || [];
+    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
    
    if (activeItemsGlobal.length > 0) {
      const currentColumnId = card.column_id;

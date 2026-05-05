@@ -234,12 +234,12 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
             )}
           </div>
 
-          {/* 4. Badges (Máximo 3 badges operacionais relevantes) */}
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {badges
-              .filter(b => b.kind !== 'manual_label' || b.show_on_card !== false)
-              .slice(0, 3)
-              .map((badge: OperationalBadge) => (
+           {/* 4. Badges (Informação operacional relevante) */}
+           <div className="flex flex-wrap gap-1.5 pt-1 min-h-[22px]">
+             {badges
+               .filter(b => b.kind !== 'manual_label' || b.show_on_card !== false)
+               .slice(0, 3)
+               .map((badge: OperationalBadge) => (
                 <span 
                   key={badge.key}
                   className={cn(

@@ -399,13 +399,13 @@ export function ProposalNegotiationSummary({
              {/* HEADER RIZZO */}
              <div className="flex items-start justify-between border-b-[4px] border-[#304955] pb-6">
                <div className="flex items-center gap-4">
-                 <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-12 w-auto object-contain" />
+                 <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-14 w-auto object-contain" />
                  <div className="h-10 w-[1px] bg-slate-200 mx-2" />
                  <div>
-                    <h1 className="text-2xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
+                    <h1 className="text-3xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
                      Resumo da Proposta
                    </h1>
-                    <p className="text-[10px] font-bold text-[#304955] uppercase tracking-[0.2em] mt-1">
+                    <p className="text-[11px] font-bold text-[#304955] uppercase tracking-[0.3em] mt-2">
                      Para Aprovação do Proprietário
                    </p>
                  </div>

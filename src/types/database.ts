@@ -210,6 +210,8 @@ export interface Checklist {
   card_id: string;
   name: string;
   position: number;
+  column_id: string | null;
+  is_global_blocker: boolean;
   created_at: string;
 }
 

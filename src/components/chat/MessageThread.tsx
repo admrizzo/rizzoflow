@@ -400,39 +400,79 @@ function initials(name?: string | null) {
      return format(date, "dd/MM/yyyy");
    };
 
-  return (
-    <div className="flex h-full flex-col bg-background relative min-h-0 chat-message-thread min-w-0 overflow-hidden">
-      <header className="border-b border-border bg-muted/20 flex w-full shrink-0">
-        <div className="w-full px-4 py-2 flex items-center gap-3">
-          {onBack ? (
-            <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          ) : null}
-           <div className="relative">
-             <Avatar className="h-7 w-7">
-               {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
-               <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
-             </Avatar>
-             {!isGroup && otherUserId && (
-                <span 
-                  className={cn(
-                    "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
-                    isOnline ? "bg-emerald-500" : "bg-slate-300"
-                  )} 
-                />
+   return (
+     <div className="flex h-full flex-col bg-background relative min-h-0 chat-message-thread min-w-0 overflow-hidden">
+       <header className="border-b border-border bg-muted/20 flex flex-col w-full shrink-0">
+         <div className="w-full px-4 py-2 flex items-center gap-3">
+           {onBack ? (
+             <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={onBack}>
+               <ArrowLeft className="h-4 w-4" />
+             </Button>
+           ) : null}
+            <div className="relative">
+              <Avatar className="h-7 w-7">
+                {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
+                <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
+              </Avatar>
+              {!isGroup && otherUserId && (
+                 <span 
+                   className={cn(
+                     "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
+                     isOnline ? "bg-emerald-500" : "bg-slate-300"
+                   )} 
+                 />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 flex flex-col justify-center">
+              <p className="text-xs font-semibold truncate leading-none">{displayName}</p>
+              {!isGroup && otherUserId && (
+                <span className="text-[9px] text-muted-foreground mt-0.5">
+                  {isOnline ? "Online" : "Offline"}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn("h-8 w-8", isSearchOpen && "bg-accent")} 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+         </div>
+         {isSearchOpen && (
+           <div className="px-4 py-2 border-t border-border flex items-center gap-2 bg-background/50 animate-in fade-in slide-in-from-top-1 duration-200">
+             <div className="relative flex-1">
+               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+               <Input
+                 ref={searchInputRef}
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 placeholder="Buscar na conversa..."
+                 className="h-8 pl-8 text-xs bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/20"
+               />
+             </div>
+             {searchQuery.trim() && (
+               <div className="flex items-center gap-1 shrink-0">
+                 <span className="text-[10px] text-muted-foreground px-1 font-medium min-w-[3.5rem] text-center">
+                   {searchResults.length > 0 ? `${searchIndex + 1} de ${searchResults.length}` : '0 de 0'}
+                 </span>
+                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={prevSearchResult} disabled={searchResults.length === 0}>
+                   <ChevronUp className="h-4 w-4" />
+                 </Button>
+                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={nextSearchResult} disabled={searchResults.length === 0}>
+                   <ChevronDown className="h-4 w-4" />
+                 </Button>
+               </div>
              )}
+             <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setIsSearchOpen(false)}>
+               <X className="h-4 w-4" />
+             </Button>
            </div>
-           <div className="min-w-0 flex-1 flex flex-col">
-             <p className="text-xs font-semibold truncate leading-none">{displayName}</p>
-             {!isGroup && otherUserId && (
-               <span className="text-[9px] text-muted-foreground mt-0.5">
-                 {isOnline ? "Online" : "Offline"}
-               </span>
-             )}
-           </div>
-        </div>
-      </header>
+         )}
+       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
         <div className="w-full space-y-3 flex flex-col min-w-0">

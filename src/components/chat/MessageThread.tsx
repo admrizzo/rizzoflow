@@ -490,8 +490,14 @@ function initials(name?: string | null) {
              const prevDate = prev ? new Date(prev.created_at) : null;
              const showSeparator = !prevDate || !isSameDay(currentDate, prevDate);
  
-             return (
-               <div key={m.id} className="space-y-3">
+              const isHighlighted = isSearchOpen && searchQuery.trim() && searchResults[searchIndex] === m.id;
+              
+              return (
+                <div 
+                  key={m.id} 
+                  className={cn("space-y-3 transition-colors duration-500", isHighlighted && "bg-primary/5 rounded-lg -mx-2 px-2")}
+                  ref={el => messageRefs.current[m.id] = el}
+                >
                  {showSeparator && (
                    <div className="my-4 flex items-center gap-3">
                      <div className="h-px flex-1 bg-border" />

@@ -1236,7 +1236,7 @@ const getStatusColor = (status: string): string => {
                 {stageStatus === 'ready' 
                    ? "Todos os itens obrigatórios desta etapa foram concluídos." 
                    : stageStatus === 'pending' 
-                     ? "Conclua os itens obrigatórios para poder mover o card."
+                     ? `Faltam ${stageRequiredPending.length} itens obrigatórios desta etapa.`
                      : "Nenhum item obrigatório configurado para esta etapa."}
               </p>
             </div>

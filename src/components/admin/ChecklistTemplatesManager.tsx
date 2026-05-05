@@ -22,9 +22,11 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+   DialogHeader,
+   DialogTitle,
+ } from '@/components/ui/dialog';
+ import { Label } from '@/components/ui/label';
+ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -907,20 +909,68 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
               )}
             </div>
 
-            {/* Requires Observation */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-amber-500" />
-                <div>
-                  <p className="text-sm font-medium">Exigir Observação</p>
-                  <p className="text-xs text-muted-foreground">Campo de texto para anotações</p>
-                </div>
-              </div>
-              <Switch 
-                checked={configRequiresObservation}
-                onCheckedChange={setConfigRequiresObservation}
-              />
-            </div>
+             {/* Requires Observation */}
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-2">
+                 <FileText className="h-4 w-4 text-amber-500" />
+                 <div>
+                   <p className="text-sm font-medium">Exigir Observação</p>
+                   <p className="text-xs text-muted-foreground">Campo de texto para anotações</p>
+                 </div>
+               </div>
+               <Switch 
+                 checked={configRequiresObservation}
+                 onCheckedChange={setConfigRequiresObservation}
+               />
+             </div>
+ 
+             {/* Operational Nature */}
+             <div className="pt-2 border-t space-y-3">
+               <div className="flex items-center gap-2">
+                 <AlertCircle className="h-4 w-4 text-red-500" />
+                 <div>
+                   <p className="text-sm font-medium">Natureza Operacional</p>
+                   <p className="text-xs text-muted-foreground">Como este item afeta o fluxo do card</p>
+                 </div>
+               </div>
+               
+               <RadioGroup 
+                 value={configOperationalNature} 
+                 onValueChange={(val: any) => setConfigOperationalNature(val)}
+                 className="grid grid-cols-1 gap-2"
+               >
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="obrigatorio" id="nature-obrigatorio" />
+                   <Label htmlFor="nature-obrigatorio" className="text-xs cursor-pointer">
+                     <strong>Obrigatório:</strong> Bloqueia avanço se pendente
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="condicional" id="nature-condicional" />
+                   <Label htmlFor="nature-condicional" className="text-xs cursor-pointer">
+                     <strong>Condicional:</strong> Pendência apenas se aplicável
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="conferencia" id="nature-conferencia" />
+                   <Label htmlFor="nature-conferencia" className="text-xs cursor-pointer">
+                     <strong>Conferência:</strong> Revisão, não bloqueia avanço
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="evidencia" id="nature-evidencia" />
+                   <Label htmlFor="nature-evidencia" className="text-xs cursor-pointer">
+                     <strong>Evidência:</strong> Documento/registro importante
+                   </Label>
+                 </div>
+                 <div className="flex items-center space-x-2">
+                   <RadioGroupItem value="informativo" id="nature-informativo" />
+                   <Label htmlFor="nature-informativo" className="text-xs cursor-pointer">
+                     <strong>Informativo:</strong> Orientação ou lembrete
+                   </Label>
+                 </div>
+               </RadioGroup>
+             </div>
           </div>
 
           <DialogFooter>

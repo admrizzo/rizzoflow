@@ -1,9 +1,10 @@
- import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Download, Loader2, CheckCheck } from 'lucide-react';
+ import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Download, Loader2, CheckCheck, Square, CheckSquare } from 'lucide-react';
 import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
+ import html2canvas from 'html2canvas';
+ import { jsPDF } from 'jspdf';
 import { Badge } from '@/components/ui/badge';
 import { Building2, MapPin, Calculator } from 'lucide-react';
 
@@ -83,51 +84,80 @@ export function ProposalNegotiationSummary({
   }
   if (!data || !data.hasData) return null;
 
-  const handleExport = async () => {
-    if (!reportRef.current) return;
-    setIsExporting(true);
-    try {
-      const clone = reportRef.current.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.top = '-9999px';
-      clone.style.left = '-9999px';
-      clone.style.width = '800px';
-      clone.style.padding = '40px';
-      clone.style.backgroundColor = '#ffffff';
-      clone.style.display = 'block';
-      
-      // Force visibility for cloned elements that might be hidden by CSS classes
-      const hiddenElements = clone.querySelectorAll('.hidden');
-      hiddenElements.forEach(el => el.classList.remove('hidden'));
+   const handleExport = async () => {
+     if (!reportRef.current) return;
+     setIsExporting(true);
+     try {
+       const clone = reportRef.current.cloneNode(true) as HTMLElement;
+       clone.style.position = 'absolute';
+       clone.style.top = '-9999px';
+       clone.style.left = '-9999px';
+       clone.style.width = '800px';
+       clone.style.padding = '40px';
+       clone.style.backgroundColor = '#ffffff';
+       clone.style.display = 'block';
+       
+       const hiddenElements = clone.querySelectorAll('.hidden');
+       hiddenElements.forEach(el => el.classList.remove('hidden'));
+ 
+       document.body.appendChild(clone);
+       
+       const images = clone.getElementsByTagName('img');
+       await Promise.all(Array.from(images).map(img => {
+         if (img.complete) return Promise.resolve();
+         return new Promise(resolve => {
+           img.onload = resolve;
+           img.onerror = resolve;
+         });
+       }));
+ 
+       await new Promise(resolve => setTimeout(resolve, 300));
+ 
+       const canvas = await html2canvas(clone, {
+         scale: 2,
+         backgroundColor: '#ffffff',
+         useCORS: true,
+         logging: false,
+         width: 800,
+         windowWidth: 800,
+       });
+ 
+       document.body.removeChild(clone);
+ 
+       const imgData = canvas.toDataURL('image/png', 1.0);
+       const pdf = new jsPDF({
+         orientation: 'portrait',
+         unit: 'px',
+         format: [canvas.width, canvas.height]
+       });
+       
+       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+       
+       const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+       const filename = `RESUMO PROPOSTA IMÓVEL COD: ${data.codigoRobust || 'IMÓVEL'} - ${dateStr}.pdf`;
+       pdf.save(filename);
+     } catch (err) {
+       console.error('Erro ao gerar resumo:', err);
+     } finally {
+       setIsExporting(false);
+     }
+   };
 
-      document.body.appendChild(clone);
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const canvas = await html2canvas(clone, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
-        width: 800,
-        windowWidth: 800,
-      });
-
-      document.body.removeChild(clone);
-
-      const link = document.createElement('a');
-      const filename = `resumo-proposta-${data.codigoRobust || 'imovel'}-${new Date().toISOString().slice(0, 10)}.png`;
-      link.download = filename;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch (err) {
-      console.error('Erro ao gerar resumo:', err);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const diffAmount = data.valorProposto && data.aluguel ? data.valorProposto - data.aluguel : null;
-  const diffPercent = diffAmount && data.aluguel ? (diffAmount / data.aluguel) * 100 : null;
+   const announcedRent = data.aluguel || 0;
+   const announcedCondo = data.condominio || 0;
+   const announcedIPTU = data.iptu || 0;
+   const announcedInsurance = data.seguro || 0;
+   const announcedPackage = announcedRent + announcedCondo + announcedIPTU + announcedInsurance;
+ 
+   const proposedRent = data.aceitouValor === 'sim' ? announcedRent : (data.valorProposto || announcedRent);
+   const proposedPackage = proposedRent + announcedCondo + announcedIPTU + announcedInsurance;
+ 
+   const diffRentAmount = proposedRent - announcedRent;
+   const diffRentPercent = announcedRent > 0 ? (diffRentAmount / announcedRent) * 100 : null;
+ 
+   const diffPackageAmount = proposedPackage - announcedPackage;
+   const diffPackagePercent = announcedPackage > 0 ? (diffPackageAmount / announcedPackage) * 100 : null;
+ 
   const guaranteeType = cardGuaranteeType || data.tipoGarantia;
 
   const rows: { label: string; value: string; emphasize?: boolean }[] = [

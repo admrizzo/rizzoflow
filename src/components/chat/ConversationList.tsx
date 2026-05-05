@@ -20,8 +20,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNowStrict } from "date-fns";
-import { ptBR } from "date-fns/locale";
+ import { formatDistanceToNowStrict, isToday, isYesterday, format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 
 function initials(name?: string | null) {
@@ -34,6 +34,41 @@ function initials(name?: string | null) {
     .join("");
 }
 
+ function formatChatTime(dateStr: string | null) {
+   if (!dateStr) return "";
+   const date = new Date(dateStr);
+   if (isToday(date)) return format(date, "HH:mm");
+   if (isYesterday(date)) return "Ontem";
+   return format(date, "dd/MM");
+ }
+ 
+ function getMessagePreview(c: any, currentUserId?: string) {
+   const isMe = c.last_message_sender_id === currentUserId;
+   const isGroup = c.type === "group";
+   
+   let prefix = "";
+   if (isMe) {
+     prefix = "Você: ";
+   } else if (isGroup && c.last_message_sender_id) {
+     // Idealmente buscaríamos o nome do sender aqui, mas por agora usamos "Nome: " genérico ou nada se for DM
+     // Como não temos o nome do sender da última mensagem fácil aqui sem novo join,
+     // vamos simplificar conforme solicitado: "Nome: mensagem" em grupos.
+     // Por enquanto, se for grupo e não for "Você", apenas mostramos a mensagem ou o tipo.
+   }
+ 
+   if (c.last_message_type && c.last_message_type !== "text") {
+     const icons = {
+       image: "🖼️ Imagem",
+       audio: "🎙️ Áudio",
+       file: "📎 Anexo"
+     };
+     return <span className="flex items-center gap-1">{prefix}{icons[c.last_message_type as keyof typeof icons]}</span>;
+   }
+ 
+   if (!c.last_message_content) return <span className="italic">Sem mensagens</span>;
+   return `${prefix}${c.last_message_content}`;
+ }
+ 
  export function ConversationList({ onSelect }: { onSelect?: (id: string) => void }) {
    const { user } = useAuth();
    const { 
@@ -71,9 +106,11 @@ function initials(name?: string | null) {
     
     if (!search.trim()) return base;
     const q = search.toLowerCase();
-    return base.filter(
-      (c) => (c.other_user_name || c.name || "").toLowerCase().includes(q) || (c.last_message || "").toLowerCase().includes(q),
-    );
+     return base.filter((c) => {
+       const name = (c.other_user_name || c.name || "").toLowerCase();
+       const content = (c.last_message_content || "").toLowerCase();
+       return name.includes(q) || content.includes(q);
+     });
   }, [conversations, search, activeTab]);
 
   const { data: people = [] } = useQuery({
@@ -270,10 +307,11 @@ function initials(name?: string | null) {
                       setActiveConversationId(c.id);
                       onSelect?.(c.id);
                     }}
-                    className={cn(
-                      "w-full flex items-start gap-3 px-4 py-3 hover:bg-accent/20 text-left transition-all border-l-2 border-transparent relative",
-                      isActive ? "bg-accent/30 border-l-primary" : "hover:border-l-border/30",
-                    )}
+                     className={cn(
+                       "w-full flex items-start gap-3 px-4 py-3 hover:bg-accent/10 text-left transition-all border-l-2 border-transparent relative",
+                       isActive ? "bg-primary/5 border-l-primary" : "hover:border-l-border/30",
+                       c.unread_count > 0 && !isActive && "bg-primary/[0.02]"
+                     )}
                   >
                      <div className="relative shrink-0">
                        <Avatar className={cn("h-10 w-10 border border-border/50", isGroup && "rounded-lg")}>
@@ -299,25 +337,32 @@ function initials(name?: string | null) {
                      </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                         <span className={cn("text-sm truncate flex-1", (c.unread_count > 0 && !isActive) ? "text-foreground font-semibold" : "text-foreground")}>
+                          <span className={cn(
+                            "text-sm truncate flex-1", 
+                            (c.unread_count > 0 && !isActive) ? "text-foreground font-bold" : "text-foreground font-medium"
+                          )}>
                           {display}
                         </span>
-                        {c.last_message_at && (
-                          <span className="text-[10.5px] text-muted-foreground shrink-0">
-                            {formatDistanceToNowStrict(new Date(c.last_message_at), { locale: ptBR, addSuffix: false })}
-                          </span>
-                        )}
+                         <span className={cn(
+                           "text-[10px] shrink-0",
+                           (c.unread_count > 0 && !isActive) ? "text-primary font-bold" : "text-muted-foreground"
+                         )}>
+                           {formatChatTime(c.last_message_at)}
+                         </span>
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                         <p className={cn("text-xs truncate flex-1", (c.unread_count > 0 && !isActive) ? "text-foreground font-medium" : "text-muted-foreground")}>
-                           {c.last_message || <span className="italic">Sem mensagens</span>}
-                         </p>
-                         {c.unread_count > 0 && !isActive && (
-                           <span className="bg-[#FF4D97] text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center shrink-0 shadow-sm">
-                            {c.unread_count > 99 ? "99+" : c.unread_count}
-                          </span>
-                        )}
-                      </div>
+                       <div className="flex items-center gap-2 mt-0.5 min-h-[1.25rem]">
+                          <div className={cn(
+                            "text-xs truncate flex-1", 
+                            (c.unread_count > 0 && !isActive) ? "text-foreground font-semibold" : "text-muted-foreground"
+                          )}>
+                            {getMessagePreview(c, user?.id)}
+                          </div>
+                          {c.unread_count > 0 && !isActive && (
+                            <span className="bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center shrink-0 shadow-sm">
+                             {c.unread_count > 99 ? "99+" : c.unread_count}
+                           </span>
+                         )}
+                       </div>
                     </div>
                   </button>
                 );

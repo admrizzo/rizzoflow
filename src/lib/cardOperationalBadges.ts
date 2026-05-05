@@ -124,33 +124,51 @@ export function getCardOperationalBadges(
        return isGlobal || isCurrentStage;
      });
  
-     const isReady = stageBlockingPending.length === 0;
+     // Status da etapa atual baseado SOMENTE nos itens da etapa atual/globais
+     const stageTotalItems = activeItemsGlobal.filter(i => {
+       const parentChecklist = allChecklists.find(cl => cl.id === i.checklist_id);
+       const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+       const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+       return isGlobal || isCurrentStage;
+     });
+ 
+     const isReady = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
  
      if (isReady) {
        badges.push({
          key: 'checklist_ready',
-         label: 'PRONTO PARA ETAPA',
+         label: 'ETAPA PRONTA',
          tone: 'emerald',
          icon: CheckCheck,
          priority: 65,
          kind: 'progress'
        });
-     } else {
+     } else if (stageBlockingPending.length > 0) {
        badges.push({
          key: 'checklist_pending_stage',
-         label: `${stageBlockingPending.length} PENDÊNCIA(S) ETAPA`,
+         label: `FALTAM ${stageBlockingPending.length} ITENS DA ETAPA`,
          tone: 'amber',
          icon: AlertTriangle,
          priority: 65,
          kind: 'progress'
        });
+     } else if (stageTotalItems.length > 0) {
+       // Tem itens na etapa mas nenhum é obrigatório ou já estão concluídos (mas isReady falhou por algum motivo lógico)
+       badges.push({
+         key: 'checklist_in_progress',
+         label: 'ETAPA EM ANDAMENTO',
+         tone: 'blue',
+         icon: CheckSquare,
+         priority: 65,
+         kind: 'progress'
+       });
      }
  
-     // 3.2 Progresso total (Secundário)
+     // 3.2 Progresso total (Sempre secundário)
      const completedTotal = activeItemsGlobal.filter(i => i.is_completed).length;
      badges.push({
        key: 'checklist_total_progress',
-       label: `TOTAL: ${completedTotal}/${activeItemsGlobal.length}`,
+       label: `TOTAL DO PROCESSO: ${completedTotal}/${activeItemsGlobal.length}`,
        tone: 'slate',
        icon: CheckSquare,
        priority: 60,

@@ -49,7 +49,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
    }, [cardsLoading, board.id]);
   const { fields } = useBoardFields(board.id);
   const { config: boardConfig } = useBoardConfig(board.id);
-  const { hasUnseenChanges, markAsViewed } = useCardViews(board.id);
+   const { getUnreadCount, markAsViewed } = useCardViews(board.id);
   const { isAdmin, user } = useAuth();
   const { isBoardAdmin } = useUserBoards();
   const { toast } = useToast();
@@ -402,7 +402,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
           vacancyDeadline: vacancyDeadlineValues[card.id],
           completionDeadline: completionDeadlineValues[card.id],
           budgetDeadline: budgetDeadlineValues[card.id],
-          hasUnseenChanges: hasUnseenChanges(card.id, card.updated_at)
+           hasUnseenChanges: getUnreadCount(card.id) > 0
         });
         return state === filters.visualState;
       });
@@ -414,9 +414,9 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
     }
 
     // Apply unseen only filter
-    if (filters?.unseenOnly) {
-      result = result.filter(card => hasUnseenChanges(card.id, card.updated_at));
-    }
+     if (filters?.unseenOnly) {
+       result = result.filter(card => getUnreadCount(card.id) > 0);
+     }
 
     return result;
   }, [
@@ -427,9 +427,9 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
     columns, 
     vacancyDeadlineValues, 
     completionDeadlineValues, 
-    budgetDeadlineValues, 
-    hasUnseenChanges
-  ]);
+     budgetDeadlineValues,
+     getUnreadCount
+   ]);
 
   // Filter cards based on archived state
   const activeCards = useMemo(() => 
@@ -715,7 +715,7 @@ export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, o
                       completionDeadlineValues={completionDeadlineValues}
                       budgetDeadlineValues={budgetDeadlineValues}
                       showOwnerAvatar={showOwnerAvatar}
-                      hasUnseenChanges={hasUnseenChanges}
+                       getUnreadCount={getUnreadCount}
                       responsibleNames={responsibleNames}
                   />
                 </div>

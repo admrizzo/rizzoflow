@@ -2038,8 +2038,9 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
             <ChecklistSection 
               checklists={filteredChecklists} 
               cardId={card.id} 
-               currentColumnId={card.column_id}
-               currentColumnName={currentColumn?.name}
+              currentColumnId={card.column_id}
+              currentColumnName={currentColumn?.name}
+              columns={columns}
               partyNames={vendaParties.map(p => ({
                 checklistId: p.checklist_id || '',
                 partyType: p.party_type,

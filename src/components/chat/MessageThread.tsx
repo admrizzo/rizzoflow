@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQueryClient } from "@tanstack/react-query";
+ import { useQuery, useQueryClient } from "@tanstack/react-query";
    import { useChat } from "./ChatProvider";
    import { isToday, isYesterday, isSameDay } from "date-fns";
   import { useChatAttachments, getChatAttachmentSignedUrl } from "@/hooks/useChatAttachments";
@@ -283,69 +283,6 @@ function initials(name?: string | null) {
     markAsRead();
   }, [conversationId, user, messages, qc]);
 
-   // participants real-time for read status
-   useEffect(() => {
-     if (!conversationId || !user) return;
-     
-     const channel = supabase
-       .channel(`chat-participants-${conversationId}`)
-       .on(
-         'postgres_changes',
-         {
-           event: 'UPDATE',
-           schema: 'public',
-           table: 'chat_participants',
-           filter: `conversation_id=eq.${conversationId}`
-         },
-         () => {
-           // Quando um participante atualiza seu last_read_at, atualizamos a lista de conversas local
-           refetchConversations();
-         }
-       )
-       .subscribe();
- 
-     return () => {
-       supabase.removeChannel(channel);
-     };
-   }, [conversationId, user, refetchConversations]);
- 
-   const isMessageRead = (messageCreatedAt: string) => {
-     if (!conv || conv.type === 'group') return false;
-     if (!conv.last_read_at) return false;
-     
-     // Em DM, se o outro usuário leu em uma data >= criação da mensagem, ela está lida
-     // O last_read_at no conv (ChatConversationListItem) é o do OUTRO usuário?
-     // Na verdade, ChatConversationListItem.last_read_at é o MEU last_read_at (pelo hook useChatConversations).
-     // Precisamos do last_read_at do OUTRO participante.
-     return false; // Fallback temporário até termos o last_read_at do outro
-   };
- 
-   // Vamos ajustar o hook useChatConversations ou carregar os participantes aqui?
-   // Como o useChatConversations já carrega quase tudo, vamos buscar o last_read_at dos participantes aqui para precisão.
-   const { data: participants = [] } = useQuery({
-     queryKey: ['chat-participants-status', conversationId],
-     enabled: !!conversationId,
-     queryFn: async () => {
-       const { data } = await supabase
-         .from('chat_participants')
-         .select('user_id, last_read_at')
-         .eq('conversation_id', conversationId);
-       return data || [];
-     },
-     refetchInterval: 10000, // Fallback se o realtime falhar
-   });
- 
-   const otherParticipantReadAt = useMemo(() => {
-     if (!user || !participants.length || isGroup) return null;
-     const other = participants.find(p => p.user_id !== user.id);
-     return other?.last_read_at || null;
-   }, [participants, user, isGroup]);
- 
-   const getMessageReadStatus = (messageCreatedAt: string) => {
-     if (isGroup) return null;
-     if (!otherParticipantReadAt) return 'sent';
-     return new Date(otherParticipantReadAt) >= new Date(messageCreatedAt) ? 'read' : 'sent';
-   };
  
    async function send() {
      const content = text.trim();

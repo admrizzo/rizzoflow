@@ -231,11 +231,14 @@ const getStatusColor = (status: string): string => {
   const { isEditor, isAdmin, user } = useAuth();
 
   const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
+  const currentColumnId = checklists[0]?.column_id || null;
+  
   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
-    // Start all checklists open
+    // Only open current stage checklists by default
     const initial: Record<string, boolean> = {};
     checklists.forEach(c => {
-      initial[c.id] = true;
+      const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
+      initial[c.id] = isCurrentStage;
     });
     return initial;
   });

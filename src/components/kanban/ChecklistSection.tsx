@@ -200,7 +200,9 @@ const getStatusColor = (status: string): string => {
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
-     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!parentChecklist && !i.column_id) return false; // Fail safe
+
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      
@@ -208,7 +210,9 @@ const getStatusColor = (status: string): string => {
    });
 
    const stageTotalItems = activeItemsGlobal.filter(i => {
-     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!parentChecklist && !i.column_id) return false; // Fail safe
+
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      return isGlobal || isCurrentStage;
@@ -233,18 +237,20 @@ const getStatusColor = (status: string): string => {
   } = useChecklists();
   const { isEditor, isAdmin, user } = useAuth();
 
-  const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
-  const currentColumnId = checklists[0]?.column_id || null;
-  
-  const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
-    // Only open current stage checklists by default
-    const initial: Record<string, boolean> = {};
-    checklists.forEach(c => {
-      const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
-      initial[c.id] = isCurrentStage;
-    });
-    return initial;
-  });
+   const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
+   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
+   
+   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
+     // Only open current stage checklists by default
+     const initial: Record<string, boolean> = {};
+     if (checklists) {
+       checklists.forEach(c => {
+         const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
+         initial[c.id] = isCurrentStage;
+       });
+     }
+     return initial;
+   });
   
   // Track dismissed checklists locally for immediate UI feedback
   const [dismissedChecklists, setDismissedChecklists] = useState<Record<string, boolean>>({});

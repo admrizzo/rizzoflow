@@ -37,7 +37,8 @@ export function useOpenCardRealtime(params: {
     const flush = () => {
       debounceRef.current = null;
       // Invalida apenas o necessário para o card aberto.
-      qc.invalidateQueries({ queryKey: ['cards'] });
+       qc.invalidateQueries({ queryKey: ['cards'] });
+       qc.invalidateQueries({ queryKey: ['unread-card-changes'] });
       qc.invalidateQueries({ queryKey: ['card-detail-from-queue'] });
       qc.invalidateQueries({ queryKey: ['my-queue'] });
       qc.invalidateQueries({ queryKey: ['card-activity-logs', cardId] });

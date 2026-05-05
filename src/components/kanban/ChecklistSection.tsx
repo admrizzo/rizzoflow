@@ -200,7 +200,9 @@ const getStatusColor = (status: string): string => {
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
-     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!parentChecklist && !i.column_id) return false; // Fail safe
+
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      
@@ -208,7 +210,9 @@ const getStatusColor = (status: string): string => {
    });
 
    const stageTotalItems = activeItemsGlobal.filter(i => {
-     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!parentChecklist && !i.column_id) return false; // Fail safe
+
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      return isGlobal || isCurrentStage;
@@ -233,18 +237,20 @@ const getStatusColor = (status: string): string => {
   } = useChecklists();
   const { isEditor, isAdmin, user } = useAuth();
 
-  const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
-  const currentColumnId = checklists[0]?.column_id || null;
-  
-  const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
-    // Only open current stage checklists by default
-    const initial: Record<string, boolean> = {};
-    checklists.forEach(c => {
-      const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
-      initial[c.id] = isCurrentStage;
-    });
-    return initial;
-  });
+   const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
+   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
+   
+   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
+     // Only open current stage checklists by default
+     const initial: Record<string, boolean> = {};
+     if (checklists) {
+       checklists.forEach(c => {
+         const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
+         initial[c.id] = isCurrentStage;
+       });
+     }
+     return initial;
+   });
   
   // Track dismissed checklists locally for immediate UI feedback
   const [dismissedChecklists, setDismissedChecklists] = useState<Record<string, boolean>>({});
@@ -542,10 +548,11 @@ const getStatusColor = (status: string): string => {
      }
    };
 
-     const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
-      const items = checklist.items || [];
-      const activeItems = items.filter(i => !i.is_dismissed);
-      const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
+      const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
+       if (!checklist) return null;
+       const items = checklist.items || [];
+       const activeItems = items.filter(i => i && !i.is_dismissed);
+       const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
      const completedCount = activeItems.filter((i) => i.is_completed).length;
      const totalActive = activeItems.length;
      const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
@@ -1176,9 +1183,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id === currentColumnId || c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id === currentColumnId || c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
@@ -1188,9 +1195,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
@@ -1200,9 +1207,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id === null && !c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id === null && !c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

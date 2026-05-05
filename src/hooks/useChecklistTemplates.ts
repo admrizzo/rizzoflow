@@ -2,16 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export interface ChecklistItemTemplate {
-  id: string;
-  template_id: string;
-  content: string;
-  position: number;
-  requires_date?: boolean;
-  requires_status?: boolean;
-  requires_observation?: boolean;
-  status_options?: string[];
-}
+ import { OperationalNature } from '@/types/database';
+ 
+ export interface ChecklistItemTemplate {
+   id: string;
+   template_id: string;
+   content: string;
+   position: number;
+   requires_date?: boolean;
+   requires_status?: boolean;
+   requires_observation?: boolean;
+   status_options?: string[];
+   operational_nature?: OperationalNature;
+ }
 
 export interface ChecklistTemplate {
   id: string;
@@ -162,16 +165,18 @@ export function useChecklistTemplates(boardId?: string) {
       templateId, 
       requires_date = false,
       requires_status = false,
-      requires_observation = false,
-      status_options = [],
-    }: { 
-      content: string; 
-      templateId: string;
-      requires_date?: boolean;
-      requires_status?: boolean;
-      requires_observation?: boolean;
-      status_options?: string[];
-    }) => {
+       requires_observation = false,
+       status_options = [],
+       operational_nature = 'obrigatorio',
+     }: { 
+       content: string; 
+       templateId: string;
+       requires_date?: boolean;
+       requires_status?: boolean;
+       requires_observation?: boolean;
+       status_options?: string[];
+       operational_nature?: OperationalNature;
+     }) => {
       const template = templates.find(t => t.id === templateId);
       const maxPosition = template && template.items.length > 0 
         ? Math.max(...template.items.map(i => i.position ?? 0)) + 1 
@@ -185,8 +190,9 @@ export function useChecklistTemplates(boardId?: string) {
           position: maxPosition,
           requires_date,
           requires_status,
-          requires_observation,
-          status_options,
+           requires_observation,
+           status_options,
+           operational_nature,
         })
         .select()
         .single();
@@ -212,22 +218,25 @@ export function useChecklistTemplates(boardId?: string) {
       content,
       requires_date,
       requires_status,
-      requires_observation,
-      status_options,
-    }: { 
-      id: string; 
-      content?: string;
-      requires_date?: boolean;
-      requires_status?: boolean;
-      requires_observation?: boolean;
-      status_options?: string[];
-    }) => {
+       requires_observation,
+       status_options,
+       operational_nature,
+     }: { 
+       id: string; 
+       content?: string;
+       requires_date?: boolean;
+       requires_status?: boolean;
+       requires_observation?: boolean;
+       status_options?: string[];
+       operational_nature?: OperationalNature;
+     }) => {
       const updateData: Record<string, unknown> = {};
       if (content !== undefined) updateData.content = content;
       if (requires_date !== undefined) updateData.requires_date = requires_date;
       if (requires_status !== undefined) updateData.requires_status = requires_status;
-      if (requires_observation !== undefined) updateData.requires_observation = requires_observation;
-      if (status_options !== undefined) updateData.status_options = status_options;
+       if (requires_observation !== undefined) updateData.requires_observation = requires_observation;
+       if (status_options !== undefined) updateData.status_options = status_options;
+       if (operational_nature !== undefined) updateData.operational_nature = operational_nature;
 
       const { data, error } = await supabase
         .from('checklist_item_templates')

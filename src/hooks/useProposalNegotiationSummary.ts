@@ -31,6 +31,7 @@ export interface ProposalNegotiationSummary {
   retiradaEmail: string | null;
   retiradaObservacao: string | null;
   documentosObservacao: string | null;
+  observacoesComerciais: string | null;
 }
 
 function num(v: any): number | null {
@@ -80,6 +81,7 @@ export function useProposalNegotiationSummary(
         retiradaEmail: null,
         retiradaObservacao: null,
         documentosObservacao: null,
+        observacoesComerciais: null,
       };
       if (!proposalLinkId) return empty;
 
@@ -104,7 +106,7 @@ export function useProposalNegotiationSummary(
       const { data: prop } = link?.codigo_robust
         ? await supabase
             .from('properties')
-            .select('valor_aluguel, condominio, iptu, seguro_incendio, logradouro, numero, bairro, cidade, estado')
+            .select('valor_aluguel, condominio, iptu, seguro_incendio, logradouro, numero, bairro, cidade, estado, raw_data')
             .eq('codigo_robust', link.codigo_robust)
             .maybeSingle()
         : { data: null };
@@ -174,6 +176,9 @@ export function useProposalNegotiationSummary(
 
        const documentosObservacao = fd?.documentos?.observacao || fd?.documentos_observacao || null;
 
+       const propRawData = (prop as any)?.raw_data;
+       const observacoesComerciais = propRawData?.descricao?.text || propRawData?.descricao || fd?.imovel?.descricao || null;
+
        return {
         hasData,
         source: fd ? 'draft' : link ? 'link' : 'none',
@@ -201,6 +206,7 @@ export function useProposalNegotiationSummary(
         retiradaEmail,
         retiradaObservacao,
         documentosObservacao,
+        observacoesComerciais,
       };
     },
     enabled: !!proposalLinkId,

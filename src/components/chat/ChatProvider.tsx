@@ -30,6 +30,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
    const [lastUpdate, setLastUpdate] = useState(Date.now());
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
     const lastSoundTimeRef = useRef<number>(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const isAudioUnlockedRef = useRef<boolean>(false);
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -104,26 +106,76 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      if (now - lastSoundTimeRef.current < 2000) return;
      lastSoundTimeRef.current = now;
  
-     const audio = new Audio("/chat-notification.mp3");
-     audio.play().catch(() => {
-       // Autoplay blocked fallback or file missing
-       try {
-         const context = new (window.AudioContext || (window as any).webkitAudioContext)();
-         const oscillator = context.createOscillator();
-         const gain = context.createGain();
-         oscillator.connect(gain);
-         gain.connect(context.destination);
-         oscillator.type = "sine";
-         oscillator.frequency.setValueAtTime(880, context.currentTime);
-         oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.1);
-         gain.gain.setValueAtTime(0.1, context.currentTime);
-         gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
-         oscillator.start();
-         oscillator.stop(context.currentTime + 0.1);
-       } catch (e) {
-         // Silent fail
+     if (audioRef.current && isAudioUnlockedRef.current) {
+       audioRef.current.currentTime = 0;
+       audioRef.current.play().catch(() => {
+         // Fallback if audio.play fails even after unlock attempt
+         playWebAudioFallback();
+       });
+     } else {
+       playWebAudioFallback();
+     }
+   }, []);
+ 
+   const playWebAudioFallback = useCallback(() => {
+     try {
+       const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+       const oscillator = context.createOscillator();
+       const gain = context.createGain();
+       oscillator.connect(gain);
+       gain.connect(context.destination);
+       oscillator.type = "sine";
+       oscillator.frequency.setValueAtTime(880, context.currentTime);
+       oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.1);
+       gain.gain.setValueAtTime(0.1, context.currentTime);
+       gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+       oscillator.start();
+       oscillator.stop(context.currentTime + 0.1);
+     } catch (e) {
+       // Silent fail
+     }
+   }, []);
+ 
+   // Audio unlock logic
+   useEffect(() => {
+     if (typeof window === "undefined") return;
+ 
+     // Create audio element once
+     if (!audioRef.current) {
+       audioRef.current = new Audio("/chat-notification.mp3");
+       audioRef.current.load();
+     }
+ 
+     const unlock = () => {
+       if (isAudioUnlockedRef.current) return;
+       
+       if (audioRef.current) {
+         // Silent play to unlock
+         const p = audioRef.current.play();
+         if (p !== undefined) {
+           p.then(() => {
+             audioRef.current?.pause();
+             if (audioRef.current) audioRef.current.currentTime = 0;
+             isAudioUnlockedRef.current = true;
+             removeListeners();
+           }).catch(() => {
+             // Still blocked
+           });
+         }
        }
-     });
+     };
+ 
+     const removeListeners = () => {
+       window.removeEventListener("click", unlock);
+       window.removeEventListener("keydown", unlock);
+       window.removeEventListener("touchstart", unlock);
+     };
+ 
+     window.addEventListener("click", unlock);
+     window.addEventListener("keydown", unlock);
+     window.addEventListener("touchstart", unlock);
+ 
+     return () => removeListeners();
    }, []);
  
    // Messages and notifications channel

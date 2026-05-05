@@ -532,46 +532,8 @@ const getStatusColor = (status: string): string => {
          default: return <AlertCircle className="h-3 w-3 text-red-500" />;
        }
      };
-   return (
-     <div className="space-y-4">
-       {/* Summary Header */}
-       {activeItemsGlobal.length > 0 && (
-         <div className={cn(
-           "p-3 rounded-lg border flex items-center justify-between mb-2",
-           isReadyToAdvance ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
-         )}>
-           <div className="flex items-center gap-2">
-             {isReadyToAdvance ? (
-               <CheckCheck className="h-5 w-5 text-emerald-600" />
-             ) : (
-               <AlertCircle className="h-5 w-5 text-amber-600" />
-             )}
-             <div>
-               <h4 className={cn(
-                 "text-sm font-semibold",
-                 isReadyToAdvance ? "text-emerald-900" : "text-amber-900"
-               )}>
-                 {isReadyToAdvance ? "Pronto para avançar" : "Pendências impeditivas"}
-               </h4>
-               <p className="text-xs text-muted-foreground">
-                 {isReadyToAdvance 
-                   ? "Todos os itens obrigatórios foram concluídos." 
-                   : `Faltam ${blockingItems.length} itens obrigatórios para poder mover o card.`}
-               </p>
-             </div>
-           </div>
-           <div className="text-right">
-             <span className="text-xs font-medium text-muted-foreground block">Progresso total</span>
-             <span className="text-sm font-bold">
-               {activeItemsGlobal.filter(i => i.is_completed).length}/{activeItemsGlobal.length}
-             </span>
-           </div>
-         </div>
-       )}
- 
-       {activeChecklists.map((checklist) => renderChecklist(checklist, false))}
 
-    // Find party name for this checklist
+    let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
     let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
     
     if (!partyInfo && checklist.name) {

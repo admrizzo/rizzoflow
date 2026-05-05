@@ -38,18 +38,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  CheckSquare,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  EyeOff,
-  Eye,
-  Ban,
-  UserCheck,
-  Pencil,
-  CalendarIcon,
-  FileCheck,
+ import {
+   CheckSquare,
+   Trash2,
+   ChevronDown,
+   ChevronRight,
+   EyeOff,
+   Eye,
+   Ban,
+   UserCheck,
+   Pencil,
+   CalendarIcon,
+   FileCheck,
    DollarSign,
    User,
    Building,
@@ -58,7 +58,9 @@ import {
    ClipboardCheck,
    FileText,
    Info,
-} from 'lucide-react';
+   CheckCheck,
+ } from 'lucide-react';
+ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -496,68 +498,65 @@ const getStatusColor = (status: string): string => {
   const activeChecklists = checklists.filter(c => !isChecklistDismissed(c));
   const dismissedChecklistsList = checklists.filter(c => isChecklistDismissed(c));
 
-  const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
-    const items = checklist.items || [];
-    const activeItems = items.filter(i => !i.is_dismissed);
-    const completedCount = activeItems.filter((i) => i.is_completed).length;
-    const totalActive = activeItems.length;
-    const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
+   const getNatureBadge = (nature: string) => {
+     switch (nature) {
+       case 'obrigatorio':
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-700 border-red-200">Obrigatório</Badge>;
+       case 'condicional':
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-amber-200">Condicional</Badge>;
+       case 'conferencia':
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-blue-50 text-blue-700 border-blue-200">Conferência</Badge>;
+       case 'evidencia':
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-emerald-50 text-emerald-700 border-emerald-200">Evidência</Badge>;
+       case 'informativo':
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-slate-50 text-slate-700 border-slate-200">Informativo</Badge>;
+       default:
+         return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-700 border-red-200">Obrigatório</Badge>;
+     }
+   };
+
+   const getNatureIcon = (nature: string) => {
+     switch (nature) {
+       case 'obrigatorio': return <AlertCircle className="h-3 w-3 text-red-500" />;
+       case 'condicional': return <HelpCircle className="h-3 w-3 text-amber-500" />;
+       case 'conferencia': return <ClipboardCheck className="h-3 w-3 text-blue-500" />;
+       case 'evidencia': return <FileText className="h-3 w-3 text-emerald-500" />;
+       case 'informativo': return <Info className="h-3 w-3 text-slate-500" />;
+       default: return <AlertCircle className="h-3 w-3 text-red-500" />;
+     }
+   };
+
+   const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
+     const items = checklist.items || [];
+     const activeItems = items.filter(i => !i.is_dismissed);
+     const completedCount = activeItems.filter((i) => i.is_completed).length;
+     const totalActive = activeItems.length;
+     const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
      const isOpen = openChecklists[checklist.id] !== false;
      const shouldHideCompleted = hideCompleted[checklist.id] || false;
- 
-     const getNatureBadge = (nature: string) => {
-       switch (nature) {
-         case 'obrigatorio':
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-700 border-red-200">Obrigatório</Badge>;
-         case 'condicional':
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-amber-200">Condicional</Badge>;
-         case 'conferencia':
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-blue-50 text-blue-700 border-blue-200">Conferência</Badge>;
-         case 'evidencia':
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-emerald-50 text-emerald-700 border-emerald-200">Evidência</Badge>;
-         case 'informativo':
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-slate-50 text-slate-700 border-slate-200">Informativo</Badge>;
-         default:
-           return <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-700 border-red-200">Obrigatório</Badge>;
-       }
-     };
- 
-     const getNatureIcon = (nature: string) => {
-       switch (nature) {
-         case 'obrigatorio': return <AlertCircle className="h-3 w-3 text-red-500" />;
-         case 'condicional': return <HelpCircle className="h-3 w-3 text-amber-500" />;
-         case 'conferencia': return <ClipboardCheck className="h-3 w-3 text-blue-500" />;
-         case 'evidencia': return <FileText className="h-3 w-3 text-emerald-500" />;
-         case 'informativo': return <Info className="h-3 w-3 text-slate-500" />;
-         default: return <AlertCircle className="h-3 w-3 text-red-500" />;
-       }
-     };
 
-    let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
-    let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
-    
-    if (!partyInfo && checklist.name) {
-      const checklistNameUpper = checklist.name.toUpperCase();
-      if (checklistNameUpper.includes('COMPRADOR')) {
-        partyInfo = partyNames.find(p => p.partyType === 'comprador' && p.partyNumber === 1);
-      } else if (checklistNameUpper.includes('VENDEDOR') && !checklistNameUpper.includes('ANTERIOR')) {
-        partyInfo = partyNames.find(p => p.partyType === 'vendedor' && p.partyNumber === 1);
-      } else if (checklistNameUpper.includes('IMÓVEL') || checklistNameUpper.includes('IMOVEL')) {
-        // Try to match by number in checklist name (e.g., "Imóvel 1", "Imóvel 2")
-        const numMatch = checklist.name.match(/(\d+)/);
-        const partyNum = numMatch ? parseInt(numMatch[1]) : 1;
-        partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === partyNum);
-        // Fallback: if no numbered match, try first imovel party
-        if (!partyInfo) {
-          partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === 1);
-        }
-      }
-    }
-    
-    const formattedName = formatChecklistName(checklist.name);
-    const displayName = partyInfo?.name 
-      ? `${formattedName} (${partyInfo.name})`
-      : formattedName;
+     let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
+     
+     if (!partyInfo && checklist.name) {
+       const checklistNameUpper = checklist.name.toUpperCase();
+       if (checklistNameUpper.includes('COMPRADOR')) {
+         partyInfo = partyNames.find(p => p.partyType === 'comprador' && p.partyNumber === 1);
+       } else if (checklistNameUpper.includes('VENDEDOR') && !checklistNameUpper.includes('ANTERIOR')) {
+         partyInfo = partyNames.find(p => p.partyType === 'vendedor' && p.partyNumber === 1);
+       } else if (checklistNameUpper.includes('IMÓVEL') || checklistNameUpper.includes('IMOVEL')) {
+         const numMatch = checklist.name.match(/(\d+)/);
+         const partyNum = numMatch ? parseInt(numMatch[1]) : 1;
+         partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === partyNum);
+         if (!partyInfo) {
+           partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === 1);
+         }
+       }
+     }
+     
+     const formattedName = formatChecklistName(checklist.name);
+     const displayName = partyInfo?.name 
+       ? `${formattedName} (${partyInfo.name})`
+       : formattedName;
 
     const sortedItems = [...items].sort((a, b) => a.position - b.position);
     
@@ -1104,11 +1103,46 @@ const getStatusColor = (status: string): string => {
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-3">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
         <CheckSquare className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Listas de Verificação</span>
+        <span className="text-sm font-medium">Mapa de Segurança Operacional</span>
       </div>
+
+      {/* Summary Header */}
+      {activeItemsGlobal.length > 0 && (
+        <div className={cn(
+          "p-3 rounded-lg border flex items-center justify-between",
+          isReadyToAdvance ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
+        )}>
+          <div className="flex items-center gap-2">
+            {isReadyToAdvance ? (
+              <CheckCheck className="h-5 w-5 text-emerald-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            )}
+            <div>
+              <h4 className={cn(
+                "text-sm font-semibold",
+                isReadyToAdvance ? "text-emerald-900" : "text-amber-900"
+              )}>
+                {isReadyToAdvance ? "Pronto para avançar" : "Pendências impeditivas"}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                {isReadyToAdvance 
+                  ? "Todos os itens obrigatórios foram concluídos." 
+                  : `Faltam ${blockingItems.length} itens obrigatórios para poder mover o card.`}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-xs font-medium text-muted-foreground block">Progresso total</span>
+            <span className="text-sm font-bold">
+              {activeItemsGlobal.filter(i => i.is_completed).length}/{activeItemsGlobal.length}
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {activeChecklists.map((checklist) => renderChecklist(checklist, false))}

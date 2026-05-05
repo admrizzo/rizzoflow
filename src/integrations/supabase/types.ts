@@ -944,6 +944,63 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_attachments: {
+        Row: {
+          attachment_type: string
+          conversation_id: string
+          created_at: string | null
+          duration_seconds: number | null
+          file_name: string
+          file_size: number | null
+          id: string
+          message_id: string
+          mime_type: string | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          attachment_type: string
+          conversation_id: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          attachment_type?: string
+          conversation_id?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_attachments_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           content: string

@@ -367,6 +367,21 @@ interface UseProposalDraftOptions {
   enabled?: boolean;
 }
 
+ /**
+  * Fetch the most recent draft data for a proposal link
+  */
+ export async function useProposalDraftData(proposalLinkId: string | null | undefined): Promise<any | null> {
+   if (!proposalLinkId) return null;
+   const { data } = await supabase
+     .from('proposal_drafts')
+     .select('form_data')
+     .eq('proposal_link_id', proposalLinkId)
+     .order('updated_at', { ascending: false })
+     .limit(1)
+     .maybeSingle();
+   return data?.form_data || null;
+ }
+ 
 export function useProposalDraft({ codigoRobust, proposalLinkId, enabled = true }: UseProposalDraftOptions) {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('rascunho');

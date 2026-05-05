@@ -207,8 +207,16 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
   const { isAdmin, user } = useAuth();
   // Permissões operacionais centralizadas: admin, gestor e administrativo
   // podem editar; corretor permanece restrito.
-  const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo } = usePermissions();
-  const isEditor = canMoveCards;
+   const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo, user } = usePermissions();
+   const isEditor = canMoveCards;
+ 
+   // Permissions for proposal summary: admin, gestor, and linked brokers. NOT administrativo.
+   const canEditProposalSummary = !isAdministrativo && (
+     isAdminRole || 
+     isGestor || 
+     (user?.id === card?.responsible_user_id) || 
+     (user?.id === card?.capturing_broker_id)
+   );
   // Edição dos responsáveis internos: somente admin/gestor/administrativo.
   const canEditInternalBrokers = isAdminRole || isGestor || isAdministrativo;
   // Solicitação de correção: mesmo grupo (admin/gestor/administrativo).
@@ -1556,61 +1564,73 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resumo da proposta</h3>
                       </header>
                       <div className="p-4 space-y-4">
-                        {/* Proposal Responsible */}
-                        {!(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <UserCircle className="h-4 w-4 text-muted-foreground" />
-                              <Label className="text-sm font-medium">
-                                {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pela proposta'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                              </Label>
-                            </div>
-                            <Input
-                              value={localProposalResponsible}
-                              onChange={(e) => setLocalProposalResponsible(e.target.value)}
-                              onBlur={() => handleFieldBlur('proposal_responsible', localProposalResponsible, card.proposal_responsible)}
-                              placeholder={isAdministrativoBoard ? "Nome do responsável pelo imóvel" : "Nome do responsável"}
-                              disabled={!isEditor}
-                              className={!isAdministrativoBoard && !localProposalResponsible ? 'border-amber-400' : ''}
-                            />
-                            {!isAdministrativoBoard && !localProposalResponsible && (
-                              <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Negotiation Details (Textarea) */}
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <Label className="text-sm font-medium">
-                              {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
-                                ? 'Observações'
-                                : 'Acordo final / observações internas'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
-                            </Label>
-                          </div>
-                          <Textarea
-                            value={localNegotiationDetails}
-                            onChange={(e) => setLocalNegotiationDetails(e.target.value)}
-                            onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
-                            placeholder={
-                              isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
-                                ? ""
-                                : isAdministrativoBoard
-                                  ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
-                                  : "Resumo interno do que ficou acordado de fato na negociação (ex: valor final, condições aceitas, observações do gestor)"
-                            }
-                            rows={8}
-                            disabled={!isEditor}
-                            className={cn(
-                              'min-h-44 resize-y',
-                              !isAdministrativoBoard && !localNegotiationDetails ? 'border-amber-400' : ''
-                            )}
-                          />
-                          {!isAdministrativoBoard && !localNegotiationDetails && (
-                            <p className="text-xs text-amber-600 mt-1">Campo obrigatório</p>
-                          )}
-                        </div>
+                         {/* Responsável pelo Fechamento (Select) */}
+                         {!(isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)) && (
+                           <div>
+                             <div className="flex items-center gap-2 mb-2">
+                               <UserCircle className="h-4 w-4 text-muted-foreground" />
+                               <Label className="text-sm font-medium">
+                                 {isAdministrativoBoard ? 'Responsável pelo imóvel' : 'Responsável pelo fechamento da proposta'}
+                               </Label>
+                             </div>
+                             {canEditProposalSummary ? (
+                               <Select 
+                                 value={localProposalResponsible} 
+                                 onValueChange={(val) => {
+                                   setLocalProposalResponsible(val);
+                                   updateCard.mutate({ id: card.id, proposal_responsible: val || null });
+                                 }}
+                               >
+                                 <SelectTrigger className="w-full bg-background">
+                                   <SelectValue placeholder="Selecione o responsável" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {profiles.map(p => (
+                                     <SelectItem key={p.user_id} value={p.full_name || p.email || ''}>
+                                       {p.full_name || p.email}
+                                     </SelectItem>
+                                   ))}
+                                   {localProposalResponsible && !profiles.some(p => (p.full_name || p.email) === localProposalResponsible) && (
+                                     <SelectItem value={localProposalResponsible}>
+                                       {localProposalResponsible}
+                                     </SelectItem>
+                                   )}
+                                 </SelectContent>
+                               </Select>
+                             ) : (
+                               <div className="flex h-10 w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                                 {localProposalResponsible || "Nenhum responsável definido"}
+                               </div>
+                             )}
+                           </div>
+                         )}
+ 
+                         {/* Acordo Final / Observações Internas (Textarea) */}
+                         <div>
+                           <div className="flex items-center gap-2 mb-2">
+                             <FileText className="h-4 w-4 text-muted-foreground" />
+                             <Label className="text-sm font-medium">
+                               {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                                 ? 'Observações'
+                                 : 'Acordo final / observações internas'}
+                             </Label>
+                           </div>
+                           <Textarea
+                             value={localNegotiationDetails}
+                             onChange={(e) => setLocalNegotiationDetails(e.target.value)}
+                             onBlur={() => handleFieldBlur('negotiation_details', localNegotiationDetails, card.negotiation_details)}
+                             placeholder={
+                               isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
+                                 ? ""
+                                 : isAdministrativoBoard
+                                   ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
+                                   : "Resumo interno do que ficou acordado de fato na negociação (ex: valor final, condições aceitas, observações do gestor)"
+                             }
+                             rows={8}
+                             disabled={!canEditProposalSummary}
+                             className="min-h-44 resize-y"
+                           />
+                         </div>
                       </div>
                     </section>
                   </div>

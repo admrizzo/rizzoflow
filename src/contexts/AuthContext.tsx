@@ -225,12 +225,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loadingWatchdog = window.setTimeout(() => {
       if (!mounted) return;
       // Se ainda está carregando e não temos usuário, libera.
-      setIsLoading((prev) => {
-        if (prev) {
-       console.warn('[Auth] Watchdog: liberando loading após timeout de 8s para evitar bloqueio da interface. Verifique a conexão com o Supabase.');
-        }
-        return false;
-      });
+       if (isLoading) {
+         console.warn('[Auth] Watchdog: timeout de 8s atingido. Verificando estado da rede...');
+         // Tenta um último getSession forçado antes de liberar
+         supabase.auth.getSession().then(({ data: { session } }) => {
+           if (!session) {
+             console.warn('[Auth] Watchdog: sessão não encontrada após timeout. Liberando tela.');
+             setIsLoading(false);
+           } else {
+             console.info('[Auth] Watchdog: sessão recuperada no limite.');
+           }
+         }).catch(() => {
+           setIsLoading(false);
+         });
+       }
     }, 8000);
 
     // getSession pode REJEITAR a promise em "Failed to fetch" — sempre cercar com try/catch.

@@ -534,6 +534,55 @@ const getStatusColor = (status: string): string => {
   const activeChecklists = checklists.filter(c => !isChecklistDismissed(c));
   const dismissedChecklistsList = checklists.filter(c => isChecklistDismissed(c));
 
+  // Get current column position for stage grouping
+  const currentColumn = columns.find(col => col.id === currentColumnId);
+  const currentColumnPosition = currentColumn?.position ?? 0;
+
+  // Group checklists into mutually exclusive groups
+  const groupedChecklistIds = new Set<string>();
+
+  const currentStageChecklists = activeChecklists.filter(c => {
+    if (c && (isChecklistInCurrentStage(c) || c.is_global_blocker)) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  const nextStageChecklists = activeChecklists.filter(c => {
+    if (!c || groupedChecklistIds.has(c.id)) return false;
+    const col = columns.find(col => col.id === c.column_id);
+    if (c.column_id && col && col.position > currentColumnPosition) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  const previousStageChecklists = activeChecklists.filter(c => {
+    if (!c || groupedChecklistIds.has(c.id)) return false;
+    const col = columns.find(col => col.id === c.column_id);
+    if (c.column_id && col && col.position < currentColumnPosition) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  // Any remaining active checklist with a column_id that wasn't grouped (fallback)
+  const otherStageChecklists = activeChecklists.filter(c => {
+    if (!c || groupedChecklistIds.has(c.id)) return false;
+    if (c.column_id !== null) {
+      groupedChecklistIds.add(c.id);
+      return true;
+    }
+    return false;
+  });
+
+  const additionalChecklists = activeChecklists.filter(c => {
+    return c && !groupedChecklistIds.has(c.id);
+  });
+
    const getNatureBadge = (nature: string) => {
      switch (nature) {
        case 'obrigatorio':

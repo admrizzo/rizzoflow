@@ -564,20 +564,20 @@ const getStatusColor = (status: string): string => {
      const isOpen = openChecklists[checklist.id] !== false;
      const shouldHideCompleted = hideCompleted[checklist.id] || false;
 
-     let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
+      let partyInfo = partyNames.find(p => p && p.checklistId === checklist.id);
      
      if (!partyInfo && checklist.name) {
        const checklistNameUpper = checklist.name.toUpperCase();
        if (checklistNameUpper.includes('COMPRADOR')) {
-         partyInfo = partyNames.find(p => p.partyType === 'comprador' && p.partyNumber === 1);
+          partyInfo = partyNames.find(p => p && p.partyType === 'comprador' && p.partyNumber === 1);
        } else if (checklistNameUpper.includes('VENDEDOR') && !checklistNameUpper.includes('ANTERIOR')) {
-         partyInfo = partyNames.find(p => p.partyType === 'vendedor' && p.partyNumber === 1);
+          partyInfo = partyNames.find(p => p && p.partyType === 'vendedor' && p.partyNumber === 1);
        } else if (checklistNameUpper.includes('IMÓVEL') || checklistNameUpper.includes('IMOVEL')) {
          const numMatch = checklist.name.match(/(\d+)/);
          const partyNum = numMatch ? parseInt(numMatch[1]) : 1;
-         partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === partyNum);
+          partyInfo = partyNames.find(p => p && p.partyType === 'imovel' && p.partyNumber === partyNum);
          if (!partyInfo) {
-           partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === 1);
+            partyInfo = partyNames.find(p => p && p.partyType === 'imovel' && p.partyNumber === 1);
          }
        }
      }

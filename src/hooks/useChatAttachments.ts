@@ -7,7 +7,6 @@
  export type ChatAttachment = Database["public"]["Tables"]["chat_message_attachments"]["Row"];
  
  export function useChatAttachments(conversationId?: string) {
-   const { user } = useAuth();
    const queryClient = useQueryClient();
    const { toast } = useToast();
  

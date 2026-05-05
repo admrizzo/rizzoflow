@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
- import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2 } from "lucide-react";
+  import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2 } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,23 @@ import { useQueryClient } from "@tanstack/react-query";
          ) : (
            <div className="flex h-32 items-center justify-center">
              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+           </div>
+         )}
+       </div>
+     );
+   }
+ 
+   if (attachment.attachment_type === 'audio') {
+     return (
+       <div className="mt-2 w-full max-w-xs">
+         {signedUrl ? (
+           <audio controls className="h-10 w-full" src={signedUrl}>
+             Seu navegador não suporta o elemento de áudio.
+           </audio>
+         ) : (
+           <div className="flex items-center gap-2 rounded-lg border border-border/20 bg-background/50 p-2">
+             <Loader2 className="h-4 w-4 animate-spin" />
+             <span className="text-[10px]">Carregando áudio...</span>
            </div>
          )}
        </div>
@@ -87,10 +104,15 @@ function initials(name?: string | null) {
   const { data: conversations = [] } = useChatConversations();
   const conv = conversations.find((c) => c.id === conversationId);
    const [text, setText] = useState("");
-   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-   const fileInputRef = useRef<HTMLInputElement>(null);
-   const imageInputRef = useRef<HTMLInputElement>(null);
-  const [sending, setSending] = useState(false);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+   const [sending, setSending] = useState(false);
+   const [isRecording, setIsRecording] = useState(false);
+   const [recordingDuration, setRecordingDuration] = useState(0);
+   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+   const recordingChunksRef = useRef<Blob[]>([]);
+   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,9 +127,29 @@ function initials(name?: string | null) {
     }
   };
 
-  useEffect(() => {
-    adjustHeight();
-  }, [text]);
+   useEffect(() => {
+     adjustHeight();
+   }, [text]);
+ 
+   useEffect(() => {
+     if (isRecording) {
+       timerRef.current = setInterval(() => {
+         setRecordingDuration(prev => {
+           if (prev >= 300) { // 5 minutes limit
+             stopRecording();
+             return prev;
+           }
+           return prev + 1;
+         });
+       }, 1000);
+     } else {
+       if (timerRef.current) clearInterval(timerRef.current);
+       setRecordingDuration(0);
+     }
+     return () => {
+       if (timerRef.current) clearInterval(timerRef.current);
+     };
+   }, [isRecording]);
  
    // autoscroll on message change
    useLayoutEffect(() => {
@@ -189,6 +231,57 @@ function initials(name?: string | null) {
        return;
      }
      setSelectedFiles(prev => [...prev, ...files]);
+   };
+ 
+   const startRecording = async () => {
+     try {
+       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+       const mediaRecorder = new MediaRecorder(stream);
+       mediaRecorderRef.current = mediaRecorder;
+       recordingChunksRef.current = [];
+ 
+       mediaRecorder.ondataavailable = (e) => {
+         if (e.data.size > 0) {
+           recordingChunksRef.current.push(e.data);
+         }
+       };
+ 
+       mediaRecorder.onstop = async () => {
+         const audioBlob = new Blob(recordingChunksRef.current, { type: 'audio/webm' });
+         if (audioBlob.size > 0) {
+           const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+           setSelectedFiles(prev => [...prev, audioFile]);
+         }
+         stream.getTracks().forEach(track => track.stop());
+       };
+ 
+       mediaRecorder.start();
+       setIsRecording(true);
+     } catch (err) {
+       console.error("Microphone permission denied:", err);
+       toast.error("Permissão do microfone negada ou não disponível.");
+     }
+   };
+ 
+   const stopRecording = () => {
+     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+       mediaRecorderRef.current.stop();
+     }
+     setIsRecording(false);
+   };
+ 
+   const cancelRecording = () => {
+     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+       mediaRecorderRef.current.stop();
+       recordingChunksRef.current = []; // Discard chunks
+     }
+     setIsRecording(false);
+   };
+ 
+   const formatDuration = (seconds: number) => {
+     const mins = Math.floor(seconds / 60);
+     const secs = seconds % 60;
+     return `${mins}:${secs.toString().padStart(2, '0')}`;
    };
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
@@ -340,82 +433,117 @@ function initials(name?: string | null) {
               className="w-full bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-[13px] min-h-[44px] max-h-[120px] outline-none placeholder:text-muted-foreground/60 leading-normal"
             />
             
-            <div className="flex items-center justify-between px-2 pb-2">
-              <div className="flex items-center gap-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  multiple
-                  onChange={handleFileSelect}
-                />
-                <input
-                  type="file"
-                  ref={imageInputRef}
-                  className="hidden"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                />
- 
-                <Tooltip>
-                  <TooltipTrigger asChild>
+            <div className="flex items-center justify-between px-2 pb-2 min-h-[40px]">
+              {isRecording ? (
+                <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-left-2 duration-300">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full border border-red-100 shadow-sm">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                    </span>
+                    <span className="text-[11px] font-bold tabular-nums">Gravando {formatDuration(recordingDuration)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                          onClick={cancelRecording}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Cancelar</TooltipContent>
+                    </Tooltip>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
+                      className="h-8 w-8 text-red-600 hover:bg-red-50 transition-colors"
+                      onClick={stopRecording}
                     >
-                      <Paperclip className="h-4 w-4" />
+                      <StopCircle className="h-5 w-5" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Anexar arquivo</TooltipContent>
-                </Tooltip>
- 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Anexar imagem</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => toast.info("Recurso em preparação")}
-                    >
-                      <Mic className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Gravar áudio (Em breve)</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => toast.info("Recurso em preparação")}
-                    >
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Emojis (Em breve)</TooltipContent>
-                </Tooltip>
-              </div>
-              
-              <div className="flex items-center gap-2">
+                  </div>
+                </div>
+                 ) : (
+                   <div className="flex items-center gap-1">
+                     <input
+                       type="file"
+                       ref={fileInputRef}
+                       className="hidden"
+                       multiple
+                       onChange={handleFileSelect}
+                     />
+                     <input
+                       type="file"
+                       ref={imageInputRef}
+                       className="hidden"
+                       multiple
+                       accept="image/*"
+                       onChange={handleFileSelect}
+                     />
+     
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                           onClick={() => fileInputRef.current?.click()}
+                         >
+                           <Paperclip className="h-4 w-4" />
+                         </Button>
+                       </TooltipTrigger>
+                       <TooltipContent side="top">Anexar arquivo</TooltipContent>
+                     </Tooltip>
+     
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                           onClick={() => imageInputRef.current?.click()}
+                         >
+                           <ImageIcon className="h-4 w-4" />
+                         </Button>
+                       </TooltipTrigger>
+                       <TooltipContent side="top">Anexar imagem</TooltipContent>
+                     </Tooltip>
+     
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                           onClick={startRecording}
+                         >
+                           <Mic className="h-4 w-4" />
+                         </Button>
+                       </TooltipTrigger>
+                       <TooltipContent side="top">Gravar áudio</TooltipContent>
+                     </Tooltip>
+   
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                           onClick={() => toast.info("Recurso em preparação")}
+                         >
+                           <Smile className="h-4 w-4" />
+                         </Button>
+                       </TooltipTrigger>
+                       <TooltipContent side="top">Emojis (Em breve)</TooltipContent>
+                     </Tooltip>
+                   </div>
+                 )}
+               
+               <div className="flex items-center gap-2">
                 <Button 
                   onClick={send} 
                    disabled={(!text.trim() && selectedFiles.length === 0) || sending} 

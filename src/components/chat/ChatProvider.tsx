@@ -1,4 +1,4 @@
- import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+  import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,7 +28,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
    const [unreadTotal, setUnreadTotal] = useState(0);
    const [lastUpdate, setLastUpdate] = useState(Date.now());
-     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+    const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+    const lastSoundTimeRef = useRef<number>(0);
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -98,6 +99,33 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      };
    }, [user]);
  
+   const playNotificationSound = useCallback(() => {
+     const now = Date.now();
+     if (now - lastSoundTimeRef.current < 2000) return;
+     lastSoundTimeRef.current = now;
+ 
+     const audio = new Audio("/chat-notification.mp3");
+     audio.play().catch(() => {
+       // Autoplay blocked fallback or file missing
+       try {
+         const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+         const oscillator = context.createOscillator();
+         const gain = context.createGain();
+         oscillator.connect(gain);
+         gain.connect(context.destination);
+         oscillator.type = "sine";
+         oscillator.frequency.setValueAtTime(880, context.currentTime);
+         oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.1);
+         gain.gain.setValueAtTime(0.1, context.currentTime);
+         gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.1);
+         oscillator.start();
+         oscillator.stop(context.currentTime + 0.1);
+       } catch (e) {
+         // Silent fail
+       }
+     });
+   }, []);
+ 
    // Messages and notifications channel
    useEffect(() => {
      if (!user) return;
@@ -105,11 +133,30 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      const msgChannel = supabase.channel("chat-messages");
  
      msgChannel
-       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, async (payload) => {
          const newMessage = payload.new as MessageRow;
          setLastUpdate(Date.now());
+         
          if (newMessage && newMessage.conversation_id) {
            qc.invalidateQueries({ queryKey: ["chat", "messages", newMessage.conversation_id] });
+           
+           // Sound logic
+           if (newMessage.sender_id !== user.id) {
+             // Check if user is participant (security/filter)
+             const { data: participation } = await supabase
+               .from("chat_participants")
+               .select("id")
+               .eq("conversation_id", newMessage.conversation_id)
+               .eq("user_id", user.id)
+               .maybeSingle();
+ 
+             if (participation) {
+               // Play sound if chat is closed OR active conversation is different
+               if (!isOpen || activeConversationId !== newMessage.conversation_id) {
+                 playNotificationSound();
+               }
+             }
+           }
          }
          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
        })
@@ -125,7 +172,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      return () => {
        msgChannel.unsubscribe();
      };
-   }, [user, refreshUnread, qc]);
+   }, [user, refreshUnread, qc, isOpen, activeConversationId, playNotificationSound]);
 
   const value = useMemo<ChatContextValue>(
     () => ({

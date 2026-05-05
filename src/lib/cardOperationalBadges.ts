@@ -105,21 +105,31 @@ export function getCardOperationalBadges(
   }
 
    // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
-   const allItems = card.checklists?.flatMap(cl => cl.items || []) || [];
-   const activeItems = allItems.filter(i => !i.is_dismissed);
+   const allChecklists = card.checklists || [];
+   const allItems = allChecklists.flatMap(cl => cl.items || []) || [];
+   const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
-   if (activeItems.length > 0) {
-     const blockingPendingItems = activeItems.filter(i => 
-       (i.operational_nature === 'obrigatorio' || !i.operational_nature) && !i.is_completed
-     );
-     const totalBlocking = activeItems.filter(i => (i.operational_nature === 'obrigatorio' || !i.operational_nature)).length;
-     const completedBlocking = totalBlocking - blockingPendingItems.length;
-     const isReady = blockingPendingItems.length === 0;
+   if (activeItemsGlobal.length > 0) {
+     const currentColumnId = card.column_id;
+     
+     // 3.1 Pendências impeditivas (Etapa atual + Global Blocker)
+     const stageBlockingPending = activeItemsGlobal.filter(i => {
+       const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+       if (!isBlockingNature || i.is_completed) return false;
+       
+       const parentChecklist = allChecklists.find(cl => cl.id === i.checklist_id);
+       const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+       const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+       
+       return isGlobal || isCurrentStage;
+     });
+ 
+     const isReady = stageBlockingPending.length === 0;
  
      if (isReady) {
        badges.push({
          key: 'checklist_ready',
-         label: 'PRONTO',
+         label: 'PRONTO PARA ETAPA',
          tone: 'emerald',
          icon: CheckCheck,
          priority: 65,
@@ -127,8 +137,8 @@ export function getCardOperationalBadges(
        });
      } else {
        badges.push({
-         key: 'checklist_pending',
-         label: `${blockingPendingItems.length} PENDENTE(S)`,
+         key: 'checklist_pending_stage',
+         label: `${stageBlockingPending.length} PENDÊNCIA(S) ETAPA`,
          tone: 'amber',
          icon: AlertTriangle,
          priority: 65,
@@ -136,11 +146,11 @@ export function getCardOperationalBadges(
        });
      }
  
-     // Progresso detalhado (opcional, pode ser mantido em segundo plano ou removido se poluir)
-     const completedTotal = activeItems.filter(i => i.is_completed).length;
+     // 3.2 Progresso total (Secundário)
+     const completedTotal = activeItemsGlobal.filter(i => i.is_completed).length;
      badges.push({
        key: 'checklist_total_progress',
-       label: `${completedTotal}/${activeItems.length}`,
+       label: `TOTAL: ${completedTotal}/${activeItemsGlobal.length}`,
        tone: 'slate',
        icon: CheckSquare,
        priority: 60,

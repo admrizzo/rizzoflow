@@ -1259,37 +1259,51 @@ const getStatusColor = (status: string): string => {
 
       <div className="space-y-6">
         {/* current stage checklists */}
-         {activeChecklists.some(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker)) && (
+        {currentStageChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
-                {activeChecklists
-                  .filter(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker))
-                  .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {currentStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
 
         {/* next stage checklists */}
-         {activeChecklists.some(c => c && c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker) && (
+        {nextStageChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
-                {activeChecklists
-                  .filter(c => c && (c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker))
-                  .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {nextStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
+
+        {/* previous stage checklists */}
+        {previousStageChecklists.length > 0 && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapas Anteriores</h5>
+            <div className="space-y-3">
+              {previousStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
+            </div>
+          </div>
+        )}
+
+        {/* other stage checklists (fallback) */}
+        {otherStageChecklists.length > 0 && (
+          <div className="space-y-3">
+            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Outras Etapas</h5>
+            <div className="space-y-3">
+              {otherStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
 
         {/* checklists without column_id (unassigned) */}
-         {activeChecklists.some(c => c && c.column_id === null && !c.is_global_blocker) && (
+        {additionalChecklists.length > 0 && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">
-               {activeChecklists
-                 .filter(c => c && (c.column_id === null && !c.is_global_blocker))
-                 .map((checklist) => checklist && renderChecklist(checklist, false))}
+              {additionalChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

@@ -1942,6 +1942,8 @@ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogP
             <ChecklistSection 
               checklists={filteredChecklists} 
               cardId={card.id} 
+               currentColumnId={card.column_id}
+               currentColumnName={currentColumn?.name}
               partyNames={vendaParties.map(p => ({
                 checklistId: p.checklist_id || '',
                 partyType: p.party_type,

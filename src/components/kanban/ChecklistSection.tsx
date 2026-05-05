@@ -85,11 +85,13 @@ interface PartyNameInfo {
   name: string | null;
 }
 
-interface ChecklistSectionProps {
-  checklists: ChecklistWithItemsExtended[];
-  cardId: string;
-  partyNames?: PartyNameInfo[];
-}
+ interface ChecklistSectionProps {
+   checklists: ChecklistWithItemsExtended[];
+   cardId: string;
+   partyNames?: PartyNameInfo[];
+   currentColumnId?: string | null;
+   currentColumnName?: string | null;
+ }
 
 // Helper function to format checklist names (convert from UPPERCASE to Title Case)
 const formatChecklistName = (name: string): string => {
@@ -192,35 +194,76 @@ const getStatusColor = (status: string): string => {
   return 'bg-gray-100 text-gray-700';
 };
 
- export function ChecklistSection({ checklists, cardId, partyNames = [] }: ChecklistSectionProps) {
-   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
+ export function ChecklistSection({ 
+   checklists, 
+   cardId, 
+   partyNames = [],
+   currentColumnId: propColumnId,
+   currentColumnName
+ }: ChecklistSectionProps) {
+   // Use provided columnId
+   const currentColumnId = propColumnId || null;
+ 
    const allItems = checklists.flatMap(c => (c && c.items) || []);
    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
-   
+ 
+   // Helper to check if a checklist belongs to the current stage
+   const isChecklistInCurrentStage = (checklist: ChecklistWithItemsExtended) => {
+     if (!checklist) return false;
+     
+     // 1. Direct match by column_id
+     if (currentColumnId && checklist.column_id === currentColumnId) {
+       return true;
+     }
+ 
+     // 2. Fallback by name comparison if we have currentColumnName
+     if (currentColumnName && checklist.name) {
+       const colName = currentColumnName.toLowerCase().trim();
+       const clName = checklist.name.toLowerCase().trim();
+       if (clName.includes(colName) || colName.includes(clName)) {
+         return true;
+       }
+     }
+ 
+     return false;
+   };
+ 
+   // Helper to check if an item belongs to the current stage
+   const isItemInCurrentStage = (item: ChecklistItemExtended) => {
+     if (!item) return false;
+     
+     // 1. Direct match by column_id
+     if (currentColumnId && item.column_id === currentColumnId) {
+       return true;
+     }
+ 
+     // 2. Fallback to parent checklist's stage
+     const parentChecklist = checklists?.find(cl => cl && cl.id === item.checklist_id);
+     if (parentChecklist) {
+       return isChecklistInCurrentStage(parentChecklist);
+     }
+ 
+     return false;
+   };
+ 
    const stageBlockingPending = activeItemsGlobal.filter(i => {
      if (!i) return false;
+     
+     // Must be blocking/mandatory
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
      const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-     if (!parentChecklist && !i.column_id) return false; // Fail safe
-
-     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      
-     return isGlobal || isCurrentStage;
+     // Include if it's in current stage OR if it's an explicit global blocker
+     const isCurrentStage = isItemInCurrentStage(i);
+     const isGlobalBlocker = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     
+     return isCurrentStage || isGlobalBlocker;
    });
-
-   const stageTotalItems = activeItemsGlobal.filter(i => {
-     if (!i) return false;
-     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-     if (!parentChecklist && !i.column_id) return false; // Fail safe
-
-     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-     return isGlobal || isCurrentStage;
-   });
-
+ 
+   const stageTotalItems = activeItemsGlobal.filter(i => isItemInCurrentStage(i));
+   
    const isReadyToAdvance = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
  
   const { 
@@ -242,18 +285,24 @@ const getStatusColor = (status: string): string => {
 
    const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
    
-   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
-     // Only open current stage checklists by default
-     const initial: Record<string, boolean> = {};
-     if (checklists) {
-       checklists.forEach(c => {
-         if (!c) return;
-         const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
-         initial[c.id] = isCurrentStage;
+   const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>({});
+ 
+   // Initialize open state when checklists or stage info changes
+   useEffect(() => {
+     if (checklists && checklists.length > 0) {
+       setOpenChecklists(prev => {
+         const initial: Record<string, boolean> = { ...prev };
+         checklists.forEach(c => {
+           if (!c) return;
+           // If not already explicitly toggled by user, open current stage and global blockers
+           if (initial[c.id] === undefined) {
+             initial[c.id] = isChecklistInCurrentStage(c) || c.is_global_blocker;
+           }
+         });
+         return initial;
        });
      }
-     return initial;
-   });
+   }, [checklists, currentColumnId, currentColumnName]);
   
   // Track dismissed checklists locally for immediate UI feedback
   const [dismissedChecklists, setDismissedChecklists] = useState<Record<string, boolean>>({});
@@ -557,7 +606,7 @@ const getStatusColor = (status: string): string => {
        if (!checklist) return null;
        const items = checklist.items || [];
        const activeItems = items.filter(i => i && !i.is_dismissed);
-       const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
+       const isCurrentStageChecklist = isChecklistInCurrentStage(checklist) || checklist.is_global_blocker;
      const completedCount = activeItems.filter((i) => i.is_completed).length;
      const totalActive = activeItems.length;
      const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
@@ -764,7 +813,7 @@ const getStatusColor = (status: string): string => {
                                        >
                                          {item.content}
                                        </span>
-                                       {(isCurrentStageChecklist || item.column_id === currentColumnId || item.is_global_blocker) 
+                                        {(isItemInCurrentStage(item) || item.is_global_blocker) 
                                          ? getNatureBadge(item.operational_nature)
                                          : item.operational_nature !== 'obrigatorio' && getNatureBadge(item.operational_nature)
                                        }
@@ -1186,25 +1235,25 @@ const getStatusColor = (status: string): string => {
 
       <div className="space-y-6">
         {/* current stage checklists */}
-         {activeChecklists.some(c => c && (c.column_id === currentColumnId || c.is_global_blocker)) && (
+         {activeChecklists.some(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker)) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
-               {activeChecklists
-                 .filter(c => c && (c.column_id === currentColumnId || c.is_global_blocker))
-                 .map((checklist) => checklist && renderChecklist(checklist, false))}
+                {activeChecklists
+                  .filter(c => c && (isChecklistInCurrentStage(c) || c.is_global_blocker))
+                  .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
 
         {/* next stage checklists */}
-         {activeChecklists.some(c => c && c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
+         {activeChecklists.some(c => c && c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
-               {activeChecklists
-                 .filter(c => c && (c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker))
-                 .map((checklist) => checklist && renderChecklist(checklist, false))}
+                {activeChecklists
+                  .filter(c => c && (c.column_id !== null && !isChecklistInCurrentStage(c) && !c.is_global_blocker))
+                  .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

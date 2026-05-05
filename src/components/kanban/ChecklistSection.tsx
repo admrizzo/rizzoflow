@@ -193,14 +193,16 @@ const getStatusColor = (status: string): string => {
 };
 
  export function ChecklistSection({ checklists, cardId, partyNames = [] }: ChecklistSectionProps) {
-   const allItems = checklists.flatMap(c => c.items || []);
-   const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
+   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
+   const allItems = checklists.flatMap(c => (c && c.items) || []);
+   const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
    
    const stageBlockingPending = activeItemsGlobal.filter(i => {
+     if (!i) return false;
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
-     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
      if (!parentChecklist && !i.column_id) return false; // Fail safe
 
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
@@ -210,7 +212,8 @@ const getStatusColor = (status: string): string => {
    });
 
    const stageTotalItems = activeItemsGlobal.filter(i => {
-     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!i) return false;
+     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
      if (!parentChecklist && !i.column_id) return false; // Fail safe
 
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
@@ -238,13 +241,13 @@ const getStatusColor = (status: string): string => {
   const { isEditor, isAdmin, user } = useAuth();
 
    const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
-   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
    
    const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
      // Only open current stage checklists by default
      const initial: Record<string, boolean> = {};
      if (checklists) {
        checklists.forEach(c => {
+         if (!c) return;
          const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
          initial[c.id] = isCurrentStage;
        });
@@ -268,18 +271,19 @@ const getStatusColor = (status: string): string => {
   };
   
   // Check if a checklist is fully dismissed (all items dismissed)
-  const isChecklistDismissed = (checklist: ChecklistWithItemsExtended) => {
-    if (dismissedChecklists[checklist.id]) return true;
-    const items = checklist.items || [];
-    if (items.length === 0) return false;
-    return items.every(item => item.is_dismissed);
-  };
+   const isChecklistDismissed = (checklist: ChecklistWithItemsExtended) => {
+     if (!checklist || !checklist.id) return false;
+     if (dismissedChecklists[checklist.id]) return true;
+     const items = checklist.items || [];
+     if (items.length === 0) return false;
+     return items.every(item => item && item.is_dismissed);
+   };
   
   // Clear local overrides when server state catches up
   useEffect(() => {
     if (Object.keys(localCompletedState).length === 0) return;
     
-    const allItems = checklists.flatMap(c => c.items || []);
+     const allItems = checklists.flatMap(c => (c && c.items) || []);
     const toRemove: string[] = [];
     
     for (const itemId of Object.keys(localCompletedState)) {
@@ -301,12 +305,13 @@ const getStatusColor = (status: string): string => {
   // Sync dismissed checklists state with server data
   useEffect(() => {
     const newDismissedState: Record<string, boolean> = {};
-    checklists.forEach(c => {
-      const items = c.items || [];
-      if (items.length > 0 && items.every(item => item.is_dismissed)) {
-        newDismissedState[c.id] = true;
-      }
-    });
+     checklists.forEach(c => {
+       if (!c) return;
+       const items = c.items || [];
+       if (items.length > 0 && items.every(item => item && item.is_dismissed)) {
+         newDismissedState[c.id] = true;
+       }
+     });
     setDismissedChecklists(newDismissedState);
   }, [checklists]);
   
@@ -559,20 +564,20 @@ const getStatusColor = (status: string): string => {
      const isOpen = openChecklists[checklist.id] !== false;
      const shouldHideCompleted = hideCompleted[checklist.id] || false;
 
-     let partyInfo = partyNames.find(p => p.checklistId === checklist.id);
+      let partyInfo = partyNames.find(p => p && p.checklistId === checklist.id);
      
      if (!partyInfo && checklist.name) {
        const checklistNameUpper = checklist.name.toUpperCase();
        if (checklistNameUpper.includes('COMPRADOR')) {
-         partyInfo = partyNames.find(p => p.partyType === 'comprador' && p.partyNumber === 1);
+          partyInfo = partyNames.find(p => p && p.partyType === 'comprador' && p.partyNumber === 1);
        } else if (checklistNameUpper.includes('VENDEDOR') && !checklistNameUpper.includes('ANTERIOR')) {
-         partyInfo = partyNames.find(p => p.partyType === 'vendedor' && p.partyNumber === 1);
+          partyInfo = partyNames.find(p => p && p.partyType === 'vendedor' && p.partyNumber === 1);
        } else if (checklistNameUpper.includes('IMÓVEL') || checklistNameUpper.includes('IMOVEL')) {
          const numMatch = checklist.name.match(/(\d+)/);
          const partyNum = numMatch ? parseInt(numMatch[1]) : 1;
-         partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === partyNum);
+          partyInfo = partyNames.find(p => p && p.partyType === 'imovel' && p.partyNumber === partyNum);
          if (!partyInfo) {
-           partyInfo = partyNames.find(p => p.partyType === 'imovel' && p.partyNumber === 1);
+            partyInfo = partyNames.find(p => p && p.partyType === 'imovel' && p.partyNumber === 1);
          }
        }
      }
@@ -582,13 +587,15 @@ const getStatusColor = (status: string): string => {
        ? `${formattedName} (${partyInfo.name})`
        : formattedName;
 
-    const sortedItems = [...items].sort((a, b) => a.position - b.position);
-    
-    const visibleItems = shouldHideCompleted 
-      ? sortedItems.filter(i => !i.is_completed && !i.is_dismissed)
-      : sortedItems.filter(i => !i.is_dismissed);
-    
-    const dismissedItems = sortedItems.filter(i => i.is_dismissed);
+     const sortedItems = [...items]
+       .filter(i => i !== null && i !== undefined)
+       .sort((a, b) => (a.position || 0) - (b.position || 0));
+     
+     const visibleItems = shouldHideCompleted 
+       ? sortedItems.filter(i => i && !i.is_completed && !i.is_dismissed)
+       : sortedItems.filter(i => i && !i.is_dismissed);
+     
+     const dismissedItems = sortedItems.filter(i => i && i.is_dismissed);
 
     return (
       <div key={checklist.id} className={cn(
@@ -1179,7 +1186,7 @@ const getStatusColor = (status: string): string => {
 
       <div className="space-y-6">
         {/* current stage checklists */}
-        {activeChecklists.some(c => c.column_id === currentColumnId || c.is_global_blocker) && (
+         {activeChecklists.some(c => c && (c.column_id === currentColumnId || c.is_global_blocker)) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
@@ -1191,7 +1198,7 @@ const getStatusColor = (status: string): string => {
         )}
 
         {/* next stage checklists */}
-        {activeChecklists.some(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
+         {activeChecklists.some(c => c && c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
@@ -1203,7 +1210,7 @@ const getStatusColor = (status: string): string => {
         )}
 
         {/* checklists without column_id (unassigned) */}
-        {activeChecklists.some(c => c.column_id === null && !c.is_global_blocker) && (
+         {activeChecklists.some(c => c && c.column_id === null && !c.is_global_blocker) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">

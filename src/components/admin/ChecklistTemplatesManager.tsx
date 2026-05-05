@@ -84,7 +84,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
   const [configuringItem, setConfiguringItem] = useState<ChecklistItemTemplate | null>(null);
   const [configRequiresDate, setConfigRequiresDate] = useState(false);
   const [configRequiresStatus, setConfigRequiresStatus] = useState(false);
-  const [configRequiresObservation, setConfigRequiresObservation] = useState(false);
+   const [configRequiresObservation, setConfigRequiresObservation] = useState(false);
+   const [configOperationalNature, setConfigOperationalNature] = useState<'obrigatorio' | 'condicional' | 'conferencia' | 'evidencia' | 'informativo'>('obrigatorio');
   const [configStatusOptions, setConfigStatusOptions] = useState<string[]>([]);
   const [newStatusOption, setNewStatusOption] = useState('');
 
@@ -209,7 +210,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     setConfiguringItem(item);
     setConfigRequiresDate(item.requires_date || false);
     setConfigRequiresStatus(item.requires_status || false);
-    setConfigRequiresObservation(item.requires_observation || false);
+     setConfigRequiresObservation(item.requires_observation || false);
+     setConfigOperationalNature(item.operational_nature || 'obrigatorio');
     setConfigStatusOptions(item.status_options || []);
     setNewStatusOption('');
     setConfigDialogOpen(true);
@@ -223,7 +225,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
       id: configuringItem.id,
       requires_date: configRequiresDate,
       requires_status: configRequiresStatus,
-      requires_observation: configRequiresObservation,
+       requires_observation: configRequiresObservation,
+       operational_nature: configOperationalNature,
       status_options: configStatusOptions,
     });
     
@@ -250,7 +253,23 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
     const badges = [];
     if (item.requires_date) badges.push({ icon: CalendarDays, label: 'Data', color: 'bg-blue-100 text-blue-700' });
     if (item.requires_status) badges.push({ icon: ListCheck, label: 'Status', color: 'bg-green-100 text-green-700' });
-    if (item.requires_observation) badges.push({ icon: FileText, label: 'Obs', color: 'bg-amber-100 text-amber-700' });
+     if (item.requires_observation) badges.push({ icon: FileText, label: 'Obs', color: 'bg-amber-100 text-amber-700' });
+     
+     const natureMap = {
+       obrigatorio: { label: 'Obrigatório', color: 'bg-red-100 text-red-700' },
+       condicional: { label: 'Condicional', color: 'bg-amber-100 text-amber-700' },
+       conferencia: { label: 'Conferência', color: 'bg-blue-100 text-blue-700' },
+       evidencia: { label: 'Evidência', color: 'bg-emerald-100 text-emerald-700' },
+       informativo: { label: 'Informativo', color: 'bg-slate-100 text-slate-700' },
+     };
+     
+     const nature = item.operational_nature || 'obrigatorio';
+     badges.push({ 
+       icon: AlertCircle, 
+       label: natureMap[nature as keyof typeof natureMap].label, 
+       color: natureMap[nature as keyof typeof natureMap].color 
+     });
+ 
     return badges;
   };
 
@@ -298,7 +317,8 @@ export function ChecklistTemplatesManager({ board, onClose }: ChecklistTemplates
               position: item.position,
               requires_date: item.requires_date || false,
               requires_status: item.requires_status || false,
-              requires_observation: item.requires_observation || false,
+               requires_observation: item.requires_observation || false,
+               operational_nature: item.operational_nature || 'obrigatorio',
               status_options: item.status_options || [],
             }));
 

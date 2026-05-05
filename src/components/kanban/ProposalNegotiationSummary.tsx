@@ -167,7 +167,7 @@ export function ProposalNegotiationSummary({
         <div className="flex items-start gap-2 rounded-md border bg-background p-3">
           <UserCircle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Responsável pela proposta</p>
+             <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Responsável pelo fechamento da proposta</p>
             <p className="font-semibold">{cardResponsible}</p>
           </div>
         </div>
@@ -534,7 +534,7 @@ export function ProposalNegotiationSummary({
               <div className="flex items-center gap-2">
                 <UserCircle className="h-5 w-5 text-slate-300" />
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                  Responsável: <span className="text-slate-700">{cardResponsible || 'Imobiliária'}</span>
+                   Responsável pelo fechamento: <span className="text-slate-700">{cardResponsible || 'Imobiliária'}</span>
                 </p>
               </div>
               <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">

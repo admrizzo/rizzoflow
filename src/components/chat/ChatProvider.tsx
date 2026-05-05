@@ -15,8 +15,10 @@ type ChatContextValue = {
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
    unreadTotal: number;
-   onlineUserIds: Set<string>;
-   refreshUnread: () => Promise<void>;
+    onlineUserIds: Set<string>;
+    refreshUnread: () => Promise<void>;
+    isSoundEnabled: boolean;
+    setSoundEnabled: (enabled: boolean) => void;
 };
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -28,10 +30,27 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
    const [unreadTotal, setUnreadTotal] = useState(0);
    const [lastUpdate, setLastUpdate] = useState(Date.now());
-    const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
-    const lastSoundTimeRef = useRef<number>(0);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const isAudioUnlockedRef = useRef<boolean>(false);
+      const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+      const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => {
+        try {
+          const saved = localStorage.getItem("rizzo:chat-sound-enabled");
+          return saved === null ? true : saved === "true";
+        } catch {
+          return true;
+        }
+      });
+      const lastSoundTimeRef = useRef<number>(0);
+      const audioRef = useRef<HTMLAudioElement | null>(null);
+      const isAudioUnlockedRef = useRef<boolean>(false);
+
+   const setSoundEnabled = (enabled: boolean) => {
+     setIsSoundEnabled(enabled);
+     try {
+       localStorage.setItem("rizzo:chat-sound-enabled", String(enabled));
+     } catch (e) {
+       console.error("Failed to save chat sound preference", e);
+     }
+   };
 
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
@@ -102,6 +121,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
    }, [user]);
  
    const playNotificationSound = useCallback(() => {
+     if (!isSoundEnabled) return;
      const now = Date.now();
      if (now - lastSoundTimeRef.current < 2000) return;
      lastSoundTimeRef.current = now;
@@ -109,13 +129,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      if (audioRef.current && isAudioUnlockedRef.current) {
        audioRef.current.currentTime = 0;
        audioRef.current.play().catch(() => {
-         // Fallback if audio.play fails even after unlock attempt
          playWebAudioFallback();
        });
      } else {
        playWebAudioFallback();
      }
-   }, []);
+   }, [isSoundEnabled]);
  
    const playWebAudioFallback = useCallback(() => {
      try {
@@ -233,12 +252,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       close: () => setIsOpen(false),
       toggle: () => setIsOpen((v) => !v),
        activeConversationId,
-       setActiveConversationId,
-       unreadTotal,
+        setActiveConversationId,
+        unreadTotal,
         onlineUserIds,
-       refreshUnread,
-     }),
-      [isOpen, activeConversationId, unreadTotal, onlineUserIds, refreshUnread],
+        refreshUnread,
+        isSoundEnabled,
+        setSoundEnabled,
+      }),
+       [isOpen, activeConversationId, unreadTotal, onlineUserIds, refreshUnread, isSoundEnabled],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

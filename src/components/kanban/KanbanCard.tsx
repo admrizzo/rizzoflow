@@ -188,32 +188,34 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
            )} 
          />
 
-         {/* Unread changes indicator with Smile Rizzo */}
-         {unreadCount !== undefined && unreadCount > 0 && (
-           <div className="absolute -top-2 -right-2 z-20 pointer-events-auto">
-             <Tooltip>
-               <TooltipTrigger asChild>
-                 <div className="relative group/smile">
-                   <div className="w-7 h-7 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center overflow-hidden transition-transform group-hover/smile:scale-110">
-                     <img 
-                       src="/smile-rizzo.png" 
-                       alt="Não lido" 
-                       className="w-5 h-5 object-contain"
-                     />
-                   </div>
-                   <Badge 
-                     className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center border border-white shadow-xs"
-                   >
-                     {unreadCount > 99 ? '99+' : unreadCount}
-                   </Badge>
-                 </div>
-               </TooltipTrigger>
-               <TooltipContent side="top" align="end" className="text-[10px] px-2 py-1 bg-slate-900 text-white border-none font-medium">
-                 {unreadCount} atualização(ões) não lida(s)
-               </TooltipContent>
-             </Tooltip>
-           </div>
-         )}
+          {/* Unread changes indicator with Smile Rizzo */}
+          {unreadCount !== undefined && unreadCount > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 z-20 pointer-events-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative group/smile cursor-help">
+                    <div className="w-5 h-5 transition-transform group-hover/smile:scale-110">
+                      <img 
+                        src="/rizzo-sorriso.png" 
+                        alt="Não lido" 
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    {unreadCount > 1 && (
+                      <Badge 
+                        className="absolute -top-1.5 -right-1.5 h-3.5 min-w-[14px] px-1 rounded-full bg-slate-900 text-white text-[7px] font-black flex items-center justify-center border border-white shadow-xs"
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="end" className="text-[10px] px-2 py-1 bg-slate-900 text-white border-none font-medium">
+                  {unreadCount} atualização(ões) não lida(s)
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         <div className="p-3.5 pl-4.5 space-y-3 relative z-0 min-h-[160px] flex flex-col">
           {/* 1. Cabeçalho: Código Robust */}
            <div className="flex items-center justify-between mb-0.5">

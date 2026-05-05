@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2, Lock } from 'lucide-react';
+ import { ArrowLeft, Loader2, Lock, Info } from 'lucide-react';
+ import { perfMark, perfMeasure } from '@/lib/perfMark';
 import { supabase } from '@/integrations/supabase/client';
 import { buildPublicUrl } from '@/lib/appUrl';
 
@@ -40,6 +41,7 @@ export default function Auth() {
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+   perfMark('auth:login:start');
     setIsLoading(true);
     
     const formData = new FormData(e.currentTarget);
@@ -64,7 +66,8 @@ export default function Auth() {
       } catch {
         // ignore
       }
-      navigate('/');
+       perfMeasure('auth:login:success', 'auth:login:start');
+       navigate('/');
     }
     
     setIsLoading(false);

@@ -1,3 +1,4 @@
+ import { perfMark, perfMeasure } from '@/lib/perfMark';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useColumns } from '@/hooks/useColumns';
@@ -36,7 +37,16 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ board, searchQuery = '', filters, initialCardId, onCardOpened, onCardClosed }: KanbanBoardProps) {
   const { columns, isLoading: columnsLoading, reorderColumns } = useColumns(board.id);
-  const { cards, isLoading: cardsLoading, moveCard } = useCards(board.id);
+   const { cards, isLoading: cardsLoading, moveCard } = useCards(board.id);
+
+   useEffect(() => {
+     if (cardsLoading) {
+       perfMark(`cards:${board.id}:start`);
+     } else {
+       perfMeasure(`cards:${board.id}:loaded`, `cards:${board.id}:start`);
+       perfMeasure(`kanban:${board.id}:render`, `dashboard:mount`);
+     }
+   }, [cardsLoading, board.id]);
   const { fields } = useBoardFields(board.id);
   const { config: boardConfig } = useBoardConfig(board.id);
   const { hasUnseenChanges, markAsViewed } = useCardViews(board.id);

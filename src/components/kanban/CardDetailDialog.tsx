@@ -1,3 +1,4 @@
+ import { perfMark, perfMeasure } from '@/lib/perfMark';
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { Card, CardWithRelations, GuaranteeType, ContractType, CardType } from '@/types/database';
 import { useCardMutations } from '@/hooks/useCardMutations';
@@ -186,7 +187,16 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
     .trim();
 }
 
-export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
+ export function CardDetailDialog({ card, open, onOpenChange }: CardDetailDialogProps) {
+   useEffect(() => {
+     if (open && card?.id) {
+       perfMark(`card:${card.id}:open:start`);
+       // Usando setTimeout para medir após o render do Dialog
+       setTimeout(() => {
+         perfMeasure(`card:${card.id}:modal:ready`, `card:${card.id}:open:start`);
+       }, 0);
+     }
+   }, [open, card?.id]);
   // Hook leve: traz APENAS as mutations necessárias, sem carregar a lista
   // do board inteiro. Reduz o tempo de abertura do card em ~1-2s quando o
   // dialog é aberto a partir de fora do Kanban (ex: Minha Fila, notificações).

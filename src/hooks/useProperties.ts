@@ -68,9 +68,9 @@ export function useProperties() {
   return usePropertiesBase();
 }
 
-export function usePropertiesLocacao() {
-  return usePropertiesBase('locacao');
-}
+ export function usePropertiesLocacao() {
+   return usePropertiesBase('locacao_wide');
+ }
 
 /**
  * Hook leve para telas que listam imóveis (Central de Propostas, seletor no card,
@@ -136,11 +136,22 @@ function usePropertiesBase(finalidade?: string) {
         .order('codigo_robust');
       if (error) throw error;
       let results = data as Property[];
-      if (finalidade) {
-        const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const needle = normalize(finalidade);
-        results = results.filter(p => p.finalidade && normalize(p.finalidade).includes(needle));
-      }
+       if (finalidade) {
+         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+         
+         if (finalidade === 'locacao_wide') {
+           // Busca ampla por locação, incluindo variações comuns
+           const locacaoTerms = ['locacao', 'aluguel', 'mensal'];
+           results = results.filter(p => {
+             if (!p.finalidade) return false;
+             const normalizedVal = normalize(p.finalidade);
+             return locacaoTerms.some(term => normalizedVal.includes(term));
+           });
+         } else {
+           const needle = normalize(finalidade);
+           results = results.filter(p => p.finalidade && normalize(p.finalidade).includes(needle));
+         }
+       }
       return results;
     },
     staleTime: 60000, // 1 min cache

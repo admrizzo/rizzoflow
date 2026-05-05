@@ -112,63 +112,71 @@ export function getCardOperationalBadges(
    if (activeItemsGlobal.length > 0) {
      const currentColumnId = card.column_id;
      
-     // 3.1 Pendências impeditivas (Etapa atual + Global Blocker)
-     const stageBlockingPending = activeItemsGlobal.filter(i => {
-       if (!i) return false;
-       const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-       if (!isBlockingNature || i.is_completed) return false;
-       
-       const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
-       if (!parentChecklist && !i.column_id) return false; // Fail safe for broken data
+      const currentColumnName = context?.column?.name;
 
-       const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-       const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-       
-       return isGlobal || isCurrentStage;
-     });
- 
-     // Status da etapa atual baseado SOMENTE nos itens da etapa atual/globais
-     const stageTotalItems = activeItemsGlobal.filter(i => {
-       if (!i) return false;
-       const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
-       if (!parentChecklist && !i.column_id) return false; // Fail safe
+      // Helper consistent with ChecklistSection component
+      const isChecklistInCurrentStage = (checklist: any) => {
+        if (!checklist) return false;
+        if (currentColumnId && checklist.column_id === currentColumnId) return true;
+        if (currentColumnName && checklist.name) {
+          const colName = currentColumnName.toLowerCase().trim();
+          const clName = checklist.name.toLowerCase().trim();
+          return clName.includes(colName) || colName.includes(clName);
+        }
+        return false;
+      };
 
-       const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-       const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-       return isGlobal || isCurrentStage;
-     });
- 
-     const isReady = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
- 
-     if (isReady) {
-       badges.push({
-         key: 'checklist_ready',
-         label: 'ETAPA PRONTA',
-         tone: 'emerald',
-         icon: CheckCheck,
-         priority: 65,
-         kind: 'progress'
-       });
-     } else if (stageBlockingPending.length > 0) {
-       badges.push({
-         key: 'checklist_pending_stage',
-         label: `FALTAM ${stageBlockingPending.length} ITENS DA ETAPA`,
-         tone: 'amber',
-         icon: AlertTriangle,
-         priority: 65,
-         kind: 'progress'
-       });
-     } else if (stageTotalItems.length > 0) {
-       // Tem itens na etapa mas nenhum é obrigatório ou já estão concluídos (mas isReady falhou por algum motivo lógico)
-       badges.push({
-         key: 'checklist_in_progress',
-         label: 'ETAPA EM ANDAMENTO',
-         tone: 'blue',
-         icon: CheckSquare,
-         priority: 65,
-         kind: 'progress'
-       });
-     }
+      const isItemInCurrentStage = (item: any) => {
+        if (!item) return false;
+        if (currentColumnId && item.column_id === currentColumnId) return true;
+        const parentChecklist = allChecklists.find(cl => cl && cl.id === item.checklist_id);
+        return isChecklistInCurrentStage(parentChecklist);
+      };
+
+      // Required items for this stage (including global blockers)
+      const stageRequiredItems = activeItemsGlobal.filter(i => {
+        const isMandatory = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+        if (!isMandatory) return false;
+        
+        const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
+        const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+        return isGlobal || isItemInCurrentStage(i);
+      });
+
+      const stageRequiredPending = stageRequiredItems.filter(i => !i.is_completed);
+      const hasStageItems = activeItemsGlobal.some(i => isItemInCurrentStage(i));
+
+      if (stageRequiredItems.length > 0) {
+        if (stageRequiredPending.length === 0) {
+          badges.push({
+            key: 'checklist_ready',
+            label: 'ETAPA PRONTA',
+            tone: 'emerald',
+            icon: CheckCheck,
+            priority: 65,
+            kind: 'progress'
+          });
+        } else {
+          badges.push({
+            key: 'checklist_pending_stage',
+            label: `FALTAM ${stageRequiredPending.length} ITENS DA ETAPA`,
+            tone: 'amber',
+            icon: AlertTriangle,
+            priority: 65,
+            kind: 'progress'
+          });
+        }
+      } else if (hasStageItems) {
+        // Has items but none are mandatory (or all optional are done)
+        badges.push({
+          key: 'checklist_ready',
+          label: 'ETAPA PRONTA',
+          tone: 'emerald',
+          icon: CheckCheck,
+          priority: 65,
+          kind: 'progress'
+        });
+      }
  
      // 3.2 Progresso total (Sempre secundário)
      const completedTotal = activeItemsGlobal.filter(i => i.is_completed).length;

@@ -207,7 +207,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
   const { isAdmin, user } = useAuth();
   // Permissões operacionais centralizadas: admin, gestor e administrativo
   // podem editar; corretor permanece restrito.
-   const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo, user } = usePermissions();
+   const { canMoveCards, isAdmin: isAdminRole, isGestor, isAdministrativo } = usePermissions();
    const isEditor = canMoveCards;
  
    // Permissions for proposal summary: admin, gestor, and linked brokers. NOT administrativo.

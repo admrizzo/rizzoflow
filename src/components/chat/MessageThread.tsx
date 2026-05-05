@@ -6,13 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown } from "lucide-react";
+   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown, Check, CheckCheck } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQueryClient } from "@tanstack/react-query";
+ import { useQuery, useQueryClient } from "@tanstack/react-query";
    import { useChat } from "./ChatProvider";
    import { isToday, isYesterday, isSameDay } from "date-fns";
   import { useChatAttachments, getChatAttachmentSignedUrl } from "@/hooks/useChatAttachments";
@@ -153,8 +153,63 @@ function initials(name?: string | null) {
    const { data: messages = [], isLoading: messagesLoading } = useChatMessages(conversationId);
    const { byMessage, uploadAttachments, isLoading: attachmentsLoading } = useChatAttachments(conversationId);
    const isLoading = messagesLoading;
-  const { data: conversations = [] } = useChatConversations();
-  const conv = conversations.find((c) => c.id === conversationId);
+    const { data: conversations = [], refetch: refetchConversations } = useChatConversations();
+
+   // participants real-time for read status
+   useEffect(() => {
+     if (!conversationId || !user) return;
+     
+     const channel = supabase
+       .channel(`chat-participants-${conversationId}`)
+       .on(
+         'postgres_changes',
+         {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'chat_participants',
+           filter: `conversation_id=eq.${conversationId}`
+         },
+         () => {
+           // Quando um participante atualiza seu last_read_at, atualizamos a lista de conversas local
+           refetchConversations();
+         }
+       )
+       .subscribe();
+ 
+     return () => {
+       supabase.removeChannel(channel);
+     };
+   }, [conversationId, user, refetchConversations]);
+ 
+   // Vamos carregar os participantes aqui para buscar o status de leitura
+   const { data: participants = [] } = useQuery({
+     queryKey: ['chat-participants-status', conversationId],
+     enabled: !!conversationId,
+     queryFn: async () => {
+       const { data } = await supabase
+         .from('chat_participants')
+         .select('user_id, last_read_at')
+         .eq('conversation_id', conversationId);
+       return data || [];
+     },
+     refetchInterval: 10000, // Fallback
+   });
+ 
+   const conv = conversations.find((c) => c.id === conversationId);
+
+   const isGroup = conv?.type === "group";
+ 
+   const otherParticipantReadAt = useMemo(() => {
+     if (!user || !participants.length || isGroup) return null;
+     const other = participants.find(p => p.user_id !== user.id);
+     return other?.last_read_at || null;
+   }, [participants, user, isGroup]);
+ 
+   const getMessageReadStatus = (messageCreatedAt: string) => {
+     if (isGroup) return null;
+     if (!otherParticipantReadAt) return 'sent';
+     return new Date(otherParticipantReadAt) >= new Date(messageCreatedAt) ? 'read' : 'sent';
+   };
     const [text, setText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -283,6 +338,7 @@ function initials(name?: string | null) {
     markAsRead();
   }, [conversationId, user, messages, qc]);
 
+ 
    async function send() {
      const content = text.trim();
      if ((!content && selectedFiles.length === 0) || !user || sending) return;
@@ -391,7 +447,6 @@ function initials(name?: string | null) {
    };
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
-   const isGroup = conv?.type === "group";
    const otherUserId = conv?.other_user_id;
     const isOnline = otherUserId ? onlineUserIds.has(otherUserId) : false;
  
@@ -535,14 +590,21 @@ function initials(name?: string | null) {
                       {byMessage[m.id]?.map(att => (
                         <AttachmentPreview key={att.id} attachment={att} />
                       ))}
-                     <p
-                       className={cn(
-                         "text-[10px] mt-1 text-right",
-                         mine ? "text-primary-foreground/70" : "text-muted-foreground",
-                       )}
-                     >
-                       {format(new Date(m.created_at), "HH:mm", { locale: ptBR })}
-                     </p>
+                      <div className={cn(
+                        "flex items-center justify-end gap-1 text-[10px] mt-1",
+                        mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                      )}>
+                        <span>{format(new Date(m.created_at), "HH:mm", { locale: ptBR })}</span>
+                        {mine && !isGroup && (
+                          <span className="shrink-0">
+                            {getMessageReadStatus(m.created_at) === 'read' ? (
+                              <CheckCheck className="h-3 w-3 text-white" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </span>
+                        )}
+                      </div>
                    </div>
                  </div>
                </div>

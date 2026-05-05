@@ -90,6 +90,7 @@ interface PartyNameInfo {
    cardId: string;
    partyNames?: PartyNameInfo[];
    currentColumnId?: string | null;
+   currentColumnName?: string | null;
  }
 
 // Helper function to format checklist names (convert from UPPERCASE to Title Case)
@@ -197,38 +198,55 @@ const getStatusColor = (status: string): string => {
    checklists, 
    cardId, 
    partyNames = [],
-   currentColumnId: propColumnId 
+   currentColumnId: propColumnId,
+   currentColumnName
  }: ChecklistSectionProps) {
-   // Use provided columnId or try to derive it as fallback
-   const currentColumnId = propColumnId || (checklists && checklists.length > 0 ? checklists[0]?.column_id : null);
-   
+   // Use provided columnId
+   const currentColumnId = propColumnId || null;
+ 
    const allItems = checklists.flatMap(c => (c && c.items) || []);
    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
-   
+ 
+   // Helper to check if a checklist/item belongs to the current stage
+   const isItemInCurrentStage = (item: ChecklistItemExtended) => {
+     if (!item) return false;
+     const parentChecklist = checklists?.find(cl => cl && cl.id === item.checklist_id);
+     
+     // 1. Direct match by column_id
+     if (currentColumnId && (item.column_id === currentColumnId || parentChecklist?.column_id === currentColumnId)) {
+       return true;
+     }
+ 
+     // 2. Fallback by name comparison if we have currentColumnName
+     if (currentColumnName && parentChecklist?.name) {
+       const colName = currentColumnName.toLowerCase().trim();
+       const clName = parentChecklist.name.toLowerCase().trim();
+       if (clName.includes(colName) || colName.includes(clName)) {
+         return true;
+       }
+     }
+ 
+     return false;
+   };
+ 
    const stageBlockingPending = activeItemsGlobal.filter(i => {
      if (!i) return false;
+     
+     // Must be blocking/mandatory
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
      const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-     if (!parentChecklist && !i.column_id) return false; // Fail safe
-
-     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
      
-     return isGlobal || isCurrentStage;
+     // Include if it's in current stage OR if it's an explicit global blocker
+     const isCurrentStage = isItemInCurrentStage(i);
+     const isGlobalBlocker = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     
+     return isCurrentStage || isGlobalBlocker;
    });
-
-   const stageTotalItems = activeItemsGlobal.filter(i => {
-     if (!i) return false;
-     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-     if (!parentChecklist && !i.column_id) return false; // Fail safe
-
-     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-     return isGlobal || isCurrentStage;
-   });
-
+ 
+   const stageTotalItems = activeItemsGlobal.filter(i => isItemInCurrentStage(i));
+   
    const isReadyToAdvance = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
  
   const { 

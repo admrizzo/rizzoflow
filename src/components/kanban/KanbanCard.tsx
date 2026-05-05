@@ -187,15 +187,23 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
            )} 
          />
 
-        {/* Red badge for unseen changes */}
-        {hasUnseenChanges && (
-          <div className="absolute -top-0.5 -right-0.5 z-10">
-            <span className="flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-            </span>
-          </div>
-        )}
+         {/* Unread changes badge */}
+         {unreadCount !== undefined && unreadCount > 0 && (
+           <div className="absolute -top-2 -right-2 z-10">
+             <Tooltip>
+               <TooltipTrigger asChild>
+                 <Badge 
+                   className="h-5 min-w-[20px] px-1 rounded-full bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm"
+                 >
+                   {unreadCount > 99 ? '99+' : unreadCount}
+                 </Badge>
+               </TooltipTrigger>
+               <TooltipContent side="top" className="text-[10px] px-2 py-1">
+                 {unreadCount} atualização(ões) não lida(s)
+               </TooltipContent>
+             </Tooltip>
+           </div>
+         )}
         <div className="p-3.5 pl-4.5 space-y-3 relative z-0 min-h-[160px] flex flex-col">
           {/* 1. Cabeçalho: Código Robust */}
            <div className="flex items-center justify-between mb-0.5">

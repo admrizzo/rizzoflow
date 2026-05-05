@@ -6,10 +6,12 @@ import {
   Wrench, 
   CheckCheck, 
   FileEdit,
-  Tag
+  Tag,
+  Info
 } from 'lucide-react';
 import { isDateOverdue } from '@/lib/dateUtils';
 import { LucideIcon } from 'lucide-react';
+import { calculateStageStatus } from '@/lib/stageChecklistStatus';
 
 export type BadgeKind = 'secondary_status' | 'progress' | 'alert' | 'manual_label' | 'time' | 'priority' | 'risk' | 'dependency';
 export type BadgeTone = 'emerald' | 'orange' | 'amber' | 'red' | 'slate' | 'blue' | 'indigo' | 'rose';
@@ -104,108 +106,53 @@ export function getCardOperationalBadges(
     });
   }
 
-   // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
-    const allChecklists = (card.checklists || []).filter(cl => cl !== null && cl !== undefined);
-    const allItems = allChecklists.flatMap(cl => (cl.items || []).filter(i => i !== null && i !== undefined)) || [];
-    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
-   
-   if (activeItemsGlobal.length > 0) {
-     const currentColumnId = card.column_id;
-     
-      const currentColumnName = context?.column?.name;
+  // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
+  const allChecklists = (card.checklists || []).filter(cl => !!cl);
+  const allItems = allChecklists.flatMap(cl => (cl.items || []).filter(i => !!i));
+  const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
+  
+  // Use shared helper for stage status calculation
+  const stageInfo = calculateStageStatus(card, context?.column);
 
-      // Helper consistent with ChecklistSection component
-      const isChecklistInCurrentStage = (checklist: any) => {
-        if (!checklist) return false;
-        if (currentColumnId && checklist.column_id === currentColumnId) return true;
-        if (currentColumnName && checklist.name) {
-          const colName = currentColumnName.toLowerCase().trim();
-          const clName = checklist.name.toLowerCase().trim();
-          return clName.includes(colName) || colName.includes(clName);
-        }
-        return false;
-      };
-
-      const isItemInCurrentStage = (item: any) => {
-        if (!item) return false;
-        if (currentColumnId && item.column_id === currentColumnId) return true;
-        const parentChecklist = allChecklists.find(cl => cl && cl.id === item.checklist_id);
-        return isChecklistInCurrentStage(parentChecklist);
-      };
-
-    // Required items for this stage (including global blockers)
-    const stageRequiredItems = activeItemsGlobal.filter(i => {
-      const isMandatory = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-      if (!isMandatory) return false;
-      
-      const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
-      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-      return isGlobal || isItemInCurrentStage(i);
+  if (stageInfo.type === 'ready') {
+    badges.push({
+      key: 'checklist_ready',
+      label: 'Etapa pronta',
+      tone: 'emerald',
+      icon: CheckCheck,
+      priority: 75,
+      kind: 'progress'
     });
+  } else if (stageInfo.type === 'pending') {
+    badges.push({
+      key: 'checklist_pending_stage',
+      label: `Faltam ${stageInfo.requiredPending} da etapa`,
+      tone: 'amber',
+      icon: AlertTriangle,
+      priority: 75,
+      kind: 'progress'
+    });
+  } else {
+    // No items or no checklist for this stage
+    badges.push({
+      key: 'checklist_no_items',
+      label: 'Sem checklist da etapa',
+      tone: 'slate',
+      icon: Info,
+      priority: 55,
+      kind: 'progress'
+    });
+  }
 
-    const stageRequiredPending = stageRequiredItems.filter(i => !i.is_completed);
-    const hasStageItems = activeItemsGlobal.some(i => isItemInCurrentStage(i));
-
-    if (stageRequiredItems.length > 0) {
-      if (stageRequiredPending.length === 0) {
-        badges.push({
-          key: 'checklist_ready',
-          label: 'Etapa pronta',
-          tone: 'emerald',
-          icon: CheckCheck,
-          priority: 75, // Higher than before, but below corrections (80)
-          kind: 'progress'
-        });
-      } else {
-        badges.push({
-          key: 'checklist_pending_stage',
-          label: `Faltam ${stageRequiredPending.length} da etapa`,
-          tone: 'amber',
-          icon: AlertTriangle,
-          priority: 75,
-          kind: 'progress'
-        });
-      }
-    } else if (hasStageItems) {
-      // Has items but none are mandatory (or all optional are done)
-      badges.push({
-        key: 'checklist_ready',
-        label: 'Etapa pronta',
-        tone: 'emerald',
-        icon: CheckCheck,
-        priority: 75,
-        kind: 'progress'
-      });
-    } else {
-      // No items for this stage
-      badges.push({
-        key: 'checklist_no_items',
-        label: 'Sem checklist da etapa',
-        tone: 'slate',
-        icon: CheckSquare,
-        priority: 55,
-        kind: 'progress'
-      });
-    }
-
-    // 3.2 Progresso total (Sempre secundário)
+  // 3.2 Progresso total (Sempre secundário)
+  if (activeItemsGlobal.length > 0) {
     const completedTotal = activeItemsGlobal.filter(i => i.is_completed).length;
     badges.push({
       key: 'checklist_total_progress',
       label: `Total do processo: ${completedTotal}/${activeItemsGlobal.length}`,
       tone: 'slate',
       icon: CheckSquare,
-      priority: 50, // Lower priority for the total
-      kind: 'progress'
-    });
-  } else {
-    // No items at all in the card
-    badges.push({
-      key: 'checklist_no_items_global',
-      label: 'Sem checklist da etapa',
-      tone: 'slate',
-      icon: CheckSquare,
-      priority: 55,
+      priority: 50,
       kind: 'progress'
     });
   }

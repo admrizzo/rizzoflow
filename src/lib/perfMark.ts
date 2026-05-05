@@ -11,7 +11,7 @@
  *   ...
  *   perfMeasure('minha-fila:ready', 'minha-fila:ready:start')
  */
-const isDev = typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV === true;
+ const isDev = typeof import.meta !== 'undefined' && ((import.meta as any).env?.DEV === true || (import.meta as any).env?.VITE_DEBUG_PERF === 'true');
 
 export function perfMark(name: string): void {
   if (!isDev) return;

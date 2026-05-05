@@ -40,11 +40,23 @@ export default function Dashboard() {
   useEffect(() => {
     perfMark('dashboard:mount');
   }, []);
-  useEffect(() => {
-    if (!authLoading && !boardsLoading) {
-      perfMeasure('dashboard:ready', 'dashboard:mount');
-    }
-  }, [authLoading, boardsLoading]);
+   useEffect(() => {
+     if (!authLoading) {
+       perfMeasure('auth:ready', 'dashboard:mount');
+     }
+   }, [authLoading]);
+
+   useEffect(() => {
+     if (!boardsLoading) {
+       perfMeasure('boards:loaded', 'dashboard:mount');
+     }
+   }, [boardsLoading]);
+
+   useEffect(() => {
+     if (!authLoading && !boardsLoading) {
+       perfMeasure('dashboard:ready', 'dashboard:mount');
+     }
+   }, [authLoading, boardsLoading]);
 
   // Prefetch dos chunks mais usados após o Dashboard montar.
   // Isso elimina a latência de download na primeira navegação para

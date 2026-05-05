@@ -1,6 +1,7 @@
 import { forwardRef, useMemo } from 'react';
 import { CardWithRelations, Column } from '@/types/database';
-import { Card } from '@/components/ui/card';
+ import { Card } from '@/components/ui/card';
+ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Archive, MapPin, CheckSquare, AlertTriangle, Wrench, FileEdit, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';

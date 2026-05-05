@@ -88,20 +88,41 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
     }
   }, [user, selectableUsers, brokerUserId, lockedToSelf]);
 
-  const searchResults = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase();
-    return properties.filter(p => {
-      const code = String(p.codigo_robust);
-      return (
-        code.includes(q) ||
-        (p.titulo || '').toLowerCase().includes(q) ||
-        (p.bairro || '').toLowerCase().includes(q) ||
-        (p.logradouro || '').toLowerCase().includes(q) ||
-        (p.cidade || '').toLowerCase().includes(q)
-      );
-    }).slice(0, 8);
-  }, [searchQuery, properties]);
+   const searchResults = useMemo(() => {
+     if (!searchQuery) return [];
+     
+     const isNumeric = /^\d+$/.test(searchQuery);
+     const minLength = isNumeric ? 1 : 2;
+     
+     if (searchQuery.length < minLength) return [];
+     
+     const q = searchQuery.toLowerCase();
+     const filtered = properties.filter(p => {
+       const code = String(p.codigo_robust);
+       return (
+         code.includes(q) ||
+         (p.titulo || '').toLowerCase().includes(q) ||
+         (p.bairro || '').toLowerCase().includes(q) ||
+         (p.logradouro || '').toLowerCase().includes(q) ||
+         (p.cidade || '').toLowerCase().includes(q)
+       );
+     });
+ 
+     // Priorizar match exato do código
+     return filtered.sort((a, b) => {
+       const aCode = String(a.codigo_robust);
+       const bCode = String(b.codigo_robust);
+       
+       if (aCode === searchQuery) return -1;
+       if (bCode === searchQuery) return 1;
+       
+       // Se um começa com o código e outro não
+       if (aCode.startsWith(searchQuery) && !bCode.startsWith(searchQuery)) return -1;
+       if (!aCode.startsWith(searchQuery) && bCode.startsWith(searchQuery)) return 1;
+       
+       return 0;
+     }).slice(0, 8);
+   }, [searchQuery, properties]);
 
   const createLink = useMutation({
     mutationFn: async () => {
@@ -271,9 +292,14 @@ export function NewProposalButton({ compact = false }: { compact?: boolean } = {
                     autoFocus
                   />
                 </div>
-                {searchQuery.length >= 2 && searchResults.length === 0 && (
-                  <p className="text-sm text-destructive text-center py-4">Imóvel não localizado no CRM</p>
-                )}
+                 {searchQuery.length >= (/^\d+$/.test(searchQuery) ? 1 : 2) && searchResults.length === 0 && (
+                   <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 space-y-2 text-center">
+                     <p className="text-sm font-medium text-destructive">Nenhum imóvel encontrado para o termo "{searchQuery}"</p>
+                     <p className="text-xs text-muted-foreground">
+                       Verifique se o código está correto, se o imóvel está sincronizado no sistema e marcado como locação no CRM.
+                     </p>
+                   </div>
+                 )}
                 {searchResults.length > 0 && (
                   <div className="border rounded-lg bg-card shadow-md max-h-60 overflow-y-auto">
                     {searchResults.map(prop => (

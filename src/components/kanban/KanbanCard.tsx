@@ -188,18 +188,27 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
            )} 
          />
 
-         {/* Unread changes badge */}
+         {/* Unread changes indicator with Smile Rizzo */}
          {unreadCount !== undefined && unreadCount > 0 && (
-           <div className="absolute -top-2 -right-2 z-10">
+           <div className="absolute -top-2 -right-2 z-20 pointer-events-auto">
              <Tooltip>
                <TooltipTrigger asChild>
-                 <Badge 
-                   className="h-5 min-w-[20px] px-1 rounded-full bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm"
-                 >
-                   {unreadCount > 99 ? '99+' : unreadCount}
-                 </Badge>
+                 <div className="relative group/smile">
+                   <div className="w-7 h-7 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center overflow-hidden transition-transform group-hover/smile:scale-110">
+                     <img 
+                       src="/smile-rizzo.png" 
+                       alt="Não lido" 
+                       className="w-5 h-5 object-contain"
+                     />
+                   </div>
+                   <Badge 
+                     className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center border border-white shadow-xs"
+                   >
+                     {unreadCount > 99 ? '99+' : unreadCount}
+                   </Badge>
+                 </div>
                </TooltipTrigger>
-               <TooltipContent side="top" className="text-[10px] px-2 py-1">
+               <TooltipContent side="top" align="end" className="text-[10px] px-2 py-1 bg-slate-900 text-white border-none font-medium">
                  {unreadCount} atualização(ões) não lida(s)
                </TooltipContent>
              </Tooltip>

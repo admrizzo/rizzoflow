@@ -433,65 +433,99 @@ function initials(name?: string | null) {
               className="w-full bg-transparent border-none focus:ring-0 resize-none py-2 px-3 text-[13px] min-h-[44px] max-h-[120px] outline-none placeholder:text-muted-foreground/60 leading-normal"
             />
             
-            <div className="flex items-center justify-between px-2 pb-2">
-              <div className="flex items-center gap-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  multiple
-                  onChange={handleFileSelect}
-                />
-                <input
-                  type="file"
-                  ref={imageInputRef}
-                  className="hidden"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                />
- 
-                <Tooltip>
-                  <TooltipTrigger asChild>
+            <div className="flex items-center justify-between px-2 pb-2 min-h-[40px]">
+              {isRecording ? (
+                <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-left-2 duration-300">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full border border-red-100 shadow-sm">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+                    </span>
+                    <span className="text-[11px] font-bold tabular-nums">Gravando {formatDuration(recordingDuration)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                          onClick={cancelRecording}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Cancelar</TooltipContent>
+                    </Tooltip>
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
+                      className="h-8 w-8 text-red-600 hover:bg-red-50 transition-colors"
+                      onClick={stopRecording}
                     >
-                      <Paperclip className="h-4 w-4" />
+                      <StopCircle className="h-5 w-5" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Anexar arquivo</TooltipContent>
-                </Tooltip>
- 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Anexar imagem</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => toast.info("Recurso em preparação")}
-                    >
-                      <Mic className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Gravar áudio (Em breve)</TooltipContent>
-                </Tooltip>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    multiple
+                    onChange={handleFileSelect}
+                  />
+                  <input
+                    type="file"
+                    ref={imageInputRef}
+                    className="hidden"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                  />
+  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Anexar arquivo</TooltipContent>
+                  </Tooltip>
+  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={() => imageInputRef.current?.click()}
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Anexar imagem</TooltipContent>
+                  </Tooltip>
+  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={startRecording}
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Gravar áudio</TooltipContent>
+                  </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>

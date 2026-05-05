@@ -92,15 +92,15 @@ export function Header({ searchQuery, onSearchChange, filters, onFiltersChange, 
     <header className="h-[52px] sticky top-0 z-[60] border-b bg-sidebar text-white border-white/5 shadow-md overflow-hidden">
       <div className="flex items-center h-full px-4 gap-4 overflow-x-auto lp-thin-scroll scrollbar-none">
          {/* Logo */}
-         <Link to="/dashboard" className="flex items-center gap-2 mr-2 group shrink-0" title="Rizzo Flow Home">
-          <div className="w-7 h-7 overflow-hidden group-hover:scale-105 transition-transform flex items-center justify-center">
+         <Link to="/dashboard" className="flex items-center gap-2.5 mr-2 group shrink-0" title="Rizzo Flow Home">
+          <div className="w-9 h-9 overflow-hidden group-hover:scale-105 transition-transform flex items-center justify-center">
             <img 
               src="/rizzo-sorriso.png" 
               alt="Rizzo Flow" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain p-0.5"
             />
           </div>
-           <span className="font-bold text-[15px] tracking-tight hidden sm:block">Rizzo Flow</span>
+           <span className="font-bold text-[16px] tracking-tight hidden sm:block">Rizzo Flow</span>
          </Link>
 
         {/* Meus Fluxos */}

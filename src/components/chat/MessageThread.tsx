@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown } from "lucide-react";
+   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown, Check, CheckCheck } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -153,7 +153,7 @@ function initials(name?: string | null) {
    const { data: messages = [], isLoading: messagesLoading } = useChatMessages(conversationId);
    const { byMessage, uploadAttachments, isLoading: attachmentsLoading } = useChatAttachments(conversationId);
    const isLoading = messagesLoading;
-  const { data: conversations = [] } = useChatConversations();
+    const { data: conversations = [], refetch: refetchConversations } = useChatConversations();
   const conv = conversations.find((c) => c.id === conversationId);
     const [text, setText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -283,6 +283,70 @@ function initials(name?: string | null) {
     markAsRead();
   }, [conversationId, user, messages, qc]);
 
+   // participants real-time for read status
+   useEffect(() => {
+     if (!conversationId || !user) return;
+     
+     const channel = supabase
+       .channel(`chat-participants-${conversationId}`)
+       .on(
+         'postgres_changes',
+         {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'chat_participants',
+           filter: `conversation_id=eq.${conversationId}`
+         },
+         () => {
+           // Quando um participante atualiza seu last_read_at, atualizamos a lista de conversas local
+           refetchConversations();
+         }
+       )
+       .subscribe();
+ 
+     return () => {
+       supabase.removeChannel(channel);
+     };
+   }, [conversationId, user, refetchConversations]);
+ 
+   const isMessageRead = (messageCreatedAt: string) => {
+     if (!conv || conv.type === 'group') return false;
+     if (!conv.last_read_at) return false;
+     
+     // Em DM, se o outro usuário leu em uma data >= criação da mensagem, ela está lida
+     // O last_read_at no conv (ChatConversationListItem) é o do OUTRO usuário?
+     // Na verdade, ChatConversationListItem.last_read_at é o MEU last_read_at (pelo hook useChatConversations).
+     // Precisamos do last_read_at do OUTRO participante.
+     return false; // Fallback temporário até termos o last_read_at do outro
+   };
+ 
+   // Vamos ajustar o hook useChatConversations ou carregar os participantes aqui?
+   // Como o useChatConversations já carrega quase tudo, vamos buscar o last_read_at dos participantes aqui para precisão.
+   const { data: participants = [] } = useQuery({
+     queryKey: ['chat-participants-status', conversationId],
+     enabled: !!conversationId,
+     queryFn: async () => {
+       const { data } = await supabase
+         .from('chat_participants')
+         .select('user_id, last_read_at')
+         .eq('conversation_id', conversationId);
+       return data || [];
+     },
+     refetchInterval: 10000, // Fallback se o realtime falhar
+   });
+ 
+   const otherParticipantReadAt = useMemo(() => {
+     if (!user || !participants.length || isGroup) return null;
+     const other = participants.find(p => p.user_id !== user.id);
+     return other?.last_read_at || null;
+   }, [participants, user, isGroup]);
+ 
+   const getMessageReadStatus = (messageCreatedAt: string) => {
+     if (isGroup) return null;
+     if (!otherParticipantReadAt) return 'sent';
+     return new Date(otherParticipantReadAt) >= new Date(messageCreatedAt) ? 'read' : 'sent';
+   };
+ 
    async function send() {
      const content = text.trim();
      if ((!content && selectedFiles.length === 0) || !user || sending) return;
@@ -535,14 +599,21 @@ function initials(name?: string | null) {
                       {byMessage[m.id]?.map(att => (
                         <AttachmentPreview key={att.id} attachment={att} />
                       ))}
-                     <p
-                       className={cn(
-                         "text-[10px] mt-1 text-right",
-                         mine ? "text-primary-foreground/70" : "text-muted-foreground",
-                       )}
-                     >
-                       {format(new Date(m.created_at), "HH:mm", { locale: ptBR })}
-                     </p>
+                      <div className={cn(
+                        "flex items-center justify-end gap-1 text-[10px] mt-1",
+                        mine ? "text-primary-foreground/70" : "text-muted-foreground",
+                      )}>
+                        <span>{format(new Date(m.created_at), "HH:mm", { locale: ptBR })}</span>
+                        {mine && !isGroup && (
+                          <span className="shrink-0">
+                            {getMessageReadStatus(m.created_at) === 'read' ? (
+                              <CheckCheck className="h-3 w-3 text-white" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </span>
+                        )}
+                      </div>
                    </div>
                  </div>
                </div>

@@ -249,6 +249,8 @@ export interface ChecklistItem {
   requires_observation?: boolean;
   status_options?: string[];
   observation_text?: string | null;
+  column_id?: string | null;
+  is_global_blocker?: boolean;
    operational_nature: OperationalNature;
 }
 

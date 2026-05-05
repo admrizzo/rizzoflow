@@ -85,11 +85,12 @@ interface PartyNameInfo {
   name: string | null;
 }
 
-interface ChecklistSectionProps {
-  checklists: ChecklistWithItemsExtended[];
-  cardId: string;
-  partyNames?: PartyNameInfo[];
-}
+ interface ChecklistSectionProps {
+   checklists: ChecklistWithItemsExtended[];
+   cardId: string;
+   partyNames?: PartyNameInfo[];
+   currentColumnId?: string | null;
+ }
 
 // Helper function to format checklist names (convert from UPPERCASE to Title Case)
 const formatChecklistName = (name: string): string => {
@@ -192,8 +193,15 @@ const getStatusColor = (status: string): string => {
   return 'bg-gray-100 text-gray-700';
 };
 
- export function ChecklistSection({ checklists, cardId, partyNames = [] }: ChecklistSectionProps) {
-   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
+ export function ChecklistSection({ 
+   checklists, 
+   cardId, 
+   partyNames = [],
+   currentColumnId: propColumnId 
+ }: ChecklistSectionProps) {
+   // Use provided columnId or try to derive it as fallback
+   const currentColumnId = propColumnId || (checklists && checklists.length > 0 ? checklists[0]?.column_id : null);
+   
    const allItems = checklists.flatMap(c => (c && c.items) || []);
    const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
    

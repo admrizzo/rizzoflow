@@ -6,15 +6,65 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
- import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile } from "lucide-react";
+ import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2 } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
-  import { useChat } from "./ChatProvider";
-  import { isToday, isYesterday, startOfDay, isSameDay } from "date-fns";
+   import { useChat } from "./ChatProvider";
+   import { isToday, isYesterday, isSameDay } from "date-fns";
+   import { useChatAttachments, getChatAttachmentSignedUrl } from "@/hooks/useChatAttachments";
+ function AttachmentPreview({ attachment }: { attachment: any }) {
+   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+ 
+   useEffect(() => {
+     getChatAttachmentSignedUrl(attachment.storage_path).then(setSignedUrl);
+   }, [attachment.storage_path]);
+ 
+   if (attachment.attachment_type === 'image') {
+     return (
+       <div className="mt-2 group relative max-w-sm overflow-hidden rounded-lg border border-border/20 bg-muted/30 transition-all hover:border-border/40">
+         {signedUrl ? (
+           <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="block">
+             <img 
+               src={signedUrl} 
+               alt={attachment.file_name} 
+               className="max-h-60 w-full object-cover transition-transform hover:scale-[1.02]"
+             />
+           </a>
+         ) : (
+           <div className="flex h-32 items-center justify-center">
+             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+           </div>
+         )}
+       </div>
+     );
+   }
+ 
+   return (
+     <div className="mt-1 flex items-center gap-2 rounded-lg border border-border/20 bg-background/50 p-2 text-[12px] transition-all hover:bg-background/80">
+       <div className="flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary">
+         <FileIcon className="h-4 w-4" />
+       </div>
+       <div className="flex-1 min-w-0">
+         <p className="truncate font-medium leading-tight">{attachment.file_name}</p>
+         <p className="text-[10px] text-muted-foreground">
+           {attachment.file_size ? `${(attachment.file_size / 1024 / 1024).toFixed(2)} MB` : ''}
+         </p>
+       </div>
+       {signedUrl && (
+         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" asChild>
+           <a href={signedUrl} target="_blank" rel="noopener noreferrer" download={attachment.file_name}>
+             <Download className="h-4 w-4" />
+           </a>
+         </Button>
+       )}
+     </div>
+   );
+ }
+ 
 
 function initials(name?: string | null) {
   if (!name) return "?";
@@ -31,10 +81,15 @@ function initials(name?: string | null) {
    const { user } = useAuth();
     const { close, onlineUserIds } = useChat();
   const qc = useQueryClient();
-  const { data: messages = [], isLoading } = useChatMessages(conversationId);
+   const { data: messages = [], isLoading: messagesLoading } = useChatMessages(conversationId);
+   const { byMessage, uploadAttachments, isLoading: attachmentsLoading } = useChatAttachments(conversationId);
+   const isLoading = messagesLoading;
   const { data: conversations = [] } = useChatConversations();
   const conv = conversations.find((c) => c.id === conversationId);
-  const [text, setText] = useState("");
+   const [text, setText] = useState("");
+   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+   const fileInputRef = useRef<HTMLInputElement>(null);
+   const imageInputRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
    const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -80,24 +135,60 @@ function initials(name?: string | null) {
     markAsRead();
   }, [conversationId, user, messages, qc]);
 
-  async function send() {
-    const content = text.trim();
-    if (!content || !user || sending) return;
-    setSending(true);
+   async function send() {
+     const content = text.trim();
+     if ((!content && selectedFiles.length === 0) || !user || sending) return;
+     setSending(true);
+     const filesToUpload = [...selectedFiles];
     setText("");
-    const { error } = await supabase.from("chat_messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      content,
-    });
-    setSending(false);
-    if (error) {
-      console.error(error);
-      setText(content);
-    } else {
+     try {
+       const { data: msg, error } = await supabase
+         .from("chat_messages")
+         .insert({
+           conversation_id: conversationId,
+           sender_id: user.id,
+           content,
+         })
+         .select()
+         .single();
+ 
+       if (error) throw error;
+ 
+       if (filesToUpload.length > 0 && msg) {
+         await uploadAttachments.mutateAsync({
+           messageId: msg.id,
+           conversationId,
+           files: filesToUpload,
+           uploadedBy: user.id,
+         });
+       }
+ 
+       setText("");
+       setSelectedFiles([]);
+       adjustHeight();
+       
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
       qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-    }
+     } catch (err) {
+       console.error(err);
+       toast.error("Erro ao enviar mensagem");
+     } finally {
+       setSending(false);
+     }
+   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const files = Array.from(e.target.files || []);
+     if (files.length + selectedFiles.length > 10) {
+       toast.error("Máximo de 10 arquivos por envio");
+       return;
+     }
+     const largeFiles = files.filter(f => f.size > 20 * 1024 * 1024);
+     if (largeFiles.length > 0) {
+       toast.error("Arquivos devem ter no máximo 20MB");
+       return;
+     }
+     setSelectedFiles(prev => [...prev, ...files]);
+   };
+ 
   }
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
@@ -192,7 +283,13 @@ function initials(name?: string | null) {
                          : "bg-muted/80 text-foreground rounded-tl-none border border-border/10",
                      )}
                    >
-                     <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug">{m.content}</p>
+                      {m.content && (
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug">{m.content}</p>
+                      )}
+                      
+                      {byMessage[m.id]?.map(att => (
+                        <AttachmentPreview key={att.id} attachment={att} />
+                      ))}
                      <p
                        className={cn(
                          "text-[10px] mt-1 text-right",
@@ -209,7 +306,23 @@ function initials(name?: string | null) {
         </div>
       </div>
 
-      <div className="bg-background px-4 pt-2 pb-3 md:pb-4 flex flex-col shrink-0 border-t">
+      <div className="bg-background px-4 pt-2 pb-3 md:pb-4 flex flex-col shrink-0 border-t space-y-2">
+        {selectedFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {selectedFiles.map((file, i) => (
+              <div key={i} className="flex items-center gap-2 bg-muted/60 px-2 py-1 rounded-md text-[10px] border border-border/40 group relative">
+                <span className="max-w-[120px] truncate">{file.name}</span>
+                <button 
+                  onClick={() => setSelectedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                  className="hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+ 
         <TooltipProvider>
           <div className="flex flex-col gap-1 bg-muted/40 rounded-xl border border-border/60 focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm w-full">
             <textarea
@@ -229,32 +342,48 @@ function initials(name?: string | null) {
             
             <div className="flex items-center justify-between px-2 pb-2">
               <div className="flex items-center gap-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  multiple
+                  onChange={handleFileSelect}
+                />
+                <input
+                  type="file"
+                  ref={imageInputRef}
+                  className="hidden"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                />
+ 
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => toast.info("Recurso em preparação")}
+                      onClick={() => fileInputRef.current?.click()}
                     >
                       <Paperclip className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Anexar arquivo (Em breve)</TooltipContent>
+                  <TooltipContent side="top">Anexar arquivo</TooltipContent>
                 </Tooltip>
-
+ 
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="icon" 
                       className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-                      onClick={() => toast.info("Recurso em preparação")}
+                      onClick={() => imageInputRef.current?.click()}
                     >
                       <ImageIcon className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="top">Anexar imagem (Em breve)</TooltipContent>
+                  <TooltipContent side="top">Anexar imagem</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -289,7 +418,7 @@ function initials(name?: string | null) {
               <div className="flex items-center gap-2">
                 <Button 
                   onClick={send} 
-                  disabled={!text.trim() || sending} 
+                   disabled={(!text.trim() && selectedFiles.length === 0) || sending} 
                   size="sm" 
                   className={cn(
                     "h-7 gap-1.5 px-3 rounded-full transition-all shadow-sm active:scale-95",

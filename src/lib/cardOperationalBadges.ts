@@ -111,10 +111,42 @@ export function getCardOperationalBadges(
   const allItems = allChecklists.flatMap(cl => (cl.items || []).filter(i => !!i));
   const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
   
-  // Use shared helper for stage status calculation
-  const stageInfo = calculateStageStatus(card, context?.column);
-
-  if (stageInfo.type === 'ready') {
+   // --- 3. Mapa de Segurança Operacional / Checklist (kind: progress) ---
+   try {
+     const stageInfo = calculateStageStatus(card, context?.column);
+ 
+     if (stageInfo.type === 'ready') {
+       badges.push({
+         key: 'checklist_ready',
+         label: 'Etapa pronta',
+         tone: 'emerald',
+         icon: CheckCheck,
+         priority: 75,
+         kind: 'progress'
+       });
+     } else if (stageInfo.type === 'pending') {
+       badges.push({
+         key: 'checklist_pending_stage',
+         label: `Faltam ${stageInfo.requiredPending} da etapa`,
+         tone: 'amber',
+         icon: AlertTriangle,
+         priority: 75,
+         kind: 'progress'
+       });
+     } else {
+       // No items or no checklist for this stage
+       badges.push({
+         key: 'checklist_no_items',
+         label: 'Sem checklist da etapa',
+         tone: 'slate',
+         icon: Info,
+         priority: 55,
+         kind: 'progress'
+       });
+     }
+   } catch (err) {
+     console.error(`[Badges] Erro ao calcular status da etapa para o card ${card.id}:`, err);
+     // Fallback amigável para não quebrar o render do card
     badges.push({
       key: 'checklist_ready',
       label: 'Etapa pronta',

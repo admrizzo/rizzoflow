@@ -42,7 +42,14 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
        hasUnseenChanges
      };
  
-     const badges = getCardOperationalBadges(card, operationalContext);
+      const badges = useMemo(() => {
+        try {
+          return getCardOperationalBadges(card, operationalContext);
+        } catch (err) {
+          console.error(`[KanbanCard] Erro ao obter badges para o card ${card.id}:`, err);
+          return [];
+        }
+      }, [card, operationalContext]);
      const visualState = getCardVisualState(card, operationalContext);
  
      const isArchived = card.is_archived;

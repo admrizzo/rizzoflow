@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Se ainda está carregando e não temos usuário, libera.
       setIsLoading((prev) => {
         if (prev) {
-          console.warn('[Auth] watchdog: liberando loading após timeout.');
+       console.warn('[Auth] Watchdog: liberando loading após timeout de 8s para evitar bloqueio da interface. Verifique a conexão com o Supabase.');
         }
         return false;
       });

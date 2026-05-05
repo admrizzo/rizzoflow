@@ -568,8 +568,6 @@ export function ProposalNegotiationSummary({
             </div>
           </div>
         </div>
-          </div>
-        </div>
       </div>
     </div>
   );

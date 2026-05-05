@@ -247,6 +247,7 @@ const getStatusColor = (status: string): string => {
      const initial: Record<string, boolean> = {};
      if (checklists) {
        checklists.forEach(c => {
+         if (!c) return;
          const isCurrentStage = c.column_id === currentColumnId || c.is_global_blocker;
          initial[c.id] = isCurrentStage;
        });
@@ -282,7 +283,7 @@ const getStatusColor = (status: string): string => {
   useEffect(() => {
     if (Object.keys(localCompletedState).length === 0) return;
     
-    const allItems = checklists.flatMap(c => c.items || []);
+     const allItems = checklists.flatMap(c => (c && c.items) || []);
     const toRemove: string[] = [];
     
     for (const itemId of Object.keys(localCompletedState)) {
@@ -304,12 +305,13 @@ const getStatusColor = (status: string): string => {
   // Sync dismissed checklists state with server data
   useEffect(() => {
     const newDismissedState: Record<string, boolean> = {};
-    checklists.forEach(c => {
-      const items = c.items || [];
-      if (items.length > 0 && items.every(item => item.is_dismissed)) {
-        newDismissedState[c.id] = true;
-      }
-    });
+     checklists.forEach(c => {
+       if (!c) return;
+       const items = c.items || [];
+       if (items.length > 0 && items.every(item => item && item.is_dismissed)) {
+         newDismissedState[c.id] = true;
+       }
+     });
     setDismissedChecklists(newDismissedState);
   }, [checklists]);
   

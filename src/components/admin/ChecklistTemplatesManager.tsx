@@ -41,9 +41,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { 
-  ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
-  ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save
-} from 'lucide-react';
+   ArrowLeft, Plus, Pencil, Trash2, GripVertical, ListChecks, 
+   ChevronDown, ChevronRight, Check, X, Copy, Settings, CalendarDays, ListCheck, FileText, Save,
+   AlertCircle
+ } from 'lucide-react';
 import { Board } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
 

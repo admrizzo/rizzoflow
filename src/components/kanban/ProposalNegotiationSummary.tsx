@@ -1,10 +1,11 @@
-import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Building2, MapPin, Calculator, Download, Loader2 } from 'lucide-react';
+import { Handshake, FileSignature, Info, CalendarDays, KeyRound, Shield, UserCircle, Download, Loader2 } from 'lucide-react';
 import { useProposalNegotiationSummary } from '@/hooks/useProposalNegotiationSummary';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { Badge } from '@/components/ui/badge';
+import { Building2, MapPin, Calculator } from 'lucide-react';
 
 interface Props {
   proposalLinkId: string | null | undefined;

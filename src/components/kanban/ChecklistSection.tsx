@@ -1159,16 +1159,16 @@ const getStatusColor = (status: string): string => {
       {activeItemsGlobal.length > 0 && (
         <div className={cn(
           "p-3 rounded-lg border flex items-center justify-between transition-colors",
-          stageStatus === 'ready' ? "bg-emerald-50 border-emerald-200" : 
-          stageStatus === 'pending' ? "bg-amber-50 border-amber-200" : 
+          stageInfo.type === 'ready' ? "bg-emerald-50 border-emerald-200" : 
+          stageInfo.type === 'pending' ? "bg-amber-50 border-amber-200" : 
           "bg-slate-50 border-slate-200"
         )}>
           <div className="flex items-center gap-3">
-            {stageStatus === 'ready' ? (
+            {stageInfo.type === 'ready' ? (
               <div className="bg-emerald-100 p-1.5 rounded-full">
                 <CheckCheck className="h-5 w-5 text-emerald-600" />
               </div>
-            ) : stageStatus === 'pending' ? (
+            ) : stageInfo.type === 'pending' ? (
               <div className="bg-amber-100 p-1.5 rounded-full">
                 <AlertCircle className="h-5 w-5 text-amber-600" />
               </div>
@@ -1180,19 +1180,19 @@ const getStatusColor = (status: string): string => {
             <div>
               <h4 className={cn(
                 "text-sm font-bold",
-                stageStatus === 'ready' ? "text-emerald-900" : 
-                stageStatus === 'pending' ? "text-amber-900" : 
+                stageInfo.type === 'ready' ? "text-emerald-900" : 
+                stageInfo.type === 'pending' ? "text-amber-900" : 
                 "text-slate-900"
               )}>
-                {stageStatus === 'ready' ? "Etapa finalizada" : 
-                 stageStatus === 'pending' ? "Etapa em andamento" : 
+                {stageInfo.type === 'ready' ? "Etapa finalizada" : 
+                 stageInfo.type === 'pending' ? "Etapa em andamento" : 
                  "Sem checklist nesta etapa"}
               </h4>
               <p className="text-[11px] text-muted-foreground leading-tight">
-                {stageStatus === 'ready' 
+                {stageInfo.type === 'ready' 
                    ? "Todos os itens obrigatórios desta etapa foram concluídos." 
-                   : stageStatus === 'pending' 
-                     ? `Faltam ${stageRequiredPending.length} itens obrigatórios desta etapa.`
+                   : stageInfo.type === 'pending' 
+                     ? `Faltam ${stageInfo.requiredPending} itens obrigatórios desta etapa.`
                      : "Nenhum item obrigatório configurado para esta etapa."}
               </p>
             </div>

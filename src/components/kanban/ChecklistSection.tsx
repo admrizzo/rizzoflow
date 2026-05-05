@@ -1145,7 +1145,7 @@ const getStatusColor = (status: string): string => {
               <p className="text-xs text-muted-foreground">
                 {isReadyToAdvance 
                   ? "Todos os itens obrigatórios foram concluídos." 
-                  : `Faltam ${blockingItems.length} itens obrigatórios para poder mover o card.`}
+                   : `Faltam ${stageBlockingPending.length} itens obrigatórios desta etapa para poder mover o card.`}
               </p>
             </div>
           </div>

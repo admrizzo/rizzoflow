@@ -169,12 +169,14 @@ function initials(name?: string | null) {
        
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
       qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-     } catch (err) {
-       console.error(err);
-       toast.error("Erro ao enviar mensagem");
-     } finally {
-       setSending(false);
-     }
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao enviar mensagem");
+      } finally {
+        setSending(false);
+      }
+   }
+ 
    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
      const files = Array.from(e.target.files || []);
      if (files.length + selectedFiles.length > 10) {
@@ -188,8 +190,6 @@ function initials(name?: string | null) {
      }
      setSelectedFiles(prev => [...prev, ...files]);
    };
- 
-  }
 
    const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
    const isGroup = conv?.type === "group";

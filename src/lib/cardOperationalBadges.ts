@@ -114,10 +114,11 @@ export function getCardOperationalBadges(
      
      // 3.1 Pendências impeditivas (Etapa atual + Global Blocker)
      const stageBlockingPending = activeItemsGlobal.filter(i => {
+       if (!i) return false;
        const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
        if (!isBlockingNature || i.is_completed) return false;
        
-       const parentChecklist = allChecklists.find(cl => cl.id === i.checklist_id);
+       const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
        if (!parentChecklist && !i.column_id) return false; // Fail safe for broken data
 
        const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
@@ -128,7 +129,8 @@ export function getCardOperationalBadges(
  
      // Status da etapa atual baseado SOMENTE nos itens da etapa atual/globais
      const stageTotalItems = activeItemsGlobal.filter(i => {
-       const parentChecklist = allChecklists.find(cl => cl.id === i.checklist_id);
+       if (!i) return false;
+       const parentChecklist = allChecklists.find(cl => cl && cl.id === i.checklist_id);
        if (!parentChecklist && !i.column_id) return false; // Fail safe
 
        const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;

@@ -66,6 +66,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseDateOnly } from '@/lib/dateUtils';
 import { ChecklistObservationInput } from './ChecklistObservationInput';
+import { 
+  calculateStageStatus, 
+  isChecklistInStage, 
+  isItemInStage 
+} from '@/lib/stageChecklistStatus';
 
 interface ChecklistItemExtended extends ChecklistItem {
   is_dismissed?: boolean;

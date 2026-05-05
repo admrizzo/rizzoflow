@@ -606,7 +606,7 @@ const getStatusColor = (status: string): string => {
        if (!checklist) return null;
        const items = checklist.items || [];
        const activeItems = items.filter(i => i && !i.is_dismissed);
-       const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
+       const isCurrentStageChecklist = isChecklistInCurrentStage(checklist) || checklist.is_global_blocker;
      const completedCount = activeItems.filter((i) => i.is_completed).length;
      const totalActive = activeItems.length;
      const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;

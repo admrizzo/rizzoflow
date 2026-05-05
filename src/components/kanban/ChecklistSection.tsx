@@ -569,15 +569,8 @@ const getStatusColor = (status: string): string => {
     return false;
   });
 
-  // Any remaining active checklist with a column_id that wasn't grouped (fallback)
-  const otherStageChecklists = activeChecklists.filter(c => {
-    if (!c || groupedChecklistIds.has(c.id)) return false;
-    if (c.column_id !== null) {
-      groupedChecklistIds.add(c.id);
-      return true;
-    }
-    return false;
-  });
+  // Note: any remaining active checklist with a column_id that wasn't grouped 
+  // will fall into additionalChecklists.
 
   const additionalChecklists = activeChecklists.filter(c => {
     return c && !groupedChecklistIds.has(c.id);
@@ -1284,16 +1277,6 @@ const getStatusColor = (status: string): string => {
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapas Anteriores</h5>
             <div className="space-y-3">
               {previousStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
-            </div>
-          </div>
-        )}
-
-        {/* other stage checklists (fallback) */}
-        {otherStageChecklists.length > 0 && (
-          <div className="space-y-3">
-            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Outras Etapas</h5>
-            <div className="space-y-3">
-              {otherStageChecklists.map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

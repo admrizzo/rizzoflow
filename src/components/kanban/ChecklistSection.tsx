@@ -548,10 +548,11 @@ const getStatusColor = (status: string): string => {
      }
    };
 
-     const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
-      const items = checklist.items || [];
-      const activeItems = items.filter(i => !i.is_dismissed);
-      const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
+      const renderChecklist = (checklist: ChecklistWithItemsExtended, isDismissedChecklist: boolean) => {
+       if (!checklist) return null;
+       const items = checklist.items || [];
+       const activeItems = items.filter(i => i && !i.is_dismissed);
+       const isCurrentStageChecklist = checklist.column_id === currentColumnId || checklist.is_global_blocker;
      const completedCount = activeItems.filter((i) => i.is_completed).length;
      const totalActive = activeItems.length;
      const progress = totalActive > 0 ? (completedCount / totalActive) * 100 : 0;
@@ -1182,9 +1183,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id === currentColumnId || c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id === currentColumnId || c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
@@ -1194,9 +1195,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}
@@ -1206,9 +1207,9 @@ const getStatusColor = (status: string): string => {
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">
-              {activeChecklists
-                .filter(c => c.column_id === null && !c.is_global_blocker)
-                .map((checklist) => renderChecklist(checklist, false))}
+               {activeChecklists
+                 .filter(c => c && (c.column_id === null && !c.is_global_blocker))
+                 .map((checklist) => checklist && renderChecklist(checklist, false))}
             </div>
           </div>
         )}

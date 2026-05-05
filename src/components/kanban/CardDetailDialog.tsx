@@ -1548,6 +1548,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                       proposalLinkId={card.proposal_link_id} 
                       cardGuaranteeType={card.guarantee_type}
                       cardResponsible={card.proposal_responsible}
+                      negotiationDetails={card.negotiation_details}
                     />
                     <section className="rounded-lg border border-border bg-card overflow-hidden">
                       <header className="px-4 py-2.5 border-b border-border bg-muted/40 flex items-center gap-2">
@@ -1585,7 +1586,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                             <Label className="text-sm font-medium">
                               {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
                                 ? 'Observações'
-                                : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                                : 'Acordo final / observações internas'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
                             </Label>
                           </div>
                           <Textarea
@@ -1597,7 +1598,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                                 ? ""
                                 : isAdministrativoBoard
                                   ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
-                                  : "Ex: 1000,00 + taxas"
+                                  : "Resumo interno do que ficou acordado de fato na negociação (ex: valor final, condições aceitas, observações do gestor)"
                             }
                             rows={8}
                             disabled={!isEditor}
@@ -1650,7 +1651,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                           <Label className="text-sm font-medium">
                             {isAdministrativoBoard && (hasVendaImovelAlugadoLabel || hasPedidoImovelLocadorLabel)
                               ? 'Observações'
-                              : 'Detalhes da negociação'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
+                              : 'Acordo final / observações internas'} {!isAdministrativoBoard && <span className="text-destructive">*</span>}
                           </Label>
                         </div>
                         <Textarea
@@ -1662,7 +1663,7 @@ function getVisibleAdditionalDescription(description: string | null | undefined)
                               ? ""
                               : isAdministrativoBoard
                                 ? "Acordos, detalhes da locação, taxas da imobiliária e detalhes"
-                                : "Ex: 1000,00 + taxas"
+                                : "Resumo interno do que ficou acordado de fato na negociação (ex: valor final, condições aceitas, observações do gestor)"
                           }
                           rows={8}
                           disabled={!isEditor}

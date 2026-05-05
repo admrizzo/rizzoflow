@@ -246,25 +246,27 @@ const getStatusColor = (status: string): string => {
      return false;
    };
  
-   const stageBlockingPending = activeItemsGlobal.filter(i => {
-     if (!i) return false;
-     
-     // Must be blocking/mandatory
-     const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-     if (!isBlockingNature || i.is_completed) return false;
-     
-     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
-     
-     // Include if it's in current stage OR if it's an explicit global blocker
-     const isCurrentStage = isItemInCurrentStage(i);
-     const isGlobalBlocker = i.is_global_blocker || parentChecklist?.is_global_blocker;
-     
-     return isCurrentStage || isGlobalBlocker;
-   });
- 
-   const stageTotalItems = activeItemsGlobal.filter(i => isItemInCurrentStage(i));
-   
-   const isReadyToAdvance = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
+    // Required items for current stage (including global blockers)
+    const stageRequiredItems = activeItemsGlobal.filter(i => {
+      if (!i) return false;
+      const isMandatory = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+      if (!isMandatory) return false;
+      
+      const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
+      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+      return isGlobal || isItemInCurrentStage(i);
+    });
+
+    const stageRequiredPending = stageRequiredItems.filter(i => !i.is_completed);
+    const hasStageItems = activeItemsGlobal.some(i => isItemInCurrentStage(i));
+    
+    // Final operational status for the current stage
+    const stageStatus = (() => {
+      if (stageRequiredItems.length === 0) {
+        return hasStageItems ? 'ready' : 'no_items';
+      }
+      return stageRequiredPending.length === 0 ? 'ready' : 'pending';
+    })();
  
   const { 
     deleteChecklist, 
@@ -1196,37 +1198,52 @@ const getStatusColor = (status: string): string => {
         <span className="text-sm font-medium">Mapa de Segurança Operacional</span>
       </div>
 
-      {/* Summary Header */}
+
+      {/* Summary Header: Operational Safety Map */}
       {activeItemsGlobal.length > 0 && (
         <div className={cn(
-          "p-3 rounded-lg border flex items-center justify-between",
-          isReadyToAdvance ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
+          "p-3 rounded-lg border flex items-center justify-between transition-colors",
+          stageStatus === 'ready' ? "bg-emerald-50 border-emerald-200" : 
+          stageStatus === 'pending' ? "bg-amber-50 border-amber-200" : 
+          "bg-slate-50 border-slate-200"
         )}>
-          <div className="flex items-center gap-2">
-            {isReadyToAdvance ? (
-              <CheckCheck className="h-5 w-5 text-emerald-600" />
+          <div className="flex items-center gap-3">
+            {stageStatus === 'ready' ? (
+              <div className="bg-emerald-100 p-1.5 rounded-full">
+                <CheckCheck className="h-5 w-5 text-emerald-600" />
+              </div>
+            ) : stageStatus === 'pending' ? (
+              <div className="bg-amber-100 p-1.5 rounded-full">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+              </div>
             ) : (
-              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <div className="bg-slate-100 p-1.5 rounded-full">
+                <Info className="h-5 w-5 text-slate-500" />
+              </div>
             )}
             <div>
               <h4 className={cn(
-                "text-sm font-semibold",
-                isReadyToAdvance ? "text-emerald-900" : "text-amber-900"
+                "text-sm font-bold",
+                stageStatus === 'ready' ? "text-emerald-900" : 
+                stageStatus === 'pending' ? "text-amber-900" : 
+                "text-slate-900"
               )}>
-                {isReadyToAdvance ? "Etapa pronta" : stageBlockingPending.length > 0 ? `Faltam ${stageBlockingPending.length} itens da etapa` : "Etapa em andamento"}
+                {stageStatus === 'ready' ? "Etapa finalizada" : 
+                 stageStatus === 'pending' ? `Faltam ${stageRequiredPending.length} itens da etapa` : 
+                 "Sem checklist nesta etapa"}
               </h4>
-              <p className="text-xs text-muted-foreground">
-                {isReadyToAdvance 
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                {stageStatus === 'ready' 
                    ? "Todos os itens obrigatórios desta etapa foram concluídos." 
-                   : stageBlockingPending.length > 0 
+                   : stageStatus === 'pending' 
                      ? "Conclua os itens obrigatórios para poder mover o card."
-                     : "Inicie o preenchimento dos itens desta etapa."}
+                     : "Nenhum item obrigatório configurado para esta etapa."}
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-xs font-medium text-muted-foreground block">Total do processo</span>
-            <span className="text-sm font-bold">
+          <div className="text-right pl-4 border-l border-slate-200/60">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter block mb-0.5">Total do processo</span>
+            <span className="text-sm font-black text-slate-700">
               {activeItemsGlobal.filter(i => i.is_completed).length}/{activeItemsGlobal.length}
             </span>
           </div>

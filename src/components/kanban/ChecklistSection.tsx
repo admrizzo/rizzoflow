@@ -193,6 +193,7 @@ const getStatusColor = (status: string): string => {
 };
 
  export function ChecklistSection({ checklists, cardId, partyNames = [] }: ChecklistSectionProps) {
+   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
    const allItems = checklists.flatMap(c => c.items || []);
    const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
@@ -238,7 +239,6 @@ const getStatusColor = (status: string): string => {
   const { isEditor, isAdmin, user } = useAuth();
 
    const [hideCompleted, setHideCompleted] = useState<Record<string, boolean>>({});
-   const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
    
    const [openChecklists, setOpenChecklists] = useState<Record<string, boolean>>(() => {
      // Only open current stage checklists by default

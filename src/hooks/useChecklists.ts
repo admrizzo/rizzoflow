@@ -11,10 +11,10 @@ export function useChecklists() {
   const { user } = useAuth();
 
   const createChecklist = useMutation({
-    mutationFn: async ({ cardId, name }: { cardId: string; name: string }) => {
+    mutationFn: async ({ cardId, name, columnId, isGlobalBlocker }: { cardId: string; name: string; columnId?: string | null; isGlobalBlocker?: boolean; }) => {
       const { data, error } = await supabase
         .from('checklists')
-        .insert({ card_id: cardId, name })
+        .insert({ card_id: cardId, name, column_id: columnId || null, is_global_blocker: isGlobalBlocker || false })
         .select()
         .single();
       

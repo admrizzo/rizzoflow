@@ -1059,6 +1059,7 @@ export type Database = {
           checklist_id: string
           civil_status_other: string | null
           civil_status_type: string | null
+          column_id: string | null
           completed_at: string | null
           completed_by: string | null
           content: string
@@ -1071,6 +1072,7 @@ export type Database = {
           id: string
           is_completed: boolean
           is_dismissed: boolean | null
+          is_global_blocker: boolean | null
           issue_date: string | null
           observation_text: string | null
           operational_nature: Database["public"]["Enums"]["operational_nature"]
@@ -1086,6 +1088,7 @@ export type Database = {
           checklist_id: string
           civil_status_other?: string | null
           civil_status_type?: string | null
+          column_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           content: string
@@ -1098,6 +1101,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           is_dismissed?: boolean | null
+          is_global_blocker?: boolean | null
           issue_date?: string | null
           observation_text?: string | null
           operational_nature?: Database["public"]["Enums"]["operational_nature"]
@@ -1113,6 +1117,7 @@ export type Database = {
           checklist_id?: string
           civil_status_other?: string | null
           civil_status_type?: string | null
+          column_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           content?: string
@@ -1125,6 +1130,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           is_dismissed?: boolean | null
+          is_global_blocker?: boolean | null
           issue_date?: string | null
           observation_text?: string | null
           operational_nature?: Database["public"]["Enums"]["operational_nature"]
@@ -1179,22 +1185,28 @@ export type Database = {
       checklists: {
         Row: {
           card_id: string
+          column_id: string | null
           created_at: string
           id: string
+          is_global_blocker: boolean | null
           name: string
           position: number
         }
         Insert: {
           card_id: string
+          column_id?: string | null
           created_at?: string
           id?: string
+          is_global_blocker?: boolean | null
           name: string
           position?: number
         }
         Update: {
           card_id?: string
+          column_id?: string | null
           created_at?: string
           id?: string
+          is_global_blocker?: boolean | null
           name?: string
           position?: number
         }

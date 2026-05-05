@@ -197,11 +197,21 @@ const getStatusColor = (status: string): string => {
    const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
    // Natureza operacional: obrigatorio, condicional, conferencia, evidencia, informativo
-   const blockingItems = activeItemsGlobal.filter(i => 
-     (i.operational_nature === 'obrigatorio' || !i.operational_nature) && !i.is_completed
-   );
- 
-   const isReadyToAdvance = blockingItems.length === 0 && activeItemsGlobal.length > 0;
+    // Filtrar pendências apenas da etapa atual ou globais (is_ready_to_advance context)
+    const currentColumnId = checklists[0]?.column_id || null; // Simplified, ideally passed as prop
+    
+    const stageBlockingPending = activeItemsGlobal.filter(i => {
+      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+      if (!isBlockingNature || i.is_completed) return false;
+      
+      const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+      
+      return isGlobal || isCurrentStage;
+    });
+
+    const isReadyToAdvance = stageBlockingPending.length === 0 && activeItemsGlobal.length > 0;
  
   const { 
     deleteChecklist, 
@@ -1135,7 +1145,7 @@ const getStatusColor = (status: string): string => {
               <p className="text-xs text-muted-foreground">
                 {isReadyToAdvance 
                   ? "Todos os itens obrigatórios foram concluídos." 
-                  : `Faltam ${blockingItems.length} itens obrigatórios para poder mover o card.`}
+                   : `Faltam ${stageBlockingPending.length} itens obrigatórios desta etapa para poder mover o card.`}
               </p>
             </div>
           </div>

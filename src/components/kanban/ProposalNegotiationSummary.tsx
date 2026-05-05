@@ -397,7 +397,7 @@ export function ProposalNegotiationSummary({
           
           <div className="space-y-8 relative z-10">
              {/* HEADER RIZZO */}
-             <div className="flex items-start justify-between border-b-[4px] border-[#198 28% 26%] pb-6">
+             <div className="flex items-start justify-between border-b-[4px] border-[#304955] pb-6">
                <div className="flex items-center gap-4">
                  <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-12 w-auto object-contain" />
                  <div className="h-10 w-[1px] bg-slate-200 mx-2" />
@@ -405,7 +405,7 @@ export function ProposalNegotiationSummary({
                     <h1 className="text-2xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
                      Resumo da Proposta
                    </h1>
-                    <p className="text-[10px] font-bold text-[#198 28% 26%] uppercase tracking-[0.2em] mt-1">
+                    <p className="text-[10px] font-bold text-[#304955] uppercase tracking-[0.2em] mt-1">
                      Para Aprovação do Proprietário
                    </p>
                  </div>
@@ -464,10 +464,10 @@ export function ProposalNegotiationSummary({
                 </div>
               </div>
 
-               <div className="flex items-center justify-between bg-[#1e293b] rounded-xl p-4 text-white shadow-lg border-b-4 border-primary">
+                <div className="flex items-center justify-between bg-[#1e293b] rounded-xl p-4 text-white shadow-lg border-b-4 border-[#304955]">
                  <div className="flex items-center gap-3">
-                   <div className="bg-primary/20 p-1.5 rounded-lg">
-                     <Calculator className="h-4 w-4 text-primary" />
+                    <div className="bg-white/10 p-1.5 rounded-lg">
+                      <Calculator className="h-4 w-4 text-white" />
                    </div>
                    <span className="text-[11px] font-black uppercase tracking-[0.15em] opacity-90">Pacote Total Anunciado</span>
                  </div>
@@ -478,7 +478,7 @@ export function ProposalNegotiationSummary({
             {/* BLOCO 2: CONDIÇÕES PROPOSTAS */}
             <section className="space-y-4 pt-6 border-t-2 border-slate-50">
               <div className="flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-primary" />
+                <Calculator className="h-5 w-5 text-[#304955]" />
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                   Condições Propostas
                 </h3>
@@ -487,8 +487,8 @@ export function ProposalNegotiationSummary({
                <div className="grid grid-cols-1 gap-6">
                  <div className="grid grid-cols-2 gap-6">
                    <div className={cn(
-                     "rounded-xl border-2 p-5 flex flex-col justify-center gap-3 shadow-md",
-                     data.aceitouValor === 'sim' ? "bg-emerald-50 border-emerald-100" : "bg-primary/5 border-primary/10"
+                      "rounded-xl border p-5 flex flex-col justify-center gap-3 shadow-sm",
+                      data.aceitouValor === 'sim' ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"
                    )}>
                      <div className="flex items-center justify-between">
                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aluguel Proposto</p>
@@ -650,17 +650,17 @@ export function ProposalNegotiationSummary({
                  <div className="flex items-center gap-2">
                    <UserCircle className="h-4 w-4 text-slate-400" />
                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                      Responsável pelo fechamento: <span className="text-slate-900 font-black">{cardResponsible || 'Imobiliária'}</span>
+                      Responsável pelo fechamento: <span className="text-[#1e293b] font-black">{cardResponsible || 'Imobiliária'}</span>
                    </p>
                  </div>
                  <p className="text-[9px] text-slate-300 font-medium ml-6 italic">Documento gerado eletronicamente pelo sistema Rizzo Flow</p>
                </div>
                <div className="flex items-center gap-3">
                  <div className="text-right">
-                   <p className="text-[10px] font-black text-primary leading-none">RIZZO IMOBILIÁRIA</p>
+                    <p className="text-[10px] font-black text-[#304955] leading-none">RIZZO IMOBILIÁRIA</p>
                    <p className="text-[9px] font-bold text-slate-400 tracking-tighter leading-none mt-1">RIZZO FLOW · OPERACIONAL</p>
                  </div>
-                 <img src="/smile-rizzo.png" alt="Rizzo" className="h-8 w-auto grayscale opacity-20" />
+                  <img src="/smile-rizzo.png" alt="Rizzo" className="h-10 w-auto grayscale opacity-10" />
                </div>
              </div>
           </div>

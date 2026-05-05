@@ -496,7 +496,7 @@ export function ProposalNegotiationSummary({
                   </div>
                 </div>
 
-                {(data.justificativa || negotiationDetails) && (
+                {(data.justificativa || negotiationDetails) ? (
                   <div className="col-span-2 space-y-4 pt-2">
                     {data.justificativa && (
                       <div className="flex flex-col gap-1">
@@ -511,7 +511,7 @@ export function ProposalNegotiationSummary({
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
               </div>
             </section>
 

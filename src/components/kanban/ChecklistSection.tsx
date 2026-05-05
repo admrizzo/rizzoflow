@@ -196,22 +196,25 @@ const getStatusColor = (status: string): string => {
    const allItems = checklists.flatMap(c => c.items || []);
    const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
-   // Natureza operacional: obrigatorio, condicional, conferencia, evidencia, informativo
-    // Filtrar pendências apenas da etapa atual ou globais (is_ready_to_advance context)
-    const currentColumnId = checklists[0]?.column_id || null; // Simplified, ideally passed as prop
-    
-    const stageBlockingPending = activeItemsGlobal.filter(i => {
-      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
-      if (!isBlockingNature || i.is_completed) return false;
-      
-      const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
-      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
-      const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
-      
-      return isGlobal || isCurrentStage;
-    });
+   const stageBlockingPending = activeItemsGlobal.filter(i => {
+     const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
+     if (!isBlockingNature || i.is_completed) return false;
+     
+     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+     
+     return isGlobal || isCurrentStage;
+   });
 
-    const isReadyToAdvance = stageBlockingPending.length === 0 && activeItemsGlobal.length > 0;
+   const stageTotalItems = activeItemsGlobal.filter(i => {
+     const parentChecklist = checklists.find(cl => cl.id === i.checklist_id);
+     const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
+     const isCurrentStage = (i.column_id === currentColumnId) || (parentChecklist?.column_id === currentColumnId);
+     return isGlobal || isCurrentStage;
+   });
+
+   const isReadyToAdvance = stageBlockingPending.length === 0 && stageTotalItems.length > 0;
  
   const { 
     deleteChecklist, 

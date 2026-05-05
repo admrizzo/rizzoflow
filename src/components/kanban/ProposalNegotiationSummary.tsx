@@ -391,18 +391,18 @@ export function ProposalNegotiationSummary({
       <div className="hidden">
         <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal relative overflow-hidden">
           {/* Background Watermark Smile */}
-          <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none -rotate-12">
-            <img src="/smile-rizzo.png" alt="" className="w-[600px] h-auto" />
+          <div className="absolute top-[12%] -right-[15%] opacity-[0.025] pointer-events-none -rotate-12">
+            <img src="/smile-rizzo.png" alt="" className="w-[500px] h-auto" />
           </div>
           
-          <div className="space-y-8 relative z-10">
+          <div className="space-y-4 relative z-10">
              {/* HEADER RIZZO */}
-             <div className="flex items-start justify-between border-b-[4px] border-[#304955] pb-6">
+             <div className="flex items-center justify-between border-b-[2px] border-[#304955] pb-4">
                <div className="flex items-center gap-4">
                  <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-14 w-auto object-contain" />
                  <div className="h-10 w-[1px] bg-slate-200 mx-2" />
                  <div>
-                    <h1 className="text-3xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
+                    <h1 className="text-xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
                      Resumo da Proposta
                    </h1>
                     <p className="text-[11px] font-bold text-[#304955] uppercase tracking-[0.3em] mt-2">
@@ -419,241 +419,138 @@ export function ProposalNegotiationSummary({
                </div>
              </div>
 
-            {/* BLOCO 1: DADOS DO IMÓVEL E VALORES ANUNCIADOS */}
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-slate-400" />
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                  Dados do Imóvel e Valores Anunciados
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col justify-center gap-2.5 h-full">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Código do Imóvel:</span>
-                    <span className="text-sm font-black text-[#1e293b]">{data.codigoRobust || '—'}</span>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex-shrink-0 bg-white p-1 rounded border border-slate-200 shadow-sm">
-                      <MapPin className="h-3 w-3 text-slate-400" />
-                    </div>
-                    <p className="text-[13px] font-semibold text-slate-700 leading-snug">
-                      {data.endereco || 'Endereço não informado'}
-                    </p>
-                  </div>
+            <section className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Imóvel e Anúncio</h3>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Aluguel Anunciado</p>
-                    <p className="text-base font-bold text-slate-800">{fmtBRL(data.aluguel)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Condomínio</p>
-                    <p className="text-sm font-semibold text-slate-600">{fmtBRL(data.condominio)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">IPTU</p>
-                    <p className="text-sm font-semibold text-slate-600">{fmtBRL(data.iptu)}</p>
-                  </div>
-                  <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Seguro Incêndio</p>
-                    <p className="text-sm font-semibold text-slate-600">{fmtBRL(data.seguro)}</p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black text-slate-300 uppercase tracking-tight">Código:</span>
+                  <span className="text-[9px] font-black text-slate-600">{data.codigoRobust || '—'}</span>
                 </div>
               </div>
-
-                <div className="flex items-center justify-between bg-[#1e293b] rounded-xl p-4 text-white shadow-lg border-b-4 border-[#304955]">
-                 <div className="flex items-center gap-3">
-                    <div className="bg-white/10 p-1.5 rounded-lg">
-                      <Calculator className="h-4 w-4 text-white" />
-                   </div>
-                   <span className="text-[11px] font-black uppercase tracking-[0.15em] opacity-90">Pacote Total Anunciado</span>
-                 </div>
-                 <span className="text-2xl font-black tabular-nums">{fmtBRL(announcedPackage)}</span>
-               </div>
+              <div className="grid grid-cols-5 gap-2">
+                <div className="col-span-3 bg-slate-50/50 rounded-lg border border-slate-100 p-3 flex flex-col justify-center">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-[12px] font-bold text-slate-700 leading-tight line-clamp-2">{data.endereco || 'Endereço não informado'}</p>
+                  </div>
+                </div>
+                <div className="col-span-2 grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg border border-slate-100 p-2"><p className="text-[8px] text-slate-400 uppercase font-black mb-0.5">Aluguel</p><p className="text-xs font-black text-slate-800">{fmtBRL(data.aluguel)}</p></div>
+                  <div className="bg-white rounded-lg border border-slate-100 p-2"><p className="text-[8px] text-slate-400 uppercase font-black mb-0.5">Cond.</p><p className="text-xs font-bold text-slate-600">{fmtBRL(data.condominio)}</p></div>
+                  <div className="bg-white rounded-lg border border-slate-100 p-2"><p className="text-[8px] text-slate-400 uppercase font-black mb-0.5">IPTU</p><p className="text-xs font-bold text-slate-600">{fmtBRL(data.iptu)}</p></div>
+                  <div className="bg-white rounded-lg border border-slate-100 p-2"><p className="text-[8px] text-slate-400 uppercase font-black mb-0.5">Seguro</p><p className="text-xs font-bold text-slate-600">{fmtBRL(data.seguro)}</p></div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between bg-[#1e293b] rounded-lg px-4 py-2 text-white shadow-md border-b-2 border-[#304955]">
+                <div className="flex items-center gap-3">
+                  <Calculator className="h-3.5 w-3.5 text-primary opacity-80" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80">Pacote Total Anunciado</span>
+                </div>
+                <span className="text-lg font-black tabular-nums">{fmtBRL(announcedPackage)}</span>
+              </div>
             </section>
 
             {/* BLOCO 2: CONDIÇÕES PROPOSTAS */}
-            <section className="space-y-3 pt-6 border-t-2 border-slate-50">
+            <section className="space-y-2 pt-3 border-t border-slate-100">
               <div className="flex items-center gap-2">
-                <Calculator className="h-5 w-5 text-[#304955]" />
-                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                  Condições Propostas
-                </h3>
+                <Calculator className="h-4 w-4 text-[#304955]" />
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Proposta Recebida</h3>
               </div>
 
-                <div className="grid grid-cols-1 gap-5">
-                  <div className="grid grid-cols-2 gap-5">
-                   <div className={cn(
-                      "rounded-xl border p-4 flex flex-col justify-center gap-2 shadow-sm min-h-[110px]",
-                      data.aceitouValor === 'sim' ? "bg-emerald-50/80 border-emerald-100" : "bg-slate-50/80 border-slate-100"
-                   )}>
-                     <div className="flex items-center justify-between">
-                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aluguel Proposto</p>
-                       {data.aceitouValor === 'sim' && (
-                         <span className="bg-emerald-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Igual Anúncio</span>
-                       )}
-                     </div>
-                     
-                     <p className="text-3xl font-black text-slate-900 tabular-nums leading-none">
-                       {fmtBRL(proposedRent)}
-                     </p>
-                     
-                     {data.aceitouValor === 'nao' && diffRentAmount !== null && (
-                       <div className="flex items-center gap-2 text-xs font-bold pt-1 border-t border-slate-200/50">
-                         <span className={cn(diffRentAmount >= 0 ? "text-emerald-600" : "text-amber-600")}>
-                           {diffRentAmount > 0 ? '+' : ''}{fmtBRL(diffRentAmount)}
-                         </span>
-                         <span className="text-slate-300">|</span>
-                         <span className={cn(diffRentAmount >= 0 ? "text-emerald-600" : "text-amber-600")}>
-                           {diffRentAmount > 0 ? '+' : ''}{fmtPercent(diffRentPercent)}
-                         </span>
-                         <span className="text-[9px] text-slate-400 font-medium uppercase ml-auto">vs anunciado</span>
-                       </div>
-                     )}
-                   </div>
- 
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 flex flex-col justify-center gap-2 shadow-sm min-h-[110px]">
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pacote Proposto Estimado</p>
-                     <p className="text-3xl font-black text-slate-900 tabular-nums leading-none">
-                       {fmtBRL(proposedPackage)}
-                     </p>
-                     <div className="flex items-center gap-2 text-xs font-bold pt-1 border-t border-slate-200/50">
-                       <span className={cn(diffPackageAmount >= 0 ? "text-slate-600" : "text-amber-600")}>
-                         {diffPackageAmount > 0 ? '+' : ''}{fmtBRL(diffPackageAmount)}
-                       </span>
-                       <span className="text-slate-300">|</span>
-                       <span className={cn(diffPackageAmount >= 0 ? "text-slate-600" : "text-amber-600")}>
-                         {diffPackageAmount > 0 ? '+' : ''}{fmtPercent(diffPackagePercent)}
-                       </span>
-                       <span className="text-[9px] text-slate-400 font-medium uppercase ml-auto">vs anunciado</span>
-                     </div>
-                   </div>
-                 </div>
-
-                <div className="space-y-3">
-                  <div className="bg-white rounded-xl border border-slate-100 p-3.5 shadow-sm flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-slate-400 mt-0.5" />
+                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className={cn("rounded-lg border p-3 flex flex-col justify-center gap-1 shadow-sm", data.aceitouValor === 'sim' ? "bg-emerald-50/60 border-emerald-100" : "bg-slate-50/60 border-slate-100")}>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Aluguel Proposto</p>
+                    <p className="text-xl font-black text-[#1e293b] leading-none">{fmtBRL(proposedRent)}</p>
+                  </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3 flex flex-col justify-center gap-1 shadow-sm">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pacote Proposto</p>
+                    <p className="text-xl font-black text-[#1e293b] leading-none">{fmtBRL(proposedPackage)}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-slate-400" />
                     <div>
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Garantia Pretendida</p>
-                      <p className="text-sm font-bold text-slate-800">
-                        {guaranteeType ? (GUARANTEE_LABELS[guaranteeType] || guaranteeType) : 'Não informada'}
-                      </p>
-                      {data.observacaoGarantia && (
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">{data.observacaoGarantia}</p>
-                      )}
+                      <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Garantia</p>
+                      <p className="text-xs font-black text-slate-700">{guaranteeType ? (GUARANTEE_LABELS[guaranteeType] || guaranteeType) : '—'}</p>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">Início</p>
-                      <p className="text-sm font-bold text-slate-700">{data.contratoDataInicio ? fmtDate(data.contratoDataInicio) : '—'}</p>
-                    </div>
-                    <div className="bg-white rounded-lg border border-slate-100 p-3 shadow-sm">
-                      <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide mb-1">Vencimento</p>
-                      <p className="text-sm font-bold text-slate-700">{data.diaVencimento ? `Dia ${data.diaVencimento}` : '—'}</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-white rounded-lg border border-slate-100 p-2 shadow-sm"><p className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Início</p><p className="text-[10px] font-black text-slate-700">{data.contratoDataInicio ? fmtDate(data.contratoDataInicio) : '—'}</p></div>
+                    <div className="bg-white rounded-lg border border-slate-100 p-2 shadow-sm"><p className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Vencimento</p><p className="text-[10px] font-black text-slate-700">{data.diaVencimento ? `Dia ${data.diaVencimento}` : '—'}</p></div>
                   </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {data.justificativa && (
-                  <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Info className="h-3.5 w-3.5 text-amber-600" />
-                      <p className="text-[10px] font-black text-amber-800 uppercase tracking-wide">Observações sobre a proposta</p>
-                    </div>
-                    <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap italic">
-                      "{data.justificativa}"
-                    </p>
+                  <div className="bg-amber-50/40 border border-amber-100 rounded-lg p-2.5">
+                    <div className="flex items-center gap-2 mb-0.5"><Info className="h-3 w-3 text-amber-600" /><p className="text-[8px] font-black text-amber-800 uppercase tracking-widest">Observações</p></div>
+                    <p className="text-[10px] text-amber-900 leading-tight italic line-clamp-2">"{data.justificativa}"</p>
                   </div>
                 )}
-
-                {/* BLOCO 3: ACORDO REGISTRADO PELA EQUIPE */}
                 {negotiationDetails && (
-                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <CheckCheck className="h-3.5 w-3.5 text-emerald-600" />
-                      <p className="text-[10px] font-black text-emerald-800 uppercase tracking-wide">Acordo registrado pela equipe</p>
-                    </div>
-                    <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
-                      {negotiationDetails}
-                    </p>
+                  <div className="bg-emerald-50/40 border border-emerald-100 rounded-lg p-2.5">
+                    <div className="flex items-center gap-2 mb-0.5"><CheckCheck className="h-3 w-3 text-emerald-600" /><p className="text-[8px] font-black text-emerald-800 uppercase tracking-widest">Acordo</p></div>
+                    <p className="text-[10px] text-slate-700 leading-tight font-bold line-clamp-2">{negotiationDetails}</p>
                   </div>
                 )}
               </div>
             </section>
 
-             {/* SEÇÃO DE APROVAÇÃO DO PROPRIETÁRIO */}
-              <section className="pt-6 space-y-5 border-t-[2px] border-slate-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileSignature className="h-4 w-4 text-slate-400" />
-                  <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                   Retorno do Proprietário
-                 </h3>
-               </div>
-               
-                <div className="grid grid-cols-3 gap-6">
-                  {[
-                    { label: 'Aprovado' },
-                    { label: 'Reprovado' },
-                    { label: 'Contraproposta' }
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-3 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
-                      <div className="h-5 w-5 rounded border-2 border-slate-300 bg-white" />
-                      <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{item.label}</span>
-                    </div>
-                  ))}
-               </div>
-
-                <div className="space-y-3">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Observações do proprietário:</p>
-                  <div className="border-b border-slate-200 w-full h-1" />
-                  <div className="border-b border-slate-200 w-full h-1" />
-                  <div className="border-b border-slate-200 w-full h-1" />
-               </div>
+            <section className="pt-3 space-y-3 border-t border-slate-100">
+              <div className="flex items-center gap-2 mb-1">
+                <FileSignature className="h-4 w-4 text-slate-400" />
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Retorno do Proprietário</h3>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {['Aprovado', 'Reprovado', 'Contraproposta'].map(l => (
+                  <div key={l} className="flex items-center gap-2 bg-slate-50/30 p-2 rounded-lg border border-slate-100">
+                    <div className="h-4 w-4 rounded border border-slate-300 bg-white flex-shrink-0" />
+                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-tight">{l}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Observações do proprietário:</p>
+                <div className="border-b border-slate-100 w-full h-0.5" />
+                <div className="border-b border-slate-100 w-full h-0.5" />
+              </div>
+              <div className="grid grid-cols-2 gap-16 pt-6 pb-2">
+                <div className="space-y-1">
+                  <div className="border-b border-slate-300 w-full" />
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Assinatura</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="border-b border-slate-300 w-full flex justify-around pb-0.5 opacity-60">
+                    <span className="text-slate-300">__</span><span className="text-slate-800">/</span>
+                    <span className="text-slate-300">__</span><span className="text-slate-800">/</span>
+                    <span className="text-slate-300">____</span>
+                  </div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Data</p>
+                </div>
+              </div>
+            </section>
  
-                <div className="grid grid-cols-2 gap-16 pt-8">
-                  <div className="space-y-1.5">
-                    <div className="border-b border-slate-900 w-full" />
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Assinatura do Proprietário</p>
-                 </div>
-                  <div className="space-y-1.5">
-                    <div className="border-b border-slate-900 w-full flex justify-around pb-1">
-                     <span className="text-slate-300">____</span>
-                     <span className="text-slate-800">/</span>
-                     <span className="text-slate-300">____</span>
-                     <span className="text-slate-800">/</span>
-                     <span className="text-slate-300">______</span>
-                   </div>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Data</p>
-                 </div>
-               </div>
-             </section>
- 
-             {/* RODAPÉ DO RESUMO */}
-              <div className="pt-8 flex items-end justify-between border-t border-slate-100">
-               <div className="space-y-1">
-                 <div className="flex items-center gap-2">
-                   <UserCircle className="h-4 w-4 text-slate-400" />
-                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                      Responsável pelo fechamento: <span className="text-[#1e293b] font-black">{cardResponsible || 'Imobiliária'}</span>
-                   </p>
-                 </div>
-                 <p className="text-[9px] text-slate-300 font-medium ml-6 italic">Documento gerado eletronicamente pelo sistema Rizzo Flow</p>
-               </div>
-               <div className="flex items-center gap-3">
-                 <div className="text-right">
-                    <p className="text-[10px] font-black text-[#304955] leading-none">RIZZO IMOBILIÁRIA</p>
-                   <p className="text-[9px] font-bold text-slate-400 tracking-tighter leading-none mt-1">RIZZO FLOW · OPERACIONAL</p>
-                 </div>
-                  <img src="/smile-rizzo.png" alt="Rizzo" className="h-10 w-auto grayscale opacity-10" />
-               </div>
-             </div>
+            <div className="pt-4 pb-1 flex items-end justify-between border-t border-slate-100">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <UserCircle className="h-3.5 w-3.5 text-slate-400" />
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Responsável: <span className="text-[#1e293b] font-black">{cardResponsible || 'Imobiliária'}</span></p>
+                </div>
+                <p className="text-[8px] text-slate-300 font-medium ml-5 italic">Documento eletrônico · Rizzo Flow</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-[#304955] leading-none">RIZZO IMOBILIÁRIA</p>
+                  <p className="text-[8px] font-bold text-slate-400 tracking-tighter leading-none mt-1">RIZZO FLOW · OPERACIONAL</p>
+                </div>
+                <img src="/smile-rizzo.png" alt="Rizzo" className="h-8 w-auto grayscale opacity-10" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

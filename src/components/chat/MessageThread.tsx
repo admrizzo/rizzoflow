@@ -154,6 +154,60 @@ function initials(name?: string | null) {
    const { byMessage, uploadAttachments, isLoading: attachmentsLoading } = useChatAttachments(conversationId);
    const isLoading = messagesLoading;
     const { data: conversations = [], refetch: refetchConversations } = useChatConversations();
+
+   // participants real-time for read status
+   useEffect(() => {
+     if (!conversationId || !user) return;
+     
+     const channel = supabase
+       .channel(`chat-participants-${conversationId}`)
+       .on(
+         'postgres_changes',
+         {
+           event: 'UPDATE',
+           schema: 'public',
+           table: 'chat_participants',
+           filter: `conversation_id=eq.${conversationId}`
+         },
+         () => {
+           // Quando um participante atualiza seu last_read_at, atualizamos a lista de conversas local
+           refetchConversations();
+         }
+       )
+       .subscribe();
+ 
+     return () => {
+       supabase.removeChannel(channel);
+     };
+   }, [conversationId, user, refetchConversations]);
+ 
+   // Vamos carregar os participantes aqui para buscar o status de leitura
+   const { data: participants = [] } = useQuery({
+     queryKey: ['chat-participants-status', conversationId],
+     enabled: !!conversationId,
+     queryFn: async () => {
+       const { data } = await supabase
+         .from('chat_participants')
+         .select('user_id, last_read_at')
+         .eq('conversation_id', conversationId);
+       return data || [];
+     },
+     refetchInterval: 10000, // Fallback
+   });
+ 
+   const isGroup = conv?.type === "group";
+ 
+   const otherParticipantReadAt = useMemo(() => {
+     if (!user || !participants.length || isGroup) return null;
+     const other = participants.find(p => p.user_id !== user.id);
+     return other?.last_read_at || null;
+   }, [participants, user, isGroup]);
+ 
+   const getMessageReadStatus = (messageCreatedAt: string) => {
+     if (isGroup) return null;
+     if (!otherParticipantReadAt) return 'sent';
+     return new Date(otherParticipantReadAt) >= new Date(messageCreatedAt) ? 'read' : 'sent';
+   };
   const conv = conversations.find((c) => c.id === conversationId);
     const [text, setText] = useState("");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);

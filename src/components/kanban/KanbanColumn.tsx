@@ -19,12 +19,12 @@ interface KanbanColumnProps {
   completionDeadlineValues?: Record<string, string | null>;
   budgetDeadlineValues?: Record<string, string | null>;
   showOwnerAvatar?: boolean;
-  hasUnseenChanges?: (cardId: string, updatedAt: string) => boolean;
+   getUnreadCount?: (cardId: string) => number;
   responsibleNames?: Record<string, string>;
 }
 
-export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, isFirstColumn = false, vacancyDeadlineValues = {}, categoryValues = {}, selectedProviders = {}, completionDeadlineValues = {}, budgetDeadlineValues = {}, showOwnerAvatar = false, hasUnseenChanges, responsibleNames = {} }: KanbanColumnProps) {
-  const [isAddingCard, setIsAddingCard] = useState(false);
+ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, isFirstColumn = false, vacancyDeadlineValues = {}, categoryValues = {}, selectedProviders = {}, completionDeadlineValues = {}, budgetDeadlineValues = {}, showOwnerAvatar = false, getUnreadCount, responsibleNames = {} }: KanbanColumnProps) {
+   const [isAddingCard, setIsAddingCard] = useState(false);
 
   return (
     <div className="flex-shrink-0 w-[300px] bg-slate-50/40 backdrop-blur-md border border-slate-200/50 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.02)] flex flex-col max-h-[calc(100vh-10rem)] transition-all hover:bg-slate-50/60 group/column">
@@ -71,7 +71,7 @@ export function KanbanColumn({ column, cards, onCardClick, boardId, boardName, i
                       completionDeadline={completionDeadlineValues[card.id]}
                       budgetDeadline={budgetDeadlineValues[card.id]}
                       showOwnerAvatar={showOwnerAvatar}
-                      hasUnseenChanges={hasUnseenChanges?.(card.id, card.updated_at) ?? false}
+                       unreadCount={getUnreadCount?.(card.id) ?? 0}
                       responsibleName={responsibleNames[card.id] || null}
                     />
                   </div>

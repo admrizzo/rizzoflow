@@ -28,19 +28,19 @@ interface KanbanCardProps {
   completionDeadline?: string | null;
   budgetDeadline?: string | null;
   showOwnerAvatar?: boolean;
-  hasUnseenChanges?: boolean;
+   unreadCount?: number;
   responsibleName?: string | null;
 }
 
 export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
-  ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, hasUnseenChanges, responsibleName }, ref) => {
-     const operationalContext = {
-       column,
-       vacancyDeadline,
-       completionDeadline,
-       budgetDeadline,
-       hasUnseenChanges
-     };
+   ({ card, column, onClick, isDragging, vacancyDeadline, categoryValue, selectedProvider, completionDeadline, budgetDeadline, showOwnerAvatar, unreadCount, responsibleName }, ref) => {
+      const operationalContext = {
+        column,
+        vacancyDeadline,
+        completionDeadline,
+        budgetDeadline,
+        hasUnseenChanges: (unreadCount ?? 0) > 0
+      };
  
       const badges = useMemo(() => {
         try {

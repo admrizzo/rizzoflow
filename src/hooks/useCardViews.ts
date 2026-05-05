@@ -6,44 +6,58 @@ import { useAuth } from '@/contexts/AuthContext';
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-   // Fetch unread counts for all cards in this board
+   // Fetch user's view timestamps
+   const { data: viewsMap = new Map<string, Date>() } = useQuery({
+     queryKey: ['card-views', user?.id, boardId],
+     queryFn: async () => {
+       if (!user?.id || !boardId) return new Map<string, Date>();
+       const { data, error } = await supabase
+         .from('card_views')
+         .select('card_id, last_viewed_at')
+         .eq('user_id', user.id);
+       if (error) throw error;
+       return new Map(data.map(v => [v.card_id, new Date(v.last_viewed_at)]));
+     },
+     enabled: !!user?.id && !!boardId,
+     staleTime: 60000,
+   });
+ 
+   // Fetch unread counts based on notifications, mentions AND relevant activity
    const { data: unreadCounts = {} } = useQuery({
-     queryKey: ['unread-card-changes', user?.id, boardId],
+     queryKey: ['unread-card-changes', user?.id, boardId, Array.from(viewsMap.entries())],
      queryFn: async () => {
        if (!user?.id) return {};
- 
        const counts: Record<string, number> = {};
  
-       // 1. Fetch unread notifications for this user
-       const notificationsQuery = supabase
-         .from('notifications')
-         .select('card_id')
-         .eq('user_id', user.id)
-         .eq('is_read', false)
-         .not('card_id', 'is', null);
+       // 1. Unread notifications
+       const notifsRes = await supabase.from('notifications').select('card_id').eq('user_id', user.id).eq('is_read', false).not('card_id', 'is', null);
+       if (notifsRes.data) notifsRes.data.forEach(n => { if (n.card_id) counts[n.card_id] = (counts[n.card_id] || 0) + 1; });
  
-       // 2. Fetch unread comment mentions for this user
-       const mentionsQuery = supabase
-         .from('comment_mentions')
-         .select('card_id')
-         .eq('mentioned_user_id', user.id)
-         .eq('is_read', false);
+       // 2. Unread mentions
+       const mentionsRes = await supabase.from('comment_mentions').select('card_id').eq('mentioned_user_id', user.id).eq('is_read', false);
+       if (mentionsRes.data) mentionsRes.data.forEach(m => { if (m.card_id) counts[m.card_id] = (counts[m.card_id] || 0) + 1; });
  
-       const [notifsRes, mentionsRes] = await Promise.all([
-         notificationsQuery,
-         mentionsQuery
-       ]);
+       // 3. Relevant Activity Logs (since last view)
+       // Only for cards the user has already viewed at least once (to avoid noise on new boards)
+       const viewedCardIds = Array.from(viewsMap.keys());
+       if (viewedCardIds.length > 0) {
+         const { data: activityLogs } = await supabase
+           .from('card_activity_logs')
+           .select('card_id, created_at, actor_user_id')
+           .in('card_id', viewedCardIds)
+           .neq('actor_user_id', user.id)
+           .order('created_at', { ascending: false });
  
-       if (notifsRes.data) {
-         notifsRes.data.forEach(n => {
-           if (n.card_id) counts[n.card_id] = (counts[n.card_id] || 0) + 1;
-         });
-       }
- 
-       if (mentionsRes.data) {
-         mentionsRes.data.forEach(m => {
-           if (m.card_id) counts[m.card_id] = (counts[m.card_id] || 0) + 1;
-         });
+         if (activityLogs) {
+           activityLogs.forEach(log => {
+             const lastView = viewsMap.get(log.card_id);
+             if (lastView && new Date(log.created_at) > lastView) {
+               // Only increment if we haven't already counted notifications/mentions for this card 
+               // to keep it sane, or just ensure it's at least 1.
+               if (!counts[log.card_id]) counts[log.card_id] = 1;
+             }
+           });
+         }
        }
  
        return counts;

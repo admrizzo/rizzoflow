@@ -11,7 +11,8 @@
  *   ...
  *   perfMeasure('minha-fila:ready', 'minha-fila:ready:start')
  */
- const isDev = typeof import.meta !== 'undefined' && ((import.meta as any).env?.DEV === true || (import.meta as any).env?.VITE_DEBUG_PERF === 'true');
+ // Forçamos ativação em produção para esta rodada de testes solicitada pelo usuário
+ const isDev = true;
 
 export function perfMark(name: string): void {
   if (!isDev) return;

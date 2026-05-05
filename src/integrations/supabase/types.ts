@@ -1010,6 +1010,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          operational_nature: Database["public"]["Enums"]["operational_nature"]
           position: number | null
           requires_date: boolean | null
           requires_observation: boolean | null
@@ -1021,6 +1022,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          operational_nature?: Database["public"]["Enums"]["operational_nature"]
           position?: number | null
           requires_date?: boolean | null
           requires_observation?: boolean | null
@@ -1032,6 +1034,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          operational_nature?: Database["public"]["Enums"]["operational_nature"]
           position?: number | null
           requires_date?: boolean | null
           requires_observation?: boolean | null
@@ -1070,6 +1073,7 @@ export type Database = {
           is_dismissed: boolean | null
           issue_date: string | null
           observation_text: string | null
+          operational_nature: Database["public"]["Enums"]["operational_nature"]
           position: number
           requires_date: boolean | null
           requires_observation: boolean | null
@@ -1096,6 +1100,7 @@ export type Database = {
           is_dismissed?: boolean | null
           issue_date?: string | null
           observation_text?: string | null
+          operational_nature?: Database["public"]["Enums"]["operational_nature"]
           position?: number
           requires_date?: boolean | null
           requires_observation?: boolean | null
@@ -1122,6 +1127,7 @@ export type Database = {
           is_dismissed?: boolean | null
           issue_date?: string | null
           observation_text?: string | null
+          operational_nature?: Database["public"]["Enums"]["operational_nature"]
           position?: number
           requires_date?: boolean | null
           requires_observation?: boolean | null
@@ -2523,6 +2529,12 @@ export type Database = {
         | "ucred"
         | "sem_garantia"
         | "carta_fianca"
+      operational_nature:
+        | "obrigatorio"
+        | "condicional"
+        | "conferencia"
+        | "evidencia"
+        | "informativo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2671,6 +2683,13 @@ export const Constants = {
         "ucred",
         "sem_garantia",
         "carta_fianca",
+      ],
+      operational_nature: [
+        "obrigatorio",
+        "condicional",
+        "conferencia",
+        "evidencia",
+        "informativo",
       ],
     },
   },

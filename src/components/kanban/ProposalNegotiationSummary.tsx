@@ -89,10 +89,10 @@ export function ProposalNegotiationSummary({
      setIsExporting(true);
      try {
        const clone = reportRef.current.cloneNode(true) as HTMLElement;
-       clone.style.position = 'absolute';
-       clone.style.top = '-9999px';
-       clone.style.left = '-9999px';
-       clone.style.width = '800px';
+       clone.style.position = 'fixed';
+       clone.style.top = '0';
+       clone.style.left = '0';
+       clone.style.width = '850px';
        clone.style.padding = '40px';
        clone.style.backgroundColor = '#ffffff';
        clone.style.display = 'block';
@@ -114,24 +114,27 @@ export function ProposalNegotiationSummary({
        await new Promise(resolve => setTimeout(resolve, 300));
  
        const canvas = await html2canvas(clone, {
-         scale: 2,
+         scale: 1.5,
          backgroundColor: '#ffffff',
          useCORS: true,
          logging: false,
-         width: 800,
-         windowWidth: 800,
+         width: 850,
+         windowWidth: 850,
        });
  
        document.body.removeChild(clone);
  
-       const imgData = canvas.toDataURL('image/png', 1.0);
+       const imgData = canvas.toDataURL('image/jpeg', 0.85);
        const pdf = new jsPDF({
          orientation: 'portrait',
-         unit: 'px',
-         format: [canvas.width, canvas.height]
+         unit: 'mm',
+         format: 'a4'
        });
        
-       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+       const imgWidth = 210;
+       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+       
+       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
        
        const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
        const filename = `RESUMO PROPOSTA IMÓVEL COD: ${data.codigoRobust || 'IMÓVEL'} - ${dateStr}.pdf`;
@@ -386,18 +389,23 @@ export function ProposalNegotiationSummary({
 
       {/* Hidden container for export only - THE OWNER REPORT LAYOUT */}
       <div className="hidden">
-        <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal">
-          <div className="space-y-8">
+        <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal relative overflow-hidden">
+          {/* Background Watermark Smile */}
+          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none -rotate-12">
+            <img src="/smile-rizzo.png" alt="" className="w-[450px] h-auto" />
+          </div>
+          
+          <div className="space-y-8 relative z-10">
              {/* HEADER RIZZO */}
-             <div className="flex items-start justify-between border-b-[3px] border-primary pb-6">
+             <div className="flex items-start justify-between border-b-[4px] border-[#198 28% 26%] pb-6">
                <div className="flex items-center gap-4">
                  <img src="/logo-rizzo.png" alt="Rizzo Imobiliária" className="h-12 w-auto object-contain" />
                  <div className="h-10 w-[1px] bg-slate-200 mx-2" />
                  <div>
-                   <h1 className="text-2xl font-black tracking-tighter text-slate-800 uppercase leading-none">
+                    <h1 className="text-2xl font-black tracking-tighter text-[#1e293b] uppercase leading-none">
                      Resumo da Proposta
                    </h1>
-                   <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
+                    <p className="text-[10px] font-bold text-[#198 28% 26%] uppercase tracking-[0.2em] mt-1">
                      Para Aprovação do Proprietário
                    </p>
                  </div>
@@ -422,10 +430,10 @@ export function ProposalNegotiationSummary({
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Identificação</span>
-                    <span className="text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
-                      {data.codigoRobust ? `Cód. ${data.codigoRobust}` : '—'}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Código do Imóvel</span>
+                    <span className="text-lg font-black text-[#1e293b] leading-none">
+                      {data.codigoRobust || '—'}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">

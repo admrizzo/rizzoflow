@@ -1229,7 +1229,7 @@ const getStatusColor = (status: string): string => {
                 "text-slate-900"
               )}>
                 {stageStatus === 'ready' ? "Etapa finalizada" : 
-                 stageStatus === 'pending' ? `Faltam ${stageRequiredPending.length} itens da etapa` : 
+                 stageStatus === 'pending' ? "Etapa em andamento" : 
                  "Sem checklist nesta etapa"}
               </h4>
               <p className="text-[11px] text-muted-foreground leading-tight">

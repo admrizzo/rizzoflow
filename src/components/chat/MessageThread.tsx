@@ -1,4 +1,4 @@
- import { useEffect, useRef, useState, useLayoutEffect } from "react";
+  import { useEffect, useRef, useState, useLayoutEffect, useMemo } from "react";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useChatConversations } from "@/hooks/useChatConversations";
 import { useAuth } from "@/contexts/AuthContext";

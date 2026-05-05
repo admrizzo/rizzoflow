@@ -198,10 +198,11 @@ const getStatusColor = (status: string): string => {
    const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
    
    const stageBlockingPending = activeItemsGlobal.filter(i => {
+     if (!i) return false;
      const isBlockingNature = (i.operational_nature === 'obrigatorio' || !i.operational_nature);
      if (!isBlockingNature || i.is_completed) return false;
      
-     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
      if (!parentChecklist && !i.column_id) return false; // Fail safe
 
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
@@ -211,7 +212,8 @@ const getStatusColor = (status: string): string => {
    });
 
    const stageTotalItems = activeItemsGlobal.filter(i => {
-     const parentChecklist = checklists?.find(cl => cl.id === i.checklist_id);
+     if (!i) return false;
+     const parentChecklist = checklists?.find(cl => cl && cl.id === i.checklist_id);
      if (!parentChecklist && !i.column_id) return false; // Fail safe
 
      const isGlobal = i.is_global_blocker || parentChecklist?.is_global_blocker;
@@ -268,12 +270,13 @@ const getStatusColor = (status: string): string => {
   };
   
   // Check if a checklist is fully dismissed (all items dismissed)
-  const isChecklistDismissed = (checklist: ChecklistWithItemsExtended) => {
-    if (dismissedChecklists[checklist.id]) return true;
-    const items = checklist.items || [];
-    if (items.length === 0) return false;
-    return items.every(item => item.is_dismissed);
-  };
+   const isChecklistDismissed = (checklist: ChecklistWithItemsExtended) => {
+     if (!checklist || !checklist.id) return false;
+     if (dismissedChecklists[checklist.id]) return true;
+     const items = checklist.items || [];
+     if (items.length === 0) return false;
+     return items.every(item => item && item.is_dismissed);
+   };
   
   // Clear local overrides when server state catches up
   useEffect(() => {
@@ -1179,7 +1182,7 @@ const getStatusColor = (status: string): string => {
 
       <div className="space-y-6">
         {/* current stage checklists */}
-        {activeChecklists.some(c => c.column_id === currentColumnId || c.is_global_blocker) && (
+         {activeChecklists.some(c => c && (c.column_id === currentColumnId || c.is_global_blocker)) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Etapa Atual</h5>
             <div className="space-y-3">
@@ -1191,7 +1194,7 @@ const getStatusColor = (status: string): string => {
         )}
 
         {/* next stage checklists */}
-        {activeChecklists.some(c => c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
+         {activeChecklists.some(c => c && c.column_id !== null && c.column_id !== currentColumnId && !c.is_global_blocker) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Próximas Etapas</h5>
             <div className="space-y-3">
@@ -1203,7 +1206,7 @@ const getStatusColor = (status: string): string => {
         )}
 
         {/* checklists without column_id (unassigned) */}
-        {activeChecklists.some(c => c.column_id === null && !c.is_global_blocker) && (
+         {activeChecklists.some(c => c && c.column_id === null && !c.is_global_blocker) && (
           <div className="space-y-3">
             <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Itens Adicionais</h5>
             <div className="space-y-3">

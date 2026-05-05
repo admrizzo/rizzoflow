@@ -391,8 +391,8 @@ export function ProposalNegotiationSummary({
       <div className="hidden">
         <div ref={reportRef} className="bg-white font-sans text-slate-900 leading-normal relative overflow-hidden">
           {/* Background Watermark Smile */}
-          <div className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] pointer-events-none -rotate-12">
-            <img src="/smile-rizzo.png" alt="" className="w-[450px] h-auto" />
+          <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none -rotate-12">
+            <img src="/smile-rizzo.png" alt="" className="w-[600px] h-auto" />
           </div>
           
           <div className="space-y-8 relative z-10">
@@ -420,7 +420,7 @@ export function ProposalNegotiationSummary({
              </div>
 
             {/* BLOCO 1: DADOS DO IMÓVEL E VALORES ANUNCIADOS */}
-            <section className="space-y-4">
+            <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-slate-400" />
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
@@ -429,16 +429,16 @@ export function ProposalNegotiationSummary({
               </div>
 
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 space-y-3">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Código do Imóvel</span>
-                    <span className="text-lg font-black text-[#1e293b] leading-none">
-                      {data.codigoRobust || '—'}
-                    </span>
+                <div className="bg-slate-50 rounded-xl border border-slate-100 p-4 flex flex-col justify-center gap-2.5 h-full">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">Código do Imóvel:</span>
+                    <span className="text-sm font-black text-[#1e293b]">{data.codigoRobust || '—'}</span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex-shrink-0 bg-white p-1 rounded border border-slate-200 shadow-sm">
+                      <MapPin className="h-3 w-3 text-slate-400" />
+                    </div>
+                    <p className="text-[13px] font-semibold text-slate-700 leading-snug">
                       {data.endereco || 'Endereço não informado'}
                     </p>
                   </div>
@@ -476,7 +476,7 @@ export function ProposalNegotiationSummary({
             </section>
 
             {/* BLOCO 2: CONDIÇÕES PROPOSTAS */}
-            <section className="space-y-4 pt-6 border-t-2 border-slate-50">
+            <section className="space-y-3 pt-6 border-t-2 border-slate-50">
               <div className="flex items-center gap-2">
                 <Calculator className="h-5 w-5 text-[#304955]" />
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
@@ -484,11 +484,11 @@ export function ProposalNegotiationSummary({
                 </h3>
               </div>
 
-               <div className="grid grid-cols-1 gap-6">
-                 <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-5">
+                  <div className="grid grid-cols-2 gap-5">
                    <div className={cn(
-                      "rounded-xl border p-5 flex flex-col justify-center gap-3 shadow-sm",
-                      data.aceitouValor === 'sim' ? "bg-emerald-50 border-emerald-100" : "bg-slate-50 border-slate-100"
+                      "rounded-xl border p-4 flex flex-col justify-center gap-2 shadow-sm min-h-[110px]",
+                      data.aceitouValor === 'sim' ? "bg-emerald-50/80 border-emerald-100" : "bg-slate-50/80 border-slate-100"
                    )}>
                      <div className="flex items-center justify-between">
                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aluguel Proposto</p>
@@ -515,10 +515,7 @@ export function ProposalNegotiationSummary({
                      )}
                    </div>
  
-                   <div className={cn(
-                     "rounded-xl border-2 p-5 flex flex-col justify-center gap-3 shadow-md",
-                     diffPackageAmount >= 0 ? "bg-slate-50 border-slate-200" : "bg-amber-50/50 border-amber-100"
-                   )}>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 flex flex-col justify-center gap-2 shadow-sm min-h-[110px]">
                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pacote Proposto Estimado</p>
                      <p className="text-3xl font-black text-slate-900 tabular-nums leading-none">
                        {fmtBRL(proposedPackage)}
@@ -536,8 +533,8 @@ export function ProposalNegotiationSummary({
                    </div>
                  </div>
 
-                <div className="space-y-4">
-                  <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm flex items-start gap-3">
+                <div className="space-y-3">
+                  <div className="bg-white rounded-xl border border-slate-100 p-3.5 shadow-sm flex items-start gap-3">
                     <Shield className="h-5 w-5 text-slate-400 mt-0.5" />
                     <div>
                       <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wide">Garantia Pretendida</p>
@@ -563,76 +560,70 @@ export function ProposalNegotiationSummary({
                 </div>
               </div>
 
-              {data.justificativa && (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-5 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Info className="h-4 w-4 text-amber-600" />
-                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">Observações sobre a proposta</p>
+              <div className="grid grid-cols-1 gap-3">
+                {data.justificativa && (
+                  <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Info className="h-3.5 w-3.5 text-amber-600" />
+                      <p className="text-[10px] font-black text-amber-800 uppercase tracking-wide">Observações sobre a proposta</p>
+                    </div>
+                    <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap italic">
+                      "{data.justificativa}"
+                    </p>
                   </div>
-                  <p className="text-sm text-amber-900 leading-relaxed whitespace-pre-wrap italic">
-                    "{data.justificativa}"
-                  </p>
-                </div>
-              )}
+                )}
 
-            {/* BLOCO 3: ACORDO REGISTRADO PELA EQUIPE */}
-            {negotiationDetails && (
-              <section className="space-y-4 pt-6 border-t-2 border-slate-50">
-                <div className="flex items-center gap-2">
-                  <CheckCheck className="h-5 w-5 text-emerald-600" />
-                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                    Acordo registrado pela equipe
-                  </h3>
-                </div>
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6 shadow-sm">
-                  <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
-                    {negotiationDetails}
-                  </p>
-                </div>
-              </section>
-            )}
+                {/* BLOCO 3: ACORDO REGISTRADO PELA EQUIPE */}
+                {negotiationDetails && (
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <CheckCheck className="h-3.5 w-3.5 text-emerald-600" />
+                      <p className="text-[10px] font-black text-emerald-800 uppercase tracking-wide">Acordo registrado pela equipe</p>
+                    </div>
+                    <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                      {negotiationDetails}
+                    </p>
+                  </div>
+                )}
+              </div>
             </section>
 
              {/* SEÇÃO DE APROVAÇÃO DO PROPRIETÁRIO */}
-             <section className="pt-8 space-y-6 border-t-[3px] border-slate-100">
-               <div className="flex items-center gap-2">
-                 <FileSignature className="h-5 w-5 text-slate-400" />
-                 <h3 className="text-sm font-black text-slate-500 uppercase tracking-wider">
+              <section className="pt-6 space-y-5 border-t-[2px] border-slate-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileSignature className="h-4 w-4 text-slate-400" />
+                  <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
                    Retorno do Proprietário
                  </h3>
                </div>
                
-               <div className="grid grid-cols-3 gap-8">
-                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                   <Square className="h-6 w-6 text-slate-300" />
-                   <span className="text-sm font-bold text-slate-700 uppercase">Aprovado</span>
-                 </div>
-                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                   <Square className="h-6 w-6 text-slate-300" />
-                   <span className="text-sm font-bold text-slate-700 uppercase">Reprovado</span>
-                 </div>
-                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                   <Square className="h-6 w-6 text-slate-300" />
-                   <span className="text-sm font-bold text-slate-700 uppercase">Contraproposta</span>
-                 </div>
+                <div className="grid grid-cols-3 gap-6">
+                  {[
+                    { label: 'Aprovado' },
+                    { label: 'Reprovado' },
+                    { label: 'Contraproposta' }
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-3 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                      <div className="h-5 w-5 rounded border-2 border-slate-300 bg-white" />
+                      <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{item.label}</span>
+                    </div>
+                  ))}
+               </div>
+
+                <div className="space-y-3">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Observações do proprietário:</p>
+                  <div className="border-b border-slate-200 w-full h-1" />
+                  <div className="border-b border-slate-200 w-full h-1" />
+                  <div className="border-b border-slate-200 w-full h-1" />
                </div>
  
-               <div className="space-y-4">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Observações do proprietário:</p>
-                 <div className="space-y-6">
-                   <div className="border-b border-slate-200 w-full h-2" />
-                   <div className="border-b border-slate-200 w-full h-2" />
-                   <div className="border-b border-slate-200 w-full h-2" />
-                 </div>
-               </div>
- 
-               <div className="grid grid-cols-2 gap-12 pt-12">
-                 <div className="space-y-2">
-                   <div className="border-b-2 border-slate-800 w-full pt-8" />
+                <div className="grid grid-cols-2 gap-16 pt-8">
+                  <div className="space-y-1.5">
+                    <div className="border-b border-slate-900 w-full" />
                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Assinatura do Proprietário</p>
                  </div>
-                 <div className="space-y-2">
-                   <div className="border-b-2 border-slate-800 w-full pt-8 flex justify-around">
+                  <div className="space-y-1.5">
+                    <div className="border-b border-slate-900 w-full flex justify-around pb-1">
                      <span className="text-slate-300">____</span>
                      <span className="text-slate-800">/</span>
                      <span className="text-slate-300">____</span>
@@ -645,7 +636,7 @@ export function ProposalNegotiationSummary({
              </section>
  
              {/* RODAPÉ DO RESUMO */}
-             <div className="pt-10 flex items-end justify-between border-t border-slate-100">
+              <div className="pt-8 flex items-end justify-between border-t border-slate-100">
                <div className="space-y-1">
                  <div className="flex items-center gap-2">
                    <UserCircle className="h-4 w-4 text-slate-400" />

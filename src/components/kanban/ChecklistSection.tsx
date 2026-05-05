@@ -585,13 +585,15 @@ const getStatusColor = (status: string): string => {
        ? `${formattedName} (${partyInfo.name})`
        : formattedName;
 
-    const sortedItems = [...items].sort((a, b) => a.position - b.position);
-    
-    const visibleItems = shouldHideCompleted 
-      ? sortedItems.filter(i => !i.is_completed && !i.is_dismissed)
-      : sortedItems.filter(i => !i.is_dismissed);
-    
-    const dismissedItems = sortedItems.filter(i => i.is_dismissed);
+     const sortedItems = [...items]
+       .filter(i => i !== null && i !== undefined)
+       .sort((a, b) => (a.position || 0) - (b.position || 0));
+     
+     const visibleItems = shouldHideCompleted 
+       ? sortedItems.filter(i => i && !i.is_completed && !i.is_dismissed)
+       : sortedItems.filter(i => i && !i.is_dismissed);
+     
+     const dismissedItems = sortedItems.filter(i => i && i.is_dismissed);
 
     return (
       <div key={checklist.id} className={cn(

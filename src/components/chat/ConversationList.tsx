@@ -8,7 +8,7 @@ import { useChatConversations } from "@/hooks/useChatConversations";
  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, MessageSquarePlus, X, User, MessageSquare, Users, Check, Plus, XCircle } from "lucide-react";
+ import { Search, MessageSquarePlus, X, User, MessageSquare, Users, Check, Plus, XCircle, Volume2, VolumeX } from "lucide-react";
 import { SheetClose } from "@/components/ui/sheet";
 import {
   Dialog,
@@ -36,7 +36,14 @@ function initials(name?: string | null) {
 
  export function ConversationList({ onSelect }: { onSelect?: (id: string) => void }) {
    const { user } = useAuth();
-    const { activeConversationId, setActiveConversationId, close, onlineUserIds } = useChat();
+   const { 
+     activeConversationId, 
+     setActiveConversationId, 
+     close, 
+     onlineUserIds,
+     isSoundEnabled,
+     setSoundEnabled 
+   } = useChat();
   const { data: conversations = [], isLoading, refetch: refetchConversations } = useChatConversations();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"chats" | "people" | "groups">("chats");
@@ -138,7 +145,7 @@ function initials(name?: string | null) {
 
   return (
     <div className="flex h-full flex-col bg-background chat-conversation-list min-w-0 overflow-hidden relative">
-      <div className="px-4 py-3 border-b border-border bg-background shrink-0 flex items-center gap-3">
+      <div className="px-4 py-3 border-b border-border bg-background shrink-0 flex items-center gap-2">
         <div className="flex-1 min-w-0">
            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "chats" | "people" | "groups")} className="w-full">
             <TabsList className="grid w-full grid-cols-3 h-9 bg-muted/50 p-1 rounded-lg">
@@ -149,15 +156,29 @@ function initials(name?: string | null) {
           </Tabs>
         </div>
 
-        <SheetClose asChild>
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            aria-label="Fechar chat"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all hover:scale-105 active:scale-95"
+            title={isSoundEnabled ? "Desativar som do chat" : "Ativar som do chat"}
+            onClick={() => setSoundEnabled(!isSoundEnabled)}
+            className={cn(
+              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all hover:bg-muted",
+              isSoundEnabled ? "text-primary/70" : "text-muted-foreground"
+            )}
           >
-            <X className="h-4 w-4" />
+            {isSoundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
-        </SheetClose>
+
+          <SheetClose asChild>
+            <button
+              type="button"
+              aria-label="Fechar chat"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </SheetClose>
+        </div>
       </div>
 
       <div className="p-3 border-b border-border shrink-0 space-y-2">

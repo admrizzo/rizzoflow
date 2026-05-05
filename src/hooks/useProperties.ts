@@ -86,14 +86,22 @@ export function usePropertiesLight(finalidade?: string) {
         .order('codigo_robust');
       if (error) throw error;
       let results = (data ?? []) as PropertyLight[];
-      if (finalidade) {
-        const normalize = (s: string) =>
-          s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const needle = normalize(finalidade);
-        results = results.filter(
-          (p) => p.finalidade && normalize(p.finalidade).includes(needle),
-        );
-      }
+       if (finalidade) {
+         const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+         
+         const isLocacao = normalize(finalidade).includes('locacao');
+         if (isLocacao) {
+           const locacaoTerms = ['locacao', 'aluguel', 'mensal'];
+           results = results.filter(p => {
+             if (!p.finalidade) return false;
+             const normalizedVal = normalize(p.finalidade);
+             return locacaoTerms.some(term => normalizedVal.includes(term));
+           });
+         } else {
+           const needle = normalize(finalidade);
+           results = results.filter(p => p.finalidade && normalize(p.finalidade).includes(needle));
+         }
+       }
       return results;
     },
     staleTime: 60_000,

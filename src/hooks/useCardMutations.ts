@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardWithRelations } from '@/types/database';
+ import { Card, CardWithRelations, CardParty } from '@/types/database';
+ import { buildProposalCardTitle } from '@/lib/cardTitleHelper';
+ import { useProposalDraftData } from '@/hooks/useProposalDraft';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBoardConfig } from '@/hooks/useBoardConfig';
@@ -31,28 +33,63 @@ export function useCardMutations(boardId?: string) {
   const { user, isAdmin } = useAuth();
   const { config: boardConfig } = useBoardConfig(boardId);
 
-  const updateCard = useMutation({
-    mutationFn: async ({ id, ...updates }: (Partial<Card> | Partial<CardWithRelations>) & { id: string }) => {
-      // Snapshot mínimo apenas dos campos rastreados — single row, sem joins.
-      let prev: Pick<
-        Card,
-        'next_action' | 'next_action_due_date' | 'responsible_user_id'
-      > | null = null;
-      const tracksHistory =
-        Object.prototype.hasOwnProperty.call(updates, 'next_action') ||
-        Object.prototype.hasOwnProperty.call(updates, 'next_action_due_date') ||
-        Object.prototype.hasOwnProperty.call(updates, 'responsible_user_id');
-
-      if (tracksHistory) {
-        const { data } = await supabase
-          .from('cards')
-          .select('next_action, next_action_due_date, responsible_user_id')
-          .eq('id', id)
-          .maybeSingle();
-        prev = (data as any) ?? null;
-      }
-
-      const { data, error } = await supabase
+   const updateCard = useMutation({
+     mutationFn: async ({ id, ...updates }: (Partial<Card> | Partial<CardWithRelations>) & { id: string }) => {
+       // Snapshot mínimo apenas dos campos rastreados e proteção de título
+       let prev: (Pick<
+         Card,
+         'next_action' | 'next_action_due_date' | 'responsible_user_id' | 'title' | 'proposal_link_id' | 'robust_code' | 'building_name'
+       >) | null = null;
+       
+       const { data: currentCard } = await supabase
+         .from('cards')
+         .select('next_action, next_action_due_date, responsible_user_id, title, proposal_link_id, robust_code, building_name')
+         .eq('id', id)
+         .maybeSingle();
+       
+       prev = (currentCard as any) ?? null;
+ 
+       // PROTEÇÃO DE TÍTULO: se o título está sendo atualizado (ou campos que afetam o título)
+       if (Object.prototype.hasOwnProperty.call(updates, 'title') || 
+           Object.prototype.hasOwnProperty.call(updates, 'robust_code') ||
+           Object.prototype.hasOwnProperty.call(updates, 'building_name')) {
+         
+         const newTitle = (updates as any).title;
+         const isNewTitleInvalid = !newTitle || newTitle === 'Não informado' || newTitle.startsWith('Não informado');
+         const isCurrentTitleValid = prev?.title && !prev.title.startsWith('Não informado');
+ 
+         if (isNewTitleInvalid && isCurrentTitleValid) {
+           // Tenta reconstruir o título usando o helper antes de desistir
+           const proposalLinkId = updates.proposal_link_id || prev?.proposal_link_id;
+           
+           if (proposalLinkId) {
+             const [draftData, { data: parties }] = await Promise.all([
+               useProposalDraftData(proposalLinkId),
+               supabase.from('proposal_parties' as any).select('role, name').eq('proposal_link_id', proposalLinkId)
+             ]);
+ 
+             const reconstructedTitle = buildProposalCardTitle({
+               currentTitle: prev?.title,
+               propertyIdentification: updates.building_name || prev?.building_name || updates.robust_code || prev?.robust_code,
+               parties: (parties as any[]) || [],
+               draftData,
+               titlePattern: boardConfig?.title_pattern
+             });
+ 
+             if (reconstructedTitle && !reconstructedTitle.startsWith('Não informado')) {
+               (updates as any).title = reconstructedTitle;
+             } else {
+               // Se falhou em reconstruir um título bom, mantém o atual
+               delete (updates as any).title;
+             }
+           } else {
+             // Sem link de proposta para reconstruir, mantém o título atual
+             delete (updates as any).title;
+           }
+         }
+       }
+ 
+       const { data, error } = await supabase
         .from('cards')
         .update(updates)
         .eq('id', id)

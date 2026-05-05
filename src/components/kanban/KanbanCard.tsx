@@ -159,25 +159,11 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
       !!robustCode &&
       new RegExp(`^#?${robustCode}\\s*[-–—]\\s*`, 'i').test(storedTitle);
 
-    const primaryTenantName = card.parties?.find(p => p.party_type === 'locatario')?.name || null;
-    const propertyIdentification = card.building_name;
-
-    // Prioriza o nome do locatário principal se disponível, seguindo o formato: {Locatário} — {Imóvel}
-    const cardTitle = useMemo(() => {
-      // Se o card tem proponente vinculado, usamos o formato desejado
-      if (primaryTenantName) {
-        return propertyIdentification 
-          ? `${primaryTenantName} — ${propertyIdentification}`
-          : primaryTenantName;
-      }
-
-      // Fallback para o título gravado, removendo prefixos de código se for um título antigo do tipo "177 - ..."
-      if (storedTitle && legacyPropertyOnlyTitle) {
-        return propertyIdentification || storedTitle;
-      }
-
-      return storedTitle || propertyIdentification || 'Inquilino não informado';
-    }, [primaryTenantName, propertyIdentification, storedTitle, legacyPropertyOnlyTitle]);
+     // 2. Título do Card: Prioriza o título ARMAZENADO no banco.
+     // O sistema agora garante que o título no banco seja o mais completo e protegido.
+     // Removida a lógica reativa que sobrescrevia o título visualmente, causando
+     // o bug de "Inquilino não informado" quando as partes ainda não carregaram.
+     const cardTitle = card.title?.trim() || card.building_name || 'Nova Proposta';
 
     return (
       <Card 

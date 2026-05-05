@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChecklistWithItems, ChecklistItem, Profile } from '@/types/database';
+ import { ChecklistWithItems, ChecklistItem, Profile, Column } from '@/types/database';
 import { useChecklists } from '@/hooks/useChecklists';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -96,6 +96,7 @@ interface PartyNameInfo {
    partyNames?: PartyNameInfo[];
    currentColumnId?: string | null;
    currentColumnName?: string | null;
+  columns?: Column[];
  }
 
 // Helper function to format checklist names (convert from UPPERCASE to Title Case)
@@ -204,7 +205,8 @@ const getStatusColor = (status: string): string => {
    cardId, 
    partyNames = [],
    currentColumnId: propColumnId,
-   currentColumnName
+  currentColumnName,
+  columns = []
  }: ChecklistSectionProps) {
    // Use provided columnId
    const currentColumnId = propColumnId || null;

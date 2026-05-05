@@ -194,8 +194,8 @@ const getStatusColor = (status: string): string => {
 
  export function ChecklistSection({ checklists, cardId, partyNames = [] }: ChecklistSectionProps) {
    const currentColumnId = (checklists && checklists.length > 0) ? (checklists[0]?.column_id || null) : null;
-   const allItems = checklists.flatMap(c => c.items || []);
-   const activeItemsGlobal = allItems.filter(i => !i.is_dismissed);
+   const allItems = checklists.flatMap(c => (c && c.items) || []);
+   const activeItemsGlobal = allItems.filter(i => i && !i.is_dismissed);
    
    const stageBlockingPending = activeItemsGlobal.filter(i => {
      if (!i) return false;

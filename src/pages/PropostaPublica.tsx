@@ -2290,11 +2290,22 @@ export default function PropostaPublica() {
             negotiation_details: negotiationDetailsLines || null,
             client_name: clientName,
             imovel_codigo: imovelCodigo,
+            correction_request_id: pendingCorrection?.id || null,
           },
         } as any,
       );
       if (rpcErr) throw rpcErr;
-      const targetCardId: string | null = (rpcRes as any)?.card_id || null;
+      const typedRpcRes = rpcRes as { 
+        card_id?: string; 
+        correction_marked_responded?: boolean;
+        success?: boolean;
+      };
+      const targetCardId: string | null = typedRpcRes?.card_id || null;
+
+      // Se havia uma solicitação de correção e a RPC falhou em marcá-la como respondida
+      if (pendingCorrection?.id && typedRpcRes?.correction_marked_responded !== true) {
+        throw new Error('Não foi possível registrar a resposta da correção. Tente novamente.');
+      }
 
       // 2.5) Backfill: vincular card_id às partes recém-criadas
       if (targetCardId && proposalLink?.id) {
@@ -2345,48 +2356,6 @@ export default function PropostaPublica() {
           }
         } catch (notifyErr) {
           console.error('Erro ao notificar admins:', notifyErr);
-        }
-      }
-
-      // Se havia uma solicitação de correção pendente, marca como respondida.
-      // Mantém o histórico (não apaga). O badge no card passa a ser
-      // "Correção/Complementação recebida" conforme as seções solicitadas.
-      if (pendingCorrection?.id) {
-        try {
-          await supabase
-            .from('proposal_correction_requests' as any)
-            .update({
-              status: 'responded',
-              responded_at: new Date().toISOString(),
-            })
-            .eq('id', pendingCorrection.id);
-
-          if (targetCardId) {
-            const onlyDocs =
-              (pendingCorrection.requested_sections || []).length > 0 &&
-              (pendingCorrection.requested_sections || []).every((s: any) =>
-                typeof s === 'string'
-                  ? s === 'documentos'
-                  : isStructuredItem(s) && s.step === 'documents',
-              );
-            const title = onlyDocs
-              ? '📎 Complementação de documentos recebida'
-              : '✅ Cliente respondeu à solicitação de correção';
-            await supabase.from('card_activity_logs').insert({
-              card_id: targetCardId,
-              actor_user_id: null,
-              event_type: 'proposal_correction_responded',
-              title,
-              description: `Resposta à solicitação: ${pendingCorrection.message}`,
-              metadata: {
-                kind: 'correction_responded',
-                only_documents: onlyDocs,
-                correction_request_id: pendingCorrection.id,
-              },
-            });
-          }
-        } catch (corrErr) {
-          console.error('Erro ao marcar correção como respondida:', corrErr);
         }
       }
 

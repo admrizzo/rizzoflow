@@ -99,8 +99,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
        .on("presence", { event: "sync" }, () => {
          const state = presenceChannel.presenceState();
          const onlineIds = new Set<string>();
-         Object.values(state).forEach((presences: any) => {
-           presences.forEach((p: any) => {
+          Object.values(state).forEach((presences) => {
+            (presences as any[]).forEach((p) => {
              if (p.user_id) onlineIds.add(p.user_id);
            });
          });
@@ -138,7 +138,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
  
    const playWebAudioFallback = useCallback(() => {
      try {
-       const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
        const oscillator = context.createOscillator();
        const gain = context.createGain();
        oscillator.connect(gain);

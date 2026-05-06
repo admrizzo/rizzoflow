@@ -121,25 +121,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      };
    }, [user]);
  
-    const playNotificationSound = useCallback(() => {
-      if (!isSoundEnabled) return;
-      const now = Date.now();
-      if (now - lastSoundTimeRef.current < 2000) return;
-      lastSoundTimeRef.current = now;
-  
-      if (audioRef.current && isAudioUnlockedRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {
-          playWebAudioFallback();
-        });
-      } else {
-        playWebAudioFallback();
-      }
-    }, [isSoundEnabled, playWebAudioFallback]);
- 
    const playWebAudioFallback = useCallback(() => {
      try {
-    const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+       const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
        const oscillator = context.createOscillator();
        const gain = context.createGain();
        oscillator.connect(gain);
@@ -155,6 +139,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
        // Silent fail
      }
    }, []);
+
+    const playNotificationSound = useCallback(() => {
+      if (!isSoundEnabled) return;
+      const now = Date.now();
+      if (now - lastSoundTimeRef.current < 2000) return;
+      lastSoundTimeRef.current = now;
+  
+      if (audioRef.current && isAudioUnlockedRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          playWebAudioFallback();
+        });
+      } else {
+        playWebAudioFallback();
+      }
+    }, [isSoundEnabled, playWebAudioFallback]);
  
    // Audio unlock logic
    useEffect(() => {

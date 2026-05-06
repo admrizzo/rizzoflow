@@ -27,7 +27,7 @@ export function useChatMessages(conversationId: string | null) {
         .order("created_at", { ascending: true });
       if (error) throw error;
       const senderIds = Array.from(new Set((msgs || []).map((m) => m.sender_id)));
-      let profMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+      const profMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
       if (senderIds.length > 0) {
         const { data: profs } = await supabase
           .from("profiles")

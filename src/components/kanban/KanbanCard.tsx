@@ -201,7 +201,7 @@ export const KanbanCard = forwardRef<HTMLDivElement, KanbanCardProps>(
                         className="w-full h-full object-contain drop-shadow-sm"
                       />
                     </div>
-                    {unreadCount > 0 && (
+                    {unreadCount > 1 && (
                       <span className="ml-1 text-[9px] font-black text-rose-600 tracking-tighter">
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>

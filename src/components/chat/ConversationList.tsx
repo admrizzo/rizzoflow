@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useChatConversations } from "@/hooks/useChatConversations";
+import { useChatConversations, ChatConversationListItem } from "@/hooks/useChatConversations";
  import { useChat } from "./ChatProvider";
  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ function initials(name?: string | null) {
    return format(date, "dd/MM");
  }
  
- function getMessagePreview(c: any, currentUserId?: string) {
+  function getMessagePreview(c: ChatConversationListItem, currentUserId?: string) {
    const isMe = c.last_message_sender_id === currentUserId;
    const isGroup = c.type === "group";
    
@@ -166,9 +166,10 @@ function initials(name?: string | null) {
       setSelectedUsers([]);
       setActiveTab("chats");
       onSelect?.(id);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast({ title: "Erro ao criar grupo", description: err.message, variant: "destructive" });
+      const error = err as { message?: string };
+      toast({ title: "Erro ao criar grupo", description: error.message || "Erro desconhecido", variant: "destructive" });
     } finally {
       setIsSubmittingGroup(false);
     }

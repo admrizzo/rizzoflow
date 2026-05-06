@@ -100,10 +100,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
          const state = presenceChannel.presenceState();
          const onlineIds = new Set<string>();
           Object.values(state).forEach((presences) => {
-            (presences as any[]).forEach((p) => {
-             if (p.user_id) onlineIds.add(p.user_id);
-           });
-         });
+            const pList = presences as Array<{ user_id?: string }>;
+            pList.forEach((p) => {
+              if (p.user_id) onlineIds.add(p.user_id);
+            });
+          });
          setOnlineUserIds(onlineIds);
        })
        .subscribe(async (status) => {
@@ -120,21 +121,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      };
    }, [user]);
  
-   const playNotificationSound = useCallback(() => {
-     if (!isSoundEnabled) return;
-     const now = Date.now();
-     if (now - lastSoundTimeRef.current < 2000) return;
-     lastSoundTimeRef.current = now;
- 
-     if (audioRef.current && isAudioUnlockedRef.current) {
-       audioRef.current.currentTime = 0;
-       audioRef.current.play().catch(() => {
-         playWebAudioFallback();
-       });
-     } else {
-       playWebAudioFallback();
-     }
-   }, [isSoundEnabled]);
+    const playNotificationSound = useCallback(() => {
+      if (!isSoundEnabled) return;
+      const now = Date.now();
+      if (now - lastSoundTimeRef.current < 2000) return;
+      lastSoundTimeRef.current = now;
+  
+      if (audioRef.current && isAudioUnlockedRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          playWebAudioFallback();
+        });
+      } else {
+        playWebAudioFallback();
+      }
+    }, [isSoundEnabled, playWebAudioFallback]);
  
    const playWebAudioFallback = useCallback(() => {
      try {

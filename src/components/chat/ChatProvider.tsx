@@ -99,11 +99,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
        .on("presence", { event: "sync" }, () => {
          const state = presenceChannel.presenceState();
          const onlineIds = new Set<string>();
-         Object.values(state).forEach((presences: any) => {
-           presences.forEach((p: any) => {
-             if (p.user_id) onlineIds.add(p.user_id);
-           });
-         });
+          Object.values(state).forEach((presences) => {
+            const pList = presences as Array<{ user_id?: string }>;
+            pList.forEach((p) => {
+              if (p.user_id) onlineIds.add(p.user_id);
+            });
+          });
          setOnlineUserIds(onlineIds);
        })
        .subscribe(async (status) => {
@@ -120,25 +121,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      };
    }, [user]);
  
-   const playNotificationSound = useCallback(() => {
-     if (!isSoundEnabled) return;
-     const now = Date.now();
-     if (now - lastSoundTimeRef.current < 2000) return;
-     lastSoundTimeRef.current = now;
- 
-     if (audioRef.current && isAudioUnlockedRef.current) {
-       audioRef.current.currentTime = 0;
-       audioRef.current.play().catch(() => {
-         playWebAudioFallback();
-       });
-     } else {
-       playWebAudioFallback();
-     }
-   }, [isSoundEnabled]);
- 
    const playWebAudioFallback = useCallback(() => {
      try {
-       const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+       const context = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
        const oscillator = context.createOscillator();
        const gain = context.createGain();
        oscillator.connect(gain);
@@ -154,6 +139,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
        // Silent fail
      }
    }, []);
+
+    const playNotificationSound = useCallback(() => {
+      if (!isSoundEnabled) return;
+      const now = Date.now();
+      if (now - lastSoundTimeRef.current < 2000) return;
+      lastSoundTimeRef.current = now;
+  
+      if (audioRef.current && isAudioUnlockedRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          playWebAudioFallback();
+        });
+      } else {
+        playWebAudioFallback();
+      }
+    }, [isSoundEnabled, playWebAudioFallback]);
  
    // Audio unlock logic
    useEffect(() => {

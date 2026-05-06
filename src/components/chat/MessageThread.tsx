@@ -15,9 +15,9 @@ import { ptBR } from "date-fns/locale";
  import { useQuery, useQueryClient } from "@tanstack/react-query";
    import { useChat } from "./ChatProvider";
    import { isToday, isYesterday, isSameDay } from "date-fns";
-  import { useChatAttachments, getChatAttachmentSignedUrl } from "@/hooks/useChatAttachments";
+import { useChatAttachments, getChatAttachmentSignedUrl, ChatAttachment } from "@/hooks/useChatAttachments";
   import { Input } from "@/components/ui/input";
- function AttachmentPreview({ attachment }: { attachment: any }) {
+ function AttachmentPreview({ attachment }: { attachment: ChatAttachment }) {
    const [localUrl, setLocalUrl] = useState<string | null>(null);
    const [isDownloading, setIsDownloading] = useState(false);
  

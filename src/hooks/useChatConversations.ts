@@ -63,7 +63,7 @@ export type ChatConversationListItem = {
       }
 
       // 4) profiles
-      let profiles: Record<string, { full_name: string; avatar_url: string | null }> = {};
+      const profiles: Record<string, { full_name: string; avatar_url: string | null }> = {};
       if (otherIds.size > 0) {
         const { data: profs } = await supabase
           .from("profiles")
@@ -93,7 +93,7 @@ export type ChatConversationListItem = {
        for (const m of msgs || []) {
          // Determinar o tipo da mensagem para o preview
          let type: 'text' | 'image' | 'file' | 'audio' = 'text';
-         const attachments = m.chat_message_attachments as any[];
+          const attachments = m.chat_message_attachments as unknown as Array<{ attachment_type: 'text' | 'image' | 'file' | 'audio' }>;
          if (attachments && attachments.length > 0) {
            // Se houver múltiplos, priorizamos o tipo mais "relevante" ou apenas o primeiro
            type = attachments[0].attachment_type || 'file';

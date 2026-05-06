@@ -73,7 +73,7 @@
  
        for (const file of files) {
          const attachmentType = getAttachmentType(file.type);
-         const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+          const safeName = file.name.replace(/[^\w.-]+/g, "_");
          const storagePath = `${convId}/${messageId}/${Date.now()}-${safeName}`;
  
          // 1. Upload to storage
@@ -118,13 +118,14 @@
        // Also invalidate chat query key from useChatMessages if needed
        queryClient.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
      },
-     onError: (err: any) => {
-       toast({
-         title: 'Erro ao enviar anexo',
-         description: err?.message || 'Tente novamente.',
-         variant: 'destructive',
-       });
-     },
+      onError: (err: unknown) => {
+        const error = err as { message?: string };
+        toast({
+          title: 'Erro ao enviar anexo',
+          description: error?.message || 'Tente novamente.',
+          variant: 'destructive',
+        });
+      },
    });
  
    return {

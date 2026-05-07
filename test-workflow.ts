@@ -12,7 +12,7 @@ async function testWorkflow() {
   const { data: link, error: linkErr } = await supabase
     .from('proposal_links')
     .insert({
-      codigo_robust: 'TEST-FLOW',
+      codigo_robust: 999999,
       status: 'pending'
     })
     .select()

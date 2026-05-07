@@ -437,8 +437,10 @@ function initials(name?: string | null) {
      return `${mins}:${secs.toString().padStart(2, '0')}`;
    };
 
-   const displayName = conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa");
-   const otherUserId = conv?.other_user_id;
+    const displayName = isGroup 
+      ? (conv?.name || "Grupo") 
+      : (conv?.other_user_name || conv?.name || (isLoading ? "Carregando..." : "Conversa"));
+    const otherUserId = !isGroup ? conv?.other_user_id : undefined;
     const isOnline = otherUserId ? onlineUserIds.has(otherUserId) : false;
  
    const formatDateSeparator = (date: Date) => {
@@ -458,16 +460,18 @@ function initials(name?: string | null) {
            ) : null}
             <div className="relative">
               <Avatar className="h-7 w-7">
-                {conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
-                <AvatarFallback className="text-[11px] bg-primary/10 text-primary">{initials(displayName)}</AvatarFallback>
+                {!isGroup && conv?.other_user_avatar && <AvatarImage src={conv.other_user_avatar} />}
+                <AvatarFallback className="text-[11px] bg-primary/10 text-primary">
+                  {isGroup && !conv?.name ? <Users className="h-4 w-4" /> : initials(displayName)}
+                </AvatarFallback>
               </Avatar>
-              {!isGroup && otherUserId && (
-                 <span 
-                   className={cn(
-                     "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
-                     isOnline ? "bg-emerald-500" : "bg-slate-300"
-                   )} 
-                 />
+              {otherUserId && (
+                <span 
+                  className={cn(
+                    "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background shadow-sm",
+                    isOnline ? "bg-emerald-500" : "bg-slate-300"
+                  )} 
+                />
               )}
             </div>
             <div className="min-w-0 flex-1 flex flex-col justify-center">

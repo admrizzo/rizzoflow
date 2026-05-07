@@ -54,14 +54,27 @@ export function useProposalDocuments(cardId: string | null | undefined) {
 
       // Dedup por storage_path (caso um mesmo doc seja registrado 2x)
       const seen = new Set<string>();
+      const semanticoSeen = new Set<string>();
       const result: ProposalDocument[] = [];
-      for (const d of (data || []) as ProposalDocument[]) {
+      
+      // Ordenamos por uploaded_at DESC para manter o mais recente em caso de duplicidade semântica
+      const sortedData = [...(data || [])].sort((a, b) => 
+        new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+      );
+
+      for (const d of sortedData as ProposalDocument[]) {
         const key = d.storage_path || d.id;
         if (seen.has(key)) continue;
         seen.add(key);
+
+        // Dedup semântico defensivo
+        const sKey = `${d.proposal_link_id || d.card_id}|${d.party_id || d.owner_label}|${d.category}|${d.original_file_name || d.file_name}|${d.file_size}|${d.correction_request_id || 'original'}|${d.is_complementary}`;
+        if (semanticoSeen.has(sKey)) continue;
+        semanticoSeen.add(sKey);
+
         result.push(d);
       }
-      return result;
+      return result.reverse(); // Voltamos à ordem cronológica ascendente para exibição
     },
     enabled: !!cardId,
     staleTime: 30_000,

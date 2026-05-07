@@ -234,6 +234,7 @@ async function uploadProposalDocuments(
   data: ProposalFormData,
   partyMap: Map<string, string> = new Map(),
   correctionRequestId: string | null = null,
+  isDuplicateFn?: (file: UploadedFile, job: any) => boolean,
 ): Promise<{ attempted: number; succeeded: number }> {
   type Job = {
     ownerType: string;
@@ -420,6 +421,10 @@ async function uploadProposalDocuments(
         const dedupKey = `${job.ownerKey}|${job.category}|${file.name}|${file.size ?? 0}`;
         if (seen.has(dedupKey)) continue;
         seen.add(dedupKey);
+
+        if (isDuplicateFn && isDuplicateFn(file, job)) {
+          continue;
+        }
 
         const isSpouseDoc = isSpouseDocCategory(job.category);
         const targetLabel = isSpouseDoc
@@ -2237,30 +2242,48 @@ export default function PropostaPublica() {
         }
       }
 
-      // 0b) Upload de documentos vinculando-os ao proposal_link_id e party_id.
-      //     Isso garante que os arquivos não se percam mesmo que o RPC falhe,
-      //     e permite que a query do card os recupere via proposal_link_id.
+      // 0b) Upload de documentos (idempotente).
       let uploadStats = { attempted: 0, succeeded: 0 };
       if (proposalLink?.id) {
         try {
+          // Busca documentos já persistidos para evitar duplicidade real no storage/banco
+          const { data: existingDocs } = await supabase
+            .from('proposal_documents')
+            .select('party_id, category, original_file_name, file_size, owner_type, correction_request_id')
+            .eq('proposal_link_id', proposalLink.id);
+
+          const isDuplicate = (file: UploadedFile, job: any) => {
+            const resolvedPartyId = isSpouseDocCategory(job.category) && job.spousePartyKey
+              ? (partyMap.get(job.spousePartyKey) || null)
+              : (partyMap.get(job.partyKey) || null);
+            
+            const resolvedOwnerType = isSpouseDocCategory(job.category)
+              ? (job.ownerPersonRole === 'FIADOR' ? 'guarantor_spouse' : 'tenant_spouse')
+              : job.ownerType;
+
+            return (existingDocs || []).some(ed => 
+              ed.category === job.category &&
+              ed.original_file_name === file.name &&
+              ed.file_size === file.size &&
+              ed.owner_type === resolvedOwnerType &&
+              ed.party_id === resolvedPartyId &&
+              ed.correction_request_id === (pendingCorrection?.id || null)
+            );
+          };
+
           uploadStats = await uploadProposalDocuments(
             null,
             proposalLink.id,
             data,
             partyMap,
             pendingCorrection?.id || null,
+            isDuplicate
           );
         } catch (uploadErr: any) {
           console.error('Erro ao enviar documentos (pré-RPC):', uploadErr);
           toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.', {
             description: uploadErr?.message || 'Nenhum dado da proposta foi finalizado.',
           });
-          setIsSubmitting(false);
-          return;
-        }
-        if (uploadStats.attempted !== uploadStats.succeeded) {
-          console.error('Contagem inconsistente no envio de documentos:', uploadStats);
-          toast.error('Não foi possível enviar todos os documentos. Revise os anexos e tente novamente.');
           setIsSubmitting(false);
           return;
         }

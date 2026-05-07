@@ -1,4 +1,5 @@
 import { useChat } from "./ChatProvider";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessageCircle } from "lucide-react";
 import { ChatPanel } from "./ChatPanel";
@@ -7,6 +8,35 @@ import { cn } from "@/lib/utils";
 export function ChatLauncher() {
   const { user } = useAuth();
   const { toggle, unreadTotal, isOpen } = useChat();
+  const [shouldPulse, setShouldPulse] = useState(false);
+  const lastUnreadRef = useRef(unreadTotal);
+  const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Only pulse if:
+    // 1. Unread count increased
+    // 2. Chat is closed
+    // 3. It's not the initial load (where lastUnreadRef is same as unreadTotal)
+    if (!isOpen && unreadTotal > lastUnreadRef.current) {
+      setShouldPulse(true);
+      
+      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current);
+      
+      pulseTimeoutRef.current = setTimeout(() => {
+        setShouldPulse(false);
+      }, 6000); // Pulse for 6 seconds
+    }
+    
+    lastUnreadRef.current = unreadTotal;
+  }, [unreadTotal, isOpen]);
+
+  // If chat opens, stop pulsing immediately
+  useEffect(() => {
+    if (isOpen && shouldPulse) {
+      setShouldPulse(false);
+      if (pulseTimeoutRef.current) clearTimeout(pulseTimeoutRef.current);
+    }
+  }, [isOpen, shouldPulse]);
 
   if (!user) return null;
 
@@ -21,6 +51,7 @@ export function ChatLauncher() {
           "shadow-[0_8px_24px_-6px_rgba(20,30,40,0.35)] hover:shadow-[0_12px_28px_-6px_rgba(20,30,40,0.45)]",
           "flex items-center justify-center transition-all hover:scale-105",
           isOpen && "opacity-0 pointer-events-none",
+          shouldPulse && "animate-chat-pulse"
         )}
         style={{ width: 56, height: 56 }}
       >

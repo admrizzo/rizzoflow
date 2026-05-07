@@ -268,10 +268,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         onlineUserIds,
         refreshUnread,
         isSoundEnabled,
-        setSoundEnabled,
-      }),
-       [isOpen, activeConversationId, unreadTotal, onlineUserIds, refreshUnread, isSoundEnabled],
-  );
+         setSoundEnabled,
+       }),
+        [isOpen, activeConversationId, unreadTotal, onlineUserIds, refreshUnread, isSoundEnabled, setSoundEnabled],
+   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }

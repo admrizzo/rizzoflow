@@ -43,15 +43,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const audioRef = useRef<HTMLAudioElement | null>(null);
       const isAudioUnlockedRef = useRef<boolean>(false);
 
-   const setSoundEnabled = (enabled: boolean) => {
-     setIsSoundEnabled(enabled);
-     try {
-       localStorage.setItem("rizzo:chat-sound-enabled", String(enabled));
-     } catch (e) {
-       console.error("Failed to save chat sound preference", e);
-     }
-   };
-
   // Recompute unread count from conversations + last_read_at
   const refreshUnread = useCallback(async () => {
     if (!user) {
@@ -140,32 +131,51 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
      }
    }, []);
 
-    const playNotificationSound = useCallback(() => {
-      if (!isSoundEnabled) return;
+    const playNotificationSound = useCallback((force = false) => {
+      if (!isSoundEnabled && !force) return;
       const now = Date.now();
-      if (now - lastSoundTimeRef.current < 2000) return;
-      lastSoundTimeRef.current = now;
+      // Throttle only if not forced (test sound)
+      if (!force && now - lastSoundTimeRef.current < 2000) return;
+      if (!force) lastSoundTimeRef.current = now;
   
-      if (audioRef.current && isAudioUnlockedRef.current) {
+      if (audioRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {
+          // If blocked or fails, use WebAudio as fallback
           playWebAudioFallback();
         });
       } else {
         playWebAudioFallback();
       }
     }, [isSoundEnabled, playWebAudioFallback]);
- 
+
+    const setSoundEnabled = (enabled: boolean) => {
+      setIsSoundEnabled(enabled);
+      try {
+        localStorage.setItem("rizzo:chat-sound-enabled", String(enabled));
+        // Play feedback sound when enabling
+        if (enabled) {
+          // Small delay to ensure state updated or just force it
+          playNotificationSound(true);
+        }
+      } catch (e) {
+        console.error("Failed to save chat sound preference", e);
+      }
+    };
+
    // Audio unlock logic
    useEffect(() => {
      if (typeof window === "undefined") return;
  
-     // Create audio element once
-     if (!audioRef.current) {
-       audioRef.current = new Audio("/chat-notification.mp3");
-       audioRef.current.load();
-     }
- 
+      if (!audioRef.current) {
+        const audio = new Audio("/chat-notification.mp3");
+        audio.preload = "auto";
+        audio.onerror = () => {
+          console.warn("Chat notification audio failed to load, using WebAudio fallback");
+        };
+        audioRef.current = audio;
+      }
+
      const unlock = () => {
        if (isAudioUnlockedRef.current) return;
        

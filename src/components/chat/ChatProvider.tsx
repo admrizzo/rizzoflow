@@ -149,19 +149,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     }, [isSoundEnabled, playWebAudioFallback]);
 
-    const setSoundEnabled = (enabled: boolean) => {
-      setIsSoundEnabled(enabled);
-      try {
-        localStorage.setItem("rizzo:chat-sound-enabled", String(enabled));
-        // Play feedback sound when enabling
-        if (enabled) {
-          // Small delay to ensure state updated or just force it
-          playNotificationSound(true);
-        }
-      } catch (e) {
-        console.error("Failed to save chat sound preference", e);
-      }
-    };
+     const setSoundEnabled = useCallback((enabled: boolean) => {
+       setIsSoundEnabled(enabled);
+       try {
+         localStorage.setItem("rizzo:chat-sound-enabled", String(enabled));
+         // Play feedback sound when enabling
+         if (enabled) {
+           // Small delay to ensure state updated or just force it
+           playNotificationSound(true);
+         }
+       } catch (e) {
+         console.error("Failed to save chat sound preference", e);
+       }
+     }, [playNotificationSound]);
 
    // Audio unlock logic
    useEffect(() => {

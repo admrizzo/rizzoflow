@@ -6,6 +6,29 @@
 
 /* Rizzo Imobiliária — design system */
 
+ @keyframes chat-ring-pulse {
+   0% {
+    box-shadow: 0 0 0 0 hsl(340 100% 45% / 0.6);
+   }
+   70% {
+    box-shadow: 0 0 0 15px hsl(340 100% 45% / 0);
+   }
+   100% {
+    box-shadow: 0 0 0 0 hsl(340 100% 45% / 0);
+   }
+ }
+ 
+ .animate-chat-pulse {
+   animation: chat-ring-pulse 2s cubic-bezier(0.4, 0, 0.6, 1);
+   animation-iteration-count: 3; /* ~6 seconds total (3 * 2s) */
+ }
+ 
+ @media (prefers-reduced-motion: reduce) {
+   .animate-chat-pulse {
+     animation: none;
+   }
+ }
+ 
 @layer base {
   :root {
     --background: 214 25% 94%;

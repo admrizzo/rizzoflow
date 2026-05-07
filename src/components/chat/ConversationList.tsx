@@ -197,14 +197,19 @@ function initials(name?: string | null) {
         <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
-            title={isSoundEnabled ? "Desativar som do chat" : "Ativar som do chat"}
+            title={isSoundEnabled ? "Som ativado" : "Som desativado"}
             onClick={() => setSoundEnabled(!isSoundEnabled)}
             className={cn(
-              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all hover:bg-muted",
-              isSoundEnabled ? "text-primary/70" : "text-muted-foreground"
+              "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all hover:bg-muted group/sound",
+              isSoundEnabled ? "text-primary" : "text-muted-foreground"
             )}
           >
-            {isSoundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {isSoundEnabled ? (
+              <Volume2 className="h-4 w-4 transition-transform group-active/sound:scale-110" />
+            ) : (
+              <VolumeX className="h-4 w-4 transition-transform group-active/sound:scale-110" />
+            )}
+            <span className="sr-only">{isSoundEnabled ? "Som ativado" : "Som desativado"}</span>
           </button>
 
           <SheetClose asChild>

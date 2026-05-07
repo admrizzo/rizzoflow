@@ -632,7 +632,22 @@ function initials(name?: string | null) {
                  </div>
                </div>
              );
-           })}
+            })}
+
+          {typingUsers.length > 0 && (
+            <div className="flex items-center gap-2 px-1 py-1 animate-in fade-in slide-in-from-bottom-1 duration-300">
+              <div className="flex gap-0.5 ml-10">
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce"></span>
+              </div>
+              <span className="text-[10px] text-muted-foreground italic font-medium">
+                {typingUsers.length === 1 
+                  ? `${typingUsers[0]} está digitando...` 
+                  : `${typingUsers.length} pessoas estão digitando...`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

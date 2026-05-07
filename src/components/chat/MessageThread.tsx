@@ -658,7 +658,10 @@ function initials(name?: string | null) {
             <textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                sendTyping();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
                   e.preventDefault();

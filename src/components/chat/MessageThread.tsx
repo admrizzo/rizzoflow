@@ -1,13 +1,15 @@
   import { useEffect, useRef, useState, useLayoutEffect, useMemo } from "react";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useChatConversations } from "@/hooks/useChatConversations";
+import { useChatTyping } from "@/hooks/useChatTyping";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-   import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown, Check, CheckCheck } from "lucide-react";
+import { Send, ArrowLeft, X, Paperclip, Image as ImageIcon, Mic, Smile, Download, FileIcon, Loader2, StopCircle, Trash2, Search, ChevronUp, ChevronDown, Check, CheckCheck, Users } from "lucide-react";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
  import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -151,49 +153,38 @@ function initials(name?: string | null) {
     const { close, onlineUserIds } = useChat();
   const qc = useQueryClient();
    const { data: messages = [], isLoading: messagesLoading } = useChatMessages(conversationId);
+  const { typingUsers, sendTyping } = useChatTyping(conversationId);
    const { byMessage, uploadAttachments, isLoading: attachmentsLoading } = useChatAttachments(conversationId);
    const isLoading = messagesLoading;
     const { data: conversations = [], refetch: refetchConversations } = useChatConversations();
 
-   // participants real-time for read status
-   useEffect(() => {
-     if (!conversationId || !user) return;
-     
-     const channel = supabase
-       .channel(`chat-participants-${conversationId}`)
-       .on(
-         'postgres_changes',
-         {
-           event: 'UPDATE',
-           schema: 'public',
-           table: 'chat_participants',
-           filter: `conversation_id=eq.${conversationId}`
-         },
-         () => {
-           // Quando um participante atualiza seu last_read_at, atualizamos a lista de conversas local
-           refetchConversations();
-         }
-       )
-       .subscribe();
- 
-     return () => {
-       supabase.removeChannel(channel);
-     };
-   }, [conversationId, user, refetchConversations]);
- 
-   // Vamos carregar os participantes aqui para buscar o status de leitura
-   const { data: participants = [] } = useQuery({
-     queryKey: ['chat-participants-status', conversationId],
-     enabled: !!conversationId,
-     queryFn: async () => {
-       const { data } = await supabase
-         .from('chat_participants')
-         .select('user_id, last_read_at')
-         .eq('conversation_id', conversationId);
-       return data || [];
-     },
-     refetchInterval: 10000, // Fallback
-   });
+    const { data: participants = [] } = useQuery({
+      queryKey: ['chat-participants-full', conversationId],
+      enabled: !!conversationId,
+      queryFn: async () => {
+        const { data: parts } = await supabase
+          .from('chat_participants')
+          .select('user_id, last_read_at')
+          .eq('conversation_id', conversationId);
+        
+        if (!parts || parts.length === 0) return [];
+        
+        const uids = parts.map(p => p.user_id);
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, avatar_url')
+          .in('user_id', uids);
+          
+        const profMap = new Map((profs || []).map(p => [p.user_id, p]));
+        
+        return parts.map(p => ({
+          ...p,
+          full_name: profMap.get(p.user_id)?.full_name || 'Usuário',
+          avatar_url: profMap.get(p.user_id)?.avatar_url || null
+        }));
+      },
+      refetchInterval: 30000,
+    });
  
    const conv = conversations.find((c) => c.id === conversationId);
 
@@ -488,6 +479,38 @@ function initials(name?: string | null) {
               )}
             </div>
             <div className="flex items-center gap-1">
+              {isGroup && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                      <Users className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0" align="end">
+                    <div className="px-3 py-2 border-b border-border bg-muted/20">
+                      <p className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground">Membros do grupo ({participants.length})</p>
+                    </div>
+                    <ScrollArea className="h-64">
+                      <div className="p-1.5 space-y-0.5">
+                        {participants.map((p) => (
+                          <div key={p.user_id} className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-muted/60 transition-colors">
+                            <Avatar className="h-7 w-7 border border-background shadow-sm">
+                              {p.avatar_url && <AvatarImage src={p.avatar_url} />}
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{initials(p.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[12px] truncate font-semibold leading-none">{p.user_id === user?.id ? "Você" : p.full_name}</span>
+                              {p.last_read_at && (
+                                <span className="text-[9px] text-muted-foreground mt-0.5">Visto {format(new Date(p.last_read_at), "HH:mm")}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+              )}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -609,7 +632,22 @@ function initials(name?: string | null) {
                  </div>
                </div>
              );
-           })}
+            })}
+
+          {typingUsers.length > 0 && (
+            <div className="flex items-center gap-2 px-1 py-1 animate-in fade-in slide-in-from-bottom-1 duration-300">
+              <div className="flex gap-0.5 ml-10">
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="h-1 w-1 rounded-full bg-muted-foreground/40 animate-bounce"></span>
+              </div>
+              <span className="text-[10px] text-muted-foreground italic font-medium">
+                {typingUsers.length === 1 
+                  ? `${typingUsers[0]} está digitando...` 
+                  : `${typingUsers.length} pessoas estão digitando...`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -635,7 +673,10 @@ function initials(name?: string | null) {
             <textarea
               ref={textareaRef}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                sendTyping();
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 768) {
                   e.preventDefault();
